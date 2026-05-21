@@ -47,6 +47,7 @@ import { toast } from '../../utils/toast';
 import NotificationBell from '../NotificationBell';
 import SidebarPillButton from './SidebarPillButton';
 import PublicDeviceModeMenuButton from './PublicDeviceModeMenuButton';
+import AdminSectionNav from './AdminSectionNav';
 import { API_URL } from '../../config';
 import { filterNavByFeatures } from '../../utils/featureGates';
 import { applyUserMenuOrder } from '../../config/menuRegistry';
@@ -946,7 +947,17 @@ const Sidebar = () => {
 
       {/* Navigation Sections */}
       <nav className="flex-1 overflow-y-auto py-4" style={{ overscrollBehavior: 'contain' }}>
-        {getNavSections().map((section, idx) => {
+        {/* Admin Portal — render the expandable Section → Tab menu
+            instead of the legacy flat TOOLS list. (Operator view at
+            /ops still uses the legacy flat list below.) */}
+        {user?.role === 'admin' && !window.location.pathname.startsWith('/ops') ? (
+          <AdminSectionNav
+            collapsed={collapsed}
+            variant="sidebar"
+            adminScopes={scopeArr(user?.admin_scope).length > 0 ? scopeArr(user?.admin_scope) : ['founder']}
+          />
+        ) : (
+        getNavSections().map((section, idx) => {
           const isAccountSection = section.title === 'ACCOUNT';
           return (
           <div key={idx} className="nav-section">
@@ -974,7 +985,8 @@ const Sidebar = () => {
             ))}
           </div>
           );
-        })}
+        })
+        )}
         {/* Utility actions — Notifications, Theme, Collapse — placed
             inside the scrollable area beneath the ACCOUNT section so the
             scrollable feature list above gets back the vertical room it

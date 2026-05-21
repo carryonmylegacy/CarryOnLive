@@ -1,6 +1,32 @@
 # CarryOn — Changelog
 
 
+## May 21, 2026 — Admin Portal Section→Tab restructure (V2026.05.21.14)
+
+**Why**: Founder Dashboard was overloaded with the entire tab strip + tab content underneath. New IA cleanly splits the 60-something admin surfaces into 6 navigable sections.
+
+**Menu (sidebar + hamburger)**:
+- Replaced the flat "TOOLS" admin section with 6 expandable sections: **Operations · Finance · Marketing · Compliance · Platform · Admin**. Each row = colored icon (matching section accent) + uppercase label + chevron.
+- Tap **label** → navigates to `/admin/<section>` (section landing). Tap **chevron** → expands inline to show every tab in that section. Tap a child tab → deep-link to that tab's page.
+- Section state persists via `carryon_admin_section_expanded_v1` in localStorage and auto-expands the section that contains the current path.
+- Scoped admins see ONLY their permitted sections (founder sees all 6). Operator portal (`/ops/*`) unchanged.
+
+**Founder Dashboard (`/admin`)**:
+- Now renders ONLY: Revenue Panel → Action Required → Platform Overview → Code Health. Tab bar and tab content moved out to section pages.
+
+**Section pages (`/admin/<section>`) & Tab pages (`/admin/<tab>`)**:
+- Each renders inside the new `AdminSectionLayout`: full-page **radial gradient fade** from top-left (color keyed to the section), section icon in a soft gradient chip, big serif title, subtitle, then the horizontal pill tab bar of that section's tabs only, then the active tab's content. Matches the benefactor portal section header style (MessagesPage / VaultPage etc.).
+- URL aliases preserved (`/admin/invites`, `/admin/templates`, `/admin/feature-gates`, etc.) so existing bookmarks still resolve.
+
+**Files**:
+- New: `src/config/adminSections.js` (single source of truth), `src/components/admin/AdminSectionLayout.js`, `src/components/layout/AdminSectionNav.js`.
+- Refactored: `pages/AdminPage.js` (3-way dispatch: founder dashboard / section / operator), `components/layout/Sidebar.js`, `components/layout/MobileNav.js`.
+- Housekeeping CP2h check updated to match the new `case 'sales-brief':` switch pattern.
+
+**Verified**: Founder dashboard renders Revenue + Action Required + Platform Overview + Code Health (no tabs below). `/admin/finance` renders the green-gradient Finance section header + 8-pill tab bar + active SubscriptionsTab content. Sidebar correctly auto-expands the section containing the current path. Housekeeping `--strict` → 0 WARN / 0 FAIL. Build tag → `V2026.05.21.14`.
+
+
+
 ## May 21, 2026 — Live self-test buttons for every external credential (V2026.05.21.8)
 
 **Why**: Closes the loop from "the key is loaded" to "the key actually authenticates against the provider". After a rotation, the founder can now confirm in one click that Render → Atlas / Resend / Stripe / AWS / Twilio / xAI all return 200.

@@ -534,7 +534,7 @@ async def _resolve_claim_or_raise(token: str) -> dict:
 async def get_claim_preview(token: str):
     """Public — returns the invite metadata so the claim page can render."""
     grant = await _resolve_claim_or_raise(token)
-    benefactor = await db.users.find_one({"id": grant["benefactor_id"]}, {"_id": 0, "name": 1, "email": 1})
+    benefactor = await db.users.find_one({"id": grant["benefactor_id"]}, {"_id": 0, "id": 1, "name": 1, "email": 1})
     return {
         "grant_id": grant["id"],
         "benefactor_name": (benefactor or {}).get("name", "A CarryOn user"),

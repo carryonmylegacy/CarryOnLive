@@ -5,19 +5,14 @@ import apiClient from '../utils/apiClient';
 import { useAuth } from '../contexts/AuthContext';
 import { API_URL } from '../config';
 import {
-  Shield, Users, FileKey, Loader2,
-  Headphones, CreditCard, Activity, Settings,
-  CheckSquare, AlertTriangle, Clock, TrendingUp, Recycle,
-  Megaphone, HeartPulse, Search, StickyNote, BookOpen, Gift, Zap, Puzzle, Mail, Film, Hourglass,
-  Globe, UserCog, Power, MessageSquare, BarChart3, Download, Radio,
-  Calendar, GraduationCap, Bell, Sparkles, MessageSquareQuote, FileText, Briefcase
+  Shield, Loader2, Recycle,
+  FileKey, Headphones, ShieldCheck, Users, CheckSquare, Activity,
+  Clock, HeartPulse, MessageSquare, BarChart3, Search, AlertTriangle,
+  StickyNote, BookOpen, Calendar, GraduationCap, CreditCard,
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { toast } from '../utils/toast';
 import { Skeleton } from '../components/ui/skeleton';
-// Note (May 21 2026): `useScrollLock` import removed — see comment near
-// where it was called below. `<ScrollRestorationProvider />` is now the
-// sole authority on scroll memory for admin tab navigation.
 import { RevenuePanel } from '../components/admin/RevenuePanel';
 import { OpsWorkTiles } from '../components/admin/OpsWorkTiles';
 import { TeamActivitySection } from '../components/admin/TeamActivitySection';
@@ -78,101 +73,16 @@ import { VoicesTab } from '../components/admin/VoicesTab';
 import SalesBriefTab from '../components/admin/SalesBriefTab';
 import AdminCommandPalette from '../components/admin/AdminCommandPalette';
 import AdminHeaderIconButton from '../components/admin/AdminHeaderIconButton';
+import AdminSectionLayout from '../components/admin/AdminSectionLayout';
+import {
+  ADMIN_SECTIONS,
+  TAB_TO_SECTION,
+  visibleAdminSections,
+} from '../config/adminSections';
 
-// ── Section-based tab organization ────────────────────────
-// Each section has a label, scopes (which admin scopes can see it), and tabs
-const FOUNDER_SECTIONS = [
-  {
-    section: 'Operations',
-    scopes: ['founder', 'ops_manager', 'ops_team'],
-    tabs: [
-      { key: 'users', label: 'Users', icon: Users, path: '/admin/users' },
-      { key: 'founder-invites', label: 'Invites', icon: Gift, path: '/admin/founder-invites' },
-      { key: 'transition', label: 'TVT', icon: FileKey, path: '/admin/transition' },
-      { key: 'dts', label: 'DTS', icon: Shield, path: '/admin/dts' },
-      { key: 'support', label: 'Support', icon: Headphones, path: '/admin/support' },
-      { key: 'verifications', label: 'Verify', icon: FileKey, path: '/admin/verifications' },
-      { key: 'milestones', label: 'Milestones', icon: CheckSquare, path: '/admin/milestones' },
-      { key: 'escalations', label: 'Escalations', icon: AlertTriangle, path: '/admin/escalations' },
-      { key: 'ops-dashboard', label: 'Ops Dashboard', icon: Activity, path: '/admin/ops-dashboard' },
-      { key: 'canned-responses', label: 'Templates', icon: MessageSquare, path: '/admin/canned-responses' },
-      { key: 'team-chat', label: 'Team Chat', icon: MessageSquare, path: '/admin/team-chat' },
-      { key: 'ops-members', label: 'Members', icon: UserCog, path: '/admin/ops-members' },
-    ],
-  },
-  {
-    section: 'Finance',
-    scopes: ['founder', 'finance'],
-    tabs: [
-      { key: 'subscriptions', label: 'Subs', icon: CreditCard, path: '/admin/subscriptions' },
-      { key: 'partners', label: 'Partners', icon: Briefcase, path: '/admin/partners' },
-      { key: 'platform-rules', label: 'Rules', icon: Shield, path: '/admin/platform-rules' },
-      { key: 'analytics', label: 'Revenue', icon: Activity, path: '/admin/analytics' },
-      { key: 'launch', label: 'Launch', icon: TrendingUp, path: '/admin/launch' },
-      { key: 'grace-periods', label: 'Grace Periods', icon: Hourglass, path: '/admin/grace-periods' },
-      { key: 'trials', label: 'Trials', icon: Clock, path: '/admin/trials' },
-      { key: 'finance-members', label: 'Members', icon: UserCog, path: '/admin/finance-members' },
-    ],
-  },
-  {
-    section: 'Marketing',
-    scopes: ['founder', 'marketing'],
-    tabs: [
-      { key: 'funnel', label: 'Funnel', icon: TrendingUp, path: '/admin/funnel' },
-      { key: 'sales-brief', label: 'Sales Brief', icon: FileText, path: '/admin/sales-brief' },
-      { key: 'beta-testing', label: 'Beta Testing', icon: Zap, path: '/admin/beta-testing' },
-      { key: 'site-content', label: 'Site Content', icon: Film, path: '/admin/site-content' },
-      { key: 'founder-emails', label: 'Emails', icon: Mail, path: '/admin/founder-emails' },
-      { key: 'announcements', label: 'Announcements', icon: Megaphone, path: '/admin/announcements' },
-      { key: 'marketing-members', label: 'Members', icon: UserCog, path: '/admin/marketing-members' },
-    ],
-  },
-  {
-    section: 'Compliance',
-    scopes: ['founder', 'compliance'],
-    tabs: [
-      { key: 'audit', label: 'Audit Trail', icon: Shield, path: '/admin/audit' },
-      { key: 'estate-health', label: 'Estate Health', icon: HeartPulse, path: '/admin/estate-health' },
-      { key: 'activity', label: 'Activity Log', icon: Activity, path: '/admin/activity' },
-      { key: 'compliance-members', label: 'Members', icon: UserCog, path: '/admin/compliance-members' },
-    ],
-  },
-  {
-    section: 'Platform',
-    scopes: ['founder', 'platform_health'],
-    tabs: [
-      { key: 'war-room', label: 'War Room', icon: Radio, path: '/admin/war-room' },
-      { key: 'system-health', label: 'System Health', icon: HeartPulse, path: '/admin/system-health' },
-      { key: 'operators', label: 'Operators', icon: Users, path: '/admin/operators' },
-      { key: 'integrations', label: 'Integrations', icon: Puzzle, path: '/admin/integrations' },
-      { key: 'download-diagnostics', label: 'Downloads', icon: Download, path: '/admin/download-diagnostics' },
-      { key: 'product-analytics', label: 'Product', icon: TrendingUp, path: '/admin/product-analytics' },
-      { key: 'referrals', label: 'Referrals', icon: Gift, path: '/admin/referrals' },
-      { key: 'p1-settings', label: 'P1 Contact', icon: AlertTriangle, path: '/admin/p1-settings' },
-      { key: 'knowledge-base', label: 'Knowledge Base', icon: BookOpen, path: '/admin/knowledge-base' },
-      { key: 'performance', label: 'Performance', icon: BarChart3, path: '/admin/performance' },
-      { key: 'shifts', label: 'Schedules', icon: Calendar, path: '/admin/shifts' },
-      { key: 'training', label: 'Training', icon: GraduationCap, path: '/admin/training' },
-      { key: 'platform-members', label: 'Members', icon: UserCog, path: '/admin/platform-members' },
-    ],
-  },
-  {
-    section: 'Admin',
-    scopes: ['founder'],
-    tabs: [
-      { key: 'scoped-admins', label: 'Admin Accounts', icon: UserCog, path: '/admin/scoped-admins' },
-      { key: 'ip-whitelist', label: 'IP Whitelist', icon: Globe, path: '/admin/ip-whitelist' },
-      { key: 'session-policy', label: 'Session Policy', icon: Clock, path: '/admin/session-policy' },
-      { key: 'maintenance', label: 'Maintenance', icon: Power, path: '/admin/maintenance' },
-      { key: 'dev-switcher', label: 'Dev Switcher', icon: Settings, path: '/admin/dev-switcher' },
-      { key: 'notification-categories', label: 'Notifications', icon: Bell, path: '/admin/notification-categories' },
-      { key: 'voices', label: 'Voices', icon: MessageSquareQuote, path: '/admin/voices' },
-      { key: 'prototypes', label: 'Prototypes', icon: Sparkles, path: '/admin/prototypes' },
-    ],
-  },
-];
-
-// Operator-mode tabs (unchanged structure)
+// Operator-mode tabs (unchanged structure — operator portal keeps the
+// flat tab strip; the Section→Tab IA refactor only applies to the
+// founder/scoped-admin Admin Portal).
 const OPERATOR_TABS = [
   { key: 'transition', label: 'TVT', icon: FileKey, path: '/ops/transition' },
   { key: 'dts', label: 'DTS', icon: Shield, path: '/ops/dts' },
@@ -202,108 +112,29 @@ const MANAGER_EXTRA_TABS = [
   { key: 'platform-rules', label: 'Rules', icon: Shield, path: '/ops/platform-rules' },
 ];
 
-const PATH_TO_TAB = {
-  '/admin/transition': 'transition',
-  '/admin/users': 'users',
-  '/admin/dts': 'dts',
-  '/admin/dev-switcher': 'dev-switcher',
-  '/admin/support': 'support',
-  '/admin/subscriptions': 'subscriptions',
-  '/admin/partners': 'partners',
-  '/admin/verifications': 'verifications',
-  '/admin/analytics': 'analytics',
-  '/admin/activity': 'activity',
-  '/admin/operators': 'operators',
-  '/admin/audit': 'audit',
-  '/admin/announcements': 'announcements',
-  '/admin/system-health': 'system-health',
-  '/admin/war-room': 'war-room',
-  '/admin/escalations': 'escalations',
-  '/admin/knowledge-base': 'knowledge-base',
-  '/admin/p1-settings': 'p1-settings',
-  '/admin/estate-health': 'estate-health',
-  '/admin/integrations': 'integrations',
-  '/admin/download-diagnostics': 'download-diagnostics',
-  '/admin/product-analytics': 'product-analytics',
-  '/admin/referrals': 'referrals',
-  '/admin/funnel': 'funnel',
-  '/admin/beta-testing': 'beta-testing',
-  '/admin/founder-emails': 'founder-emails',
-  '/admin/founder-invites': 'founder-invites',
-  '/admin/site-content': 'site-content',
-  '/admin/grace-periods': 'grace-periods',
-  '/admin/ops-dashboard': 'ops-dashboard',
-  '/admin/milestones': 'milestones',
-  '/admin/trials': 'trials',
-  '/admin/scoped-admins': 'scoped-admins',
-  '/admin/ip-whitelist': 'ip-whitelist',
-  '/admin/maintenance': 'maintenance',
-  '/admin/canned-responses': 'canned-responses',
-  '/admin/performance': 'performance',
-  '/admin/launch': 'launch',
-  '/admin/team-chat': 'team-chat',
-  '/admin/session-policy': 'session-policy',
-  '/admin/shifts': 'shifts',
-  '/admin/training': 'training',
-  '/admin/notification-categories': 'notification-categories',
-  '/admin/voices': 'voices',
-  '/admin/prototypes': 'prototypes',
-  '/admin/ops-members': 'ops-members',
-  '/admin/finance-members': 'finance-members',
-  '/admin/platform-rules': 'platform-rules',
-  '/admin/marketing-members': 'marketing-members',
-  '/admin/sales-brief': 'sales-brief',
-  '/admin/compliance-members': 'compliance-members',
-  '/admin/platform-members': 'platform-members',
-  // Apr 27, 2026 — friendly URL aliases. The user-visible tab labels in
-  // the bottom nav say "Invites", "Templates", "Members" but the
-  // canonical internal paths are the verbose forms above. When a user
-  // pastes the friendly form into the URL bar it used to fall through
-  // to the `users` default tab, which made it look like the admin tabs
-  // were broken. These aliases make the URL paste do the obvious thing.
-  '/admin/invites': 'founder-invites',
-  '/admin/templates': 'canned-responses',
-  '/admin/members': 'ops-members',
-  // Section-level URL aliases — when the founder pastes a deep link
-  // like /admin/finance during a Zoom pitch, land them on the canonical
-  // first tab inside that section instead of falling through to the
-  // generic Users overview. Mirrors SCOPE_DEFAULT_TAB so the manual
-  // ?scope= URL and the section-level path produce the same view.
-  '/admin/finance': 'subscriptions',
-  '/admin/compliance': 'audit',
-  '/admin/marketing': 'funnel',
-  '/admin/operations': 'ops-dashboard',
-  '/admin/platform-health': 'system-health',
-  '/admin/launch-war-room': 'war-room',
-  // FeatureGatesCard lives inside SubscriptionsTab, so the deep link
-  // lands on the same tab and scrolls the gates table into view.
-  '/admin/feature-gates': 'subscriptions',
-  // Operations portal paths
-  '/ops/transition': 'transition',
-  '/ops/dts': 'dts',
-  '/ops/support': 'support',
-  '/ops/verifications': 'verifications',
-  '/ops/my-activity': 'my-activity',
-  '/ops/search': 'search',
-  '/ops/escalations': 'ops-escalations',
-  '/ops/shift-notes': 'shift-notes',
-  '/ops/knowledge-base': 'ops-kb',
-  '/ops/operators': 'operators',
-  '/ops/dashboard': 'ops-dashboard',
-  '/ops/ops-dashboard': 'ops-dashboard',
-  '/ops/milestones': 'milestones',
-  '/ops/users': 'users',
-  '/ops/trials': 'trials',
-  '/ops/estate-health': 'estate-health',
-  '/ops/subscriptions': 'subscriptions',
-  '/ops/platform-rules': 'platform-rules',
-  '/ops/system-health': 'system-health',
-  '/ops/canned-responses': 'canned-responses',
-  '/ops/performance': 'performance',
-  '/ops/team-chat': 'team-chat',
-  '/ops/shifts': 'shifts',
-  '/ops/training': 'training',
-};
+// Path → tab key. Built from ADMIN_SECTIONS + section landings + ops
+// portal + the friendly aliases we already supported (Apr 27 2026).
+const PATH_TO_TAB = (() => {
+  const m = {};
+  ADMIN_SECTIONS.forEach(s => s.tabs.forEach(t => { m[t.path] = t.key; }));
+  // Operator-mode paths
+  OPERATOR_TABS.forEach(t => { m[t.path] = t.key; });
+  MANAGER_EXTRA_TABS.forEach(t => { m[t.path] = t.key; });
+  // Friendly aliases (kept so existing bookmarks and pasted URLs work).
+  Object.assign(m, {
+    '/admin/invites': 'founder-invites',
+    '/admin/templates': 'canned-responses',
+    '/admin/members': 'ops-members',
+    '/admin/platform-health': 'system-health',
+    '/admin/launch-war-room': 'war-room',
+    '/admin/feature-gates': 'subscriptions',
+    '/ops/dashboard': 'ops-dashboard',
+  });
+  return m;
+})();
+
+// Section landings (no tab — render the first tab's content).
+const SECTION_LANDING_PATHS = new Set(ADMIN_SECTIONS.map(s => `/admin/${s.key}`));
 
 const AdminPage = ({ operatorMode = false }) => {
   const { user, getAuthHeaders } = useAuth();
@@ -311,24 +142,6 @@ const AdminPage = ({ operatorMode = false }) => {
   const navigate = useNavigate();
   const scopeParam = new URLSearchParams(location.search).get('scope');
   const defaultOpsTab = user?.operator_role === 'manager' ? 'ops-dashboard' : 'transition';
-
-  // Default tab per scope — so scoped views land on their first tab, not Operations/Users
-  const SCOPE_DEFAULT_TAB = {
-    finance: 'subscriptions', compliance: 'audit', marketing: 'funnel',
-    platform_health: 'system-health', ops_manager: 'users', ops_team: 'users',
-  };
-  const defaultTab = operatorMode ? defaultOpsTab : (scopeParam ? SCOPE_DEFAULT_TAB[scopeParam] || 'users' : 'users');
-  const tab = PATH_TO_TAB[location.pathname] || defaultTab;
-  const effectiveTab = (!operatorMode && location.pathname === '/admin') ? defaultTab : tab;
-
-  // NOTE (May 21 2026): removed `useScrollLock(effectiveTab)` here.
-  // Each admin tab is its own pathname (e.g. /admin/users vs
-  // /admin/transition), so <ScrollRestorationProvider /> handles
-  // per-tab scroll memory natively. Keeping useScrollLock active here
-  // raced against the provider — the lock kept reapplying the OLD
-  // tab's scroll position over the provider's per-tab restore, which
-  // is why "tap a tab → land at top" kept regressing. Per-tab memory
-  // now works as expected.
 
   const [users, setUsers] = useState([]);
   const [stats, setStats] = useState(null);
@@ -341,14 +154,52 @@ const AdminPage = ({ operatorMode = false }) => {
   const [, setOtpDisabled] = useState(false);
   const [cleaning, setCleaning] = useState(false);
 
-  // Admin scope: founder sees all, scoped admins see only their sections
-  // URL ?scope= param overrides the view (portal switching), otherwise use server scope
+  // Admin scope: founder sees all, scoped admins see only their sections.
   const serverScope = user?.admin_scope || user?._serverScope || 'founder';
   const serverScopes = Array.isArray(serverScope) ? serverScope : (serverScope ? [serverScope] : ['founder']);
-  // If URL has ?scope=finance, show only finance. If no param, show user's actual scopes.
   const adminScopes = scopeParam ? [scopeParam] : (serverScopes.length > 0 ? serverScopes : ['founder']);
   const isFounder = adminScopes.includes('founder');
   const isManager = user?.operator_role === 'manager';
+
+  // Sections visible to this admin (scope-filtered).
+  const sections = visibleAdminSections(adminScopes);
+
+  // Resolve current view based on URL:
+  //   /admin               → Founder Dashboard (revenue + code health only)
+  //   /admin/<section>     → Section landing (first tab active)
+  //   /admin/<tab-path>    → Section + that tab active
+  //   /ops/*               → Operator portal (legacy flat tab strip)
+  const pathname = location.pathname;
+  const isFounderDashboard = !operatorMode && pathname === '/admin';
+
+  let currentSectionKey = null;
+  let currentTabKey = null;
+
+  if (operatorMode) {
+    currentTabKey = PATH_TO_TAB[pathname] || defaultOpsTab;
+  } else if (!isFounderDashboard) {
+    // Section landing?
+    const landingMatch = pathname.match(/^\/admin\/([a-z-]+)$/);
+    if (landingMatch && SECTION_LANDING_PATHS.has(`/admin/${landingMatch[1]}`)) {
+      currentSectionKey = landingMatch[1];
+    } else {
+      // Tab path → resolve section
+      currentTabKey = PATH_TO_TAB[pathname];
+      if (currentTabKey) {
+        currentSectionKey = TAB_TO_SECTION[currentTabKey];
+      }
+      // Unknown admin path → fall back to founder dashboard
+      if (!currentSectionKey) {
+        // Final fallback: send to founder dashboard (or first visible section
+        // for scoped admins).
+        if (isFounder) {
+          // Render founder dashboard view
+        } else if (sections.length > 0) {
+          currentSectionKey = sections[0].key;
+        }
+      }
+    }
+  }
 
   const handleCleanup = async () => {
     setCleaning(true);
@@ -454,197 +305,178 @@ const AdminPage = ({ operatorMode = false }) => {
 
   if (loading) return <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-6"><Skeleton className="h-12 w-64 bg-[var(--s)]" /></div>;
 
-  // Build visible tabs for founder/scoped admin mode
-  const getVisibleFounderTabs = () => {
-    const tabs = [];
-    FOUNDER_SECTIONS.forEach(section => {
-      if (section.scopes.some(s => adminScopes.includes(s))) {
-        tabs.push({ sectionLabel: section.section });
-        section.tabs.forEach(t => tabs.push(t));
-      }
-    });
-    return tabs;
-  };
-
-  // Build visible tabs for operator mode
-  const getVisibleOperatorTabs = () => {
-    const tabs = [...OPERATOR_TABS];
-    if (isManager || user?.role === 'admin') {
-      tabs.push(...MANAGER_EXTRA_TABS);
+  // ── Render the actual tab content for a given tab key ─────────
+  const renderTabContent = (tabKey) => {
+    switch (tabKey) {
+      case 'users': return <UsersTab users={users} setUsers={setUsers} currentUserId={user?.id} getAuthHeaders={getAuthHeaders} operatorMode={operatorMode} />;
+      case 'transition': return <TransitionTab getAuthHeaders={getAuthHeaders} onStatsChange={refreshStats} />;
+      case 'dts': return <DTSTab getAuthHeaders={getAuthHeaders} />;
+      case 'support': return <SupportTab getAuthHeaders={getAuthHeaders} />;
+      case 'subscriptions': return <SubscriptionsTab getAuthHeaders={getAuthHeaders} users={users} operatorMode={operatorMode} />;
+      case 'partners': return <PartnersTab getAuthHeaders={getAuthHeaders} />;
+      case 'verifications': return <VerificationsTab getAuthHeaders={getAuthHeaders} />;
+      case 'analytics': return <AnalyticsTab getAuthHeaders={getAuthHeaders} />;
+      case 'launch': return <LaunchMetricsTab getAuthHeaders={getAuthHeaders} />;
+      case 'activity': return <ActivityTab getAuthHeaders={getAuthHeaders} />;
+      case 'operators': return <OperatorsTab getAuthHeaders={getAuthHeaders} />;
+      case 'audit': return <AuditTrailTab getAuthHeaders={getAuthHeaders} />;
+      case 'dev-switcher': return <DevSwitcherTab users={users} getAuthHeaders={getAuthHeaders} />;
+      case 'announcements': return <AnnouncementsTab getAuthHeaders={getAuthHeaders} />;
+      case 'system-health': return <SystemHealthTab getAuthHeaders={getAuthHeaders} />;
+      case 'war-room': return <LaunchWarRoomTab />;
+      case 'escalations': return <EscalationsTab getAuthHeaders={getAuthHeaders} isFounder={isFounder} isManager={isManager} />;
+      case 'knowledge-base': return <KnowledgeBaseTab getAuthHeaders={getAuthHeaders} isFounder={true} />;
+      case 'p1-settings': return <P1ContactSettingsTab getAuthHeaders={getAuthHeaders} />;
+      case 'estate-health': return <EstateHealthTab getAuthHeaders={getAuthHeaders} />;
+      case 'integrations': return <IntegrationsTab getAuthHeaders={getAuthHeaders} />;
+      case 'download-diagnostics': return <DownloadDiagnosticsTab />;
+      case 'product-analytics': return <ProductAnalyticsTab />;
+      case 'referrals': return <AdminReferralsTab />;
+      case 'funnel': return <FunnelAnalyticsTab getAuthHeaders={getAuthHeaders} />;
+      case 'beta-testing': return <BetaTestingTab getAuthHeaders={getAuthHeaders} />;
+      case 'founder-emails': return <FounderEmailsTab getAuthHeaders={getAuthHeaders} />;
+      case 'founder-invites': return <FounderInvitesTab onPendingChange={setPendingAccessReqs} />;
+      case 'site-content': return <SiteContentTab getAuthHeaders={getAuthHeaders} />;
+      case 'grace-periods': return <GracePeriodsTab getAuthHeaders={getAuthHeaders} />;
+      case 'trials': return <TrialUsersTab getAuthHeaders={getAuthHeaders} />;
+      case 'scoped-admins': return <ScopedAdminsTab getAuthHeaders={getAuthHeaders} />;
+      case 'ip-whitelist': return <IPWhitelistTab getAuthHeaders={getAuthHeaders} />;
+      case 'maintenance': return <MaintenanceModeTab getAuthHeaders={getAuthHeaders} />;
+      case 'canned-responses': return <CannedResponsesTab getAuthHeaders={getAuthHeaders} isManager={isFounder || isManager} />;
+      case 'performance': return <PerformanceTab getAuthHeaders={getAuthHeaders} />;
+      case 'team-chat': return <TeamChatTab getAuthHeaders={getAuthHeaders} />;
+      case 'session-policy': return <SessionPolicyTab getAuthHeaders={getAuthHeaders} />;
+      case 'shifts': return <ShiftScheduleTab getAuthHeaders={getAuthHeaders} />;
+      case 'training': return <TrainingTrackerTab getAuthHeaders={getAuthHeaders} />;
+      case 'notification-categories': return <NotificationCategoriesTab getAuthHeaders={getAuthHeaders} />;
+      case 'voices': return <VoicesTab getAuthHeaders={getAuthHeaders} />;
+      case 'prototypes': return <PrototypesTab />;
+      case 'ops-members': return <SectionMembersTab getAuthHeaders={getAuthHeaders} sectionScopes={['ops_manager', 'ops_team']} sectionLabel="Operations" />;
+      case 'finance-members': return <SectionMembersTab getAuthHeaders={getAuthHeaders} sectionScopes={['finance']} sectionLabel="Finance" />;
+      case 'platform-rules': return <PlatformRulesTab getAuthHeaders={getAuthHeaders} />;
+      case 'marketing-members': return <SectionMembersTab getAuthHeaders={getAuthHeaders} sectionScopes={['marketing']} sectionLabel="Marketing" />;
+      case 'sales-brief': return <SalesBriefTab />;
+      case 'compliance-members': return <SectionMembersTab getAuthHeaders={getAuthHeaders} sectionScopes={['compliance']} sectionLabel="Compliance" />;
+      case 'platform-members': return <SectionMembersTab getAuthHeaders={getAuthHeaders} sectionScopes={['platform_health']} sectionLabel="Platform" />;
+      case 'my-activity': return operatorMode ? <MyActivityTab getAuthHeaders={getAuthHeaders} /> : null;
+      case 'search': return operatorMode ? <QuickSearchTab getAuthHeaders={getAuthHeaders} /> : null;
+      case 'ops-escalations': return operatorMode ? <EscalationsTab getAuthHeaders={getAuthHeaders} isFounder={false} isManager={isManager} /> : null;
+      case 'shift-notes': return operatorMode ? <ShiftNotesTab getAuthHeaders={getAuthHeaders} /> : null;
+      case 'ops-kb': return operatorMode ? <KnowledgeBaseTab getAuthHeaders={getAuthHeaders} isFounder={false} /> : null;
+      case 'ops-dashboard': return <OpsDashboardTab getAuthHeaders={getAuthHeaders} />;
+      case 'milestones': return <MilestoneDeliveriesTab getAuthHeaders={getAuthHeaders} />;
+      default: return null;
     }
-    return tabs;
   };
 
-  const visibleTabs = operatorMode ? getVisibleOperatorTabs() : getVisibleFounderTabs();
-
-  // Section colors for visual grouping
-  const sectionColors = {
-    'Operations': '#d4af37',
-    'Finance': '#22C993',
-    'Marketing': '#B794F6',
-    'Compliance': '#3B82F6',
-    'Platform': '#F59E0B',
-    'Admin': '#ef4444',
-  };
-
-  // Dashboard title based on scope
-  const getDashboardTitle = () => {
-    if (operatorMode) return 'Operations Dashboard';
-    if (isFounder) return 'Founder Dashboard';
-    const labels = { finance: 'Finance', compliance: 'Compliance', marketing: 'Marketing', platform_health: 'Platform Health', ops_manager: 'Operations', ops_team: 'Operations' };
-    const scopeNames = adminScopes.map(s => labels[s] || s).join(' + ');
-    return `${scopeNames} Dashboard`;
-  };
-
-  return (
-    <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-5 animate-fade-in max-w-full overflow-x-hidden" data-testid="admin-dashboard">
-      {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>{getDashboardTitle()}</h1>
-          <p className="text-xs sm:text-sm text-[var(--t5)]">
-            {operatorMode
-              ? 'Transition Verification \u00B7 Customer Service \u00B7 Trustee Services'
-              : isFounder
-                ? 'Operations \u00B7 Finance \u00B7 Marketing \u00B7 Compliance \u00B7 Platform'
-                : `Scoped access \u2014 ${adminScopes.join(', ').replace(/_/g, ' ')}`
-            }
-          </p>
-        </div>
-        {!operatorMode && isFounder && (
-        <div className="flex items-center gap-2 flex-shrink-0">
-        <AdminCommandPalette tabs={visibleTabs} operatorMode={operatorMode} />
-        <QueueAlertsPanel />
-        <AdminHeaderIconButton
-          onClick={handleCleanup}
-          disabled={cleaning}
-          title="Remove orphaned records from deleted users"
-          data-testid="admin-cleanup-btn"
-        >
-          {cleaning ? <Loader2 className="animate-spin" /> : <Recycle />}
-        </AdminHeaderIconButton>
-        </div>
-        )}
-        {operatorMode && (
+  // ═══════════════════════════════════════════════════════════════════
+  //  OPERATOR PORTAL — legacy flat tab strip (unchanged behavior)
+  // ═══════════════════════════════════════════════════════════════════
+  if (operatorMode) {
+    const opsTabs = [...OPERATOR_TABS, ...((isManager || user?.role === 'admin') ? MANAGER_EXTRA_TABS : [])];
+    const effectiveTab = currentTabKey || defaultOpsTab;
+    return (
+      <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-5 animate-fade-in max-w-full overflow-x-hidden" data-testid="admin-dashboard">
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>Operations Dashboard</h1>
+            <p className="text-xs sm:text-sm text-[var(--t5)]">Transition Verification · Customer Service · Trustee Services</p>
+          </div>
           <div className="flex items-center gap-2 flex-shrink-0">
-            <AdminCommandPalette tabs={visibleTabs} operatorMode={operatorMode} />
+            <AdminCommandPalette tabs={opsTabs} operatorMode={true} />
             <QueueAlertsPanel />
           </div>
+        </div>
+        <OpsWorkTiles stats={stats} dashEvents={dashEvents} />
+        {(isManager || user?.role === 'admin') && (
+          <TeamActivitySection teamTasks={teamTasks} opsDash={opsDash} />
         )}
-      </div>
-
-      {/* Revenue Analytics — founder and finance only */}
-      {!operatorMode && (isFounder || adminScopes.includes('finance')) && <RevenuePanel revenue={revenue} />}
-
-      {/* Operator Work Queue Tiles */}
-      {operatorMode && <OpsWorkTiles stats={stats} dashEvents={dashEvents} />}
-
-      {/* Manager: Team Activity Overview */}
-      {operatorMode && (isManager || user?.role === 'admin') && (
-        <TeamActivitySection teamTasks={teamTasks} opsDash={opsDash} />
-      )}
-
-      {/* Action Required — founder only */}
-      {!operatorMode && isFounder && <ActionRequired stats={stats} navigate={navigate} />}
-
-      {/* Platform Overview — founder and platform_health only */}
-      {!operatorMode && (isFounder || adminScopes.includes('platform_health')) && stats && <PlatformOverview stats={stats} />}
-
-      {/* Code Health — founder and platform_health only */}
-      {!operatorMode && (isFounder || adminScopes.includes('platform_health')) && <CodeHealthTile getAuthHeaders={getAuthHeaders} />}
-
-      {/* Tabs — with section labels for founder view */}
-      <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide items-center" data-testid="admin-tab-bar" style={{ WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-        {visibleTabs.map((t, i) => {
-          if (t.sectionLabel) {
-            return (
-              <span key={`section-${t.sectionLabel}`}
-                className={`text-[11px] font-bold uppercase tracking-wider whitespace-nowrap flex-shrink-0 ${i > 0 ? 'ml-2' : ''} mr-1`}
-                style={{ color: sectionColors[t.sectionLabel] || 'var(--t5)' }}>
-                {t.sectionLabel}
-              </span>
-            );
-          }
-          return (
-            <button key={t.key} onClick={() => navigate(scopeParam ? `${t.path}?scope=${scopeParam}` : t.path)}
-              className={`flex items-center gap-1.5 rounded-lg font-bold transition-all whitespace-nowrap flex-shrink-0 active:scale-[0.97] ${
-                operatorMode ? 'px-3.5 py-2.5 text-sm min-h-[44px]' : 'px-3 py-2 text-xs'
-              } ${
+        <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide items-center" data-testid="admin-tab-bar" style={{ WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+          {opsTabs.map(t => (
+            <button key={t.key} onClick={() => navigate(t.path)}
+              className={`flex items-center gap-1.5 rounded-lg font-bold transition-all whitespace-nowrap flex-shrink-0 active:scale-[0.97] px-3.5 py-2.5 text-sm min-h-[44px] ${
                 effectiveTab === t.key ? 'gold-pill' : 'bg-[var(--s)] text-[var(--t4)]'
               }`} data-testid={`admin-tab-${t.key}`}>
-              <t.icon className={operatorMode ? 'w-4 h-4' : 'w-3.5 h-3.5'} /> {t.label}
-              {t.key === 'founder-invites' && pendingAccessReqs > 0 && (
-                <span className="ml-0.5 px-1.5 py-0.5 rounded-full text-[11px] font-bold leading-none" style={{ background: '#ef4444', color: '#fff' }}>{pendingAccessReqs}</span>
-              )}
+              <t.icon className="w-4 h-4" /> {t.label}
             </button>
-          );
-        })}
+          ))}
+        </div>
+        <div style={{ minHeight: '100vh' }}>{renderTabContent(effectiveTab)}</div>
       </div>
+    );
+  }
 
-      {/* Tab Content */}
-      <div style={{ minHeight: '100vh' }}>
-        {effectiveTab === 'users' && <UsersTab users={users} setUsers={setUsers} currentUserId={user?.id} getAuthHeaders={getAuthHeaders} operatorMode={operatorMode} />}
-        {effectiveTab === 'transition' && <TransitionTab getAuthHeaders={getAuthHeaders} onStatsChange={refreshStats} />}
-        {effectiveTab === 'dts' && <DTSTab getAuthHeaders={getAuthHeaders} />}
-        {effectiveTab === 'support' && <SupportTab getAuthHeaders={getAuthHeaders} />}
-        {effectiveTab === 'subscriptions' && <SubscriptionsTab getAuthHeaders={getAuthHeaders} users={users} operatorMode={operatorMode} />}
-        {effectiveTab === 'partners' && <PartnersTab getAuthHeaders={getAuthHeaders} />}
-        {effectiveTab === 'verifications' && <VerificationsTab getAuthHeaders={getAuthHeaders} />}
-        {effectiveTab === 'analytics' && <AnalyticsTab getAuthHeaders={getAuthHeaders} />}
-        {effectiveTab === 'launch' && <LaunchMetricsTab getAuthHeaders={getAuthHeaders} />}
-        {effectiveTab === 'activity' && <ActivityTab getAuthHeaders={getAuthHeaders} />}
-        {effectiveTab === 'operators' && <OperatorsTab getAuthHeaders={getAuthHeaders} />}
-        {effectiveTab === 'audit' && <AuditTrailTab getAuthHeaders={getAuthHeaders} />}
-        {effectiveTab === 'dev-switcher' && <DevSwitcherTab users={users} getAuthHeaders={getAuthHeaders} />}
-        {effectiveTab === 'announcements' && <AnnouncementsTab getAuthHeaders={getAuthHeaders} />}
-        {effectiveTab === 'system-health' && <SystemHealthTab getAuthHeaders={getAuthHeaders} />}
-        {effectiveTab === 'war-room' && <LaunchWarRoomTab />}
-        {effectiveTab === 'escalations' && <EscalationsTab getAuthHeaders={getAuthHeaders} isFounder={isFounder} isManager={isManager} />}
-        {effectiveTab === 'knowledge-base' && <KnowledgeBaseTab getAuthHeaders={getAuthHeaders} isFounder={true} />}
-        {effectiveTab === 'p1-settings' && <P1ContactSettingsTab getAuthHeaders={getAuthHeaders} />}
-        {effectiveTab === 'estate-health' && <EstateHealthTab getAuthHeaders={getAuthHeaders} />}
-        {effectiveTab === 'integrations' && <IntegrationsTab getAuthHeaders={getAuthHeaders} />}
-        {effectiveTab === 'download-diagnostics' && <DownloadDiagnosticsTab />}
-        {effectiveTab === 'product-analytics' && <ProductAnalyticsTab />}
-        {effectiveTab === 'referrals' && <AdminReferralsTab />}
-        {effectiveTab === 'funnel' && <FunnelAnalyticsTab getAuthHeaders={getAuthHeaders} />}
-        {effectiveTab === 'beta-testing' && <BetaTestingTab getAuthHeaders={getAuthHeaders} />}
-        {effectiveTab === 'founder-emails' && <FounderEmailsTab getAuthHeaders={getAuthHeaders} />}
-        {effectiveTab === 'founder-invites' && <FounderInvitesTab onPendingChange={setPendingAccessReqs} />}
-        {effectiveTab === 'site-content' && <SiteContentTab getAuthHeaders={getAuthHeaders} />}
-        {effectiveTab === 'grace-periods' && <GracePeriodsTab getAuthHeaders={getAuthHeaders} />}
-        {effectiveTab === 'trials' && <TrialUsersTab getAuthHeaders={getAuthHeaders} />}
-        {effectiveTab === 'scoped-admins' && <ScopedAdminsTab getAuthHeaders={getAuthHeaders} />}
-        {effectiveTab === 'ip-whitelist' && <IPWhitelistTab getAuthHeaders={getAuthHeaders} />}
-        {effectiveTab === 'maintenance' && <MaintenanceModeTab getAuthHeaders={getAuthHeaders} />}
-        {effectiveTab === 'canned-responses' && <CannedResponsesTab getAuthHeaders={getAuthHeaders} isManager={isFounder || isManager} />}
-        {effectiveTab === 'performance' && <PerformanceTab getAuthHeaders={getAuthHeaders} />}
-        {effectiveTab === 'team-chat' && <TeamChatTab getAuthHeaders={getAuthHeaders} />}
-        {effectiveTab === 'session-policy' && <SessionPolicyTab getAuthHeaders={getAuthHeaders} />}
-        {effectiveTab === 'shifts' && <ShiftScheduleTab getAuthHeaders={getAuthHeaders} />}
-        {effectiveTab === 'training' && <TrainingTrackerTab getAuthHeaders={getAuthHeaders} />}
-        {effectiveTab === 'notification-categories' && <NotificationCategoriesTab getAuthHeaders={getAuthHeaders} />}
-        {effectiveTab === 'voices' && <VoicesTab getAuthHeaders={getAuthHeaders} />}
-        {effectiveTab === 'prototypes' && <PrototypesTab />}
-        {/* Section Members tabs */}
-        {effectiveTab === 'ops-members' && <SectionMembersTab getAuthHeaders={getAuthHeaders} sectionScopes={['ops_manager', 'ops_team']} sectionLabel="Operations" />}
-        {effectiveTab === 'finance-members' && <SectionMembersTab getAuthHeaders={getAuthHeaders} sectionScopes={['finance']} sectionLabel="Finance" />}
-        {effectiveTab === 'platform-rules' && <PlatformRulesTab getAuthHeaders={getAuthHeaders} />}
-        {effectiveTab === 'marketing-members' && <SectionMembersTab getAuthHeaders={getAuthHeaders} sectionScopes={['marketing']} sectionLabel="Marketing" />}
-        {effectiveTab === 'sales-brief' && <SalesBriefTab />}
-        {effectiveTab === 'compliance-members' && <SectionMembersTab getAuthHeaders={getAuthHeaders} sectionScopes={['compliance']} sectionLabel="Compliance" />}
-        {effectiveTab === 'platform-members' && <SectionMembersTab getAuthHeaders={getAuthHeaders} sectionScopes={['platform_health']} sectionLabel="Platform" />}
-        {/* Operator-specific tabs */}
-        {effectiveTab === 'my-activity' && operatorMode && <MyActivityTab getAuthHeaders={getAuthHeaders} />}
-        {effectiveTab === 'search' && operatorMode && <QuickSearchTab getAuthHeaders={getAuthHeaders} />}
-        {effectiveTab === 'ops-escalations' && operatorMode && <EscalationsTab getAuthHeaders={getAuthHeaders} isFounder={false} isManager={isManager} />}
-        {effectiveTab === 'shift-notes' && operatorMode && <ShiftNotesTab getAuthHeaders={getAuthHeaders} />}
-        {effectiveTab === 'ops-kb' && operatorMode && <KnowledgeBaseTab getAuthHeaders={getAuthHeaders} isFounder={false} />}
-        {effectiveTab === 'ops-dashboard' && <OpsDashboardTab getAuthHeaders={getAuthHeaders} />}
-        {effectiveTab === 'milestones' && <MilestoneDeliveriesTab getAuthHeaders={getAuthHeaders} />}
+  // ═══════════════════════════════════════════════════════════════════
+  //  FOUNDER DASHBOARD — `/admin` exactly. Revenue + Code Health only.
+  // ═══════════════════════════════════════════════════════════════════
+  if (isFounderDashboard) {
+    const getDashboardTitle = () => {
+      if (isFounder) return 'Founder Dashboard';
+      const labels = { finance: 'Finance', compliance: 'Compliance', marketing: 'Marketing', platform_health: 'Platform Health', ops_manager: 'Operations', ops_team: 'Operations' };
+      const scopeNames = adminScopes.map(s => labels[s] || s).join(' + ');
+      return `${scopeNames} Dashboard`;
+    };
+    return (
+      <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-5 animate-fade-in max-w-full overflow-x-hidden" data-testid="admin-dashboard">
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>{getDashboardTitle()}</h1>
+            <p className="text-xs sm:text-sm text-[var(--t5)]">
+              {isFounder
+                ? 'Operations \u00B7 Finance \u00B7 Marketing \u00B7 Compliance \u00B7 Platform'
+                : `Scoped access \u2014 ${adminScopes.join(', ').replace(/_/g, ' ')}`
+              }
+            </p>
+          </div>
+          {isFounder && (
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <AdminCommandPalette tabs={sections.flatMap(s => s.tabs)} operatorMode={false} />
+              <QueueAlertsPanel />
+              <AdminHeaderIconButton
+                onClick={handleCleanup}
+                disabled={cleaning}
+                title="Remove orphaned records from deleted users"
+                data-testid="admin-cleanup-btn"
+              >
+                {cleaning ? <Loader2 className="animate-spin" /> : <Recycle />}
+              </AdminHeaderIconButton>
+            </div>
+          )}
+        </div>
+        {(isFounder || adminScopes.includes('finance')) && <RevenuePanel revenue={revenue} />}
+        {isFounder && <ActionRequired stats={stats} navigate={navigate} />}
+        {(isFounder || adminScopes.includes('platform_health')) && stats && <PlatformOverview stats={stats} />}
+        {(isFounder || adminScopes.includes('platform_health')) && <CodeHealthTile getAuthHeaders={getAuthHeaders} />}
       </div>
-    </div>
-  );
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  //  SECTION / TAB PAGES — `/admin/<section>` or `/admin/<tabpath>`
+  // ═══════════════════════════════════════════════════════════════════
+  if (currentSectionKey) {
+    // Scope guard — if the section isn't allowed for this admin's scopes,
+    // bounce them to their founder dashboard / first allowed section.
+    const allowed = sections.find(s => s.key === currentSectionKey);
+    if (!allowed) {
+      // Redirect inline by navigating
+      setTimeout(() => navigate(isFounder ? '/admin' : (sections[0] ? `/admin/${sections[0].key}` : '/admin')), 0);
+      return <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6"><Skeleton className="h-12 w-64 bg-[var(--s)]" /></div>;
+    }
+    return (
+      <AdminSectionLayout
+        sectionKey={currentSectionKey}
+        activeTabKey={currentTabKey}
+        scopeParam={scopeParam}
+        pendingAccessReqs={pendingAccessReqs}
+      >
+        {renderTabContent(currentTabKey || allowed.tabs[0]?.key)}
+      </AdminSectionLayout>
+    );
+  }
+
+  // Fallback — unknown admin path. Send to founder dashboard.
+  return null;
 };
 
 export default AdminPage;

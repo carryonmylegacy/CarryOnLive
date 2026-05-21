@@ -410,19 +410,21 @@ async def is_feature_enabled_for_user(user_doc: dict, feature_key: str) -> bool:
     if user_doc.get("partner_id"):
         partner_doc = await db.b2b_partners.find_one(
             {"id": user_doc["partner_id"], "active": True},
-            {"_id": 0, "feature_gates": 1},
+            {"_id": 0, "id": 1, "feature_gates": 1},
         )
         if partner_doc and isinstance(partner_doc.get("feature_gates"), dict):
             return bool(partner_doc["feature_gates"].get(feature_key, False))
 
     effective_tier = None
-    sub = await db.user_subscriptions.find_one({"user_id": user_doc["id"]}, {"_id": 0, "plan_id": 1, "status": 1})
+    sub = await db.user_subscriptions.find_one(
+        {"user_id": user_doc["id"]}, {"_id": 0, "id": 1, "plan_id": 1, "status": 1}
+    )
     if sub and sub.get("status") in ("active", "past_due"):
         effective_tier = sub.get("plan_id")
     if not effective_tier:
         owned = await db.estates.find_one(
             {"owner_id": user_doc["id"], "verified_tier": {"$exists": True, "$ne": ""}},
-            {"_id": 0, "verified_tier": 1},
+            {"_id": 0, "id": 1, "verified_tier": 1},
         )
         if owned and owned.get("verified_tier"):
             effective_tier = owned["verified_tier"]

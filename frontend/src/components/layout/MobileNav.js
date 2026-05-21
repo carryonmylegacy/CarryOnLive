@@ -43,6 +43,7 @@ import {
 import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet';
 import NotificationBell from '../NotificationBell';
 import PublicDeviceModeMenuButton from './PublicDeviceModeMenuButton';
+import AdminSectionNav from './AdminSectionNav';
 import { toast } from '../../utils/toast';
 import { API_URL } from '../../config';
 import { filterNavByFeatures } from '../../utils/featureGates';
@@ -811,6 +812,20 @@ const MobileNav = () => {
 
               {/* MY ESTATE PLAN Section */}
               <nav className="flex-1 px-4 overflow-y-auto" role="navigation" aria-label="Main menu">
+                {/* Admin Portal — render the expandable Section → Tab menu
+                    instead of the legacy flat TOOLS list. (Operator view at
+                    /ops still uses the legacy flat list below.) */}
+                {user?.role === 'admin' && !window.location.pathname.startsWith('/ops') ? (
+                  <div className="mb-6">
+                    <AdminSectionNav
+                      collapsed={false}
+                      variant="mobile"
+                      adminScopes={(Array.isArray(user?.admin_scope) ? user.admin_scope : (user?.admin_scope ? [user.admin_scope] : ['founder']))}
+                      onNavClick={() => setOpen(false)}
+                    />
+                  </div>
+                ) : (
+                <>
                 {/* Main nav items — path-aware for admin viewing ops */}
                 {(() => {
                   const isOpsView = user?.role === 'admin' && window.location.pathname.startsWith('/ops');
@@ -897,6 +912,8 @@ const MobileNav = () => {
                 </div>
                   );
                 })()}
+                </>
+                )}
 
                 {/* ACCOUNT Section — hidden for staff (admin/operator) */}
                 {accountItems.length > 0 && (

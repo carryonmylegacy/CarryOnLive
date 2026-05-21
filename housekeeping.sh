@@ -1660,7 +1660,7 @@ cp_check "CP2g Admin Sales Brief tab + editor" \
   "brief-editor"
 cp_check "CP2h Admin Sales Brief route mounted" \
   "/app/frontend/src/pages/AdminPage.js" \
-  "effectiveTab === 'sales-brief'"
+  "case 'sales-brief':"
 
 # CP3 — Beneficiary Estate Concierge AI (BEC)
 # POST-transition AI for the beneficiary side, gated server-side on
