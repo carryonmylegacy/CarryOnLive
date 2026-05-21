@@ -355,3 +355,84 @@ async def run_security_scan(current_user: dict = Depends(require_admin)):
         "report_version": "1.0.0",
         "platform": "CarryOn Estate Planning",
     }
+
+
+# ============================================================================
+# Secrets Inventory — name + presence + length only (never the value)
+# ============================================================================
+#
+# Surfaces a redacted list of every secret env var the backend cares about so
+# the founder can confirm at a glance which credentials are loaded after a
+# Render deploy or a rotation. Useful next time we have to chase a "did the
+# new password actually land?" moment without grepping logs.
+#
+# Hard rule: NEVER return the value. Return only:
+#   - name (the env var key)
+#   - present (bool)
+#   - length (int — char count of the loaded value, or 0)
+#   - tier ("critical" | "high" | "low") for ordering in the UI
+#   - notes (one-liner human description)
+#
+# Add new secrets here as they're introduced. Order doesn't matter — the UI
+# sorts by tier then name.
+
+_TRACKED_SECRETS = [
+    # --- critical: rotating these has the biggest blast radius ---
+    ("MONGO_URL", "critical", "Atlas connection string (rotate password if leaked)"),
+    ("ENCRYPTION_KEY", "critical", "KDF master key — DO NOT rotate without re-encryption migration"),
+    ("JWT_SECRET", "critical", "Session signing secret (rotation invalidates all sessions)"),
+    # --- high: 3rd-party service credentials ---
+    ("EMERGENT_LLM_KEY", "high", "Universal LLM key (rotate via Emergent profile)"),
+    ("XAI_API_KEY", "high", "xAI/Grok direct API key"),
+    ("RESEND_API_KEY", "high", "Resend transactional email"),
+    ("STRIPE_API_KEY", "high", "Stripe live secret key (sk_live_...)"),
+    ("AWS_ACCESS_KEY_ID", "high", "S3 / object storage access key"),
+    ("AWS_SECRET_ACCESS_KEY", "high", "S3 / object storage secret"),
+    ("TWILIO_AUTH_TOKEN", "high", "Twilio account auth token"),
+    ("APPLE_SHARED_SECRET", "high", "App Store IAP receipt validation"),
+    # --- low: rotation rarely needed, included for completeness ---
+    ("VAPID_PRIVATE_KEY_INLINE", "low", "Web push signing key"),
+    ("TWILIO_ACCOUNT_SID", "low", "Twilio account SID (not strictly secret)"),
+    ("TWILIO_PHONE_NUMBER", "low", "Twilio sender number (not secret)"),
+    ("SENDER_EMAIL", "low", "From address for outbound mail"),
+    ("XAI_TEAM_ID", "low", "xAI team identifier (not secret)"),
+    ("DEMO_REVIEW_EMAIL", "low", "App Store reviewer demo account"),
+    ("DEMO_REVIEW_OTP", "low", "App Store reviewer demo OTP"),
+]
+
+
+@router.get("/admin/secrets-inventory")
+async def get_secrets_inventory(current_user: dict = Depends(require_admin)):
+    """Redacted inventory of every backend secret the app expects.
+
+    Returns names + presence + length ONLY. Never returns the value.
+    Useful for confirming a Render env update landed correctly after a
+    credential rotation.
+    """
+    items = []
+    for name, tier, notes in _TRACKED_SECRETS:
+        # Read from os.environ directly so we capture the live process env
+        # (config.py only re-exports a subset at import time).
+        val = os.environ.get(name, "")
+        items.append(
+            {
+                "name": name,
+                "present": bool(val),
+                "length": len(val),
+                "tier": tier,
+                "notes": notes,
+            }
+        )
+
+    counts = {
+        "total": len(items),
+        "present": sum(1 for i in items if i["present"]),
+        "missing": sum(1 for i in items if not i["present"]),
+        "critical_missing": sum(1 for i in items if not i["present"] and i["tier"] == "critical"),
+    }
+
+    return {
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "counts": counts,
+        "items": items,
+    }

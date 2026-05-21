@@ -1,6 +1,24 @@
 # CarryOn — Changelog
 
 
+## May 21, 2026 — Founder-portal Secrets Inventory tile (V2026.05.21.7)
+
+**Why**: After the Mongo Atlas auth flood (#33 consecutive failures) revealed how hard it is to confirm "did the new Render env value land?" without grepping logs, the founder requested a one-click view of every loaded credential — names + presence + length only, never values.
+
+**Built**:
+- **Backend**: `GET /api/admin/secrets-inventory` (admin-only) in `routes/admin/security_scan.py`. Tracks 18 env vars across 3 tiers (`critical` / `high` / `low`) with one-line human descriptions. Returns name + present (bool) + length (int) + tier + notes — values are NEVER returned. Hard rule enforced by reading `os.environ.get()` and discarding the value before building the response.
+- **Frontend**: `components/admin/SecretsInventoryCard.js` slotted into `SystemHealthTab` alongside `DbStatusCard` and `AuditIntegrityCard`. Color-coded by tier (red=critical, amber=high, blue=low), tier-sorted, summary chip `X/Y loaded`, red banner if any **critical** secret is missing, refresh button, disclaimer that values are never exposed.
+- Tracked secrets: `MONGO_URL`, `ENCRYPTION_KEY`, `JWT_SECRET` (critical); `EMERGENT_LLM_KEY`, `XAI_API_KEY`, `RESEND_API_KEY`, `STRIPE_API_KEY`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `TWILIO_AUTH_TOKEN`, `APPLE_SHARED_SECRET` (high); plus VAPID, Twilio SID, sender email, demo reviewer creds (low).
+
+**Verified**: `curl /api/admin/secrets-inventory` (founder token) returned 17/18 secrets present (only `VAPID_PRIVATE_KEY_INLINE` missing — VAPID is stored as a file path in this env, expected). Response confirmed to contain only `name`/`present`/`length`/`tier`/`notes` — zero secret material.
+
+**Housekeeping**: ALL CHECKS PASSED (0 WARN / 0 FAIL). Build tag bumped to `V2026.05.21.7`.
+
+**Operator note**: Next time you rotate a credential on Render, refresh this tile to confirm the new value loaded (length is a strong signal — if you set a 64-char JWT secret and the tile still shows 34 chars, the save didn't take).
+
+
+
+
 ## May 21, 2026 — Platform-wide gold button unification in light mode (V2026.05.21.6)
 
 **User reported**: After the initial Public-Device-Mode unification pass, two buttons in the CFP Entities & Structures toolbar were still rendering in the loud dark-gold style — the "Locked" toggle and the "+ Add" CTA. User asked: *"I said platform wide, but you missed these two (circled in red)! What else did you miss?!?!"*

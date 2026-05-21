@@ -7,6 +7,7 @@ import { toast } from '../../utils/toast';
 import { API_URL } from '../../config';
 import { DbStatusCard } from './DbStatusCard';
 import { AuditIntegrityCard } from './AuditIntegrityCard';
+import { SecretsInventoryCard } from './SecretsInventoryCard';
 
 const XAICreditsCard = ({ getAuthHeaders }) => {
   const [credits, setCredits] = useState(null);
@@ -204,6 +205,12 @@ export const SystemHealthTab = ({ getAuthHeaders }) => {
       {/* SOC 2 audit-trail hash-chain integrity — proves to auditors and
           B2B prospects that the audit log is self-verifying every 10 min. */}
       <AuditIntegrityCard getAuthHeaders={getAuthHeaders} />
+
+      {/* Secrets inventory — REDACTED list of loaded env secrets (name +
+          presence + length only). Lets the founder confirm a Render env
+          update landed after rotating a credential. Values are NEVER
+          returned by the backend. */}
+      <SecretsInventoryCard getAuthHeaders={getAuthHeaders} />
 
       {/* Status timestamp */}
       <p className="text-[11px] text-[var(--t5)]">Last checked: {new Date(health.timestamp).toLocaleString()}</p>
