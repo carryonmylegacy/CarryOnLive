@@ -820,7 +820,7 @@ const MobileNav = () => {
                     <AdminSectionNav
                       collapsed={false}
                       variant="mobile"
-                      adminScopes={(Array.isArray(user?.admin_scope) ? user.admin_scope : (user?.admin_scope ? [user.admin_scope] : ['founder']))}
+                      adminScopes={scopeArr(user?.admin_scope).length > 0 ? scopeArr(user?.admin_scope) : ['founder']}
                       onNavClick={() => setOpen(false)}
                     />
                   </div>
