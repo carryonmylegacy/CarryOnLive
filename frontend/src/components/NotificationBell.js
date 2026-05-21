@@ -12,7 +12,7 @@ const NotificationBell = ({ collapsed }) => {
   const [loading, setLoading] = useState(false);
   const panelRef = useRef(null);
   const buttonRef = useRef(null);
-  const [panelPos, setPanelPos] = useState({ left: 0, bottom: 0 });
+  const [panelPos, setPanelPos] = useState({ left: 0, top: 0 });
 
   const token = localStorage.getItem('carryon_token');
   const headers = token ? { Authorization: `Bearer ${token}` } : {};
@@ -53,10 +53,18 @@ const NotificationBell = ({ collapsed }) => {
   const handleOpen = () => {
     if (!open) {
       fetchNotifications();
-      // Calculate position from button for fixed desktop panel
+      // Position the panel adjacent to the bell button on desktop —
+      // left edge of the panel meets right edge of the button, and the
+      // panel is vertically centered on the button. The result is
+      // clamped to stay within the viewport on shorter screens.
       if (buttonRef.current && window.innerWidth >= 1024) {
         const rect = buttonRef.current.getBoundingClientRect();
-        setPanelPos({ left: rect.left, bottom: window.innerHeight - rect.top + 8 });
+        const PANEL_HEIGHT = Math.min(420, window.innerHeight * 0.6);
+        const buttonCenterY = rect.top + rect.height / 2;
+        const desiredTop = buttonCenterY - PANEL_HEIGHT / 2;
+        // Keep the panel inside the viewport with an 8px margin.
+        const clampedTop = Math.max(8, Math.min(window.innerHeight - PANEL_HEIGHT - 8, desiredTop));
+        setPanelPos({ left: rect.right + 8, top: clampedTop });
       }
     }
     setOpen(!open);
@@ -159,11 +167,13 @@ const NotificationBell = ({ collapsed }) => {
               // Mobile: fixed within safe areas
               top: 'calc(env(safe-area-inset-top, 0px) + 8px)',
               bottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)',
-              // Desktop overrides — fixed position so it's not clipped by sidebar overflow
+              // Desktop overrides — fixed position so it's not clipped by sidebar overflow.
+              // Panel opens to the right of the bell with its left edge touching
+              // the button's right edge, vertically centered on the button.
               ...(typeof window !== 'undefined' && window.innerWidth >= 1024 ? {
                 position: 'fixed',
-                top: 'auto',
-                bottom: panelPos.bottom,
+                top: panelPos.top,
+                bottom: 'auto',
                 left: panelPos.left,
                 right: 'auto',
                 width: 360,
