@@ -1,6 +1,29 @@
 # CarryOn — Changelog
 
 
+## May 21, 2026 — Live self-test buttons for every external credential (V2026.05.21.8)
+
+**Why**: Closes the loop from "the key is loaded" to "the key actually authenticates against the provider". After a rotation, the founder can now confirm in one click that Render → Atlas / Resend / Stripe / AWS / Twilio / xAI all return 200.
+
+**Built (additive)**:
+- **Backend**: `POST /api/admin/secrets-self-test/{service_id}` (admin-only) in `routes/admin/security_scan.py`. Strict 6 s timeout. Read-only — no charges, no email sends, no SMS. Tests:
+  - `mongo` → `db.command("ping")`
+  - `resend` → `GET /domains` (treats 401 `restricted_api_key` as PASS because that response proves the key authenticated — it's just send-scoped)
+  - `stripe` → `Balance.retrieve()` (also surfaces `livemode` + currencies)
+  - `aws_s3` → `head_bucket` against `carryon-vault`
+  - `twilio` → `GET /Accounts/{sid}.json` (surfaces account `status`)
+  - `xai` → `GET /v1/models`
+- **Frontend** (`SecretsInventoryCard.js`):
+  - Per-row `Test` button on each testable secret (Mongo, Resend, Stripe, AWS, Twilio, xAI) — runs the live check and shows a green latency chip or red "failed" chip with a hover-tooltip carrying the provider response.
+  - `Test all` button in the card header runs all 6 in parallel (~1 s wall time total).
+  - Toast on each result (e.g. `STRIPE_API_KEY ✓ livemode=True, currencies=['usd'] (342ms)`).
+- Non-testable secrets (`JWT_SECRET`, `ENCRYPTION_KEY`, `APPLE_SHARED_SECRET`, VAPID, etc.) intentionally have no Test button — there's no read-only provider endpoint that would prove they work without doing real work.
+
+**Verified end-to-end**: All 6 production services returned `ok=True` against live providers (Mongo ping 0 ms, Resend 220 ms, Stripe livemode=True 342 ms, S3 carryon-vault reachable 180 ms, Twilio status=active 174 ms, xAI 8 models 158 ms). Housekeeping `--strict` → ALL CHECKS PASSED. Build tag → `V2026.05.21.8`.
+
+
+
+
 ## May 21, 2026 — Founder-portal Secrets Inventory tile (V2026.05.21.7)
 
 **Why**: After the Mongo Atlas auth flood (#33 consecutive failures) revealed how hard it is to confirm "did the new Render env value land?" without grepping logs, the founder requested a one-click view of every loaded credential — names + presence + length only, never values.

@@ -436,3 +436,277 @@ async def get_secrets_inventory(current_user: dict = Depends(require_admin)):
         "counts": counts,
         "items": items,
     }
+
+
+# ============================================================================
+# Live self-test for each external service — closes the loop from
+# "the key is loaded" to "the key actually works against the provider".
+# ============================================================================
+#
+# Each test is read-only (no writes, no charges, no email sends) and runs
+# under a strict 6-second timeout so a hung provider can't block the
+# founder portal. Errors are caught and returned as `ok=False` + a
+# truncated `error` string — never raised — so one broken service doesn't
+# poison the UX for the others.
+#
+# Hard rule: NEVER include the secret value in the response. Only the
+# provider's own response excerpt (already public per the provider's API
+# contract) and a short error string if the call failed.
+
+import asyncio  # noqa: E402  (kept beside the rest of the imports inside the same module)
+import time  # noqa: E402
+
+_SELF_TEST_TIMEOUT_S = 6.0
+
+
+async def _test_mongo() -> dict:
+    """Verifies the live MongoDB connection by issuing a `ping`."""
+    start = time.monotonic()
+    try:
+        res = await asyncio.wait_for(db.command("ping"), timeout=_SELF_TEST_TIMEOUT_S)
+        ok = bool(res and res.get("ok") == 1.0)
+        return {
+            "ok": ok,
+            "latency_ms": int((time.monotonic() - start) * 1000),
+            "detail": "ping ok" if ok else "ping returned non-ok",
+        }
+    except Exception as e:
+        return {
+            "ok": False,
+            "latency_ms": int((time.monotonic() - start) * 1000),
+            "error": str(e)[:300],
+        }
+
+
+async def _test_resend() -> dict:
+    """Reads the list of verified domains via Resend's `/domains` endpoint.
+
+    No email is sent. A 200 with a non-empty domains list proves the key
+    works and the account has at least one verified sender domain.
+    """
+    import httpx
+
+    start = time.monotonic()
+    key = os.environ.get("RESEND_API_KEY", "")
+    if not key:
+        return {"ok": False, "error": "RESEND_API_KEY not set", "latency_ms": 0}
+    try:
+        async with httpx.AsyncClient(timeout=_SELF_TEST_TIMEOUT_S) as client:
+            r = await client.get(
+                "https://api.resend.com/domains",
+                headers={"Authorization": f"Bearer {key}"},
+            )
+        latency_ms = int((time.monotonic() - start) * 1000)
+        if r.status_code == 200:
+            data = r.json() or {}
+            domains = data.get("data", []) if isinstance(data, dict) else []
+            return {
+                "ok": True,
+                "latency_ms": latency_ms,
+                "detail": f"{len(domains)} verified domain(s)",
+            }
+        # Send-only Resend keys can't list /domains and return a 401 with
+        # `restricted_api_key`. That response itself PROVES the key is
+        # valid (only an authenticated request gets back the "you don't
+        # have permission for THIS endpoint" message), so treat it as a
+        # pass with a clear note.
+        if r.status_code == 401 and "restricted_api_key" in (r.text or ""):
+            return {
+                "ok": True,
+                "latency_ms": latency_ms,
+                "detail": "key valid (send-only scope — domain listing restricted)",
+            }
+        return {
+            "ok": False,
+            "latency_ms": latency_ms,
+            "error": f"HTTP {r.status_code}: {r.text[:200]}",
+        }
+    except Exception as e:
+        return {
+            "ok": False,
+            "latency_ms": int((time.monotonic() - start) * 1000),
+            "error": str(e)[:300],
+        }
+
+
+async def _test_stripe() -> dict:
+    """Reads the Stripe account balance — confirms the secret key and the
+    account is in good standing. No charges, no writes."""
+    import stripe
+
+    start = time.monotonic()
+    key = os.environ.get("STRIPE_API_KEY", "")
+    if not key:
+        return {"ok": False, "error": "STRIPE_API_KEY not set", "latency_ms": 0}
+    try:
+        # Stripe SDK is sync — run in a thread so it respects the timeout.
+        def _call():
+            stripe.api_key = key
+            return stripe.Balance.retrieve()
+
+        bal = await asyncio.wait_for(asyncio.to_thread(_call), timeout=_SELF_TEST_TIMEOUT_S)
+        latency_ms = int((time.monotonic() - start) * 1000)
+        currencies = [b.get("currency") for b in (bal.get("available") or [])]
+        return {
+            "ok": True,
+            "latency_ms": latency_ms,
+            "detail": f"livemode={bal.get('livemode')}, currencies={currencies}",
+        }
+    except Exception as e:
+        return {
+            "ok": False,
+            "latency_ms": int((time.monotonic() - start) * 1000),
+            "error": str(e)[:300],
+        }
+
+
+async def _test_aws_s3() -> dict:
+    """Issues a `head_bucket` against the configured S3 bucket. Validates
+    the access key + secret + bucket existence + read permission."""
+    import boto3
+    from botocore.exceptions import ClientError
+
+    start = time.monotonic()
+    access = os.environ.get("AWS_ACCESS_KEY_ID", "")
+    secret = os.environ.get("AWS_SECRET_ACCESS_KEY", "")
+    bucket = os.environ.get("S3_BUCKET_NAME") or "carryon-vault"
+    region = os.environ.get("AWS_REGION") or "us-east-2"
+    if not access or not secret:
+        return {"ok": False, "error": "AWS keys not set", "latency_ms": 0}
+    try:
+
+        def _call():
+            client = boto3.client(
+                "s3",
+                aws_access_key_id=access,
+                aws_secret_access_key=secret,
+                region_name=region,
+            )
+            client.head_bucket(Bucket=bucket)
+            return True
+
+        await asyncio.wait_for(asyncio.to_thread(_call), timeout=_SELF_TEST_TIMEOUT_S)
+        return {
+            "ok": True,
+            "latency_ms": int((time.monotonic() - start) * 1000),
+            "detail": f"bucket={bucket} region={region} reachable",
+        }
+    except ClientError as e:
+        return {
+            "ok": False,
+            "latency_ms": int((time.monotonic() - start) * 1000),
+            "error": f"{e.response.get('Error', {}).get('Code', 'ClientError')}: {str(e)[:200]}",
+        }
+    except Exception as e:
+        return {
+            "ok": False,
+            "latency_ms": int((time.monotonic() - start) * 1000),
+            "error": str(e)[:300],
+        }
+
+
+async def _test_twilio() -> dict:
+    """Fetches the Twilio account record — proves the SID + auth token are
+    a valid pair. No SMS sent."""
+    import httpx
+
+    start = time.monotonic()
+    sid = os.environ.get("TWILIO_ACCOUNT_SID", "")
+    token = os.environ.get("TWILIO_AUTH_TOKEN", "")
+    if not sid or not token:
+        return {"ok": False, "error": "TWILIO_ACCOUNT_SID or TWILIO_AUTH_TOKEN not set", "latency_ms": 0}
+    try:
+        url = f"https://api.twilio.com/2010-04-01/Accounts/{sid}.json"
+        async with httpx.AsyncClient(timeout=_SELF_TEST_TIMEOUT_S) as client:
+            r = await client.get(url, auth=(sid, token))
+        latency_ms = int((time.monotonic() - start) * 1000)
+        if r.status_code == 200:
+            data = r.json() or {}
+            return {
+                "ok": True,
+                "latency_ms": latency_ms,
+                "detail": f"status={data.get('status', 'unknown')}",
+            }
+        return {
+            "ok": False,
+            "latency_ms": latency_ms,
+            "error": f"HTTP {r.status_code}: {r.text[:200]}",
+        }
+    except Exception as e:
+        return {
+            "ok": False,
+            "latency_ms": int((time.monotonic() - start) * 1000),
+            "error": str(e)[:300],
+        }
+
+
+async def _test_xai() -> dict:
+    """Lists xAI models — the cheapest authenticated read on the xAI API.
+    No completion run, no token billed."""
+    import httpx
+
+    start = time.monotonic()
+    key = os.environ.get("XAI_API_KEY", "")
+    if not key:
+        return {"ok": False, "error": "XAI_API_KEY not set", "latency_ms": 0}
+    try:
+        async with httpx.AsyncClient(timeout=_SELF_TEST_TIMEOUT_S) as client:
+            r = await client.get(
+                "https://api.x.ai/v1/models",
+                headers={"Authorization": f"Bearer {key}"},
+            )
+        latency_ms = int((time.monotonic() - start) * 1000)
+        if r.status_code == 200:
+            data = r.json() or {}
+            models = data.get("data", []) if isinstance(data, dict) else []
+            return {
+                "ok": True,
+                "latency_ms": latency_ms,
+                "detail": f"{len(models)} model(s) available",
+            }
+        return {
+            "ok": False,
+            "latency_ms": latency_ms,
+            "error": f"HTTP {r.status_code}: {r.text[:200]}",
+        }
+    except Exception as e:
+        return {
+            "ok": False,
+            "latency_ms": int((time.monotonic() - start) * 1000),
+            "error": str(e)[:300],
+        }
+
+
+# Registry — keep in sync with the frontend `TESTABLE_SERVICES` list.
+_SELF_TESTS = {
+    "mongo": ("MONGO_URL", _test_mongo),
+    "resend": ("RESEND_API_KEY", _test_resend),
+    "stripe": ("STRIPE_API_KEY", _test_stripe),
+    "aws_s3": ("AWS_ACCESS_KEY_ID", _test_aws_s3),
+    "twilio": ("TWILIO_AUTH_TOKEN", _test_twilio),
+    "xai": ("XAI_API_KEY", _test_xai),
+}
+
+
+@router.post("/admin/secrets-self-test/{service_id}")
+async def run_secret_self_test(service_id: str, current_user: dict = Depends(require_admin)):
+    """Runs a live, read-only self-test against the provider for the given
+    service. Admin-only. Strict 6-second timeout. Read-only — no charges,
+    no email sends, no SMS, no writes.
+    """
+    entry = _SELF_TESTS.get(service_id)
+    if entry is None:
+        return {
+            "service": service_id,
+            "ok": False,
+            "error": f"unknown service '{service_id}'",
+            "tested_at": datetime.now(timezone.utc).isoformat(),
+        }
+    secret_name, runner = entry
+    result = await runner()
+    return {
+        "service": service_id,
+        "secret_name": secret_name,
+        "tested_at": datetime.now(timezone.utc).isoformat(),
+        **result,
+    }
