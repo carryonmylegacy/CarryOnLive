@@ -769,21 +769,31 @@ const FinancialPortalPage = () => {
   // Category filter bubble renderer
   const renderCategoryBubbles = (categories, activeFilter, setFilter, labels) => (
     <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 lg:mx-0 lg:px-0 scrollbar-hide" data-testid="category-bubbles">
-      {categories.map(cat => (
-        <button
-          key={cat}
-          onClick={() => setFilter(cat)}
-          className="flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap"
-          style={{
-            background: activeFilter === cat ? 'linear-gradient(135deg, #d4af37, #b8962e)' : 'rgba(255,255,255,0.05)',
-            color: activeFilter === cat ? '#080e1a' : 'var(--t3)',
-            border: `1px solid ${activeFilter === cat ? 'transparent' : 'rgba(255,255,255,0.08)'}`,
-          }}
-          data-testid={`filter-${cat}`}
-        >
-          {cat === 'all' ? 'All' : (labels[cat] || cat)}
-        </button>
-      ))}
+      {categories.map(cat => {
+        const isActive = activeFilter === cat;
+        return (
+          <button
+            key={cat}
+            onClick={() => setFilter(cat)}
+            className={
+              "flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap " +
+              (isActive ? "gold-pill" : "")
+            }
+            style={
+              isActive
+                ? undefined
+                : {
+                    background: 'rgba(255,255,255,0.05)',
+                    color: 'var(--t3)',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                  }
+            }
+            data-testid={`filter-${cat}`}
+          >
+            {cat === 'all' ? 'All' : (labels[cat] || cat)}
+          </button>
+        );
+      })}
     </div>
   );
 
