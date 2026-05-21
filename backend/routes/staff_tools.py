@@ -183,22 +183,20 @@ async def _build_integrations_data():
     # verified=False means inferred from code/.env — user should confirm
     integrations = [
         {
-            "id": "railway",
-            "name": "Railway",
+            "id": "render",
+            "name": "Render",
             "status": "active",
             "category": "infrastructure",
-            "dashboard_url": "https://railway.com",
-            "cost_monthly": 12.00,
-            "cost_note": "Avg ~$12/mo (Pro $20 base - $20 free credit + usage)",
-            "cost_verified": True,
+            "dashboard_url": "https://dashboard.render.com",
+            "cost_monthly": 25.00,
+            "cost_note": "Render Standard plan (~$25/mo); migrated from Railway May 2026",
+            "cost_verified": False,
             "details": [
-                {"label": "Service", "value": "carryon-api", "verified": True},
-                {"label": "Plan", "value": "Pro ($20/mo base, $20 free credit)", "verified": True},
+                {"label": "Service", "value": "carryon-api-kacr", "verified": True},
+                {"label": "Type", "value": "Web Service (Docker)", "verified": True},
                 {"label": "Region", "value": "US East (Virginia)", "verified": True},
-                {"label": "Replicas", "value": "1", "verified": True},
-                {"label": "CPU Limit", "value": "32 vCPU", "verified": True},
-                {"label": "RAM Limit", "value": "32 GB", "verified": True},
-                {"label": "URL", "value": "carryon-api-production.up.railway.app", "verified": True},
+                {"label": "Runtime", "value": "Python 3.12 (Docker container)", "verified": True},
+                {"label": "Replicas", "value": "1", "verified": False},
                 {"label": "Deploy", "value": "Auto from GitHub main branch", "verified": True},
                 {"label": "Login Email", "value": "", "verified": False, "sensitive": True},
             ],
@@ -510,7 +508,7 @@ async def _build_integrations_data():
             "category": "local_processing",
             "dashboard_url": None,
             "cost_monthly": 0.00,
-            "cost_note": "$0/mo (CPU absorbed by Railway)",
+            "cost_note": "$0/mo (CPU absorbed by Render web service)",
             "cost_verified": True,
             "details": [
                 {"label": "Purpose", "value": "Voice-based identity verification", "verified": True},
@@ -665,11 +663,11 @@ async def _build_integrations_data():
             "upgrade_to": "M40 (~$759/mo, 16GB RAM)",
             "upgrade_url": "https://cloud.mongodb.com",
         },
-        "railway": {
-            "max_users": 25000,
-            "reason": "Pro plan scales to 32GB RAM / 32 vCPU, adequate for ~25K concurrent",
-            "upgrade_to": "Enterprise (custom)",
-            "upgrade_url": "https://railway.com",
+        "render": {
+            "max_users": 20000,
+            "reason": "Standard plan (4GB RAM, dedicated CPU) handles ~20K concurrent before vertical scale-up",
+            "upgrade_to": "Pro (~$85/mo, 8GB RAM, more CPU)",
+            "upgrade_url": "https://dashboard.render.com",
         },
         "xai": {
             "max_users": 50000,
@@ -921,7 +919,7 @@ async def generate_soc2_report(data: IntegrationsPinRequest, current_user: dict 
         ),
         (
             "Availability",
-            "Railway Pro (auto-scaling, 32GB RAM/32 vCPU max), MongoDB M30 (3-node replica set), daily health scheduler",
+            "Render (Docker, auto-scaling, Virginia us-east-1), MongoDB Atlas M20 (3-node replica set), daily health scheduler",
         ),
         (
             "Processing Integrity",

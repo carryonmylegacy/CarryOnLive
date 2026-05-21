@@ -147,7 +147,7 @@ async def lifespan(app):
     if _os.environ.get("STRIPE_API_KEY") and not _os.environ.get("STRIPE_WEBHOOK_SECRET"):
         logger.critical(
             "⚠️  STRIPE_WEBHOOK_SECRET is NOT set. Stripe webhooks will be REJECTED. "
-            "Add it to Railway env vars: Stripe Dashboard → Developers → Webhooks → Signing Secret."
+            "Add it to Render env vars: Stripe Dashboard → Developers → Webhooks → Signing Secret."
         )
     if not _os.environ.get("SENTRY_DSN"):
         logger.warning("SENTRY_DSN not set — error monitoring inactive.")
@@ -306,7 +306,7 @@ app = FastAPI(
         "name": "Proprietary — © 2026 CarryOn Technologies LLC",
     },
     servers=[
-        {"url": "https://carryon-api-production.up.railway.app", "description": "Production"},
+        {"url": "https://carryon-api-kacr.onrender.com", "description": "Production"},
         {"url": "http://localhost:8001", "description": "Local dev"},
     ],
     openapi_tags=[

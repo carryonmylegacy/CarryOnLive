@@ -476,10 +476,10 @@ async def stripe_webhook(request: Request):
         # SECURITY: If webhook secret is not configured, reject ALL incoming webhooks.
         # Processing unverified webhooks allows anyone to forge payment events.
         # Fix: go to Stripe Dashboard → Developers → Webhooks → your endpoint → Signing Secret
-        # and add STRIPE_WEBHOOK_SECRET to your Railway environment variables.
+        # and add STRIPE_WEBHOOK_SECRET to your Render environment variables.
         logger.critical(
             "STRIPE_WEBHOOK_SECRET is NOT set — rejecting webhook to prevent forged events. "
-            "Add STRIPE_WEBHOOK_SECRET to your Railway environment variables immediately."
+            "Add STRIPE_WEBHOOK_SECRET to your Render environment variables immediately."
         )
         raise HTTPException(
             status_code=400,
