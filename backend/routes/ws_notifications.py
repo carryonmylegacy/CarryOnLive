@@ -253,12 +253,36 @@ async def check_sla_breaches():
 
 
 async def sla_checker_loop():
-    """Background loop that checks SLA breaches every 60 seconds."""
+    """Background loop that checks SLA breaches every 60 seconds.
+
+    Resilient to transient ``AuthenticationFailed`` errors from MongoDB
+    Atlas — those occur ~once a day when the SCRAM session handshake
+    races a credential refresh on a pooled connection that has been
+    idle right at the ``maxIdleTimeMS`` boundary. The driver normally
+    retries reads, but a SCRAM-time auth blip can fall through. We
+    swallow up to 2 consecutive auth failures (log at warning, no
+    Sentry escalation) and only emit an error after the 3rd consecutive
+    failure so a genuine credential break still surfaces.
+    """
+    consecutive_auth_failures = 0
     while True:
         try:
             breach_count = await check_sla_breaches()
             if breach_count > 0:
                 logger.info(f"SLA checker found {breach_count} breach(es)")
+            consecutive_auth_failures = 0  # reset on any success
         except Exception as e:
-            logger.error(f"SLA checker error: {e}")
+            err_str = str(e)
+            is_auth = "Authentication failed" in err_str or "AuthenticationFailed" in err_str or "'code': 18" in err_str
+            if is_auth:
+                consecutive_auth_failures += 1
+                if consecutive_auth_failures <= 2:
+                    logger.warning(
+                        "SLA checker transient Mongo auth failure "
+                        f"#{consecutive_auth_failures} — will retry next cycle."
+                    )
+                else:
+                    logger.error(f"SLA checker persistent Mongo auth failure #{consecutive_auth_failures}: {e}")
+            else:
+                logger.error(f"SLA checker error: {e}")
         await asyncio.sleep(60)
