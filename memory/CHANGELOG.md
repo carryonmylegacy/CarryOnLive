@@ -1,6 +1,27 @@
 # CarryOn — Changelog
 
 
+## May 21, 2026 (UX polish) — Trustee banner no longer overlaps sidebar logo or notifications
+
+**User reported**: The trustee banner was visually clashing — its sticky position at z-60 covered (1) the top of the sidebar including the CarryOn logo and (2) the notifications dropdown when it opened.
+
+**Fix shipped (zero surgery on other components — additive only)**:
+- Banner moved from `position: sticky` to **`position: fixed; top: 0`** anchored to the viewport.
+- z-index lowered from 60 → **40** so the notifications dropdown (z-200) always layers above it.
+- Banner now publishes its measured height to `--cy-trustee-banner-h` AND additively bumps the existing `--cy-offline-banner-h` CSS variable. The sidebar, mobile header, and other layout primitives already read `--cy-offline-banner-h` to step out of the way of the offline banner — by reusing that hook we get correct layout-step-down across the entire app without touching any other component's CSS.
+- Banner height shrunk slightly (font-size 14→13, padding 8→6, icon 18→16) — visually less intrusive, still prominent.
+- `paddingTop: env(safe-area-inset-top)` added so the banner respects iOS notch.
+- Prior-value snapshot/restore on unmount so toggling trustee mode on/off never leaves a stale CSS variable behind.
+
+**Verified visually**: sidebar starts at y=38px (right under the 38px banner), CarryOn logo fully visible. Notifications dropdown opens at y=212 with z-200, rendering cleanly above the banner. All 3 trustee-audit + "trustee claimed" notifications visible end-to-end.
+
+**Housekeeping**: 0 WARN / 0 FAIL. Pytest 34/34. Build tag bumped to `V2026.05.21.2`.
+
+**Note on the offline + trustee co-occurrence edge case**: when the user is BOTH offline AND in trustee mode (rare), the two banners try to occupy the same top slot. The current implementation favors trustee visibility (since trustee is the more critical context). A future improvement could stack them vertically — not done now to stay minimal.
+
+
+
+
 ## May 21, 2026 (later) — TMA invite: Resend failure resilience + copy-link fallback
 
 **User reported**: on production, sending a trustee invite to a real Gmail address returns *"Invite re-issued. · Email could not be delivered — share the new link manually if needed."* Resend rejected the send (root cause unknown without prod logs — likely Resend free-tier sandbox or unverified domain).
