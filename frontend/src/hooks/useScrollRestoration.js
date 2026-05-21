@@ -53,16 +53,28 @@ const SAVE_DEBOUNCE_MS = 180;
 const SERVER_PUSH_DEBOUNCE_MS = 4000;
 
 // ── Pref helpers ────────────────────────────────────────────────
+//
+// Default-ON semantics (May 2026): the platform remembers scroll position
+// by default for every authenticated user. Anyone who specifically wants
+// scroll-to-top on every navigation can toggle the feature OFF in
+// Settings → Preferences, which writes `'0'` to localStorage. Anything
+// other than the literal string `'0'` (including a missing key) is
+// treated as ENABLED. This stops the recurring "scroll memory keeps
+// regressing" complaints — fresh devices and post-localStorage-clear
+// sessions now inherit the polished behaviour automatically instead of
+// the legacy default-off behaviour that required a re-toggle every time.
 
 export function isScrollRestorationEnabled() {
-  try { return localStorage.getItem(PREF_KEY) === '1'; }
-  catch { return false; }
+  try { return localStorage.getItem(PREF_KEY) !== '0'; }
+  catch { return true; }
 }
 
 export function setScrollRestorationEnabled(on) {
   try {
-    if (on) localStorage.setItem(PREF_KEY, '1');
-    else localStorage.removeItem(PREF_KEY);
+    // Store an explicit '1' / '0' so the default-on semantics above
+    // can distinguish "user-disabled" from "never-set" reliably across
+    // browsers and storage-eviction cycles.
+    localStorage.setItem(PREF_KEY, on ? '1' : '0');
   } catch { /* private mode / quota — degrade silently */ }
   try { window.dispatchEvent(new CustomEvent(PREF_EVENT)); } catch { /* SSR */ }
   // When the user turns the feature OFF, drop any saved positions so
@@ -133,12 +145,14 @@ export async function hydrateScrollRestorationFromServer() {
   if (!headers.Authorization) return null;
   try {
     const res = await apiClient.get(`${API_URL}/user-preferences/scroll-restoration`, { headers });
-    const enabled = !!res?.data?.enabled;
+    // Default-ON semantics: only treat as disabled if the server has
+    // explicitly stored `enabled: false`. Brand-new users with no
+    // server-side preference yet get the default-on experience.
+    const enabled = res?.data?.enabled !== false;
     const serverPositions = (res?.data?.positions && typeof res.data.positions === 'object') ? res.data.positions : {};
-    // Toggle: server wins.
+    // Toggle: server wins (using default-on semantics).
     try {
-      if (enabled) localStorage.setItem(PREF_KEY, '1');
-      else localStorage.removeItem(PREF_KEY);
+      localStorage.setItem(PREF_KEY, enabled ? '1' : '0');
     } catch { /* ignore */ }
     // Positions: union with server-precedence on shared keys.
     if (enabled) {

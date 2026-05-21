@@ -193,8 +193,14 @@ async def get_scroll_restoration_pref(
         {"user_id": current_user["id"], "key": "scroll_restoration"},
         {"_id": 0, "id": 1, "enabled": 1, "positions": 1},
     )
+    # Default-ON semantics (May 2026): users without a server-side pref
+    # row get `enabled: True`. Only users who have explicitly toggled
+    # OFF (and thus have a row with `enabled: False` stored) get the
+    # disabled state. The frontend mirror in `useScrollRestoration.js`
+    # uses the same `!== false` check so local + server agree.
+    enabled = True if doc is None else bool(doc.get("enabled", True))
     return {
-        "enabled": bool((doc or {}).get("enabled", False)),
+        "enabled": enabled,
         "positions": (doc or {}).get("positions") or {},
     }
 
