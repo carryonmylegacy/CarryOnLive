@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import apiClient from '../../utils/apiClient';
 import { toast } from '../../utils/toast';
 import { useAuth } from '../../contexts/AuthContext';
-import { ShieldCheck, UserPlus, Trash2, Loader2, AlertTriangle, Mail, RefreshCw } from 'lucide-react';
+import { ShieldCheck, UserPlus, Trash2, Loader2, AlertTriangle, Mail, RefreshCw, Copy } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Input } from '../ui/input';
 import { Button } from '../ui/button';
@@ -106,8 +106,12 @@ const TrusteeAccessCard = () => {
           description: 'They have 48 hours to claim it before the link expires.',
         });
       } else {
-        toast.success('Invite created.', {
-          description: 'The email could not be sent automatically — share the link manually if needed.',
+        // Try to surface the actual Resend error so the user understands
+        // why delivery failed. Always prompt them to copy the link manually.
+        const reason = r.data?.email_error ? ` (${r.data.email_error})` : '';
+        toast.warning('Invite created — but the email could not be delivered.', {
+          description: `Use the Copy invite link button on the grant row to share it manually${reason}.`,
+          duration: 8000,
         });
       }
       resetForm();
@@ -144,13 +148,38 @@ const TrusteeAccessCard = () => {
       if (r.data?.email_sent) {
         toast.success(`Invite re-sent to ${grant.email}. The previous link is no longer valid.`);
       } else {
-        toast.success('Invite re-issued.', { description: 'Email could not be delivered — share the new link manually if needed.' });
+        const reason = r.data?.email_error ? ` (${r.data.email_error})` : '';
+        toast.warning('New invite link generated — but the email could not be delivered.', {
+          description: `Use the Copy invite link button to share it manually${reason}.`,
+          duration: 8000,
+        });
       }
       await refresh();
     } catch (err) {
       toast.error(err?.response?.data?.detail || 'Could not resend the invite.');
     } finally {
       setBusy(false);
+    }
+  };
+
+  const handleCopyLink = async (grant) => {
+    const url = grant.claim_url;
+    if (!url) {
+      toast.error('No claim link available for this grant.');
+      return;
+    }
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(url);
+        toast.success('Invite link copied to clipboard.', {
+          description: 'Share it with your trustee through any channel.',
+        });
+      } else {
+        // Fallback for non-secure contexts.
+        window.prompt('Copy the invite link below:', url);
+      }
+    } catch {
+      window.prompt('Copy the invite link below:', url);
     }
   };
 
@@ -274,6 +303,19 @@ const TrusteeAccessCard = () => {
                       </p>
                     </div>
                     <div className="flex items-center gap-1">
+                      {isPending && grant.claim_url && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleCopyLink(grant)}
+                          disabled={busy}
+                          data-testid={`trustee-grant-copy-${grant.id}`}
+                          aria-label={`Copy invite link for ${grant.trustee_display_name}`}
+                          title="Copy invite link"
+                        >
+                          <Copy className="w-4 h-4" />
+                        </Button>
+                      )}
                       {isPending && (
                         <Button
                           variant="ghost"

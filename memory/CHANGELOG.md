@@ -1,6 +1,29 @@
 # CarryOn — Changelog
 
 
+## May 21, 2026 (later) — TMA invite: Resend failure resilience + copy-link fallback
+
+**User reported**: on production, sending a trustee invite to a real Gmail address returns *"Invite re-issued. · Email could not be delivered — share the new link manually if needed."* Resend rejected the send (root cause unknown without prod logs — likely Resend free-tier sandbox or unverified domain).
+
+**Fix shipped (additive, defensive)**:
+- **Always return the claim URL on invite + resend responses.** Backend `POST /api/trustee/grants` and `POST /api/trustee/grants/{id}/resend` now include `claim_url` and `email_error` fields alongside `email_sent`.
+- **GET /api/trustee/grants** now embeds `claim_url` on every pending/otp_pending grant (server-side, never leaked to non-benefactor sessions).
+- **New `send_email_ex(to, subject, html) -> {ok, error}`** in `services/email.py` that surfaces the underlying Resend exception. Backward-compat `send_email()` preserved (delegates to the new helper).
+- **Frontend**: TrusteeAccessCard now renders a **Copy 📋 button** next to Resend on every pending grant. Click copies the claim URL to clipboard (with prompt fallback for non-secure contexts).
+- **Toast UX**: failed sends now use `toast.warning` with the actual Resend error message + an 8-second duration nudge: *"Use the Copy invite link button on the grant row to share it manually."*
+
+**Why this matters**:
+- Live platform — the trustee invite must never be blocked by a fragile external dependency (Resend free-tier limits, sandbox mode, recipient bounces, etc.).
+- Diagnostic value — the actual Resend error is now visible in the toast, so the next time delivery fails the user can read it (e.g. *"You can only send testing emails to your own email address"* would immediately tell the user their Resend account is on free tier).
+- Permanent product value — even with email working perfectly, some trustees may prefer the benefactor share the link via Signal / iMessage / Slack instead of email; the Copy button serves that real-world need.
+
+**Verified**: pending grants on the preview pod now expose `claim_url` in the list endpoint; Copy + Resend + Trash icons render correctly per row; legacy active grants correctly show only the trash icon (no claim URL).
+
+**Housekeeping**: 0 WARN / 0 FAIL. Build still on `V2026.05.21.1` (no UI version change worth a bump — same feature surface, just adds a fallback button).
+
+
+
+
 ## May 21, 2026 — TMA hardened: email-invite + trustee-picks-own-password + required email-OTP
 
 **User intuition was right** — the original "benefactor types the password and emails it" flow had three killer holes: (1) plaintext password in email is a cardinal sin (Gmail archives forever, easy to forward); (2) the benefactor knowing the trustee password destroys the audit-trail guarantee (no way to prove a logged action was truly the trustee's); (3) two-password ceremony + OTP-fatigue would have driven 40+ attorneys to drop off mid-onboarding.

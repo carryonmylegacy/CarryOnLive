@@ -11,10 +11,25 @@ if RESEND_API_KEY:
 
 
 async def send_email(to: str, subject: str, html: str):
-    """Send a transactional email via Resend."""
+    """Send a transactional email via Resend.
+
+    Returns ``True`` on success, ``False`` on any failure. Preserved for
+    backward compatibility with callers that don't need the error reason.
+    """
+    result = await send_email_ex(to, subject, html)
+    return result["ok"]
+
+
+async def send_email_ex(to: str, subject: str, html: str) -> dict:
+    """Send a transactional email via Resend and return a structured result.
+
+    Returns ``{"ok": bool, "error": str | None}``. Used by callers that
+    want to surface the underlying Resend error to the end-user (e.g. the
+    trustee invite flow shows the error inline + a copy-link fallback).
+    """
     if not RESEND_API_KEY:
         logger.info(f"Email not configured — would send '{subject}' to {to}")
-        return False
+        return {"ok": False, "error": "Email service not configured on this environment."}
     try:
         await asyncio.to_thread(
             resend.Emails.send,
@@ -26,7 +41,7 @@ async def send_email(to: str, subject: str, html: str):
             },
         )
         logger.info(f"Email sent: '{subject}' → {to}")
-        return True
+        return {"ok": True, "error": None}
     except Exception as e:
         logger.error(f"Email send failed ({subject} → {to}): {e}")
-        return False
+        return {"ok": False, "error": str(e)}

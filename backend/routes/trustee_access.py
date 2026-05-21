@@ -54,7 +54,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, EmailStr, Field
 
 from config import db, logger
-from services.email import send_email
+from services.email import send_email, send_email_ex
 from utils import generate_otp, get_current_user, hash_password
 
 router = APIRouter()
@@ -294,7 +294,17 @@ async def list_grants(current_user: dict = Depends(get_current_user)):
         .sort("created_at", -1)
         .to_list(50)
     )
-    return {"grants": [_grant_public(r) for r in rows]}
+    grants = []
+    for r in rows:
+        g = _grant_public(r)
+        # Surface the claim URL on pending grants so the benefactor can
+        # copy and share the link manually if Resend rejected the send
+        # (test sandbox, unverified domain, rate-limit, bounce, etc.).
+        token = r.get("claim_token")
+        if token and g["status"] in ("pending", "otp_pending"):
+            g["claim_url"] = _claim_url(token)
+        grants.append(g)
+    return {"grants": grants}
 
 
 @router.post("/trustee/grants")
@@ -356,21 +366,25 @@ async def invite_trustee(data: TrusteeGrantInvite, current_user: dict = Depends(
     await db.trustee_grants.insert_one(grant)
     logger.info(f"[TMA] Invite created by benefactor={current_user['id']} email={email_lower}")
 
-    # Fire the invitation email. Best-effort — if Resend is unconfigured
-    # we still return success with a hint so the benefactor can copy the
-    # link manually from the response payload.
-    sent = await send_email(
+    # Fire the invitation email. Best-effort — if Resend rejects the send
+    # (test sandbox, unverified domain, rate-limit, recipient bounce, etc.)
+    # we still return the grant + claim URL so the benefactor can copy
+    # and share the link manually. The error reason is surfaced inline.
+    claim_url = _claim_url(claim_token)
+    email_result = await send_email_ex(
         to=data.email.strip(),
         subject=f"{current_user.get('name', 'A CarryOn user')} has invited you as a trustee",
         html=_invite_html(
             benefactor_name=current_user.get("name", "A CarryOn user"),
             trustee_name=data.trustee_display_name.strip(),
-            claim_url=_claim_url(claim_token),
+            claim_url=claim_url,
             expires_hours=CLAIM_TOKEN_TTL_HOURS,
         ),
     )
     out = _grant_public(grant)
-    out["email_sent"] = bool(sent)
+    out["email_sent"] = bool(email_result["ok"])
+    out["email_error"] = email_result.get("error")
+    out["claim_url"] = claim_url
     return out
 
 
@@ -455,17 +469,24 @@ async def resend_invite(grant_id: str, current_user: dict = Depends(get_current_
             }
         },
     )
-    sent = await send_email(
+    claim_url = _claim_url(claim_token)
+    email_result = await send_email_ex(
         to=grant["email"],
         subject=f"{current_user.get('name', 'A CarryOn user')} has invited you as a trustee (resent)",
         html=_invite_html(
             benefactor_name=current_user.get("name", "A CarryOn user"),
             trustee_name=grant.get("trustee_display_name", "Trustee"),
-            claim_url=_claim_url(claim_token),
+            claim_url=claim_url,
             expires_hours=CLAIM_TOKEN_TTL_HOURS,
         ),
     )
-    return {"resent": True, "email_sent": bool(sent), "claim_token_expires_at": claim_expires}
+    return {
+        "resent": True,
+        "email_sent": bool(email_result["ok"]),
+        "email_error": email_result.get("error"),
+        "claim_url": claim_url,
+        "claim_token_expires_at": claim_expires,
+    }
 
 
 @router.delete("/trustee/grants/{grant_id}")
