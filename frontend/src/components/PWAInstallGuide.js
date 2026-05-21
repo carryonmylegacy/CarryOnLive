@@ -119,7 +119,7 @@ const PWAInstallGuide = ({ open, onClose }) => {
         <div className="w-full max-w-sm rounded-t-2xl sm:rounded-2xl p-6" style={{ background: 'var(--bg)', border: '1px solid rgba(var(--gold-rgb), 0.2)' }}>
           <h2 className="text-white text-lg font-bold mb-2" style={{ fontFamily: 'var(--sans)' }}>Open in Safari</h2>
           <p className="text-[#7b879e] text-sm mb-4">Adding to your Home Screen only works in Safari. Copy <span className="text-[#d4af37] font-semibold">carryon.us</span> and paste it into Safari.</p>
-          <button onClick={onClose} className="w-full py-3 rounded-xl text-sm font-bold active:scale-[0.97]" style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a' }} data-testid="install-guide-done">Got it</button>
+          <button onClick={onClose} className="gold-gradient-btn w-full py-3 rounded-xl text-sm font-bold active:scale-[0.97]" data-testid="install-guide-done">Got it</button>
         </div>
       </div>
     );
@@ -138,7 +138,7 @@ const PWAInstallGuide = ({ open, onClose }) => {
             <div className="flex items-center gap-3"><div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold" style={{ background: 'rgba(var(--gold-rgb), 0.15)', color: '#d4af37' }}>2</div><span className="text-white text-sm">Tap <strong className="text-[#d4af37]">&ldquo;Install app&rdquo;</strong></span></div>
             <div className="flex items-center gap-3"><div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold" style={{ background: 'rgba(var(--gold-rgb), 0.15)', color: '#d4af37' }}>3</div><span className="text-white text-sm">Tap <strong className="text-[#d4af37]">&ldquo;Install&rdquo;</strong></span></div>
           </div>
-          <button onClick={onClose} className="w-full py-3 rounded-xl text-sm font-bold active:scale-[0.97]" style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a' }} data-testid="install-guide-done">Got it</button>
+          <button onClick={onClose} className="gold-gradient-btn w-full py-3 rounded-xl text-sm font-bold active:scale-[0.97]" data-testid="install-guide-done">Got it</button>
         </div>
       </div>
     );
@@ -203,8 +203,8 @@ const PWAInstallGuide = ({ open, onClose }) => {
         </div>
 
         <div className="px-4 pb-5 pt-1">
-          <button onClick={onClose} className="w-full py-3 rounded-xl text-sm font-bold active:scale-[0.97]"
-            style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a' }} data-testid="install-guide-done">
+          <button onClick={onClose} className="gold-gradient-btn w-full py-3 rounded-xl text-sm font-bold active:scale-[0.97]"
+            data-testid="install-guide-done">
             Got it
           </button>
         </div>

@@ -507,6 +507,43 @@
   border-color: rgba(var(--gold-rgb, 212,165,55), 0.75) !important;
 }
 
+/* ===== .gold-gradient-btn — class-based replacement for inline gold
+   gradient buttons. Use this instead of `style={{ background:
+   'linear-gradient(135deg, #d4af37, #b8962e)' }}` because Chrome
+   normalizes hex → rgb() in the serialized `style` attribute, so the
+   `[style*="#d4af37"]` attribute selectors above can't catch them.
+   The class-based approach has none of that ambiguity. */
+.gold-gradient-btn {
+  background: linear-gradient(135deg, #d4af37, #b8962e);
+  color: #080e1a;
+  border: none;
+  transition: background 200ms ease, color 200ms ease, border-color 200ms ease;
+}
+.gold-gradient-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #e0bc4a, #c9a033);
+}
+.gold-gradient-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Light-mode unification — match the Public Device Mode pill exactly.
+   The gradient is dropped in favor of a single cream tone so it blends
+   with the rest of the light-mode admin chrome. */
+[data-theme="light"] .gold-gradient-btn {
+  background: rgba(254, 249, 231, 0.95);
+  color: #7a5c00;
+  border: 1px solid rgba(var(--gold-rgb, 212,165,55), 0.55);
+  box-shadow:
+    0 1px 2px rgba(212, 175, 55, 0.10),
+    0 1px 6px rgba(212, 175, 55, 0.06);
+}
+[data-theme="light"] .gold-gradient-btn:hover:not(:disabled) {
+  background: rgba(252, 243, 202, 1);
+  color: #5d4500;
+  border-color: rgba(var(--gold-rgb, 212,165,55), 0.75);
+}
+
 /* ===== Tailwind-arbitrary-value gold buttons unify in light mode =====
    Many admin buttons use Tailwind's arbitrary-value class
    `bg-[var(--gold)]` (often paired with `text-[#0F1629]` or `#0b1120`).

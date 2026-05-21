@@ -684,7 +684,7 @@ export default function EditMilestoneMessagePage() {
                 </div>
                 <div className="flex flex-shrink-0 items-center justify-center px-6 py-8" style={{ background: 'rgba(0,0,0,0.8)', paddingBottom: 'calc(2rem + env(safe-area-inset-bottom, 0px))' }}>
                   {!isRecording && countdown === null ? (
-                    <button onClick={startRecording} className="flex h-20 w-20 items-center justify-center rounded-full transition-transform active:scale-90" style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', boxShadow: '0 4px 24px rgba(var(--gold-rgb), 0.4)' }} data-testid="edit-message-start-recording-button" aria-label="Start recording">
+                    <button onClick={startRecording} className="gold-gradient-btn flex h-20 w-20 items-center justify-center rounded-full transition-transform active:scale-90" style={{ boxShadow: '0 4px 24px rgba(var(--gold-rgb), 0.4)' }} data-testid="edit-message-start-recording-button" aria-label="Start recording">
                       <Camera className="h-8 w-8 text-[#080e1a]" />
                     </button>
                   ) : isRecording ? (

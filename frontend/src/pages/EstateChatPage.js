@@ -1043,7 +1043,7 @@ export default function EstateChatPage() {
                           style={{ background: 'var(--s)', border: '1px solid var(--b)', color: 'var(--t)', fontSize: '16px', outline: 'none' }} />
                         <div className="flex gap-2 justify-end">
                           <button onClick={() => setEditingMsg(null)} className="text-xs px-3 py-1 rounded-lg" style={{ color: 'var(--t4)', background: 'rgba(255,255,255,0.06)' }} data-testid="edit-cancel-btn">Cancel</button>
-                          <button onClick={handleEditMessage} className="text-xs px-3 py-1 rounded-lg font-semibold" style={{ color: '#080e1a', background: 'linear-gradient(135deg, #d4af37, #F0C95C)' }} data-testid="edit-save-btn">Save</button>
+                          <button onClick={handleEditMessage} className="gold-gradient-btn text-xs px-3 py-1 rounded-lg font-semibold" data-testid="edit-save-btn">Save</button>
                         </div>
                       </div>
                     ) : (

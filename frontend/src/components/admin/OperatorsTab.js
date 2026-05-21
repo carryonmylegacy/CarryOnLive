@@ -144,7 +144,7 @@ export const OperatorsTab = ({ getAuthHeaders }) => {
     <div className="space-y-4" data-testid="operators-tab">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-bold text-[var(--t)] uppercase tracking-wider">Operations Team</h3>
-        <Button size="sm" className="text-xs" style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a' }}
+        <Button size="sm" className="gold-gradient-btn text-xs"
           onClick={() => setShowCreate(true)} data-testid="add-operator-btn">
           <Plus className="w-3 h-3 mr-1" /> Add {isFounder ? 'Operator' : 'Team Member'}
         </Button>
@@ -255,7 +255,7 @@ export const OperatorsTab = ({ getAuthHeaders }) => {
               className="bg-[var(--s)] border-[var(--b)] text-[var(--t)]" />
             <textarea placeholder="Notes (internal reference only)" value={form.notes} onChange={f('notes')}
               className="w-full h-20 px-3 py-2 rounded-lg text-base bg-[var(--s)] border border-[var(--b)] text-[var(--t)] resize-none" />
-            <Button className="w-full" style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a' }}
+            <Button className="w-full gold-gradient-btn"
               disabled={creating} onClick={handleCreate} data-testid="create-operator-submit">
               {creating ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
               Create {form.operator_role === 'manager' ? 'Manager' : 'Team Member'}
@@ -314,7 +314,7 @@ export const OperatorsTab = ({ getAuthHeaders }) => {
             <div className="flex gap-3 mt-2">
               <Button variant="outline" className="flex-1 border-[var(--b)] text-[var(--t)]"
                 onClick={() => setEditTarget(null)}>Cancel</Button>
-              <Button className="flex-1" style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#080e1a' }}
+              <Button className="flex-1 gold-gradient-btn"
                 disabled={editing} onClick={handleEdit} data-testid="edit-operator-submit">
                 {editing ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Pencil className="w-4 h-4 mr-1" />}
                 Save Changes

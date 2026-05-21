@@ -204,8 +204,7 @@ export const VerificationsTab = ({ getAuthHeaders }) => {
                               size="sm"
                               onClick={() => notifyBenefactor(v)}
                               disabled={notifying === v.id}
-                              className="text-[11px] h-7 px-2 font-bold"
-                              style={{ background: 'linear-gradient(135deg, #d4af37, #c9a033)', color: '#0F1629' }}
+                              className="gold-gradient-btn text-[11px] h-7 px-2 font-bold"
                               data-testid={`notify-benefactor-${v.id}`}
                             >
                               {notifying === v.id ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Bell className="w-3 h-3 mr-1" />}
