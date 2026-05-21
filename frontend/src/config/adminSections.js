@@ -26,6 +26,17 @@ export const ADMIN_SECTIONS = [
     label: 'Operations',
     icon: Briefcase,
     color: '#d4af37',
+    // Pill thematics — mirrors the .gold-pill rule per-section.
+    pill: {
+      // Light mode: opaque pale tinted bg + dark saturated text + accent border
+      bgLight: 'rgba(254, 249, 231, 0.95)',
+      bgLightHover: 'rgba(252, 243, 202, 1)',
+      textLight: '#7a5c00',
+      // Dark mode: solid accent gradient bg + near-black text (matches gold-pill base)
+      bgDark: 'linear-gradient(135deg, #d4af37, #b8962e)',
+      bgDarkHover: 'linear-gradient(135deg, #e0bd47, #c9a338)',
+      textDark: '#080e1a',
+    },
     scopes: ['founder', 'ops_manager', 'ops_team'],
     tabs: [
       { key: 'users', label: 'Users', icon: Users, path: '/admin/users' },
@@ -47,6 +58,14 @@ export const ADMIN_SECTIONS = [
     label: 'Finance',
     icon: CreditCard,
     color: '#22C993',
+    pill: {
+      bgLight: 'rgba(220, 252, 231, 0.95)',
+      bgLightHover: 'rgba(187, 247, 208, 1)',
+      textLight: '#0a614a',
+      bgDark: 'linear-gradient(135deg, #22C993, #1ba87d)',
+      bgDarkHover: 'linear-gradient(135deg, #2dd4a4, #1fc491)',
+      textDark: '#062318',
+    },
     scopes: ['founder', 'finance'],
     tabs: [
       { key: 'subscriptions', label: 'Subs', icon: CreditCard, path: '/admin/subscriptions' },
@@ -64,6 +83,14 @@ export const ADMIN_SECTIONS = [
     label: 'Marketing',
     icon: Megaphone,
     color: '#B794F6',
+    pill: {
+      bgLight: 'rgba(243, 232, 255, 0.95)',
+      bgLightHover: 'rgba(233, 213, 255, 1)',
+      textLight: '#4b25a0',
+      bgDark: 'linear-gradient(135deg, #B794F6, #9a72e0)',
+      bgDarkHover: 'linear-gradient(135deg, #c4a4ff, #ab85ee)',
+      textDark: '#1a0f30',
+    },
     scopes: ['founder', 'marketing'],
     tabs: [
       { key: 'funnel', label: 'Funnel', icon: TrendingUp, path: '/admin/funnel' },
@@ -80,6 +107,14 @@ export const ADMIN_SECTIONS = [
     label: 'Compliance',
     icon: ShieldCheck,
     color: '#3B82F6',
+    pill: {
+      bgLight: 'rgba(219, 234, 254, 0.95)',
+      bgLightHover: 'rgba(191, 219, 254, 1)',
+      textLight: '#1d4fa8',
+      bgDark: 'linear-gradient(135deg, #3B82F6, #2d6ad6)',
+      bgDarkHover: 'linear-gradient(135deg, #5097ff, #3f7ee8)',
+      textDark: '#06162e',
+    },
     scopes: ['founder', 'compliance'],
     tabs: [
       { key: 'audit', label: 'Audit Trail', icon: Shield, path: '/admin/audit' },
@@ -93,6 +128,14 @@ export const ADMIN_SECTIONS = [
     label: 'Platform',
     icon: HeartPulse,
     color: '#F59E0B',
+    pill: {
+      bgLight: 'rgba(255, 247, 220, 0.95)',
+      bgLightHover: 'rgba(254, 240, 195, 1)',
+      textLight: '#7a4f00',
+      bgDark: 'linear-gradient(135deg, #F59E0B, #d68708)',
+      bgDarkHover: 'linear-gradient(135deg, #ffac20, #e9970f)',
+      textDark: '#2e1d00',
+    },
     scopes: ['founder', 'platform_health'],
     tabs: [
       { key: 'war-room', label: 'War Room', icon: Radio, path: '/admin/war-room' },
@@ -115,6 +158,14 @@ export const ADMIN_SECTIONS = [
     label: 'Admin',
     icon: UserCog,
     color: '#ef4444',
+    pill: {
+      bgLight: 'rgba(254, 226, 226, 0.95)',
+      bgLightHover: 'rgba(254, 202, 202, 1)',
+      textLight: '#9b1c1c',
+      bgDark: 'linear-gradient(135deg, #ef4444, #d63333)',
+      bgDarkHover: 'linear-gradient(135deg, #ff5757, #e84444)',
+      textDark: '#2e0606',
+    },
     scopes: ['founder'],
     tabs: [
       { key: 'scoped-admins', label: 'Admin Accounts', icon: UserCog, path: '/admin/scoped-admins' },

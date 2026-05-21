@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { NavLink, useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { ChevronDown } from 'lucide-react';
 import { ADMIN_SECTIONS, sectionRgb, visibleAdminSections } from '../../config/adminSections';
+import { useTheme } from '../../contexts/ThemeContext';
 
 /**
  * AdminSectionNav — expandable section list for the admin sidebar /
@@ -14,6 +15,8 @@ import { ADMIN_SECTIONS, sectionRgb, visibleAdminSections } from '../../config/a
 const AdminSectionNav = ({ collapsed = false, variant = 'sidebar', onNavClick, adminScopes }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { theme } = useTheme();
+  const isLight = theme === 'light';
   const isMobile = variant === 'mobile';
 
   const sections = visibleAdminSections(adminScopes || ['founder']);
@@ -91,23 +94,27 @@ const AdminSectionNav = ({ collapsed = false, variant = 'sidebar', onNavClick, a
         const isTabInSectionActive = s.tabs.some(t => t.path === location.pathname);
         const isOpen = !!expanded[s.key];
         const isActive = isSectionActive || isTabInSectionActive;
+        // Per-section pill thematic — mirrors the `.gold-pill` rule but
+        // keyed to each section's accent color. Opaque tinted bg in
+        // light mode, solid accent gradient in dark mode, dark
+        // saturated text against the bg, accent border at 0.55.
+        const pill = s.pill;
+        const pillBg = isLight
+          ? (isActive ? pill.bgLightHover : pill.bgLight)
+          : (isActive ? pill.bgDarkHover : pill.bgDark);
+        const pillText = isLight ? pill.textLight : pill.textDark;
+        const borderAlpha = isActive ? 0.75 : 0.55;
+        const shadowAlpha = isActive ? 0.20 : 0.10;
 
         return (
           <div key={s.key} className="admin-section-block" style={{ marginBottom: 6 }}>
-            {/* Permanently-shaded pill — each section's accent color
-                used for bg/border/text/icon. Matches the cream-gold
-                pill thematic. Active state deepens the tint. */}
             <div
               className="flex items-center gap-2 rounded-full transition-all"
               style={{
                 padding: isMobile ? '10px 14px' : '8px 14px',
-                background: isActive
-                  ? `rgba(${rgb}, 0.22)`
-                  : `rgba(${rgb}, 0.10)`,
-                border: `1px solid rgba(${rgb}, ${isActive ? 0.65 : 0.45})`,
-                boxShadow: isActive
-                  ? `0 2px 6px rgba(${rgb}, 0.25)`
-                  : `0 1px 2px rgba(${rgb}, 0.12)`,
+                background: pillBg,
+                border: `1px solid rgba(${rgb}, ${borderAlpha})`,
+                boxShadow: `0 1px 2px rgba(${rgb}, ${shadowAlpha}), 0 1px 6px rgba(${rgb}, ${shadowAlpha * 0.6})`,
               }}
             >
               {/* LABEL — navigates to section page */}
@@ -119,14 +126,14 @@ const AdminSectionNav = ({ collapsed = false, variant = 'sidebar', onNavClick, a
               >
                 <Icon
                   className="flex-shrink-0"
-                  style={{ width: 18, height: 18, color: s.color }}
+                  style={{ width: 18, height: 18, color: pillText }}
                 />
                 <span
                   className="font-bold uppercase tracking-wider truncate"
                   style={{
                     fontSize: isMobile ? 13 : 12,
                     letterSpacing: '0.08em',
-                    color: s.color,
+                    color: pillText,
                   }}
                 >
                   {s.label}
@@ -139,7 +146,7 @@ const AdminSectionNav = ({ collapsed = false, variant = 'sidebar', onNavClick, a
                 aria-label={`${isOpen ? 'Collapse' : 'Expand'} ${s.label}`}
                 aria-expanded={isOpen}
                 className="flex-shrink-0 p-1 rounded-md active:scale-90 transition-transform"
-                style={{ background: 'transparent', border: 0, color: 'var(--t4)', cursor: 'pointer' }}
+                style={{ background: 'transparent', border: 0, color: pillText, cursor: 'pointer' }}
               >
                 <ChevronDown
                   style={{
@@ -147,7 +154,7 @@ const AdminSectionNav = ({ collapsed = false, variant = 'sidebar', onNavClick, a
                     height: 16,
                     transition: 'transform 180ms',
                     transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                    color: s.color,
+                    color: pillText,
                   }}
                 />
               </button>
