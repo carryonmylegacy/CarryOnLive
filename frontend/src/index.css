@@ -468,13 +468,24 @@
    forces them all to match the Public Device Mode treatment whenever
    light mode is active — no JS edits required. Marketing surfaces
    (HomePage, AboutPage) use forced-dark backgrounds and opt-out via
-   the `.gold-keep-dark` escape hatch below. */
+   the `.gold-keep-dark` escape hatch below.
+
+   ⚠️  We deliberately scope to `button` only so decorative <div>
+   gradients (chat message bubbles, glow underlines, hero accents)
+   are NOT affected — they're meant to stay dark-gold against light
+   bubble backgrounds. The hex-substring selectors catch the color
+   regardless of whether it appears bare (`#d4af37`), inside a
+   gradient (`linear-gradient(135deg, #d4af37, #c9a033)`), or with
+   any spacing variant. */
 [data-theme="light"] button[style*="background: var(--gold)"]:not(.gold-keep-dark),
 [data-theme="light"] button[style*="background:var(--gold)"]:not(.gold-keep-dark),
-[data-theme="light"] button[style*="background: #d4af37"]:not(.gold-keep-dark),
-[data-theme="light"] button[style*="background:#d4af37"]:not(.gold-keep-dark),
-[data-theme="light"] button[style*="background: #daa520"]:not(.gold-keep-dark),
-[data-theme="light"] button[style*="background:#daa520"]:not(.gold-keep-dark) {
+[data-theme="light"] button[style*="#d4af37"]:not(.gold-keep-dark),
+[data-theme="light"] button[style*="#daa520"]:not(.gold-keep-dark),
+[data-theme="light"] button[style*="#c9a033"]:not(.gold-keep-dark),
+[data-theme="light"] button[style*="#b8932a"]:not(.gold-keep-dark),
+[data-theme="light"] button[style*="#b8962e"]:not(.gold-keep-dark),
+[data-theme="light"] button[style*="#b8860b"]:not(.gold-keep-dark),
+[data-theme="light"] button[style*="#f0d860"]:not(.gold-keep-dark) {
   background: rgba(254, 249, 231, 0.95) !important;
   color: #7a5c00 !important;
   border: 1px solid rgba(var(--gold-rgb, 212,165,55), 0.55) !important;
@@ -484,10 +495,13 @@
 }
 [data-theme="light"] button[style*="background: var(--gold)"]:not(.gold-keep-dark):hover:not(:disabled),
 [data-theme="light"] button[style*="background:var(--gold)"]:not(.gold-keep-dark):hover:not(:disabled),
-[data-theme="light"] button[style*="background: #d4af37"]:not(.gold-keep-dark):hover:not(:disabled),
-[data-theme="light"] button[style*="background:#d4af37"]:not(.gold-keep-dark):hover:not(:disabled),
-[data-theme="light"] button[style*="background: #daa520"]:not(.gold-keep-dark):hover:not(:disabled),
-[data-theme="light"] button[style*="background:#daa520"]:not(.gold-keep-dark):hover:not(:disabled) {
+[data-theme="light"] button[style*="#d4af37"]:not(.gold-keep-dark):hover:not(:disabled),
+[data-theme="light"] button[style*="#daa520"]:not(.gold-keep-dark):hover:not(:disabled),
+[data-theme="light"] button[style*="#c9a033"]:not(.gold-keep-dark):hover:not(:disabled),
+[data-theme="light"] button[style*="#b8932a"]:not(.gold-keep-dark):hover:not(:disabled),
+[data-theme="light"] button[style*="#b8962e"]:not(.gold-keep-dark):hover:not(:disabled),
+[data-theme="light"] button[style*="#b8860b"]:not(.gold-keep-dark):hover:not(:disabled),
+[data-theme="light"] button[style*="#f0d860"]:not(.gold-keep-dark):hover:not(:disabled) {
   background: rgba(252, 243, 202, 1) !important;
   color: #5d4500 !important;
   border-color: rgba(var(--gold-rgb, 212,165,55), 0.75) !important;

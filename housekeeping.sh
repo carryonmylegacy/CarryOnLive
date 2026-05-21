@@ -1382,7 +1382,7 @@ _run_pitch_smoke "67. [A1.2]  Smoke: preview ......... " "" "" "FAIL"
 if [ -n "${PROD_API_URL:-}" ]; then
   _run_pitch_smoke "68. [A1.2]  Smoke: production ...... " "API_URL=$PROD_API_URL" "$PROD_API_URL" "WARN"
 else
-  echo -e "68. [A1.2]  Smoke: production ...... $INFO (skipped — set PROD_API_URL to Railway backend origin)"
+  echo -e "68. [A1.2]  Smoke: production ...... $INFO (skipped — set PROD_API_URL to Render backend origin)"
 fi
 _run_pitch_smoke "69. [A1.2]  Smoke: preview / admin . " "TEST_EMAIL=founder@carryon.us TEST_PASSWORD=CarryOntheWisdom!" "" "FAIL"
 
