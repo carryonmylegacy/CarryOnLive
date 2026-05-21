@@ -71,6 +71,34 @@ _ROUTE_MAP: list[tuple[re.Pattern[str], str, str, str]] = [
     (re.compile(r"^/api/ccp/(?P<id>[a-f0-9-]+)/?$"), "ccp_protocols", "id", "contingency protocol"),
     # IAC checklist tasks
     (re.compile(r"^/api/checklist/(?P<id>[a-f0-9-]+)/?$"), "checklist_tasks", "id", "checklist task"),
+    # CFP — bills, debts, accounts, property (May 21 2026 expansion so
+    # trustee Undo works for every Financial Picture mutation).
+    (re.compile(r"^/api/financial/bills/(?P<id>[a-f0-9-]+)/?$"), "bills", "id", "bill"),
+    (re.compile(r"^/api/financial/payments/(?P<id>[a-f0-9-]+)/?$"), "bill_payments", "id", "bill payment"),
+    (re.compile(r"^/api/financial/debts/(?P<id>[a-f0-9-]+)/?$"), "debts", "id", "debt"),
+    (re.compile(r"^/api/financial/accounts/(?P<id>[a-f0-9-]+)/?$"), "financial_accounts", "id", "financial account"),
+    (re.compile(r"^/api/financial/property/(?P<id>[a-f0-9-]+)/?$"), "property_assets", "id", "property asset"),
+    (re.compile(r"^/api/financial/categories/(?P<id>[a-f0-9-]+)/?$"), "bill_categories", "id", "bill category"),
+    # CFP — entities and supporting graph nodes
+    (re.compile(r"^/api/financial/entities/(?P<id>[a-f0-9-]+)/?$"), "cfp_entities", "id", "entity"),
+    (
+        re.compile(r"^/api/financial/external-people/(?P<id>[a-f0-9-]+)/?$"),
+        "cfp_external_people",
+        "id",
+        "external person",
+    ),
+    (
+        re.compile(r"^/api/financial/entity-relationships/(?P<id>[a-f0-9-]+)/?$"),
+        "cfp_entity_relationships",
+        "id",
+        "entity relationship",
+    ),
+    (
+        re.compile(r"^/api/financial/beneficiary-blocks/(?P<id>[a-f0-9-]+)/?$"),
+        "cfp_beneficiary_blocks",
+        "id",
+        "beneficiary block",
+    ),
 ]
 
 

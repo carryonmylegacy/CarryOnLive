@@ -791,6 +791,33 @@
     box-shadow: 0 1px 3px rgba(212,175,55,0.30), 0 4px 12px rgba(212,175,55,0.18);
   }
 
+  /* CachedPdfIcon pill — used on CFP/Guardian/IAC pages to advertise
+     when a hand-off PDF was last generated. The dark-mode tint
+     (rgba(gold,0.10)) was nearly invisible against the cream
+     light-mode surface; matched the Public Device Mode pill's
+     idle-gold pattern so the pill is legible in both themes. */
+  .cached-pdf-icon {
+    background: rgba(var(--gold-rgb), 0.10);
+    border: 1px solid rgba(var(--gold-rgb), 0.35);
+    color: #d4af37;
+  }
+  .cached-pdf-icon:hover {
+    background: rgba(var(--gold-rgb), 0.18);
+    border-color: rgba(var(--gold-rgb), 0.55);
+  }
+  [data-theme="light"] .cached-pdf-icon {
+    border-color: rgba(var(--gold-rgb), 0.55);
+    color: #7a5c00;
+    background: rgba(254, 249, 231, 0.95);
+    box-shadow: 0 1px 2px rgba(212, 175, 55, 0.10), 0 1px 6px rgba(212, 175, 55, 0.06);
+  }
+  [data-theme="light"] .cached-pdf-icon:hover {
+    background: rgba(252, 243, 202, 1);
+    color: #5d4500;
+    border-color: rgba(var(--gold-rgb), 0.75);
+  }
+
+
   /* User Area - Sidebar Footer */
   .sb-user {
     margin-top: auto;

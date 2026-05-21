@@ -154,23 +154,11 @@ const CachedPdfIcon = ({ pdfType, className = '', testIdSuffix = '' }) => {
       title={tooltip}
       aria-label={tooltip}
       data-testid={testId}
-      className={`inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-full whitespace-nowrap transition-all text-[11px] font-bold ${className}`}
+      className={`cached-pdf-icon inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-full whitespace-nowrap transition-all text-[11px] font-bold ${className}`}
       style={{
-        background: 'rgba(var(--gold-rgb), 0.10)',
-        border: '1px solid rgba(var(--gold-rgb), 0.35)',
-        color: '#d4af37',
         cursor: loading ? 'wait' : 'pointer',
         flexShrink: 0,
         lineHeight: 1.1,
-      }}
-      onMouseEnter={(e) => {
-        if (loading) return;
-        e.currentTarget.style.background = 'rgba(var(--gold-rgb), 0.18)';
-        e.currentTarget.style.borderColor = 'rgba(var(--gold-rgb), 0.55)';
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.background = 'rgba(var(--gold-rgb), 0.10)';
-        e.currentTarget.style.borderColor = 'rgba(var(--gold-rgb), 0.35)';
       }}
     >
       {loading

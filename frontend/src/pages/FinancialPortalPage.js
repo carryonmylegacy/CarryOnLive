@@ -823,34 +823,35 @@ const FinancialPortalPage = () => {
             </p>
           </div>
         </div>
-        <div className="flex gap-2 w-full sm:w-auto flex-wrap">
+        <div className="flex gap-2 w-full sm:w-auto flex-wrap items-start">
+          {/* Hand-off PDF + Latest PDF stacked vertically, CFP visibility
+              toggle to the right. Add Bill + Quick Add have been moved
+              down to the per-tab toolbar (next to the category chips). */}
+          <div className="flex flex-col gap-1.5 items-stretch">
+            {estate?.id && (
+              <Button
+                variant="outline"
+                className="outline-pill-button flex-shrink-0 px-3 sm:px-4"
+                onClick={() => handleHandoffExport()}
+                disabled={exportingHandoff}
+                data-testid="handoff-pdf-btn"
+                title="Hand-off PDF for your beneficiaries"
+              >
+                {exportingHandoff ? (
+                  <Loader2 className="w-4 h-4 mr-1.5 animate-spin text-[var(--gold)]" />
+                ) : (
+                  <FileDown className="w-4 h-4 mr-1.5 text-[var(--gold)]" />
+                )}
+                {exportingHandoff ? 'Generating…' : 'Hand-off PDF'}
+              </Button>
+            )}
+            {estate?.id && (
+              <div className="flex justify-center">
+                <CachedPdfIcon pdfType="cfp_handoff" />
+              </div>
+            )}
+          </div>
           <CfpVisibilityToggle estate={estate} onUpdate={setEstate} />
-          <Button className="gold-button flex-1 sm:flex-initial" onClick={handleAddClick} data-testid="add-item-button">
-            <Plus className="w-5 h-5 mr-2" />
-            {addButtonLabel}
-          </Button>
-          <Button variant="outline" className="outline-pill-button flex-shrink-0 px-3 sm:px-4"
-            onClick={() => setShowQuickAdd(true)} data-testid="quick-add-button">
-            <Sparkles className="w-4 h-4 mr-1.5 text-[var(--gold)]" /> Quick Add
-          </Button>
-          {estate?.id && (
-            <Button
-              variant="outline"
-              className="outline-pill-button flex-shrink-0 px-3 sm:px-4"
-              onClick={() => handleHandoffExport()}
-              disabled={exportingHandoff}
-              data-testid="handoff-pdf-btn"
-              title="Hand-off PDF for your beneficiaries"
-            >
-              {exportingHandoff ? (
-                <Loader2 className="w-4 h-4 mr-1.5 animate-spin text-[var(--gold)]" />
-              ) : (
-                <FileDown className="w-4 h-4 mr-1.5 text-[var(--gold)]" />
-              )}
-              {exportingHandoff ? 'Generating…' : 'Hand-off PDF'}
-            </Button>
-          )}
-          {estate?.id && <CachedPdfIcon pdfType="cfp_handoff" />}
         </div>
       </div>
 
@@ -916,6 +917,20 @@ const FinancialPortalPage = () => {
             className="flex-1 bg-transparent border-none text-[var(--t)] text-sm outline-none placeholder:text-[var(--t5)]"
             data-testid="financial-search"
           />
+        </div>
+
+        {/* Add / Quick Add row — moved out of the page header (May 21
+            2026 user feedback) so the header pills are uncluttered.
+            The label flips automatically with the active sub-tab. */}
+        <div className="flex flex-wrap items-center gap-2 mt-3">
+          <Button className="gold-button" onClick={handleAddClick} data-testid="add-item-button">
+            <Plus className="w-5 h-5 mr-2" />
+            {addButtonLabel}
+          </Button>
+          <Button variant="outline" className="outline-pill-button px-3 sm:px-4"
+            onClick={() => setShowQuickAdd(true)} data-testid="quick-add-button">
+            <Sparkles className="w-4 h-4 mr-1.5 text-[var(--gold)]" /> Quick Add
+          </Button>
         </div>
 
         {/* ============ BILLS TAB ============ */}
