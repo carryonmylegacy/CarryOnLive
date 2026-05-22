@@ -28,28 +28,17 @@ import apiClient from '../utils/apiClient';
 import { API_URL } from '../config';
 import { useAuth, useBrand } from '../contexts/AuthContext';
 import { openPdfPreview } from '../utils/openPdfPreview';
+import AddressAutocomplete from './AddressAutocomplete';
 
 const STEPS = [
-  'welcome', 'state', 'household', 'beneficiaries', 'real_estate',
-  'financial_accounts', 'life_insurance', 'business', 'existing_documents',
+  'gate', 'welcome', 'residence', 'household', 'beneficiaries',
+  'properties', 'life_insurance', 'business', 'existing_documents',
   'generate',
 ];
 // Re-exported so the public Partner-Brief trial page (which is not
 // authenticated) can reuse the same step list / validation / UI without
 // duplicating any copy. Keep these in lockstep.
 export { STEPS };
-
-const US_STATES = [
-  'AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA',
-  'KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ',
-  'NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VT',
-  'VA','WA','WV','WI','WY','DC',
-];
-const RELATIONSHIPS = [
-  'Spouse','Partner','Son','Daughter','Mother','Father','Brother','Sister',
-  'Grandson','Granddaughter','Grandmother','Grandfather','Aunt','Uncle',
-  'Niece','Nephew','Friend','Charity','Other',
-];
 
 const SESSION_SKIP_KEY = 'carryon_quickstart_skipped_session';
 
@@ -89,9 +78,19 @@ const QuickStartWizard = ({ forceOpen = false, onClose = () => {} }) => {
     try {
       const res = await apiClient.get(`${API_URL}/quickstart/progress`, getAuthHeaders());
       setProgress(res.data);
-      const cur = res.data?.current_step || 'welcome';
+      let cur = res.data?.current_step || 'gate';
+      // Backwards compat — older sessions may still point at a step
+      // key that has since been removed (financial_accounts) or renamed
+      // (state → residence, real_estate → properties). Snap them to the
+      // start of the wizard so the user never lands on a dead step.
+      if (!STEPS.includes(cur)) cur = 'gate';
+      // Honour the "I'm familiar — don't bother me again" gate answer.
+      // If the user previously tapped "No" we never re-open automatically
+      // (the Dashboard Resume CTA can still force it open manually).
+      if (res.data?.data?.gate?.familiar === 'familiar' && !forceOpen) {
+        setDismissedThisSession(true);
+      }
       stepIdxRef.current = Math.max(0, STEPS.indexOf(cur));
-      // Pre-load the current step's saved data if any.
       const savedForStep = res.data?.data?.[cur] || {};
       setStepData(savedForStep);
     } catch (e) {
@@ -122,6 +121,36 @@ const QuickStartWizard = ({ forceOpen = false, onClose = () => {} }) => {
     try { sessionStorage.setItem(SESSION_SKIP_KEY, '1'); } catch { /* ignore */ }
     setDismissedThisSession(true);
     onClose();
+  };
+
+  // Handles the gate Yes/No buttons. Persists the choice server-side
+  // and, when the user picks "I'm familiar," immediately closes the
+  // modal without nagging — they can still open it from the Dashboard
+  // Resume CTA whenever they want.
+  const handleGateChoice = async (choice) => {
+    setSaving(true);
+    setError('');
+    try {
+      const nextStep = choice === 'new' ? 'welcome' : 'gate';
+      const res = await apiClient.put(
+        `${API_URL}/quickstart/step/gate`,
+        { data: { familiar: choice }, next_step: nextStep },
+        getAuthHeaders(),
+      );
+      setProgress(res.data);
+      if (choice === 'familiar') {
+        // Mark dismissed for the session; the Resume CTA stays on the
+        // dashboard so they can come back at any time.
+        try { sessionStorage.setItem(SESSION_SKIP_KEY, '1'); } catch { /* ignore */ }
+        setDismissedThisSession(true);
+        onClose();
+      } else {
+        setStepData(res.data?.data?.welcome || {});
+      }
+    } catch (e) {
+      setError(e?.response?.data?.detail || 'Could not save your choice.');
+    }
+    setSaving(false);
   };
 
   const goToStep = async (nextKey) => {
@@ -211,20 +240,26 @@ const QuickStartWizard = ({ forceOpen = false, onClose = () => {} }) => {
         }}
       />
 
-      {/* Card */}
+      {/* Card — opaque dark background + bright text so headings POP
+          regardless of the platform theme. Previously the modal used
+          `var(--card)` + `var(--t)` text which rendered as dim grey on
+          dim grey in the founder's screenshots. Forcing explicit hex
+          values here also keeps the modal readable in light mode where
+          the dashboard CSS variables flip but the modal stays dark. */}
       <div
         className="relative w-full max-w-2xl mx-3 lg:mx-6 rounded-3xl overflow-hidden flex flex-col"
         style={{
-          background: 'var(--card)',
-          border: '1px solid rgba(var(--gold-rgb), 0.30)',
-          boxShadow: '0 30px 80px -10px rgba(0,0,0,0.7)',
+          background: '#0F172A',
+          border: '1px solid rgba(212,175,55,0.45)',
+          boxShadow: '0 30px 80px -10px rgba(0,0,0,0.75)',
           maxHeight: '92vh',
+          color: '#F8FAFC',
         }}
       >
         {/* Header */}
         <div
           className="flex items-center justify-between px-5 py-4 border-b"
-          style={{ borderColor: 'rgba(255,255,255,0.06)' }}
+          style={{ borderColor: 'rgba(255,255,255,0.10)' }}
         >
           <div className="flex items-center gap-3 min-w-0">
             <div
@@ -239,12 +274,12 @@ const QuickStartWizard = ({ forceOpen = false, onClose = () => {} }) => {
             <div className="min-w-0">
               <h2
                 id="quickstart-title"
-                className="text-base lg:text-lg font-bold text-[var(--t)] truncate"
-                style={{ fontFamily: 'var(--sans)' }}
+                className="text-base lg:text-lg font-bold truncate"
+                style={{ fontFamily: 'var(--sans)', color: '#F8FAFC' }}
               >
                 {brand} QuickStart
               </h2>
-              <p className="text-xs text-[var(--t5)]">
+              <p className="text-xs" style={{ color: '#CBD5E1' }}>
                 Step {currentIdx + 1} of {totalSteps}
               </p>
             </div>
@@ -254,8 +289,8 @@ const QuickStartWizard = ({ forceOpen = false, onClose = () => {} }) => {
             type="button"
             data-testid="quickstart-skip-x"
             aria-label="Skip for now"
-            className="w-8 h-8 rounded-full flex items-center justify-center text-[var(--t4)] active:scale-90 transition-transform"
-            style={{ background: 'rgba(255,255,255,0.05)' }}
+            className="w-9 h-9 rounded-full flex items-center justify-center active:scale-90 transition-transform"
+            style={{ background: 'rgba(255,255,255,0.10)', color: '#F8FAFC', border: '1px solid rgba(255,255,255,0.18)' }}
           >
             <X className="w-4 h-4" />
           </button>
@@ -263,41 +298,43 @@ const QuickStartWizard = ({ forceOpen = false, onClose = () => {} }) => {
 
         {/* Step progress bar */}
         <div className="px-5 pt-3">
-          <div className="h-1 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+          <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.10)' }}>
             <div
               className="h-full transition-all duration-500"
               style={{
                 width: `${((currentIdx + 1) / totalSteps) * 100}%`,
-                background: 'linear-gradient(90deg, var(--gold), color-mix(in srgb, var(--gold) 50%, transparent))',
+                background: 'linear-gradient(90deg, #d4af37, #b8962e)',
               }}
             />
           </div>
         </div>
 
         {/* Scrollable body */}
-        <div className="flex-1 overflow-y-auto px-5 py-5">
+        <div className="flex-1 overflow-y-auto px-5 py-5" style={{ color: '#F8FAFC' }}>
           <QuickStartStep
             stepKey={currentStep}
             data={stepData}
             setData={setStepData}
             user={user}
             brand={brand}
+            onGateChoice={(choice) => handleGateChoice(choice)}
           />
           {error && (
-            <p className="mt-3 text-xs text-rose-400" data-testid="quickstart-error">{error}</p>
+            <p className="mt-3 text-xs" style={{ color: '#fca5a5' }} data-testid="quickstart-error">{error}</p>
           )}
         </div>
 
         {/* Footer */}
         <div
           className="flex items-center justify-between gap-3 px-5 py-4 border-t"
-          style={{ borderColor: 'rgba(255,255,255,0.06)' }}
+          style={{ borderColor: 'rgba(255,255,255,0.10)' }}
         >
           <button
             type="button"
             onClick={skip}
             data-testid="quickstart-skip-btn"
-            className="text-xs lg:text-sm font-bold text-[var(--t4)] hover:text-[var(--t)] transition-colors"
+            className="text-xs lg:text-sm font-bold transition-colors"
+            style={{ color: '#CBD5E1' }}
           >
             Skip for now
           </button>
@@ -310,15 +347,15 @@ const QuickStartWizard = ({ forceOpen = false, onClose = () => {} }) => {
                 data-testid="quickstart-back-btn"
                 className="inline-flex items-center gap-1.5 px-3 lg:px-4 py-2 rounded-xl text-xs lg:text-sm font-bold transition-all active:scale-[0.97] disabled:opacity-40"
                 style={{
-                  background: 'rgba(255,255,255,0.05)',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  color: 'var(--t)',
+                  background: 'rgba(255,255,255,0.08)',
+                  border: '1px solid rgba(255,255,255,0.18)',
+                  color: '#F8FAFC',
                 }}
               >
                 <ArrowLeft className="w-3.5 h-3.5" /> Back
               </button>
             )}
-            {currentStep === 'generate' ? (
+            {currentStep === 'gate' ? null : currentStep === 'generate' ? (
               <button
                 type="button"
                 onClick={generate}
@@ -366,102 +403,206 @@ const QuickStartWizard = ({ forceOpen = false, onClose = () => {} }) => {
 // same step UI + validation logic without any duplication.
 export function isStepValid(stepKey, data) {
   switch (stepKey) {
+    case 'gate':
+      return Boolean(data?.familiar);
     case 'welcome':
       return true;
-    case 'state':
-      return Boolean(data?.state_of_residence);
+    case 'residence':
+      // Either a Google-Places-selected full address (street+state) OR a
+      // bare state pick is enough to drive jurisdictional tailoring.
+      return Boolean(data?.state) && data.state.length === 2;
     case 'household':
       return Boolean(data?.marital_status);
     case 'beneficiaries':
       return Array.isArray(data?.beneficiaries) && data.beneficiaries.length > 0
         && data.beneficiaries.every((b) => b?.name && b?.relationship);
-    case 'real_estate':
-      return true; // optional
-    case 'financial_accounts':
-      return true;
+    case 'properties':
+      return true; // optional — many users rent or own nothing
     case 'life_insurance':
-      return Boolean(data?.status);
+      return data?.policy_count !== undefined && data?.policy_count !== null && data.policy_count >= 0;
     case 'business':
-      return Boolean(data?.structure);
+      // Multi-select: either "none" is explicitly checked OR at least
+      // one entity type is selected.
+      if (data?.none === true) return true;
+      return Array.isArray(data?.types) && data.types.length > 0;
     case 'existing_documents':
-      return true; // multi-select can be empty
+      return true; // anything goes — counts default to 0
     default:
       return true;
   }
 }
 
 const Label = ({ children }) => (
-  <label className="block text-xs lg:text-sm font-bold text-[var(--t)] mb-1.5">{children}</label>
+  <label className="block text-xs lg:text-sm font-bold mb-1.5" style={{ color: '#F8FAFC' }}>{children}</label>
 );
 const inputStyle = {
-  background: 'rgba(255,255,255,0.04)',
-  border: '1px solid rgba(255,255,255,0.10)',
-  color: 'var(--t)',
+  background: 'rgba(255,255,255,0.06)',
+  border: '1px solid rgba(255,255,255,0.18)',
+  color: '#F8FAFC',
 };
 
-export const QuickStartStep = ({ stepKey, data, setData, user, brand }) => {
+// ── Step button styles — extracted because every step reuses them. ──
+const pillButtonStyle = (selected) => ({
+  background: selected ? 'rgba(212,175,55,0.22)' : 'rgba(255,255,255,0.07)',
+  border: selected ? '1px solid rgba(212,175,55,0.65)' : '1px solid rgba(255,255,255,0.18)',
+  color: selected ? '#FCD34D' : '#F8FAFC',
+});
+const headingStyle = { color: '#F8FAFC', fontFamily: 'var(--serif)' };
+const bodyStyle = { color: '#E5E7EB' };
+const mutedStyle = { color: '#CBD5E1' };
+
+const _STATE_LIST = [
+  'AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA',
+  'KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ',
+  'NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VT',
+  'VA','WA','WV','WI','WY','DC',
+];
+const _RELS = [
+  'Spouse','Partner','Son','Daughter','Mother','Father','Brother','Sister',
+  'Grandson','Granddaughter','Grandmother','Grandfather','Aunt','Uncle',
+  'Niece','Nephew','Friend','Charity','Other',
+];
+const _ENTITY_TYPES = [
+  ['sole_prop','Sole Proprietorship'],['llc','LLC'],
+  ['s_corp','S-Corp'],['c_corp','C-Corp'],
+  ['partnership','Partnership'],['limited_partnership','Limited Partnership'],
+  ['nonprofit','Nonprofit / 501(c)'],['holding_company','Holding Company'],
+];
+
+export const QuickStartStep = ({ stepKey, data, setData, user, brand, onGateChoice }) => {
   const set = (k, v) => setData({ ...data, [k]: v });
   const firstName = (user?.first_name || user?.name || '').split(' ')[0] || 'there';
 
+  // ── 0. Gate: Is estate planning new to you? ──────────────────────
+  if (stepKey === 'gate') {
+    return (
+      <div className="space-y-5" data-testid="qs-step-gate">
+        <h3 className="text-xl lg:text-2xl font-bold" style={headingStyle}>
+          Is estate planning new to you?
+        </h3>
+        <p className="text-sm lg:text-base leading-relaxed" style={bodyStyle}>
+          If you&apos;ve never sat down with an attorney about a will or trust, {brand} QuickStart
+          will help you arrive at one prepared. If you already have your plan in place,
+          you&apos;re welcome to use QuickStart as a refresher — but you don&apos;t need to.
+        </p>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 pt-2">
+          <button
+            type="button"
+            data-testid="qs-gate-new"
+            onClick={() => onGateChoice && onGateChoice('new')}
+            className="rounded-2xl px-5 py-5 text-left transition-all active:scale-[0.98]"
+            style={{
+              background: 'linear-gradient(135deg, #d4af37, #b8962e)',
+              color: '#181818',
+              boxShadow: '0 10px 30px rgba(212,175,55,0.25)',
+              border: 'none',
+            }}
+          >
+            <div className="text-lg font-bold mb-1">Yes &mdash; walk me through it</div>
+            <div className="text-xs opacity-80">~2 minutes. Ends with a printable, professional-prep checklist.</div>
+          </button>
+          <button
+            type="button"
+            data-testid="qs-gate-familiar"
+            onClick={() => onGateChoice && onGateChoice('familiar')}
+            className="rounded-2xl px-5 py-5 text-left transition-all active:scale-[0.98]"
+            style={{
+              background: 'rgba(255,255,255,0.06)',
+              color: '#F8FAFC',
+              border: '1px solid rgba(255,255,255,0.20)',
+            }}
+          >
+            <div className="text-lg font-bold mb-1">No &mdash; I&apos;m familiar</div>
+            <div className="text-xs" style={mutedStyle}>Skip straight to your dashboard. QuickStart is always available from there.</div>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── 1. Welcome ─────────────────────────────────────────────────────
   if (stepKey === 'welcome') {
     return (
       <div className="space-y-4" data-testid="qs-step-welcome">
-        <h3 className="text-xl lg:text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--serif)' }}>
+        <h3 className="text-xl lg:text-2xl font-bold" style={headingStyle}>
           Hi {firstName} — let&apos;s get you started.
         </h3>
-        <p className="text-sm lg:text-base text-[var(--t4)] leading-relaxed">
-          In about two minutes, {brand} will turn what you tell us into a
-          one-page guide you can take, verbatim, to your estate attorney, CPA,
-          financial advisor, and life-insurance agent.
+        <p className="text-sm lg:text-base leading-relaxed" style={bodyStyle}>
+          In about two minutes, {brand} will turn what you tell us into a one-page guide
+          you can take, verbatim, to your estate attorney, CPA, financial advisor, and
+          life-insurance agent.
         </p>
-        <p className="text-sm lg:text-base text-[var(--t4)] leading-relaxed">
-          No documents to dig up, no jargon. Just a few quick questions about
-          where you live, who&apos;s in your family, and what you own.
+        <p className="text-sm lg:text-base leading-relaxed" style={bodyStyle}>
+          No documents to dig up, no jargon. Just a few quick questions about where you
+          live, who&apos;s in your family, and what you own.
         </p>
         <div
-          className="rounded-2xl p-3 lg:p-4 flex items-start gap-3"
-          style={{ background: 'rgba(var(--gold-rgb), 0.06)', border: '1px solid rgba(var(--gold-rgb), 0.20)' }}
+          className="rounded-2xl p-4 flex items-start gap-3"
+          style={{ background: 'rgba(212,175,55,0.10)', border: '1px solid rgba(212,175,55,0.35)' }}
         >
-          <ShieldCheck className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: 'var(--gold)' }} />
-          <p className="text-xs lg:text-sm text-[var(--t4)]">
-            Anything you skip can be filled in later. Your answers save as you go — if you log out, you&apos;ll pick up right where you left off.
+          <ShieldCheck className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#FCD34D' }} />
+          <p className="text-xs lg:text-sm" style={mutedStyle}>
+            Anything you skip can be filled in later. Your answers save as you go — if you log out,
+            you&apos;ll pick up right where you left off.
           </p>
         </div>
       </div>
     );
   }
 
-  if (stepKey === 'state') {
+  // ── 2. Residence (Google Places autocomplete) ─────────────────────
+  if (stepKey === 'residence') {
+    const onAddressSelect = ({ street, city, state, zip }) => {
+      setData({
+        ...data,
+        address: [street, city].filter(Boolean).join(', '),
+        street: street || '',
+        city: city || '',
+        state: state || data?.state || '',
+        zip: zip || '',
+      });
+    };
     return (
-      <div className="space-y-3" data-testid="qs-step-state">
-        <h3 className="text-lg lg:text-xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--serif)' }}>
-          Where do you live?
-        </h3>
-        <p className="text-sm text-[var(--t4)]">
-          Estate laws vary state by state. Your state of residence drives every recommendation we make.
+      <div className="space-y-3" data-testid="qs-step-residence">
+        <h3 className="text-lg lg:text-xl font-bold" style={headingStyle}>Where do you live?</h3>
+        <p className="text-sm" style={mutedStyle}>
+          Estate laws vary state by state. Start typing your home address and pick the
+          match — we&apos;ll grab the state automatically. (You can leave the address blank
+          and just choose a state if you&apos;d rather.)
         </p>
+        <Label>Personal residence</Label>
+        <AddressAutocomplete
+          value={data?.address || ''}
+          onChange={(v) => set('address', v)}
+          onSelect={onAddressSelect}
+          placeholder="Start typing your home address…"
+          className="w-full rounded-xl px-3 py-3 focus:outline-none focus:ring-2 focus:ring-[#d4af37]"
+          style={{ ...inputStyle, fontSize: '16px' }}
+          data-testid="qs-residence-address"
+        />
         <Label>State of residence</Label>
         <div className="relative">
           <select
-            value={data?.state_of_residence || ''}
-            onChange={(e) => set('state_of_residence', e.target.value)}
-            data-testid="qs-state-select"
-            className="w-full appearance-none rounded-xl px-3 py-3 text-sm lg:text-base focus:outline-none focus:ring-2 focus:ring-[var(--gold)]"
+            value={data?.state || ''}
+            onChange={(e) => set('state', e.target.value)}
+            data-testid="qs-residence-state"
+            className="w-full appearance-none rounded-xl px-3 py-3 focus:outline-none focus:ring-2 focus:ring-[#d4af37]"
             style={{ ...inputStyle, fontSize: '16px' }}
           >
-            <option value="">Choose your state…</option>
-            {US_STATES.map((s) => <option key={s} value={s}>{s}</option>)}
+            <option value="" style={{ color: '#0F172A' }}>Choose your state…</option>
+            {_STATE_LIST.map((s) => <option key={s} value={s} style={{ color: '#0F172A' }}>{s}</option>)}
           </select>
-          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--t5)] pointer-events-none" />
+          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: '#CBD5E1' }} />
         </div>
       </div>
     );
   }
 
+  // ── 3. Household ───────────────────────────────────────────────────
   if (stepKey === 'household') {
     return (
       <div className="space-y-4" data-testid="qs-step-household">
-        <h3 className="text-lg lg:text-xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--serif)' }}>About your household</h3>
+        <h3 className="text-lg lg:text-xl font-bold" style={headingStyle}>About your household</h3>
         <div>
           <Label>Marital status</Label>
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
@@ -472,11 +613,7 @@ export const QuickStartStep = ({ stepKey, data, setData, user, brand }) => {
                 onClick={() => set('marital_status', opt)}
                 data-testid={`qs-marital-${opt}`}
                 className="rounded-xl px-3 py-2.5 text-sm font-bold capitalize transition-all active:scale-[0.97]"
-                style={{
-                  background: data?.marital_status === opt ? 'rgba(var(--gold-rgb), 0.18)' : 'rgba(255,255,255,0.04)',
-                  border: data?.marital_status === opt ? '1px solid rgba(var(--gold-rgb), 0.5)' : '1px solid rgba(255,255,255,0.08)',
-                  color: data?.marital_status === opt ? 'var(--gold)' : 'var(--t)',
-                }}
+                style={pillButtonStyle(data?.marital_status === opt)}
               >{opt}</button>
             ))}
           </div>
@@ -489,7 +626,7 @@ export const QuickStartStep = ({ stepKey, data, setData, user, brand }) => {
               value={data?.children_dependent ?? ''}
               onChange={(e) => set('children_dependent', e.target.value === '' ? null : Number(e.target.value))}
               data-testid="qs-children-dep"
-              className="w-full rounded-xl px-3 py-3 focus:outline-none focus:ring-2 focus:ring-[var(--gold)]"
+              className="w-full rounded-xl px-3 py-3 focus:outline-none focus:ring-2 focus:ring-[#d4af37]"
               style={{ ...inputStyle, fontSize: '16px' }}
             />
           </div>
@@ -500,18 +637,18 @@ export const QuickStartStep = ({ stepKey, data, setData, user, brand }) => {
               value={data?.children_adult ?? ''}
               onChange={(e) => set('children_adult', e.target.value === '' ? null : Number(e.target.value))}
               data-testid="qs-children-adult"
-              className="w-full rounded-xl px-3 py-3 focus:outline-none focus:ring-2 focus:ring-[var(--gold)]"
+              className="w-full rounded-xl px-3 py-3 focus:outline-none focus:ring-2 focus:ring-[#d4af37]"
               style={{ ...inputStyle, fontSize: '16px' }}
             />
           </div>
         </div>
-        <label className="flex items-center gap-3 text-sm text-[var(--t)] cursor-pointer">
+        <label className="flex items-center gap-3 text-sm cursor-pointer" style={bodyStyle}>
           <input
             type="checkbox"
             checked={Boolean(data?.special_needs_dependent)}
             onChange={(e) => set('special_needs_dependent', e.target.checked)}
             data-testid="qs-special-needs"
-            className="w-5 h-5 rounded accent-[color:var(--gold)]"
+            className="w-5 h-5 rounded accent-[#d4af37]"
           />
           A dependent in my care has special needs (drives special-needs trust guidance).
         </label>
@@ -519,187 +656,184 @@ export const QuickStartStep = ({ stepKey, data, setData, user, brand }) => {
     );
   }
 
+  // ── 4. Beneficiaries (name + relationship only) ───────────────────
   if (stepKey === 'beneficiaries') {
     const beneficiaries = Array.isArray(data?.beneficiaries) ? data.beneficiaries : [];
     const addRow = () => setData({ ...data, beneficiaries: [...beneficiaries, { name: '', relationship: '' }] });
-    const updateRow = (idx, field, value) => {
-      const next = beneficiaries.map((b, i) => i === idx ? { ...b, [field]: value } : b);
-      setData({ ...data, beneficiaries: next });
-    };
+    const updateRow = (idx, field, value) => setData({ ...data, beneficiaries: beneficiaries.map((b, i) => i === idx ? { ...b, [field]: value } : b) });
     const removeRow = (idx) => setData({ ...data, beneficiaries: beneficiaries.filter((_, i) => i !== idx) });
     return (
       <div className="space-y-3" data-testid="qs-step-beneficiaries">
-        <h3 className="text-lg lg:text-xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--serif)' }}>Who are your beneficiaries?</h3>
-        <p className="text-sm text-[var(--t4)]">
-          Just a name and a relationship is enough. We&apos;ll create a tile for each
-          person so you can fill in the rest later from Getting Started.
+        <h3 className="text-lg lg:text-xl font-bold" style={headingStyle}>Who are your beneficiaries?</h3>
+        <p className="text-sm" style={mutedStyle}>
+          Just a name and a relationship is enough. We&apos;ll create a tile for each person
+          so you can fill in the rest later from Getting Started.
         </p>
         <div className="space-y-2">
           {beneficiaries.length === 0 && (
-            <p className="text-xs text-[var(--t5)] italic">No one added yet. Add at least one to continue.</p>
+            <p className="text-xs italic" style={mutedStyle}>No one added yet. Add at least one to continue.</p>
           )}
           {beneficiaries.map((b, idx) => (
             <div key={idx} className="grid grid-cols-[1fr_140px_auto] gap-2 items-center">
               <input
-                type="text"
-                value={b.name || ''}
-                onChange={(e) => updateRow(idx, 'name', e.target.value)}
-                placeholder="Full name"
-                data-testid={`qs-ben-name-${idx}`}
-                className="rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[var(--gold)]"
+                type="text" value={b.name || ''} onChange={(e) => updateRow(idx, 'name', e.target.value)}
+                placeholder="Full name" data-testid={`qs-ben-name-${idx}`}
+                className="rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#d4af37]"
                 style={{ ...inputStyle, fontSize: '16px' }}
               />
               <select
-                value={b.relationship || ''}
-                onChange={(e) => updateRow(idx, 'relationship', e.target.value)}
+                value={b.relationship || ''} onChange={(e) => updateRow(idx, 'relationship', e.target.value)}
                 data-testid={`qs-ben-rel-${idx}`}
-                className="rounded-xl px-2 py-2.5 focus:outline-none focus:ring-2 focus:ring-[var(--gold)]"
+                className="rounded-xl px-2 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#d4af37]"
                 style={{ ...inputStyle, fontSize: '16px' }}
               >
-                <option value="">Relationship…</option>
-                {RELATIONSHIPS.map((r) => <option key={r} value={r}>{r}</option>)}
+                <option value="" style={{ color: '#0F172A' }}>Relationship…</option>
+                {_RELS.map((r) => <option key={r} value={r} style={{ color: '#0F172A' }}>{r}</option>)}
               </select>
               <button
-                type="button"
-                onClick={() => removeRow(idx)}
-                data-testid={`qs-ben-remove-${idx}`}
+                type="button" onClick={() => removeRow(idx)} data-testid={`qs-ben-remove-${idx}`}
                 aria-label="Remove"
-                className="w-9 h-9 rounded-lg flex items-center justify-center text-[var(--t4)] hover:text-rose-400"
-                style={{ background: 'rgba(255,255,255,0.04)' }}
+                className="w-9 h-9 rounded-lg flex items-center justify-center"
+                style={{ background: 'rgba(255,255,255,0.08)', color: '#FCA5A5', border: '1px solid rgba(255,255,255,0.15)' }}
               ><X className="w-4 h-4" /></button>
             </div>
           ))}
         </div>
         <button
-          type="button"
-          onClick={addRow}
-          data-testid="qs-ben-add"
-          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-[var(--gold)] transition-all active:scale-[0.97]"
-          style={{ background: 'rgba(var(--gold-rgb), 0.08)', border: '1px solid rgba(var(--gold-rgb), 0.25)' }}
-        >
-          <ChevronRight className="w-3.5 h-3.5" /> Add a beneficiary
-        </button>
+          type="button" onClick={addRow} data-testid="qs-ben-add"
+          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all active:scale-[0.97]"
+          style={{ background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.45)', color: '#FCD34D' }}
+        ><ChevronRight className="w-3.5 h-3.5" /> Add a beneficiary</button>
       </div>
     );
   }
 
-  if (stepKey === 'real_estate') {
+  // ── 5. Properties (multi-add with Google Places + per-property state) ──
+  if (stepKey === 'properties') {
+    const list = Array.isArray(data?.list) ? data.list : [];
+    const addRow = () => setData({ ...data, list: [...list, { address: '', state: '', kind: 'other' }] });
+    const updateRow = (idx, patch) => setData({ ...data, list: list.map((p, i) => i === idx ? { ...p, ...patch } : p) });
+    const removeRow = (idx) => setData({ ...data, list: list.filter((_, i) => i !== idx) });
     return (
-      <div className="space-y-3" data-testid="qs-step-real_estate">
-        <h3 className="text-lg lg:text-xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--serif)' }}>Real estate</h3>
-        <p className="text-sm text-[var(--t4)]">Quick counts only — no addresses needed here.</p>
-        <label className="flex items-center gap-3 text-sm text-[var(--t)] cursor-pointer">
-          <input
-            type="checkbox"
-            checked={Boolean(data?.primary_residence)}
-            onChange={(e) => set('primary_residence', e.target.checked)}
-            data-testid="qs-re-primary"
-            className="w-5 h-5 rounded accent-[color:var(--gold)]"
-          />
-          I own my primary residence.
-        </label>
-        <div>
-          <Label>Additional properties (rentals, vacation, land)</Label>
-          <input
-            type="number" min="0" max="50"
-            value={data?.additional_count ?? ''}
-            onChange={(e) => set('additional_count', e.target.value === '' ? null : Number(e.target.value))}
-            data-testid="qs-re-additional"
-            className="w-full rounded-xl px-3 py-3 focus:outline-none focus:ring-2 focus:ring-[var(--gold)]"
-            style={{ ...inputStyle, fontSize: '16px' }}
-          />
-        </div>
-        <label className="flex items-center gap-3 text-sm text-[var(--t)] cursor-pointer">
-          <input
-            type="checkbox"
-            checked={Boolean(data?.multi_state)}
-            onChange={(e) => set('multi_state', e.target.checked)}
-            data-testid="qs-re-multistate"
-            className="w-5 h-5 rounded accent-[color:var(--gold)]"
-          />
-          At least one property is in a different state than my residence.
-        </label>
-      </div>
-    );
-  }
-
-  if (stepKey === 'financial_accounts') {
-    const keys = [
-      ['checking_savings', 'Checking / Savings'],
-      ['brokerage', 'Brokerage / Investments'],
-      ['retirement', 'Retirement (401(k), IRA, etc.)'],
-      ['hsa', 'HSA / FSA'],
-      ['crypto', 'Crypto / Digital assets'],
-    ];
-    return (
-      <div className="space-y-3" data-testid="qs-step-financial_accounts">
-        <h3 className="text-lg lg:text-xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--serif)' }}>Financial accounts</h3>
-        <p className="text-sm text-[var(--t4)]">Just check what applies — no amounts.</p>
-        <div className="space-y-2">
-          {keys.map(([k, label]) => (
-            <label key={k} className="flex items-center gap-3 text-sm text-[var(--t)] cursor-pointer">
-              <input
-                type="checkbox"
-                checked={Boolean(data?.[k])}
-                onChange={(e) => set(k, e.target.checked)}
-                data-testid={`qs-fa-${k}`}
-                className="w-5 h-5 rounded accent-[color:var(--gold)]"
+      <div className="space-y-3" data-testid="qs-step-properties">
+        <h3 className="text-lg lg:text-xl font-bold" style={headingStyle}>Other properties you own</h3>
+        <p className="text-sm" style={mutedStyle}>
+          Add any properties beyond your personal residence — rentals, vacation homes,
+          land, anything that&apos;s in your name. State matters (out-of-state property
+          drives ancillary probate). Leave this blank if there are none.
+        </p>
+        <div className="space-y-3">
+          {list.map((p, idx) => (
+            <div key={idx} className="space-y-2 rounded-xl p-3" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)' }}>
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold" style={mutedStyle}>Property {idx + 1}</span>
+                <button
+                  type="button" onClick={() => removeRow(idx)} data-testid={`qs-prop-remove-${idx}`}
+                  aria-label="Remove" className="w-7 h-7 rounded-md flex items-center justify-center"
+                  style={{ background: 'rgba(255,255,255,0.08)', color: '#FCA5A5' }}
+                ><X className="w-3.5 h-3.5" /></button>
+              </div>
+              <AddressAutocomplete
+                value={p.address || ''}
+                onChange={(v) => updateRow(idx, { address: v })}
+                onSelect={({ street, city, state }) => updateRow(idx, {
+                  address: [street, city].filter(Boolean).join(', '),
+                  state: state || p.state || '',
+                })}
+                placeholder="Start typing the property address…"
+                className="w-full rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#d4af37]"
+                style={{ ...inputStyle, fontSize: '16px' }}
+                data-testid={`qs-prop-address-${idx}`}
               />
-              {label}
-            </label>
+              <div className="grid grid-cols-[1fr_140px] gap-2">
+                <select
+                  value={p.kind || 'other'} onChange={(e) => updateRow(idx, { kind: e.target.value })}
+                  data-testid={`qs-prop-kind-${idx}`}
+                  className="rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#d4af37]"
+                  style={{ ...inputStyle, fontSize: '16px' }}
+                >
+                  {[['vacation','Vacation / second home'],['rental','Rental property'],['land','Vacant land'],['commercial','Commercial property'],['other','Other']].map(([k, label]) => (
+                    <option key={k} value={k} style={{ color: '#0F172A' }}>{label}</option>
+                  ))}
+                </select>
+                <select
+                  value={p.state || ''} onChange={(e) => updateRow(idx, { state: e.target.value })}
+                  data-testid={`qs-prop-state-${idx}`}
+                  className="rounded-xl px-2 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#d4af37]"
+                  style={{ ...inputStyle, fontSize: '16px' }}
+                >
+                  <option value="" style={{ color: '#0F172A' }}>State…</option>
+                  {_STATE_LIST.map((s) => <option key={s} value={s} style={{ color: '#0F172A' }}>{s}</option>)}
+                </select>
+              </div>
+            </div>
           ))}
         </div>
+        <button
+          type="button" onClick={addRow} data-testid="qs-prop-add"
+          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all active:scale-[0.97]"
+          style={{ background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.45)', color: '#FCD34D' }}
+        ><ChevronRight className="w-3.5 h-3.5" /> Add a property</button>
       </div>
     );
   }
 
+  // ── 6. Life Insurance — number of policies ────────────────────────
   if (stepKey === 'life_insurance') {
     return (
       <div className="space-y-3" data-testid="qs-step-life_insurance">
-        <h3 className="text-lg lg:text-xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--serif)' }}>Life insurance</h3>
-        <p className="text-sm text-[var(--t4)]">Do you carry a life-insurance policy?</p>
-        <div className="grid grid-cols-3 gap-2">
-          {['yes','no','unsure'].map((opt) => (
-            <button
-              key={opt}
-              type="button"
-              onClick={() => set('status', opt)}
-              data-testid={`qs-li-${opt}`}
-              className="rounded-xl px-3 py-3 text-sm font-bold capitalize transition-all active:scale-[0.97]"
-              style={{
-                background: data?.status === opt ? 'rgba(var(--gold-rgb), 0.18)' : 'rgba(255,255,255,0.04)',
-                border: data?.status === opt ? '1px solid rgba(var(--gold-rgb), 0.5)' : '1px solid rgba(255,255,255,0.08)',
-                color: data?.status === opt ? 'var(--gold)' : 'var(--t)',
-              }}
-            >{opt}</button>
-          ))}
-        </div>
+        <h3 className="text-lg lg:text-xl font-bold" style={headingStyle}>Life insurance</h3>
+        <p className="text-sm" style={mutedStyle}>
+          How many active life-insurance policies do you carry? (Term, whole, group through work — all count.)
+        </p>
+        <Label>Number of policies</Label>
+        <input
+          type="number" min="0" max="20"
+          value={data?.policy_count ?? ''}
+          onChange={(e) => set('policy_count', e.target.value === '' ? null : Number(e.target.value))}
+          data-testid="qs-li-count"
+          className="w-full rounded-xl px-3 py-3 focus:outline-none focus:ring-2 focus:ring-[#d4af37]"
+          style={{ ...inputStyle, fontSize: '16px' }}
+        />
+        <label className="flex items-center gap-3 text-sm cursor-pointer pt-1" style={bodyStyle}>
+          <input
+            type="checkbox" checked={Boolean(data?.unsure)} onChange={(e) => set('unsure', e.target.checked)}
+            data-testid="qs-li-unsure"
+            className="w-5 h-5 rounded accent-[#d4af37]"
+          />
+          I&apos;m not sure how many I have (we&apos;ll flag this for the insurance-agent conversation).
+        </label>
       </div>
     );
   }
 
+  // ── 7. Business — MULTI-SELECT entity types ───────────────────────
   if (stepKey === 'business') {
-    const opts = [
-      ['none','None'],['sole_prop','Sole Proprietorship'],['llc','LLC'],
-      ['s_corp','S-Corp'],['c_corp','C-Corp'],['partnership','Partnership'],['multiple','Multiple Entities'],
-    ];
+    const types = Array.isArray(data?.types) ? data.types : [];
+    const isNone = data?.none === true;
+    const toggle = (k) => {
+      if (types.includes(k)) setData({ ...data, types: types.filter((t) => t !== k), none: false });
+      else setData({ ...data, types: [...types, k], none: false });
+    };
+    const toggleNone = () => setData({ none: !isNone, types: [] });
     return (
       <div className="space-y-3" data-testid="qs-step-business">
-        <h3 className="text-lg lg:text-xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--serif)' }}>Business ownership</h3>
-        <p className="text-sm text-[var(--t4)]">Do you own all or part of a business?</p>
-        <div className="grid grid-cols-2 gap-2">
-          {opts.map(([k, label]) => (
+        <h3 className="text-lg lg:text-xl font-bold" style={headingStyle}>Business ownership</h3>
+        <p className="text-sm" style={mutedStyle}>
+          Select every entity type you own all or part of. Most business owners have more than one.
+        </p>
+        <button
+          type="button" onClick={toggleNone} data-testid="qs-biz-none"
+          className="w-full rounded-xl px-3 py-3 text-sm font-bold transition-all active:scale-[0.98] text-left"
+          style={pillButtonStyle(isNone)}
+        >None — I don&apos;t own a business</button>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
+          {_ENTITY_TYPES.map(([k, label]) => (
             <button
-              key={k}
-              type="button"
-              onClick={() => set('structure', k)}
-              data-testid={`qs-biz-${k}`}
-              className="rounded-xl px-3 py-3 text-sm font-bold transition-all active:scale-[0.97] text-left"
-              style={{
-                background: data?.structure === k ? 'rgba(var(--gold-rgb), 0.18)' : 'rgba(255,255,255,0.04)',
-                border: data?.structure === k ? '1px solid rgba(var(--gold-rgb), 0.5)' : '1px solid rgba(255,255,255,0.08)',
-                color: data?.structure === k ? 'var(--gold)' : 'var(--t)',
-              }}
+              key={k} type="button" onClick={() => toggle(k)} data-testid={`qs-biz-${k}`}
+              disabled={isNone}
+              className="rounded-xl px-3 py-3 text-sm font-bold transition-all active:scale-[0.97] text-left disabled:opacity-40"
+              style={pillButtonStyle(types.includes(k))}
             >{label}</button>
           ))}
         </div>
@@ -707,30 +841,43 @@ export const QuickStartStep = ({ stepKey, data, setData, user, brand }) => {
     );
   }
 
+  // ── 8. Existing documents — counts per type ───────────────────────
   if (stepKey === 'existing_documents') {
-    const opts = [
-      ['will','Will'],['revocable_trust','Revocable Trust'],['irrevocable_trust','Irrevocable Trust'],
-      ['durable_poa','Durable Power of Attorney'],['healthcare_directive','Healthcare Directive / Living Will'],
-      ['hipaa_release','HIPAA Release'],['guardianship_designation','Guardianship Designation'],
-    ];
-    const current = Array.isArray(data?.documents) ? data.documents : [];
-    const toggle = (k) => {
-      if (current.includes(k)) setData({ ...data, documents: current.filter((x) => x !== k) });
-      else setData({ ...data, documents: [...current, k] });
-    };
+    const counts = data?.counts || {};
+    const setCount = (k, v) => setData({ ...data, counts: { ...counts, [k]: v } });
+    const flags = Array.isArray(data?.flags) ? data.flags : [];
+    const toggleFlag = (k) => setData({
+      ...data, flags: flags.includes(k) ? flags.filter((f) => f !== k) : [...flags, k]
+    });
     return (
       <div className="space-y-3" data-testid="qs-step-existing_documents">
-        <h3 className="text-lg lg:text-xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--serif)' }}>What do you already have?</h3>
-        <p className="text-sm text-[var(--t4)]">Tap any documents you&apos;ve already executed.</p>
-        <div className="grid grid-cols-1 gap-2">
-          {opts.map(([k, label]) => (
-            <label key={k} className="flex items-center gap-3 text-sm text-[var(--t)] cursor-pointer">
+        <h3 className="text-lg lg:text-xl font-bold" style={headingStyle}>What do you already have?</h3>
+        <p className="text-sm" style={mutedStyle}>
+          Most people have multiple of these — be exact where you can. Leave any at 0 if you don&apos;t have one.
+        </p>
+        <div className="space-y-2">
+          {[['wills','Wills'],['trusts','Trusts (revocable, irrevocable, charitable…)'],['policies_business','Buy-sell / business succession agreements']].map(([k, label]) => (
+            <div key={k} className="grid grid-cols-[1fr_90px] gap-3 items-center">
+              <span className="text-sm" style={bodyStyle}>{label}</span>
               <input
-                type="checkbox"
-                checked={current.includes(k)}
-                onChange={() => toggle(k)}
+                type="number" min="0" max="20"
+                value={counts[k] ?? ''}
+                onChange={(e) => setCount(k, e.target.value === '' ? null : Number(e.target.value))}
+                data-testid={`qs-doc-count-${k}`}
+                className="rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#d4af37]"
+                style={{ ...inputStyle, fontSize: '16px' }}
+              />
+            </div>
+          ))}
+        </div>
+        <p className="text-xs pt-1" style={mutedStyle}>Check anything else you already have in place:</p>
+        <div className="grid grid-cols-1 gap-2">
+          {[['durable_poa','Durable Power of Attorney'],['healthcare_directive','Healthcare Directive / Living Will'],['hipaa_release','HIPAA Release'],['guardianship_designation','Guardianship Designation']].map(([k, label]) => (
+            <label key={k} className="flex items-center gap-3 text-sm cursor-pointer" style={bodyStyle}>
+              <input
+                type="checkbox" checked={flags.includes(k)} onChange={() => toggleFlag(k)}
                 data-testid={`qs-doc-${k}`}
-                className="w-5 h-5 rounded accent-[color:var(--gold)]"
+                className="w-5 h-5 rounded accent-[#d4af37]"
               />
               {label}
             </label>
@@ -740,17 +887,18 @@ export const QuickStartStep = ({ stepKey, data, setData, user, brand }) => {
     );
   }
 
+  // ── 9. Generate ───────────────────────────────────────────────────
   if (stepKey === 'generate') {
     return (
       <div className="space-y-3" data-testid="qs-step-generate">
-        <h3 className="text-lg lg:text-xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--serif)' }}>You&apos;re ready.</h3>
-        <p className="text-sm text-[var(--t4)] leading-relaxed">
+        <h3 className="text-lg lg:text-xl font-bold" style={headingStyle}>You&apos;re ready.</h3>
+        <p className="text-sm leading-relaxed" style={bodyStyle}>
           Tap <strong>Generate my guide</strong> and {brand} will hand you a one-page
           checklist tailored to your state, your family, and what you own. Take it,
           verbatim, to your estate attorney, CPA, financial advisor, and life-insurance
           agent — and start the conversation already informed.
         </p>
-        <p className="text-xs text-[var(--t5)] italic">
+        <p className="text-xs italic" style={mutedStyle}>
           This usually takes 10-30 seconds. The guide opens in a preview where you can
           download or print it, and it&apos;s automatically saved to your Estate Binder.
         </p>

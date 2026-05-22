@@ -51,12 +51,12 @@ router = APIRouter()
 # every step has a Skip-for-Now path that returns the user to /dashboard
 # without marking the wizard complete. The frontend mirrors this list. ─
 STEP_ORDER: list[str] = [
+    "gate",
     "welcome",
-    "state",
+    "residence",
     "household",
     "beneficiaries",
-    "real_estate",
-    "financial_accounts",
+    "properties",
     "life_insurance",
     "business",
     "existing_documents",
@@ -77,7 +77,7 @@ def _empty_progress(user_id: str, estate_id: str | None) -> dict:
     return {
         "user_id": user_id,
         "estate_id": estate_id,
-        "current_step": "welcome",
+        "current_step": "gate",
         "completed_steps": [],
         "data": {},
         "complete": False,
@@ -293,7 +293,8 @@ async def generate_guide(current_user: dict = Depends(get_current_user)):
                 "pdf_type": "quickstart_guide",
                 "s3_key": s3_key,
                 "title": "QuickStart Estate Plan Guide",
-                "subtitle": data.get("state", {}).get("state_of_residence", ""),
+                "subtitle": (data.get("residence") or {}).get("state")
+                or (data.get("state") or {}).get("state_of_residence", ""),
                 "filename": "CarryOn_QuickStart_Guide.pdf",
                 "size_bytes": len(pdf_bytes),
                 "updated_at": now,
@@ -325,6 +326,7 @@ async def generate_guide(current_user: dict = Depends(get_current_user)):
             "Content-Disposition": 'inline; filename="CarryOn_QuickStart_Guide.pdf"',
             "Cache-Control": "private, no-store",
             "X-CarryOn-Pdf-Title": "QuickStart Estate Plan Guide",
-            "X-CarryOn-Pdf-Subtitle": data.get("state", {}).get("state_of_residence", ""),
+            "X-CarryOn-Pdf-Subtitle": (data.get("residence") or {}).get("state")
+            or data.get("state", {}).get("state_of_residence", ""),
         },
     )

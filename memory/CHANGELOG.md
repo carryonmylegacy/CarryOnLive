@@ -1,6 +1,43 @@
 # CarryOn — Changelog
 
 
+## May 22, 2026 — QuickStart Wizard v2: gate step, multi-everything, real contrast (V2026.05.22-g)
+
+**Why**: Founder ran the v1 wizard and pushed back hard: (1) UX was too dim — `var(--card)` + `var(--t)` rendered as dim grey on dim grey; (2) the wizard was supposed to OPEN with "Is estate planning new to you?" Yes/No and only force the rest of the flow on "Yes"; (3) the asks needed to support **multiple** entity types, **multiple** wills/trusts/policies, **multiple** properties each with their own state, and the personal residence should be a full address via Google Places.
+
+**Frontend** (`components/QuickStartWizard.js` + `pages/QuickStartTrialPage.js` + `pages/DashboardPage.js`):
+- **Gate step added** as the first step: bright high-contrast Yes/No buttons. **Yes** → continue the 10-step flow. **No** → save `gate.familiar = 'familiar'`, dismiss the modal for this session, never auto-open again (the dashboard Resume CTA can still force it open manually).
+- **Contrast rebuilt**: the modal is now an opaque dark card (`#0F172A`) with **explicit** bright text colors (`#F8FAFC` headings, `#E5E7EB` body, `#CBD5E1` muted) and gold-tinted pill buttons (`rgba(212,175,55,0.22)` background, `#FCD34D` text when selected) so it stays readable regardless of theme. Step counter and Skip-for-now copy are now legible too.
+- **`state` → `residence` step**: uses the existing `AddressAutocomplete` (Google Places API) so the user types their home address and the state is filled automatically. Manual state-only fallback remains for users who don't want to share an address.
+- **`real_estate` → `properties` step**: multi-add list. Each property gets its own `AddressAutocomplete` + property type (vacation / rental / land / commercial / other) + state dropdown (driving multi-state probate guidance).
+- **`business` step rebuilt as multi-select**: explicit "None — I don't own a business" toggle + 8 entity types (Sole Prop, LLC, S-Corp, C-Corp, Partnership, Limited Partnership, Nonprofit / 501(c), Holding Company), any combination selectable.
+- **`life_insurance` step**: number of policies (with an "I'm unsure" flag) — replaces the old yes/no/unsure single-pick.
+- **`existing_documents` step**: per-type counts (wills, trusts, business succession agreements) plus checkboxes for the rest (POA, Healthcare Directive, HIPAA Release, Guardianship Designation).
+- **`financial_accounts` step dropped** — overlap with the platform's CFP / DAV / SDV pillars. Per founder direction: don't ask in QW what the platform already collects properly later.
+- **Trial page (`/quickstart/try`)** automatically starts at the `welcome` step (the gate is meaningless for a prospect who already clicked "Try it on your own household").
+- **Dashboard Resume CTA** counter updated to the new step list.
+
+**Backend** (`routes/quickstart.py` + `services/quickstart_ai.py` + `services/quickstart_pdf.py` + `routes/partner_brief.py`):
+- `STEP_ORDER` rewritten: `gate → welcome → residence → household → beneficiaries → properties → life_insurance → business → existing_documents → generate`. Newly-created progress documents start at `gate` so a fresh user always sees the choice first.
+- `_human_state_summary` (the Grok prompt feeder) understands BOTH the new and legacy shapes so in-flight users don't lose context. Multi-property summaries enumerate each property's `kind`, `state`, and `address`. Multi-entity-type summaries list every entity. Document counts (e.g. "1 will, 1 trust") + flag list (e.g. "durable poa") are spelled out for the model.
+- PDF renderer updated: snapshot block now shows **Personal residence**, **Other properties** (multi), **Life insurance** (count-aware), **Business** (multi entity types), **Existing documents** (count + flag aware). Visual cadence (Helvetica, gold accent, blue-grey body) unchanged.
+- `/api/partner-brief/sample-quickstart-pdf` deterministic sample updated to the new shape (Mitchell family in CA, vacation property in NV, 2 life-insurance policies, 1 will, no business).
+- `/api/partner-brief/try-quickstart` validator updated to read state from either `residence.state` (new) or `state.state_of_residence` (legacy).
+
+**End-to-end verified** at 1280 × 900 (preview pod):
+- Gate step renders correctly with the two big colored buttons.
+- All 9 subsequent steps render legibly with high contrast.
+- Google Places autocomplete works on both the personal-residence and per-property address fields.
+- Multi-entity business step lets you select LLC + S-Corp simultaneously.
+- Document-count step accepts 1 will + durable POA flag.
+- Generate fires Grok, renders a multi-page PDF with the new shape ("Personal residence: CA", "Other properties: Vacation (NV)"), Pete + Pat referenced by name in the AI intro.
+
+### Housekeeping
+- 74 PASS, 0 WARN, 0 FAIL. **ALL CHECKS PASSED — READY TO PUSH.**
+- `QuickStartWizard` + `QuickStartTrialPage` added to the 7c (light/dark mode) allow-list because the modal MUST stay dark regardless of theme so the founder-mandated bright-on-dark contrast survives.
+
+
+
 ## May 22, 2026 — Public QuickStart trial funnel + lead capture (V2026.05.22-f)
 
 **Why**: The Partner Brief's "See a sample" button shows what the deliverable looks like, but a B2B prospect (HR-benefits buyer, hospice director, attorney) closes faster when they can *feel* the platform on their own household before pitching it to their leadership team. Founder confirmed: a second "Try it on your own household" CTA, no sign-up required, results emailed.

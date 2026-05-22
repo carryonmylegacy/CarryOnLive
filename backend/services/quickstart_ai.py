@@ -84,11 +84,23 @@ match this exact shape:
 
 def _human_state_summary(data: dict[str, Any]) -> str:
     """Compact natural-language summary of what the user told us. Kept
-    purely declarative — let Grok decide how to apply state law."""
+    purely declarative — let Grok decide how to apply state law.
+
+    Handles BOTH the new (post May-22-2026) and legacy data shapes so
+    in-flight users don't lose their answers when the schema evolves.
+    New shape uses `residence.state`, `properties.list`, `business.types`,
+    `life_insurance.policy_count`, `existing_documents.counts/flags`."""
     parts: list[str] = []
-    state = (data.get("state") or {}).get("state_of_residence")
+
+    # State of residence — prefer new `residence`, fall back to legacy `state`.
+    residence = data.get("residence") or {}
+    state = residence.get("state") or (data.get("state") or {}).get("state_of_residence")
     if state:
         parts.append(f"State of residence: {state}.")
+    if residence.get("address"):
+        parts.append(f"Personal residence: {residence.get('address')}.")
+
+    # Household — unchanged.
     hh = data.get("household") or {}
     if hh:
         marital = hh.get("marital_status") or "unspecified"
@@ -101,38 +113,84 @@ def _human_state_summary(data: dict[str, Any]) -> str:
             parts.append(f"Adult children: {adult}.")
         if hh.get("special_needs_dependent"):
             parts.append("Has dependents with special needs.")
+
+    # Beneficiaries — unchanged.
     bens = (data.get("beneficiaries") or {}).get("beneficiaries") or []
     if bens:
         rels = ", ".join(f"{b.get('name')} ({b.get('relationship')})" for b in bens if b.get("name"))
         parts.append(f"Intended beneficiaries: {rels}.")
-    re_block = data.get("real_estate") or {}
-    if re_block:
+
+    # Properties — NEW shape: a multi-add list with address + state per item.
+    # Fall back to the legacy `real_estate` block for old in-flight users.
+    props = (data.get("properties") or {}).get("list") or []
+    if props:
+        prop_bits: list[str] = []
+        for p in props:
+            if not isinstance(p, dict):
+                continue
+            kind = (p.get("kind") or "property").replace("_", " ")
+            loc = p.get("address") or p.get("state") or "(no address)"
+            st = p.get("state") or ""
+            prop_bits.append(f"{kind} in {st or '?'} ({loc})")
+        parts.append("Other properties owned: " + "; ".join(prop_bits) + ".")
+    else:
+        re_block = data.get("real_estate") or {}
+        if re_block:
+            bits = []
+            if re_block.get("primary_residence"):
+                bits.append("owns primary residence")
+            ac = re_block.get("additional_count") or 0
+            if ac:
+                bits.append(f"{ac} additional propert{'y' if ac == 1 else 'ies'}")
+            if re_block.get("multi_state"):
+                bits.append("with at least one property in a different state")
+            if bits:
+                parts.append("Real estate: " + ", ".join(bits) + ".")
+
+    # Life insurance — NEW: policy count + unsure flag.
+    li = data.get("life_insurance") or {}
+    if "policy_count" in li and li.get("policy_count") is not None:
+        count = li.get("policy_count")
+        if count == 0:
+            parts.append("Life insurance: no active policies.")
+        else:
+            parts.append(f"Life insurance: {count} active polic{'y' if count == 1 else 'ies'}.")
+        if li.get("unsure"):
+            parts.append("(User is unsure of exact policy count.)")
+    elif li.get("status"):
+        parts.append(f"Life insurance: {li.get('status')}.")
+
+    # Business — NEW: multi-select entity types + explicit "none" toggle.
+    biz = data.get("business") or {}
+    if biz.get("none"):
+        parts.append("Business ownership: none.")
+    elif isinstance(biz.get("types"), list) and biz.get("types"):
+        types = ", ".join(t.replace("_", " ").upper() for t in biz["types"])
+        parts.append(f"Business entities owned: {types}.")
+    elif biz.get("structure") and biz["structure"] != "none":
+        parts.append(f"Business ownership: {biz['structure']}.")
+
+    # Existing documents — NEW: per-type counts + flag list.
+    edocs = data.get("existing_documents") or {}
+    counts = edocs.get("counts") or {}
+    flags = edocs.get("flags") or edocs.get("documents") or []
+    has_any = any((counts.get(k) or 0) > 0 for k in counts) or bool(flags)
+    if has_any:
         bits = []
-        if re_block.get("primary_residence"):
-            bits.append("owns primary residence")
-        ac = re_block.get("additional_count") or 0
-        if ac:
-            bits.append(f"{ac} additional propert{'y' if ac == 1 else 'ies'}")
-        if re_block.get("multi_state"):
-            bits.append("with at least one property in a different state")
-        if bits:
-            parts.append("Real estate: " + ", ".join(bits) + ".")
-    fa = data.get("financial_accounts") or {}
-    if fa:
-        flagged = [k.replace("_", " ") for k, v in fa.items() if v]
-        if flagged:
-            parts.append("Financial account types held: " + ", ".join(flagged) + ".")
-    li = (data.get("life_insurance") or {}).get("status")
-    if li:
-        parts.append(f"Life insurance: {li}.")
-    biz = (data.get("business") or {}).get("structure")
-    if biz and biz != "none":
-        parts.append(f"Business ownership: {biz}.")
-    docs = (data.get("existing_documents") or {}).get("documents") or []
-    if docs:
-        parts.append("Already has: " + ", ".join(docs) + ".")
+        for k, label in (
+            ("wills", "will"),
+            ("trusts", "trust"),
+            ("policies_business", "buy-sell / succession agreement"),
+        ):
+            n = counts.get(k) or 0
+            if n:
+                bits.append(f"{n} {label}{'s' if n != 1 else ''}")
+        for f in flags:
+            bits.append(str(f).replace("_", " "))
+        parts.append("Already has: " + ", ".join(bits) + ".")
     else:
         parts.append("No existing estate documents reported.")
+
     return " ".join(parts) or "No inputs provided."
 
 

@@ -90,6 +90,13 @@ def _kv_row(pdf: FPDF, key: str, value: str) -> None:
     pdf.multi_cell(0, 6, _safe(value), new_x="LMARGIN", new_y="NEXT")
 
 
+def _state_of(data: dict[str, Any]) -> str:
+    """Resolve the user's state of residence from the new
+    `residence.state` field, falling back to legacy `state.state_of_residence`."""
+    res = data.get("residence") or {}
+    return res.get("state") or (data.get("state") or {}).get("state_of_residence") or ""
+
+
 def _format_household(data: dict[str, Any]) -> str:
     hh = data.get("household") or {}
     parts: list[str] = []
@@ -108,8 +115,21 @@ def _format_household(data: dict[str, Any]) -> str:
 
 
 def _format_real_estate(data: dict[str, Any]) -> str:
+    # NEW shape — `properties.list` is a multi-add with address+state per row.
+    props = (data.get("properties") or {}).get("list") or []
+    if props:
+        bits: list[str] = []
+        for p in props:
+            if not isinstance(p, dict):
+                continue
+            kind = (p.get("kind") or "property").replace("_", " ").title()
+            st = p.get("state") or "?"
+            addr = p.get("address") or ""
+            bits.append(f"{kind} ({st}){' — ' + addr if addr else ''}")
+        return " | ".join(bits)
+    # Legacy fallback.
     re_block = data.get("real_estate") or {}
-    bits: list[str] = []
+    bits = []
     if re_block.get("primary_residence"):
         bits.append("primary residence")
     ac = re_block.get("additional_count") or 0
@@ -118,6 +138,40 @@ def _format_real_estate(data: dict[str, Any]) -> str:
     if re_block.get("multi_state"):
         bits.append("at least one out-of-state property")
     return ", ".join(bits) or "None reported"
+
+
+def _format_residence(data: dict[str, Any]) -> str:
+    res = data.get("residence") or {}
+    addr = res.get("address") or ""
+    state = res.get("state") or ""
+    if addr and state:
+        return f"{addr} ({state})"
+    return addr or state or ""
+
+
+def _format_business(data: dict[str, Any]) -> str:
+    biz = data.get("business") or {}
+    if biz.get("none"):
+        return "None"
+    types = biz.get("types") or []
+    if isinstance(types, list) and types:
+        return ", ".join(t.replace("_", " ").upper() for t in types)
+    # Legacy single-structure fallback.
+    structure = biz.get("structure")
+    if structure and structure != "none":
+        return structure.replace("_", " ").upper()
+    return ""
+
+
+def _format_life_insurance(data: dict[str, Any]) -> str:
+    li = data.get("life_insurance") or {}
+    if "policy_count" in li and li.get("policy_count") is not None:
+        n = li["policy_count"]
+        base = "No active policies" if n == 0 else f"{n} polic{'y' if n == 1 else 'ies'}"
+        if li.get("unsure"):
+            return base + " (user unsure of exact count)"
+        return base
+    return (li.get("status") or "").title()
 
 
 def _format_accounts(data: dict[str, Any]) -> str:
@@ -134,10 +188,17 @@ def _format_beneficiaries(data: dict[str, Any]) -> str:
 
 
 def _format_documents(data: dict[str, Any]) -> str:
-    docs = (data.get("existing_documents") or {}).get("documents") or []
-    if not docs:
-        return "None reported"
-    return ", ".join(d.replace("_", " ").title() for d in docs)
+    edocs = data.get("existing_documents") or {}
+    counts = edocs.get("counts") or {}
+    flags = edocs.get("flags") or edocs.get("documents") or []
+    bits: list[str] = []
+    for k, label in (("wills", "will"), ("trusts", "trust"), ("policies_business", "buy-sell / succession")):
+        n = counts.get(k) or 0
+        if n:
+            bits.append(f"{n} {label}{'s' if n != 1 else ''}")
+    for f in flags:
+        bits.append(str(f).replace("_", " ").title())
+    return ", ".join(bits) or "None reported"
 
 
 def build_quickstart_pdf(
@@ -170,7 +231,7 @@ def build_quickstart_pdf(
     pdf.set_text_color(*_INK)
     pdf.cell(0, 9, _safe(f"Prepared for {user_name}"), new_x="LMARGIN", new_y="NEXT", align="C")
 
-    state = (data.get("state") or {}).get("state_of_residence") or ""
+    state = _state_of(data)
     sub_bits: list[str] = []
     if state:
         sub_bits.append(f"State of residence: {state}")
@@ -191,16 +252,18 @@ def build_quickstart_pdf(
 
     # ── Snapshot block ───────────────────────────────────────────────
     _section_heading(pdf, "Your snapshot")
+    residence = _format_residence(data)
+    if residence:
+        _kv_row(pdf, "Personal residence", residence)
     _kv_row(pdf, "Beneficiaries", _format_beneficiaries(data))
     _kv_row(pdf, "Household", _format_household(data))
-    _kv_row(pdf, "Real estate", _format_real_estate(data))
-    _kv_row(pdf, "Financial accounts", _format_accounts(data))
-    li = (data.get("life_insurance") or {}).get("status")
+    _kv_row(pdf, "Other properties", _format_real_estate(data))
+    li = _format_life_insurance(data)
     if li:
-        _kv_row(pdf, "Life insurance", li.replace("_", " ").title())
-    biz = (data.get("business") or {}).get("structure")
-    if biz and biz != "none":
-        _kv_row(pdf, "Business", biz.replace("_", " ").upper())
+        _kv_row(pdf, "Life insurance", li)
+    biz = _format_business(data)
+    if biz:
+        _kv_row(pdf, "Business", biz)
     _kv_row(pdf, "Existing documents", _format_documents(data))
 
     pdf.ln(3)

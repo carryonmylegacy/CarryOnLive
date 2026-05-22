@@ -42,7 +42,10 @@ export default function QuickStartTrialPage() {
   // wizard's server-side `data.<step>` shape so the same backend
   // prompt builder works on this payload too).
   const [trial, setTrial] = useState(() => loadTrial());
-  const [currentIdx, setCurrentIdx] = useState(0);
+  // Skip the "Is estate planning new to you?" gate — the user has
+  // already self-selected by clicking "Try it on your own household"
+  // on the Partner Brief, so the gate would be a useless click here.
+  const [currentIdx, setCurrentIdx] = useState(() => Math.max(0, STEPS.indexOf('welcome')));
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(null);
@@ -60,7 +63,10 @@ export default function QuickStartTrialPage() {
   };
 
   const go = (delta) => {
-    const nextIdx = Math.min(STEPS.length - 1, Math.max(0, currentIdx + delta));
+    // Floor at the welcome step — never let the trial page back into
+    // the authenticated wizard's gate step.
+    const minIdx = Math.max(0, STEPS.indexOf('welcome'));
+    const nextIdx = Math.min(STEPS.length - 1, Math.max(minIdx, currentIdx + delta));
     setCurrentIdx(nextIdx);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };

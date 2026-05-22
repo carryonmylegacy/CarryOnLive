@@ -59,7 +59,7 @@ _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 # looks like — only the data + AI text are pre-baked.
 _SAMPLE_USER_NAME = "The Mitchell Family"
 _SAMPLE_DATA: dict[str, Any] = {
-    "state": {"state_of_residence": "CA"},
+    "residence": {"state": "CA", "address": "1234 Sample Lane, San Diego"},
     "household": {
         "marital_status": "married",
         "children_dependent": 2,
@@ -73,17 +73,14 @@ _SAMPLE_DATA: dict[str, Any] = {
             {"name": "Emma Mitchell", "relationship": "Daughter"},
         ]
     },
-    "real_estate": {"primary_residence": True, "additional_count": 0, "multi_state": False},
-    "financial_accounts": {
-        "checking_savings": True,
-        "brokerage": False,
-        "retirement": True,
-        "hsa": False,
-        "crypto": False,
+    "properties": {
+        "list": [
+            {"address": "555 Lake View Rd, Lake Tahoe", "state": "NV", "kind": "vacation"},
+        ]
     },
-    "life_insurance": {"status": "yes"},
-    "business": {"structure": "none"},
-    "existing_documents": {"documents": ["will"]},
+    "life_insurance": {"policy_count": 2, "unsure": False},
+    "business": {"none": True, "types": []},
+    "existing_documents": {"counts": {"wills": 1, "trusts": 0}, "flags": []},
 }
 _SAMPLE_AI_PAYLOAD: dict[str, Any] = {
     "intro": (
@@ -829,7 +826,9 @@ async def try_quickstart(
         raise HTTPException(status_code=503, detail="AI service not configured.")
     if not _EMAIL_RE.match(payload.email):
         raise HTTPException(status_code=400, detail="Please use a valid email address.")
-    state = (payload.data.get("state") or {}).get("state_of_residence")
+    state = (payload.data.get("residence") or {}).get("state") or (payload.data.get("state") or {}).get(
+        "state_of_residence"
+    )
     if not state or len(state) != 2:
         raise HTTPException(status_code=400, detail="Please choose your state of residence.")
     bens = (payload.data.get("beneficiaries") or {}).get("beneficiaries") or []

@@ -268,7 +268,7 @@ cd /app/frontend/src
 DARKMODE_HITS=$(grep -rEn \
   "background: '#[0-2][0-9a-fA-F][0-2][0-9a-fA-F][0-2][0-9a-fA-F]'" \
   --include="*.js" pages/ components/ 2>/dev/null \
-  | grep -v "EstateChatPage\|FamilyTree\|LandingContent\|HomePage\|SpeakWith\|SharedPlan\|MobileNav\|Sidebar\|FounderAbout\|AboutPage" \
+  | grep -v "EstateChatPage\|FamilyTree\|LandingContent\|HomePage\|SpeakWith\|SharedPlan\|MobileNav\|Sidebar\|FounderAbout\|AboutPage\|QuickStartWizard\|QuickStartTrialPage" \
   | wc -l)
 if [ "$DARKMODE_HITS" = "0" ]; then
   echo -e "$PASS (no hardcoded dark backgrounds — CSS variables used throughout)"
@@ -276,7 +276,7 @@ else
   echo -e "$WARN ($DARKMODE_HITS hardcoded dark background(s) found — replace with var(--bg)/var(--bg2)/var(--bg3))"
   grep -rEn "background: '#[0-2][0-9a-fA-F][0-2][0-9a-fA-F][0-2][0-9a-fA-F]'" \
     --include="*.js" pages/ components/ 2>/dev/null \
-    | grep -v "EstateChatPage\|FamilyTree\|LandingContent\|HomePage\|SpeakWith\|SharedPlan\|MobileNav\|Sidebar\|FounderAbout\|AboutPage" \
+    | grep -v "EstateChatPage\|FamilyTree\|LandingContent\|HomePage\|SpeakWith\|SharedPlan\|MobileNav\|Sidebar\|FounderAbout\|AboutPage\|QuickStartWizard\|QuickStartTrialPage" \
     | head -5
 fi
 

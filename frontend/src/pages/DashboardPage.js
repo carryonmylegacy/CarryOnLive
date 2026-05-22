@@ -967,7 +967,7 @@ const DashboardPage = () => {
                 </h3>
                 <p className="text-xs lg:text-sm text-[var(--t4)] truncate">
                   {(() => {
-                    const idx = Math.max(0, ['welcome','state','household','beneficiaries','real_estate','financial_accounts','life_insurance','business','existing_documents','generate'].indexOf(quickstartProgress.current_step || 'welcome'));
+                    const idx = Math.max(0, ['gate','welcome','residence','household','beneficiaries','properties','life_insurance','business','existing_documents','generate'].indexOf(quickstartProgress.current_step || 'gate'));
                     const total = 10;
                     return `${total - idx} step${total - idx === 1 ? '' : 's'} left to generate your guide`;
                   })()}
