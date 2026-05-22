@@ -13,6 +13,7 @@ import PullToRefreshIndicator from '../PullToRefreshIndicator';
 import { haptics } from '../../utils/haptics';
 import BetaFeedbackButton from '../BetaFeedbackButton';
 import BetaWelcomeModal from '../BetaWelcomeModal';
+import QuickStartWizard from '../QuickStartWizard';
 import { useLocalStorageBoolean } from '../../hooks/useLocalStorageBoolean';
 import FeatureGate from '../FeatureGate';
 
@@ -104,6 +105,11 @@ const DashboardLayout = () => {
   const [guardianMounted, setGuardianMounted] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => localStorage.getItem('carryon_sidebar_collapsed') === 'true');
   const [betaAccepted, setBetaAccepted] = useState(true);
+  // Resume-trigger for the QuickStart wizard. The wizard self-decides
+  // whether to render (eligibility + session-skip + complete flag); this
+  // counter just lets the dashboard's "Pick up where you left off" CTA
+  // force it open even if the user has session-skipped.
+  const [quickstartForceOpen, setQuickstartForceOpen] = useState(0);
   // Reactive mirror of `localStorage.hide_beta_bug_icon`. Backed by
   // `useSyncExternalStore` via useLocalStorageBoolean — guarantees this
   // component re-renders the instant the Settings toggle writes a new
@@ -172,6 +178,15 @@ const DashboardLayout = () => {
     const id = requestAnimationFrame(scrollToTop);
     return () => cancelAnimationFrame(id);
   }, [location.pathname]);
+
+  // Listen for a dashboard "resume QuickStart" event so the CTA tile
+  // on DashboardPage can pop the modal open even after the user has
+  // session-skipped it.
+  useEffect(() => {
+    const onResume = () => setQuickstartForceOpen((n) => n + 1);
+    window.addEventListener('carryon:resume-quickstart', onResume);
+    return () => window.removeEventListener('carryon:resume-quickstart', onResume);
+  }, []);
 
   useEffect(() => {
     const onStorage = () => setSidebarCollapsed(localStorage.getItem('carryon_sidebar_collapsed') === 'true');
@@ -276,6 +291,15 @@ const DashboardLayout = () => {
 
       {/* Beta Tester: Floating Feedback Button (can be hidden via settings) */}
       {isBetaTester && betaAccepted && !betaIconHidden && <BetaFeedbackButton />}
+
+      {/* QuickStart Wizard — full-screen modal, first thing a new
+          benefactor sees on login. Self-renders only when eligible
+          and incomplete. `forceOpen` increments when the dashboard's
+          Resume CTA dispatches `carryon:resume-quickstart`. */}
+      <QuickStartWizard
+        forceOpen={quickstartForceOpen > 0}
+        onClose={() => setQuickstartForceOpen(0)}
+      />
     </div>
   );
 };

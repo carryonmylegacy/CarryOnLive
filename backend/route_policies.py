@@ -271,6 +271,11 @@ ROUTE_POLICIES: dict = {
     # ── Estate Binder (combined PDF assembly) ──────────────────────────────
     "POST /api/estate-binder/generate": {"auth": "required"},
     "GET /api/estate-binder/manifest": {"auth": "required"},
+    # ── QuickStart Wizard (initial benefactor onboarding) ─────────────────
+    "GET /api/quickstart/progress": {"auth": "required"},
+    "PUT /api/quickstart/step/{step_key}": {"auth": "required"},
+    "POST /api/quickstart/reset": {"auth": "required"},
+    "POST /api/quickstart/generate": {"auth": "required"},
     # ── Share Binder (anonymous public links + owner management) ───────────
     "POST /api/share/binder": {
         "auth": "required",

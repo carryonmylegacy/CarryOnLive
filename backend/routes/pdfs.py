@@ -42,6 +42,7 @@ router = APIRouter()
 # frontend `CachedPdfIcon` call-site. The label is what we show in
 # the icon's tooltip + tab list.
 PDF_TYPE_REGISTRY = {
+    "quickstart_guide": {"label": "QuickStart Estate Plan Guide"},
     "ega_todo": {"label": "EGA To-Do List"},
     "ega_iac": {"label": "EGA Immediate Action Report"},
     "ega_checklist": {"label": "IAC Checklist (EGA)"},

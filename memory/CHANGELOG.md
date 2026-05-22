@@ -1,6 +1,38 @@
 # CarryOn — Changelog
 
 
+## May 22, 2026 — QuickStart Wizard (V2026.05.22-d)
+
+**Why**: New benefactors needed a frictionless, AI-driven first-login experience that produces a tailored "go-talk-to-your-pros" checklist they can print, take to an attorney/CPA/financial-advisor/insurance-agent, and start an informed conversation. The wizard is **not** an extension of the existing Getting Started flow — it's a pre-flight that produces a PDF, period. Getting Started picks up afterward to teach the platform.
+
+**Backend** (new):
+- `routes/quickstart.py` — `GET /api/quickstart/progress`, `PUT /api/quickstart/step/{step_key}`, `POST /api/quickstart/reset`, `POST /api/quickstart/generate`. State lives in a new `quickstart_progress` Mongo collection (user-scoped; resumes across logout per founder direction).
+- `services/quickstart_ai.py` — Grok prompt builder + JSON-fenced response parser. Uses the founder's personal `XAI_API_KEY` via `config.xai_client` (NOT the Emergent LLM key).
+- `services/quickstart_pdf.py` — server-side fpdf2 renderer matching the existing platform PDF cadence (Helvetica + CarryOn gold accent + identical rule treatment as the Estate Binder).
+
+**Binder integration**:
+- `pdf_type = "quickstart_guide"` registered in `routes/pdfs.py::PDF_TYPE_REGISTRY`.
+- Inserted as the **first** entry in `routes/estate_binder.py::SECTION_ORDER`, so the QuickStart Guide opens the binder right after the Title + TOC pages.
+
+**Beneficiary materialization**:
+- Each beneficiary entered on the wizard's "Who are your beneficiaries?" step is immediately upserted into `db.beneficiaries` with `quickstart_seed: true` so the Getting Started `add_beneficiary` step now opens the existing tile (via `/beneficiaries?seed_id=…`) instead of asking the user to create a fresh one. Implemented in `components/OnboardingWizard.js::handleStepClick` + `pages/BeneficiariesPage.js` (new `seed_id` query-param effect that auto-opens the matching beneficiary's edit modal).
+
+**Frontend** (new):
+- `components/QuickStartWizard.js` — full-screen modal, portaled to `document.body`, full visual progress bar, 10 conversational steps (welcome → state → household → beneficiaries → real-estate → financial accounts → life insurance → business → existing documents → generate). Every step has a "Skip for now" affordance that closes the modal for the current session (server-side progress preserved). Final step uses the standard `openPdfPreview` pipeline so the result lands in the same preview modal as every other platform PDF, and the PDF is fire-and-forget cached for the binder.
+- `components/layout/DashboardLayout.js` — mounts `QuickStartWizard` once per session, listens for `carryon:resume-quickstart` events.
+- `pages/DashboardPage.js` — new "Resume your QuickStart" CTA tile (above the existing Getting Started resume tile) that fires the resume event.
+
+**End-to-end verified** (preview pod, `info@carryon.us`):
+- Modal opens on first dashboard load → 10 steps walk → Grok call → state-aware AI intro ("Hi Pete, getting started on estate planning is a smart and caring move for you and Jane. With your primary residence and accounts in California…") → branded multi-page PDF with snapshot block + per-professional checklists + state-specific notes → standard preview modal with Save PDF / Print / Back → progress marked complete + binder cached.
+- Skip for Now → modal closes → Resume CTA appears on dashboard → click → modal re-opens at the last step.
+- Beneficiary stubs created on the wizard now appear in `/beneficiaries` with `quickstart_seed=true`.
+
+### Housekeeping
+- 74 PASS, 0 WARN, 0 FAIL. **ALL CHECKS PASSED — READY TO PUSH.**
+- One housekeeping exclusion added: `quickstart.py::delete_one` in the `reset` endpoint (sandbox state, not user data) is now excluded from the soft-delete-standard count.
+
+
+
 ## May 22, 2026 — Universal Back Button room-maker fix (V2026.05.22-c)
 
 **Why**: The universal back chip was overlapping page-title icons. The prior CSS rule `.main-content.with-back-button > * > *:first-child { padding-left: 48px }` targeted the wrong DOM node because `OverlayScrollbarsComponent` wraps page content in a viewport `<div>` whose `*:first-child` is the **fixed** BackButton itself — so the padding landed on a position:fixed element and accomplished nothing visible. On desktop the chip was also buried under the 260 px sidebar.

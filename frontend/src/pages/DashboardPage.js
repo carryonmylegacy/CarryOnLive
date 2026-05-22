@@ -87,6 +87,10 @@ const DashboardPage = () => {
   // "Pick Up Where You Left Off" resume button when the user has
   // manually dismissed the wizard but still has incomplete steps.
   const [onboardingProgress, setOnboardingProgress] = useState(null);
+  // QuickStart Wizard progress — drives the "Resume QuickStart" CTA
+  // above the GS CTA when the user has session-skipped the wizard but
+  // hasn't finished it. Independent of the GS (`onboarding`) flow.
+  const [quickstartProgress, setQuickstartProgress] = useState(null);
   const guidedDismissedRef = useRef(false);
   const lastCompletedAtRef = useRef(null);
 
@@ -98,6 +102,20 @@ const DashboardPage = () => {
 
   useEffect(() => { fetchEstates(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (estate?.id) fetchEstateData(estate.id); }, [estate?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Fetch QuickStart progress once per dashboard mount so the resume
+  // CTA renders if the user session-skipped the wizard but hasn't
+  // finished it.
+  useEffect(() => {
+    const eligible = user?.role === 'benefactor' || user?.is_also_benefactor;
+    if (!eligible) return;
+    let cancelled = false;
+    apiClient
+      .get(`${API_URL}/quickstart/progress`, getAuthHeaders())
+      .then((res) => { if (!cancelled) setQuickstartProgress(res.data); })
+      .catch(() => { /* non-fatal */ });
+    return () => { cancelled = true; };
+  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Prefetch likely next routes after dashboard loads
   useEffect(() => {
@@ -913,6 +931,53 @@ const DashboardPage = () => {
         <div className="sm:mt-1">
         </div>
       </div>
+
+      {/* Resume QuickStart — appears when the user has dismissed the
+          QuickStart modal for this session but hasn't finished it.
+          Clicking dispatches the global event the DashboardLayout
+          listens for to force-reopen the modal. Independent of the
+          Getting Started flow below. */}
+      {(user?.role === 'benefactor' || user?.is_also_benefactor)
+        && quickstartProgress
+        && !quickstartProgress.complete && (
+        <button
+          type="button"
+          data-testid="resume-quickstart-btn"
+          onClick={() => {
+            try { sessionStorage.removeItem('carryon_quickstart_skipped_session'); } catch { /* ignore */ }
+            window.dispatchEvent(new CustomEvent('carryon:resume-quickstart'));
+          }}
+          className="glass-card w-full p-4 lg:p-5 mb-4 border-l-4 border-l-[#d4af37] text-left transition-transform duration-150 active:scale-[0.98] lg:hover:scale-[1.01] lg:hover:shadow-[0_12px_36px_-6px_rgba(var(--gold-rgb), 0.25)]"
+          style={{ cursor: 'pointer' }}
+        >
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <div
+                className="flex-shrink-0 w-10 h-10 lg:w-11 lg:h-11 rounded-full flex items-center justify-center"
+                style={{
+                  background: 'radial-gradient(circle, rgba(var(--gold-rgb), 0.22) 0%, rgba(var(--gold-rgb), 0.08) 70%)',
+                  border: '1px solid rgba(var(--gold-rgb), 0.35)',
+                }}
+              >
+                <Sparkles className="w-5 h-5" style={{ color: '#d4af37' }} />
+              </div>
+              <div className="min-w-0">
+                <h3 className="text-base lg:text-lg font-semibold text-[var(--t)] truncate">
+                  Resume your QuickStart
+                </h3>
+                <p className="text-xs lg:text-sm text-[var(--t4)] truncate">
+                  {(() => {
+                    const idx = Math.max(0, ['welcome','state','household','beneficiaries','real_estate','financial_accounts','life_insurance','business','existing_documents','generate'].indexOf(quickstartProgress.current_step || 'welcome'));
+                    const total = 10;
+                    return `${total - idx} step${total - idx === 1 ? '' : 's'} left to generate your guide`;
+                  })()}
+                </p>
+              </div>
+            </div>
+            <ChevronRight className="w-5 h-5 flex-shrink-0 text-[var(--t5)]" />
+          </div>
+        </button>
+      )}
 
       {/* Pick Up Where You Left Off — visible when the wizard has been
           manually dismissed but the user still has incomplete onboarding

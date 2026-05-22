@@ -52,6 +52,7 @@ router = APIRouter()
 # `source_page_route` + `source_page_label` are surfaced in the
 # missing-sections JSON so the frontend can offer a tap-to-cache CTA.
 SECTION_ORDER: list[tuple[str, str, str, str]] = [
+    ("quickstart_guide", "QuickStart Estate Plan Guide", "/quickstart", "QuickStart Wizard"),
     ("iac_standalone", "Immediate Action Checklist", "/checklist", "Checklist page"),
     ("ega_plan", "Estate Guardian — Plan of Action", "/guardian", "Estate Guardian"),
     ("ega_transcript", "Estate Guardian — Conversation Transcript", "/guardian", "Estate Guardian"),

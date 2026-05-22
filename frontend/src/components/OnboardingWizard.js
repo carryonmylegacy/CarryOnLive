@@ -132,6 +132,21 @@ const OnboardingWizard = ({ onAllComplete }) => {
       try { await apiClient.post(`${API_URL}/onboarding/complete-step/review_settings`, {}, getAuthHeaders()); }
       catch (err) { console.error(err); }
     }
+    // If the user already seeded beneficiary stubs in the QuickStart
+    // Wizard, send them straight into the first incomplete one rather
+    // than dropping them on the empty "Add a beneficiary" view. The
+    // BeneficiariesPage handles the `?seed_id=...` query param to
+    // auto-open that beneficiary's tile.
+    if (step.key === 'add_beneficiary' && !step.completed) {
+      try {
+        const qs = await apiClient.get(`${API_URL}/quickstart/progress`, getAuthHeaders());
+        const seededBens = qs?.data?.data?.beneficiaries?.beneficiaries || [];
+        if (seededBens.length > 0 && seededBens[0]?.beneficiary_id) {
+          navigate(`/beneficiaries?seed_id=${encodeURIComponent(seededBens[0].beneficiary_id)}`);
+          return;
+        }
+      } catch { /* non-fatal — fall through to normal route */ }
+    }
     navigate(config.route, { state: config.route === '/checklist' ? { fromGettingStarted: true } : undefined });
   };
 

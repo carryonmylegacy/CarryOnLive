@@ -87,6 +87,11 @@ const BeneficiariesPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const fromGettingStarted = location.state?.fromGettingStarted;
+  // QuickStart Wizard hands off via `?seed_id=<beneficiary-id>` so we
+  // auto-open that beneficiary's edit modal as soon as the list lands —
+  // never re-ask "add a beneficiary" when one already exists.
+  const seedIdParam = new URLSearchParams(location.search).get('seed_id');
+  const seedAutoOpenedRef = useRef(false);
   const [beneficiaries, setBeneficiaries] = useState([]);
   // Sort key for the succession-hierarchy list. "succession" is the
   // sentinel custom-order value that preserves the drag-to-reorder UX
@@ -558,6 +563,20 @@ const BeneficiariesPage = () => {
     setPhotoFile(null);
     setShowAddModal(true);
   };
+
+  // QuickStart hand-off: when the user lands here via
+  // `?seed_id=<id>`, auto-open the matching beneficiary's edit modal
+  // exactly once so the Getting Started flow drops them inside the
+  // tile to fill in the rest. Fires only after the list loads.
+  useEffect(() => {
+    if (!seedIdParam) return;
+    if (seedAutoOpenedRef.current) return;
+    if (!Array.isArray(beneficiaries) || beneficiaries.length === 0) return;
+    const target = beneficiaries.find((b) => b?.id === seedIdParam);
+    if (!target) return;
+    seedAutoOpenedRef.current = true;
+    openEditModal(target);
+  }, [seedIdParam, beneficiaries]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSendInvitation = async (beneficiaryId) => {
     setSendingInvite(beneficiaryId);
