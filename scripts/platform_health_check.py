@@ -53,8 +53,8 @@ TARGETS = {
         "api": "https://carryon-api-production.up.railway.app",
     },
     "preview": {
-        "frontend": "https://admin-verified-2.preview.emergentagent.com",
-        "api": "https://admin-verified-2.preview.emergentagent.com",
+        "frontend": "https://trustee-mode-pwa.preview.emergentagent.com",
+        "api": "https://trustee-mode-pwa.preview.emergentagent.com",
     },
 }
 
