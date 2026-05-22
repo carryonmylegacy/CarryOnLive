@@ -608,8 +608,8 @@ export default function ConnectedProtocolPage() {
   if (view === 'checkin' && activeEmergency) {
     return (
       <div data-testid="ccp-checkin-view" className="w-full max-w-[1400px] mx-auto px-4 lg:px-6 py-6 pb-28 sm:pb-6 space-y-4">
-        <button onClick={() => setView('active')} className="flex items-center gap-2 text-sm font-semibold mb-2" style={{ color: 'var(--t4)' }}>
-          <ArrowLeft className="w-4 h-4" />Back to Status Board
+        <button onClick={() => setView('active')} className="inline-flex items-center gap-1 text-xs font-semibold mb-2" style={{ color: 'var(--t5)' }} data-testid="ccp-back-to-status-board">
+          ‹ Status board
         </button>
         <h2 className="text-xl font-bold text-center" style={{ color: 'var(--t)' }}>How are you?</h2>
         <p className="text-sm text-center" style={{ color: 'var(--t4)' }}>Tap your current status</p>
@@ -727,8 +727,8 @@ export default function ConnectedProtocolPage() {
   if (view === 'plans') {
     return (
       <div data-testid="ccp-plans-list" className="w-full max-w-[1400px] mx-auto px-4 lg:px-6 py-6 pb-28 sm:pb-6 space-y-4">
-        <button onClick={() => setView('home')} className="flex items-center gap-2 text-sm font-semibold mb-2" style={{ color: 'var(--t4)' }}>
-          <ArrowLeft className="w-4 h-4" />Back
+        <button onClick={() => setView('home')} className="inline-flex items-center gap-1 text-xs font-semibold mb-2" style={{ color: 'var(--t5)' }} data-testid="ccp-back-to-home-from-plans">
+          ‹ CCP home
         </button>
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-bold" style={{ color: 'var(--t)', fontFamily: 'var(--sans)' }}>Emergency Plans</h2>
