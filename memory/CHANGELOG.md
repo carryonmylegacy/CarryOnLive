@@ -1,6 +1,21 @@
 # CarryOn — Changelog
 
 
+## May 22, 2026 — Fork pickup: QuickStart → SDV verification (no code change)
+
+**Context**: Forked session to verify the prior agent's "QuickStart PDF saves into the Secure Document Vault + Edit & Regenerate" work, which the handoff flagged as code-complete-but-untested.
+
+**Verification on preview pod (`trustee-mode-pwa.preview.emergentagent.com`)**:
+- `bash /app/housekeeping.sh --strict` → `ALL CLEAR — SAFE TO PUSH`, 0 WARN / 0 FAIL.
+- `_upsert_quickstart_in_sdv()` exercised end-to-end against Pete Mitchell's estate with synthetic PDF bytes: AES-256-GCM encryption via `encrypt_aes256(pdf_bytes, get_estate_salt(estate_id))` ✓, S3 upload to `carryon-vault/estates/<eid>/<doc_id>` ✓, Mongo insert with `is_quickstart_guide=True`, `system_managed=True`, `encryption_version="aes-256-gcm"` ✓. Re-running the same upsert kept the count at exactly 1 row and refreshed `updated_at` (idempotent — confirmed).
+- `GET /api/documents/{estate_id}` surfaces the QuickStart Guide row to the frontend with the correct flags. Test row cleaned up after verification.
+- `GET /api/quickstart/progress` and `POST /api/quickstart/reopen` both return 200 with the expected payload (cursor snaps back to `gate`, `complete=false`, prior step data preserved).
+- Dashboard CTAs verified visually: `quickstart-complete-tile` renders with "Your QuickStart Guide is ready — Saved in your Secure Document Vault and Estate Binder" + `View PDF` / `Edit & regenerate` buttons. Clicking `Edit & regenerate` fires `POST /api/quickstart/reopen → 200` and the tile transitions to "Resume your QuickStart — 10 steps left to generate your guide".
+
+**No code changes shipped this session** — the previous agent's implementation is correct. yarn.lock has fork-bootstrap drift (new dev deps `@axe-core/playwright`, `@alcalzone/ansi-tokenize`, etc.) that pre-existed before pickup; housekeeping passes with it in place, so leaving it untouched.
+
+
+
 ## May 22, 2026 — QuickStart Wizard v2: gate step, multi-everything, real contrast (V2026.05.22-g)
 
 **Why**: Founder ran the v1 wizard and pushed back hard: (1) UX was too dim — `var(--card)` + `var(--t)` rendered as dim grey on dim grey; (2) the wizard was supposed to OPEN with "Is estate planning new to you?" Yes/No and only force the rest of the flow on "Yes"; (3) the asks needed to support **multiple** entity types, **multiple** wills/trusts/policies, **multiple** properties each with their own state, and the personal residence should be a full address via Google Places.
