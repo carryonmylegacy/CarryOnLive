@@ -36,6 +36,13 @@ const TrusteeBanner = () => {
     // combine + restore cleanly on unmount.
     const priorOffline = root.style.getPropertyValue('--cy-offline-banner-h') || '0px';
     const priorOfflinePx = priorOffline.endsWith('px') ? parseFloat(priorOffline) : 0;
+    const priorHeaderSafeTop = root.style.getPropertyValue('--cy-header-safe-top') || 'env(safe-area-inset-top, 0px)';
+
+    // While the trustee banner owns the top of the screen it already
+    // absorbs the iOS status-bar inset (see `paddingTop` below) — zero
+    // out the header's own safe-area padding so the two don't stack and
+    // leave a dead gap below the banner. Mirrors NetworkStatusBanner.
+    root.style.setProperty('--cy-header-safe-top', '0px');
 
     const measure = () => {
       const h = ref.current?.offsetHeight || 0;
@@ -58,8 +65,9 @@ const TrusteeBanner = () => {
       clearTimeout(t);
       if (ro) ro.disconnect();
       root.style.setProperty('--cy-trustee-banner-h', '0px');
-      // Restore the offline var to its prior value.
+      // Restore the offline var + header safe-area var to their prior values.
       root.style.setProperty('--cy-offline-banner-h', priorOffline);
+      root.style.setProperty('--cy-header-safe-top', priorHeaderSafeTop);
     };
   }, [active]);
 
