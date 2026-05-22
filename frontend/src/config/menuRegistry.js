@@ -76,6 +76,7 @@ export const CANONICAL_PILLAR_ORDER = [
   'iac',           // Immediate Action Checklist
   'ega',           // Estate Guardian AI
   'cfp',           // CarryOn Financial Picture
+  'ces',           // CarryOn Entities & Structures
   'dav',           // Digital Access Vault
   'ffn',           // Friends & Family Notification
   'ccp',           // CarryOn Contingency Protocols

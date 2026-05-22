@@ -20,9 +20,11 @@ const ROUTE_TO_FEATURE = {
   '/estate-chat': 'ect',
   '/connected-protocol': 'ccp',
   '/financial': 'cfp',
+  '/entities': 'ces',
   '/beneficiary/estate-chat': 'ect',
   '/beneficiary/connected-protocol': 'ccp',
   '/beneficiary/financial': 'cfp',
+  '/beneficiary/entities': 'ces',
 };
 
 /**

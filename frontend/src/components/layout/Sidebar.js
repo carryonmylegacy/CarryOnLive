@@ -48,6 +48,7 @@ import NotificationBell from '../NotificationBell';
 import SidebarPillButton from './SidebarPillButton';
 import PublicDeviceModeMenuButton from './PublicDeviceModeMenuButton';
 import AdminSectionNav from './AdminSectionNav';
+import BenefactorSectionNav from './BenefactorSectionNav';
 import { API_URL } from '../../config';
 import { filterNavByFeatures } from '../../utils/featureGates';
 import { applyUserMenuOrder } from '../../config/menuRegistry';
@@ -956,8 +957,62 @@ const Sidebar = () => {
             variant="sidebar"
             adminScopes={scopeArr(user?.admin_scope).length > 0 ? scopeArr(user?.admin_scope) : ['founder']}
           />
-        ) : (
-        getNavSections().map((section, idx) => {
+        ) : (() => {
+          // Benefactor portal — render the 4-section expandable menu.
+          // Beneficiary side keeps the legacy flat list for now (per
+          // user instruction May 22 2026: "just benefactor side for
+          // now"). Multi-role users acting in benefactor context also
+          // see the new section nav.
+          const onBeneficiarySide = window.location.pathname.startsWith('/beneficiary');
+          const isBenefactorView =
+            (user?.role === 'benefactor' && !onBeneficiarySide) ||
+            (user?.role === 'beneficiary' && user?.is_also_benefactor && !onBeneficiarySide);
+          if (isBenefactorView) {
+            return (
+              <>
+                {/* Dashboard pinned ABOVE the sections (mirrors how
+                    the admin Founder Dashboard sits above the admin
+                    section nav). */}
+                <div className="nav-section">
+                  <NavLink
+                    to="/dashboard"
+                    className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                    data-testid="nav-dashboard"
+                    title={collapsed ? 'Dashboard' : undefined}
+                  >
+                    <LayoutDashboard />
+                    {!collapsed && <span>Dashboard</span>}
+                  </NavLink>
+                </div>
+                <BenefactorSectionNav
+                  collapsed={collapsed}
+                  variant="sidebar"
+                  enabledFeatures={enabledFeatures}
+                  ectUnread={ectUnread}
+                />
+                {/* ACCOUNT section pinned below — anchored, not user-reorderable */}
+                {!collapsed && (
+                  <div className="nav-section">
+                    <div className="nav-section-title">ACCOUNT</div>
+                    <NavLink to="/settings" className={({ isActive }) => `nav-item-sm ${isActive ? 'active' : ''}`} data-testid="nav-settings"><Settings /><span>Settings</span></NavLink>
+                    <NavLink to="/subscription" className={({ isActive }) => `nav-item-sm ${isActive ? 'active' : ''}`} data-testid="nav-subscription"><CreditCard /><span>Subscription</span></NavLink>
+                    <NavLink to="/security-settings" className={({ isActive }) => `nav-item-sm ${isActive ? 'active' : ''}`} data-testid="nav-security-settings"><ShieldCheck /><span>Security Settings</span></NavLink>
+                    <NavLink to="/support" className={({ isActive }) => `nav-item-sm ${isActive ? 'active' : ''}`} data-testid="nav-customer-support"><Headphones /><span>Customer Support</span></NavLink>
+                  </div>
+                )}
+                {collapsed && (
+                  <div className="nav-section">
+                    <NavLink to="/settings" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} title="Settings" data-testid="nav-settings"><Settings /></NavLink>
+                    <NavLink to="/subscription" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} title="Subscription" data-testid="nav-subscription"><CreditCard /></NavLink>
+                    <NavLink to="/security-settings" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} title="Security Settings" data-testid="nav-security-settings"><ShieldCheck /></NavLink>
+                    <NavLink to="/support" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} title="Customer Support" data-testid="nav-customer-support"><Headphones /></NavLink>
+                  </div>
+                )}
+              </>
+            );
+          }
+          // Beneficiary side / operator / fallback — legacy flat list.
+          return getNavSections().map((section, idx) => {
           const isAccountSection = section.title === 'ACCOUNT';
           return (
           <div key={idx} className="nav-section">
@@ -985,8 +1040,8 @@ const Sidebar = () => {
             ))}
           </div>
           );
-        })
-        )}
+        });
+        })()}
         {/* Utility actions — Notifications, Theme, Collapse — placed
             inside the scrollable area beneath the ACCOUNT section so the
             scrollable feature list above gets back the vertical room it

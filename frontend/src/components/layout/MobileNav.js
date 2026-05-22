@@ -44,6 +44,7 @@ import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet';
 import NotificationBell from '../NotificationBell';
 import PublicDeviceModeMenuButton from './PublicDeviceModeMenuButton';
 import AdminSectionNav from './AdminSectionNav';
+import BenefactorSectionNav from './BenefactorSectionNav';
 import { toast } from '../../utils/toast';
 import { API_URL } from '../../config';
 import { filterNavByFeatures } from '../../utils/featureGates';
@@ -824,7 +825,85 @@ const MobileNav = () => {
                       onNavClick={() => setOpen(false)}
                     />
                   </div>
-                ) : (
+                ) : (() => {
+                  // Benefactor portal — render the 4-section
+                  // expandable menu. Beneficiary side keeps the
+                  // legacy flat list (per user instruction
+                  // May 22 2026: "just benefactor side for now").
+                  const onBeneficiarySide = window.location.pathname.startsWith('/beneficiary');
+                  const isBenefactorView =
+                    (user?.role === 'benefactor' && !onBeneficiarySide) ||
+                    (user?.role === 'beneficiary' && user?.is_also_benefactor && !onBeneficiarySide);
+                  if (!isBenefactorView) return null;
+                  return (
+                    <>
+                      {/* Dashboard pinned ABOVE the sections */}
+                      <div className="mb-3">
+                        <button
+                          onClick={() => { setOpen(false); navigate('/dashboard'); }}
+                          data-testid="mobile-nav-dashboard"
+                          className="flex items-center gap-3 w-full text-left rounded-lg px-3 py-2.5"
+                          style={{
+                            background: 'var(--s)',
+                            border: '1px solid var(--b)',
+                            color: 'var(--t)',
+                            fontWeight: 600,
+                            fontSize: 14,
+                          }}
+                        >
+                          <Home className="w-5 h-5" /> Dashboard
+                        </button>
+                      </div>
+                      <div className="mb-6">
+                        <BenefactorSectionNav
+                          collapsed={false}
+                          variant="mobile"
+                          enabledFeatures={enabledFeatures}
+                          ectUnread={ectUnread}
+                          onNavClick={() => setOpen(false)}
+                        />
+                      </div>
+                      {/* ACCOUNT section pinned below — anchored */}
+                      <div className="mb-6">
+                        <h3
+                          className="text-sm font-bold tracking-wider uppercase mb-3 px-2"
+                          style={{ color: theme === 'dark' ? '#8895A7' : '#475569' }}
+                        >
+                          ACCOUNT
+                        </h3>
+                        <div className="space-y-1">
+                          {[
+                            { to: '/settings', icon: Settings, label: 'Settings', testid: 'mobile-nav-settings' },
+                            { to: '/subscription', icon: CreditCard, label: 'Subscription', testid: 'mobile-nav-subscription' },
+                            { to: '/security-settings', icon: ShieldCheck, label: 'Security Settings', testid: 'mobile-nav-security' },
+                            { to: '/support', icon: Headphones, label: 'Customer Support', testid: 'mobile-nav-support' },
+                          ].map(item => (
+                            <button
+                              key={item.to}
+                              onClick={() => { setOpen(false); navigate(item.to); }}
+                              data-testid={item.testid}
+                              className="flex items-center gap-3 w-full text-left rounded-lg px-3 py-2"
+                              style={{ color: 'var(--t3)', background: 'transparent', fontSize: 13 }}
+                            >
+                              <item.icon className="w-4 h-4" />
+                              <span>{item.label}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  );
+                })()}
+                {user?.role === 'admin' && !window.location.pathname.startsWith('/ops') ? null : (() => {
+                  // Operator / beneficiary fallback — legacy flat list.
+                  // (Benefactor was rendered above; skip this branch
+                  // for benefactor view to avoid double-rendering.)
+                  const onBeneficiarySide = window.location.pathname.startsWith('/beneficiary');
+                  const isBenefactorView =
+                    (user?.role === 'benefactor' && !onBeneficiarySide) ||
+                    (user?.role === 'beneficiary' && user?.is_also_benefactor && !onBeneficiarySide);
+                  if (isBenefactorView) return null;
+                  return (
                 <>
                 {/* Main nav items — path-aware for admin viewing ops */}
                 {(() => {
@@ -913,10 +992,20 @@ const MobileNav = () => {
                   );
                 })()}
                 </>
-                )}
+                  );
+                })()}
 
                 {/* ACCOUNT Section — hidden for staff (admin/operator) */}
-                {accountItems.length > 0 && (
+                {accountItems.length > 0 && (() => {
+                  // Hide legacy ACCOUNT block for benefactor view —
+                  // benefactor branch above renders its own anchored
+                  // ACCOUNT section.
+                  const onBeneficiarySide = window.location.pathname.startsWith('/beneficiary');
+                  const isBenefactorView =
+                    (user?.role === 'benefactor' && !onBeneficiarySide) ||
+                    (user?.role === 'beneficiary' && user?.is_also_benefactor && !onBeneficiarySide);
+                  if (isBenefactorView) return null;
+                  return (
                 <div className="mb-6">
                   <h3 
                     className="text-sm font-bold tracking-wider uppercase mb-3 px-2"
@@ -951,7 +1040,8 @@ const MobileNav = () => {
                     ))}
                   </div>
                 </div>
-                )}
+                );
+                })()}
               </nav>
 
               {/* Admin OTP Toggle — Founder only */}

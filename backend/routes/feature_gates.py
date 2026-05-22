@@ -73,6 +73,23 @@ PLATFORM_FEATURES = [
         "default_off": True,
     },
     {
+        # CarryOn Entities & Structures — benefactor-side org chart of
+        # trusts / LLCs / charities / properties / external people.
+        # Broken out of CFP on May 22, 2026 so the founder can toggle
+        # it independently per tier and per partner. Default OFF for
+        # every tier and every partner — founder enables it via
+        # Admin → Finance → Subs → Feature Gates and per partner via
+        # Admin → Finance → Partners. Hiding the route does NOT delete
+        # data: `cfp_entities`, `cfp_external_people`, and
+        # `cfp_entity_relationships` collections are untouched by the
+        # toggle. Re-enabling restores access to existing structures.
+        "key": "ces",
+        "label": "CarryOn Entities & Structures (CES)",
+        "route": "/entities",
+        "core": False,
+        "default_off": True,
+    },
+    {
         # Trustee Mode Access — benefactor-provisioned read/write
         # delegate identity. NOT a beneficiary, NOT a co-owner. The
         # benefactor creates a separate username/password that, when

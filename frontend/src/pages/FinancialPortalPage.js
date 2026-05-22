@@ -7,7 +7,8 @@ import { useLabelCleaner, useBrandedLabelBuilder } from '../utils/brandLabel';
 import { cachedGet } from '../utils/apiCache';
 import {
   DollarSign, Plus, Loader2, ArrowLeft, Search, Sparkles,
-  ChevronRight, ChevronLeft, Receipt, Landmark, PiggyBank, TrendingUp, Building2, FileDown
+  ChevronRight, ChevronLeft, Receipt, Landmark, PiggyBank, TrendingUp, Building2, FileDown,
+  Network,
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -40,7 +41,8 @@ import CashflowTimeline from '../components/financial/CashflowTimeline';
 import FinancialSummary from '../components/financial/FinancialSummary';
 import CfpVisibilityToggle from '../components/CfpVisibilityToggle';
 import QuickAdd from '../components/financial/QuickAdd';
-import EntitiesSection from '../components/financial/entities/EntitiesSection';
+// EntitiesSection moved to its own page (/entities) on May 22 2026.
+// Component file remains under components/financial/entities/.
 
 const DEFAULT_BILL_CATEGORIES = [
   'mortgage_rent', 'utilities', 'insurance', 'subscriptions', 'credit_card',
@@ -865,14 +867,66 @@ const FinancialPortalPage = () => {
         </div>
       </div>
 
-      {/* Entities & Structures org chart — appears above Financial Summary
-          when the user has any entities. Hidden completely otherwise. */}
-      <EntitiesSection
-        estateId={estate?.id}
-        beneficiaries={beneficiaries}
-        onEntitiesChanged={refreshSummary}
-        openEntityId={new URLSearchParams(location.search).get('openEntity')}
-      />
+      {/* Entities & Structures — moved to its own page (/entities) on
+          May 22 2026 so the founder can toggle CES independently per
+          tier and per partner. CFP keeps a quick-jump link to it. */}
+      <div
+        className="glass-card-thin"
+        data-testid="cfp-ces-link"
+        style={{
+          padding: '14px 18px',
+          marginTop: 8,
+          marginBottom: 8,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 12,
+          flexWrap: 'wrap',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+          <div
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 10,
+              background: 'linear-gradient(135deg, rgba(34,201,147,0.22), rgba(34,201,147,0.10))',
+              border: '1px solid rgba(34,201,147,0.25)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}
+          >
+            <Network className="w-4 h-4" style={{ color: '#22C993' }} />
+          </div>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--t)' }}>
+              CarryOn Entities &amp; Structures (CES)
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--t5)' }}>
+              Trusts, LLCs, charities, properties, and the people who hold them.
+            </div>
+          </div>
+        </div>
+        <button
+          onClick={() => navigate('/entities')}
+          data-testid="cfp-ces-link-open"
+          className="rounded-full transition-all active:scale-95"
+          style={{
+            padding: '8px 16px',
+            background: '#22C993',
+            color: '#062318',
+            border: '1px solid rgba(34,201,147,0.35)',
+            fontWeight: 700,
+            fontSize: 13,
+            cursor: 'pointer',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          Open Entities &amp; Structures →
+        </button>
+      </div>
 
       {/* Financial Summary Cards */}
       <FinancialSummary

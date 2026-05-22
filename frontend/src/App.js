@@ -63,6 +63,7 @@ const FFNPage = lazy(() => import('./pages/FFNPage'));
 const EstateChatPage = lazy(() => import('./pages/EstateChatPage'));
 const ConnectedProtocolPage = lazy(() => import('./pages/ConnectedProtocolPage'));
 const FinancialPortalPage = lazy(() => import('./pages/FinancialPortalPage'));
+const EntitiesPage = lazy(() => import('./pages/EntitiesPage'));
 const BeneficiaryCCPPage = lazy(() => import('./pages/beneficiary/BeneficiaryCCPPage'));
 const TransitionPage = lazy(() => import('./pages/TransitionPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
@@ -678,6 +679,7 @@ function AppRoutes() {
         <Route path="/transition" element={<TransitionPage />} />
         <Route path="/digital-wallet" element={<FeatureGate><DigitalWalletPage /></FeatureGate>} />
         <Route path="/financial" element={<FeatureGate><FinancialPortalPage /></FeatureGate>} />
+        <Route path="/entities" element={<FeatureGate><EntitiesPage /></FeatureGate>} />
         {/* Friendly alias — old marketing/email links and the documented
             test plan reference /financial-portal; canonical path is
             /financial. Redirect rather than 404 so historical links keep

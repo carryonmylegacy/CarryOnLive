@@ -25,7 +25,8 @@ import DashboardViewCard from '../components/settings/DashboardViewCard';
 import DigestCard from '../components/settings/DigestCard';
 import PrivacyCard from '../components/settings/PrivacyCard';
 import DockCustomizer from '../components/DockCustomizer';
-import MenuOrderCustomizer from '../components/MenuOrderCustomizer';
+// MenuOrderCustomizer retired May 22 2026 — file kept on disk in
+// case the founder chooses to bring per-section reordering back.
 import ReferralCard from '../components/ReferralCard';
 import ChatAutoscrollCard from '../components/settings/ChatAutoscrollCard';
 import TrusteeAccessCard from '../components/settings/TrusteeAccessCard';
@@ -248,15 +249,10 @@ const SettingsPage = () => {
         </CardContent>
       </Card>
 
-      {/* Menu Order Customizer — benefactor + beneficiary only (staff
-          portals have workflow-only menus and aren't user-reorderable). */}
-      {!isStaff && (
-        <Card className="glass-card" data-testid="settings-menu-order-card">
-          <CardContent className="pt-5">
-            <MenuOrderCustomizer />
-          </CardContent>
-        </Card>
-      )}
+      {/* Menu Order Customizer — RETIRED May 22 2026 when the
+          benefactor menu was consolidated to 4 fixed sections. The
+          component file is preserved on disk in case the founder
+          chooses to bring per-section reordering back later. */}
 
       {/* ── Section: Notifications ── */}
       <SectionHeader title="Notifications" hint="Push, in-app, and email preferences." />

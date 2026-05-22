@@ -60,6 +60,9 @@ PARTNER_FEATURE_PILLARS = [
     {"key": "cfp", "label": "Financial Picture"},
     {"key": "bec", "label": "Beneficiary Estate Concierge"},
     {"key": "beneficiaries", "label": "Beneficiaries"},
+    # CarryOn Entities & Structures defaults OFF — partners must
+    # explicitly opt in. Broken out of CFP on May 22, 2026.
+    {"key": "ces", "label": "CarryOn Entities & Structures", "default_off": True},
     # Trustee Mode Access defaults OFF — partners must explicitly opt in.
     {"key": "tma", "label": "Trustee Mode Access", "default_off": True},
 ]
