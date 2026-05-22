@@ -149,10 +149,9 @@ export const StatCard = ({ icon: Icon, value, label, cardClass, onClick, classNa
 /**
  * SectionStatCard — section-rollup tile (May 22 2026).
  *
- * Same outer chrome as `StatCard` (cardClass background, glass-card,
- * rounded-2xl, container-query sizing) so the dashboard's visual
- * cadence is unchanged — only the inner content layout differs.
- * Instead of one giant number + label, we render:
+ * Same outer chrome as `StatCard` (rounded-2xl, container-query
+ * sizing, hover/tap affordances) so the dashboard's visual cadence
+ * is unchanged. Inner content swaps the giant number + label for:
  *
  *   [icon]
  *   SectionTitle              ← large, bold, container-query sized
@@ -160,59 +159,72 @@ export const StatCard = ({ icon: Icon, value, label, cardClass, onClick, classNa
  *   Title - value
  *   ...
  *
- * Each stat row renders only if the parent passed it in — the
- * dashboard tier-gates rows BEFORE building `stats`, so this
- * component stays presentational and never needs to know about
- * feature keys.
+ * The tile background is derived directly from the `accent` prop
+ * (the section color) so the four tiles match the four menu pills
+ * exactly — Estate blue, Vault gold, Financial green, Preparedness
+ * purple. (Previously we fell back to legacy per-feature CSS classes
+ * via `cardClass` which produced the WRONG colors.)
  */
-export const SectionStatCard = ({ icon: Icon, title, stats = [], cardClass, onClick, className = '', sectionKey, accent }) => (
-  <div
-    className={`${cardClass} rounded-2xl p-4 lg:p-5 cursor-pointer transition-transform duration-150 active:scale-[0.96] lg:hover:scale-[1.03] lg:hover:shadow-xl flex flex-col items-center justify-start w-full h-full overflow-hidden ${className}`}
-    onClick={onClick}
-    data-testid={`stat-card-${(sectionKey || title).toLowerCase().replace(/\s+/g, '-')}`}
-    aria-label={`${title} section`}
-    role="button"
-    style={{ containerType: 'inline-size' }}
-  >
-    <Icon
-      className="w-6 h-6 lg:w-8 lg:h-8 mb-2 lg:mb-3 opacity-90 flex-shrink-0"
-      style={{ color: accent }}
-    />
+export const SectionStatCard = ({ icon: Icon, title, stats = [], onClick, className = '', sectionKey, accent = '#3B82F6' }) => {
+  // Extract r,g,b from accent so we can build the same `linear-
+  // gradient + box-shadow + border` recipe each section uses,
+  // tinted to its own color.
+  const hex = accent.replace('#', '');
+  const r = parseInt(hex.slice(0, 2), 16);
+  const g = parseInt(hex.slice(2, 4), 16);
+  const b = parseInt(hex.slice(4, 6), 16);
+  const rgb = `${r}, ${g}, ${b}`;
+  return (
     <div
-      className="font-bold text-center leading-tight flex-shrink-0 mb-2"
+      className={`rounded-2xl p-4 lg:p-5 cursor-pointer transition-transform duration-150 active:scale-[0.96] lg:hover:scale-[1.03] lg:hover:shadow-xl flex flex-col items-center justify-start w-full h-full overflow-hidden ${className}`}
+      onClick={onClick}
+      data-testid={`stat-card-${(sectionKey || title).toLowerCase().replace(/\s+/g, '-')}`}
+      aria-label={`${title} section`}
+      role="button"
       style={{
-        // Section title — same `clamp(0.8125rem, 6.5cqi, 1.5rem)` as
-        // the legacy `StatCard` label so the new tiles read at the
-        // same weight in the grid.
-        fontSize: 'clamp(0.875rem, 7cqi, 1.5rem)',
-        color: 'var(--t)',
-        fontFamily: 'var(--sans)',
+        containerType: 'inline-size',
+        background: `linear-gradient(135deg, rgba(${rgb}, 0.22), rgba(${rgb}, 0.10))`,
+        border: `1px solid rgba(${rgb}, 0.35)`,
+        boxShadow: `0 6px 18px rgba(${rgb}, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.04)`,
       }}
     >
-      {title}
+      <Icon
+        className="w-6 h-6 lg:w-8 lg:h-8 mb-2 lg:mb-3 opacity-95 flex-shrink-0"
+        style={{ color: accent }}
+      />
+      <div
+        className="font-bold text-center leading-tight flex-shrink-0 mb-2"
+        style={{
+          fontSize: 'clamp(0.875rem, 7cqi, 1.5rem)',
+          color: 'var(--t)',
+          fontFamily: 'var(--sans)',
+        }}
+      >
+        {title}
+      </div>
+      <div className="flex flex-col items-center gap-1 min-w-0 w-full overflow-hidden">
+        {stats.map((s) => (
+          <div
+            key={s.title}
+            className="font-bold whitespace-nowrap text-center max-w-full overflow-hidden text-ellipsis"
+            style={{
+              // Stat rows — "Title - number" per founder spec
+              // (May 22 2026). Smaller proportional font (5cqi)
+              // capped 11–14px so a 140px mobile tile reads at 11px,
+              // a 360px desktop tile reads at 14px. Bold white in
+              // dark mode (var(--t)), bold near-black in light mode
+              // (same var(--t) — adapts automatically).
+              fontSize: 'clamp(11px, 5cqi, 14px)',
+              color: 'var(--t)',
+              lineHeight: 1.3,
+            }}
+            data-testid={`section-stat-${(sectionKey || title).toLowerCase()}-${s.title.toLowerCase().replace(/\s+/g, '-')}`}
+          >
+            {s.title} - {s.value}
+          </div>
+        ))}
+      </div>
     </div>
-    <div className="flex flex-col items-center gap-1 min-w-0 w-full overflow-hidden">
-      {stats.map((s) => (
-        <div
-          key={s.title}
-          className="font-bold whitespace-nowrap text-center max-w-full overflow-hidden text-ellipsis"
-          style={{
-            // Stat rows — "Title - number" per founder spec
-            // (May 22 2026). Smaller proportional font (5cqi)
-            // capped 11–14px so a 140px mobile tile reads at 11px,
-            // a 360px desktop tile reads at 14px. Bold white in
-            // dark mode (var(--t)), bold near-black in light mode
-            // (same var(--t) — adapts automatically).
-            fontSize: 'clamp(11px, 5cqi, 14px)',
-            color: 'var(--t)',
-            lineHeight: 1.3,
-          }}
-          data-testid={`section-stat-${(sectionKey || title).toLowerCase()}-${s.title.toLowerCase().replace(/\s+/g, '-')}`}
-        >
-          {s.title} - {s.value}
-        </div>
-      ))}
-    </div>
-  </div>
-);
+  );
+};
 

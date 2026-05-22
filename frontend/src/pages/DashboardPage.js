@@ -28,7 +28,7 @@ import {
   Receipt,
   TrendingUp,
   ShieldAlert,
-  Landmark, Vault, Coins, Siren,
+  Landmark, Lock, Coins, Siren,
 } from 'lucide-react';
 import TrialBanner from '../components/TrialBanner';
 import BillingStatusBanner from '../components/BillingStatusBanner';
@@ -1049,7 +1049,6 @@ const DashboardPage = () => {
                   { featureKey: 'mm', title: 'Messages', value: stats.messages },
                   { featureKey: 'ffn', title: 'FFN', value: stats.ffn },
                 ])}
-                cardClass="stat-card-beneficiaries"
                 onClick={() => navigate('/section/estate')}
                 sectionKey="estate"
               />
@@ -1062,14 +1061,13 @@ const DashboardPage = () => {
             chipLabel: 'Vault',
             tile: (
               <SectionStatCard
-                icon={Vault}
+                icon={Lock}
                 title="Vault"
                 accent="#d4af37"
                 stats={buildStats([
                   { featureKey: 'sdv', title: 'Documents', value: stats.documents },
                   { featureKey: 'dav', title: 'Digital', value: stats.dav },
                 ])}
-                cardClass="stat-card-vault"
                 onClick={() => navigate('/section/vault')}
                 sectionKey="vault"
               />
@@ -1089,7 +1087,6 @@ const DashboardPage = () => {
                   { featureKey: 'cfp', title: 'Financials', value: cfpN },
                   { featureKey: 'ces', title: 'Entities', value: stats.ces },
                 ])}
-                cardClass="stat-card-financial"
                 onClick={() => navigate('/section/financial')}
                 sectionKey="financial"
               />
@@ -1109,7 +1106,6 @@ const DashboardPage = () => {
                   { featureKey: 'iac', title: 'Checklist', value: totalTasks },
                   { featureKey: 'ccp', title: 'CCP plans', value: stats.ccp_plans },
                 ])}
-                cardClass="stat-card-ccp"
                 onClick={() => navigate('/section/preparedness')}
                 sectionKey="preparedness"
               />

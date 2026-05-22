@@ -15,7 +15,7 @@
 //   ESTATE → VAULT → FINANCIAL → PREPAREDNESS
 
 import {
-  Landmark, Vault, Coins, Siren,
+  Landmark, Lock, Coins, Siren,
   Users, MessageSquare, Heart, Shield, Clock,
   FolderLock, KeyRound, Sparkles,
   DollarSign, Network,
@@ -48,7 +48,7 @@ export const BENEFACTOR_SECTIONS = [
   {
     key: 'vault',
     label: 'Vault',
-    icon: Vault,
+    icon: Lock,
     color: '#d4af37', // brand gold
     pill: {
       bgLight: 'rgba(254, 249, 231, 0.95)',
