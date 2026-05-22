@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Lock, Shield, ArrowRight, Check, Users, FileText, Sparkles,
-  MessageCircle, KeyRound, ChevronDown, DollarSign, BookOpen, Network,
+  MessageCircle, KeyRound, ChevronDown, DollarSign, BookOpen, Network, Landmark,
 } from 'lucide-react';
 import { recordFunnelEvent } from '../utils/funnelTelemetry';
 import { API_URL } from '../config';
@@ -15,46 +15,33 @@ const TRUST_BADGES = [
   { label: 'SOC 2 In Progress' },
 ];
 
-// Source-of-truth feature catalog. These are the canonical "Eleven Pillars
-// of Family Readiness" — names, abbreviations, bold lines, and full
-// descriptions copied verbatim from /app/frontend/src/components/landing/
-// LandingContent.js (HomePage). Do NOT rename, paraphrase, or invent
-// alternative blurbs. If a description needs to change, change it in
-// LandingContent.js first and mirror here.
+// Source-of-truth feature catalog. These are the canonical "Four Pillars
+// of Total Estate Readiness" — each pillar bundles a small set of
+// focused functions. Copied verbatim from /app/frontend/src/components/
+// landing/LandingContent.js (HomePage). Do NOT rename, paraphrase, or
+// invent alternative blurbs. If a description needs to change, change
+// it in LandingContent.js first and mirror here.
 const FEATURES = [
-  { num: '01', icon: MessageCircle, title: 'Milestone Messages', abbr: 'MM',
-    bold: 'Your words at their wedding. Your voice on their birthday. Your love — delivered exactly when it matters.',
-    body: 'Record written, audio, or video messages for the milestones you want to be part of — even if you can\'t be there. Graduations, births, first homes, or any moment you choose. Create them infinitely over time, and they\'re delivered exactly as you envision.' },
-  { num: '02', icon: Lock, title: 'Secure Document Vault', abbr: 'SDV',
-    bold: 'Every will, trust, policy, and deed — encrypted, organized, and accessible to the right people at the right time.',
-    body: 'Upload your most critical family documents into a per-estate encrypted vault with AES-256 encryption and Triple Lock protection. Your beneficiaries access exactly what you authorize — and your documents become the foundation that powers everything else.' },
-  { num: '03', icon: FileText, title: 'Immediate Action Checklist', abbr: 'IAC',
-    bold: 'A step-by-step guide your family can follow on the hardest days of their lives.',
-    body: 'Partially auto-created by EGA from your documents and fully customizable by you. When a crisis hits, your family opens the IAC and knows exactly what to do, who to call, where to find every document, and what deadlines matter. No guessing. No searching. No overwhelm.' },
-  { num: '04', icon: Sparkles, title: 'Estate Guardian\u2122 AI', abbr: 'EGA',
-    bold: 'An AI analyst trained on U.S. law across all 50 states — working inside your encrypted vault to find what you missed.',
-    body: 'EGA analyzes your uploaded documents for contradictions, gaps, outdated provisions, and missing pieces. It identifies critical details — claim phone numbers, executor contacts, filing deadlines — and auto-populates the beginnings of your personalized action plan. No team reads your documents. The AI works entirely within your encryption.' },
-  { num: '05', icon: DollarSign, title: 'CarryOn Financial Picture', abbr: 'CFP',
-    bold: 'Your family\u2019s complete financial picture — linked, monitored, and ready for the people who\u2019ll need it most.',
-    body: 'Link your bank accounts, investment portfolios, insurance policies, and financial assets into one secure, encrypted view. Track balances, flag anomalies, and ensure your beneficiaries know exactly where every dollar is and who to contact — without having to search through file cabinets, email threads, or scattered logins. When the time comes, your family sees the full financial picture instantly.' },
-  { num: '06', icon: Network, title: 'CarryOn Entities & Structures', abbr: 'CES',
-    bold: 'CFP shows what\u2019s there. CES shows how it\u2019s wired — every trust, LLC, partnership, and the people connected to each.',
-    body: 'A visual, pan-and-zoom org chart of your trusts, LLCs, S-corps, C-corps, partnerships, charitable entities, real properties, and the beneficiaries and external advisors connected to each. Built for households with anything more complex than a single will — so when transition happens, your family and their attorney see the entire structure at a glance instead of reconstructing it from a filing cabinet.' },
-  { num: '07', icon: KeyRound, title: 'Digital Access Vault', abbr: 'DAV',
-    bold: 'Passwords, accounts, crypto keys, and digital credentials — saved, encrypted, and assigned to the right people.',
-    body: 'The modern family has dozens of digital accounts, subscriptions, financial platforms, and access credentials that need to be passed down and organized. DAV stores them all in your encrypted vault, assigned to specific beneficiaries, so nothing is lost and nothing is forgotten.' },
-  { num: '08', icon: Users, title: 'Friends & Family Notification', abbr: 'FFN',
-    bold: 'The people who matter most should never hear important news through the grapevine.',
-    body: 'Build a personalized notification list of family, friends, colleagues, and anyone your beneficiaries should contact during a transition or emergency. Names, phone numbers, relationships, and special notes — all organized and ready so your family can coordinate outreach without scrambling.' },
-  { num: '09', icon: Shield, title: 'CarryOn Contingency Protocols', abbr: 'CCP',
-    bold: 'Response plans your family can build now for the scenarios they might face — ready to activate at a moment\u2019s notice.',
-    body: 'Build contingency protocols for any situation: medical emergencies, natural disasters, financial disruptions, or the passing of a family member. The Tap-to-Create Wizard walks you through building a protocol in minutes — connecting your people, your documents, your checklists, and your communication channels into one coordinated plan your family can execute together.' },
-  { num: '10', icon: MessageCircle, title: 'Estate Communications Tool', abbr: 'ECT',
-    bold: 'Secure, private family messaging that doesn\u2019t depend on a phone number — so your family stays connected no matter what.',
-    body: 'Unlike every mainstream chat app, ECT doesn\u2019t rely on your phone number or a specific device. Log in from a friend\u2019s phone, a library computer, or a FEMA trailer after a disaster — and pick up exactly where you left off, in perfect sync with your family. End-to-end encrypted group and direct messaging with voice messages, image sharing, emoji reactions, location sharing, and message pinning. When a contingency protocol activates, ECT is how your family coordinates — privately, securely, and from anywhere.' },
-  { num: '11', icon: BookOpen, title: 'Beneficiary Estate Concierge', abbr: 'BEC',
-    bold: 'After you\u2019re gone, your family doesn\u2019t have to wonder — they can ask. The Concierge answers in plain English, grounded only in the documents you chose to share.',
-    body: 'When transition is verified, your beneficiaries gain access to a private AI concierge that lives inside the documents you specifically released to each of them. They can ask anything — \u201cWhere is the life insurance?\u201d \u201cWho\u2019s the executor?\u201d \u201cWhat did Dad want for the cabin?\u201d — and get clear answers with inline citations back to the exact document, paragraph, and page. Every answer is grounded in what you shared. Nothing is invented. The Concierge works only inside your encrypted vault and only with the documents you authorized for that beneficiary.' },
+  {
+    num: '01', icon: Landmark, title: 'Estate', abbr: 'People & plan',
+    bold: 'The people who matter, the plan you leave them, and the audit trail of every change you make.',
+    body: 'Beneficiaries (designate who matters, who sees what, when). Milestone Messages (MM — video/audio/written messages delivered at specific future moments). Friends & Family Notification (FFN — coordinated call-list when something happens). Designated Trustee Services (DTS — let an advisor act on your behalf, fully audited). Estate Plan Timeline (EPT — a living record of every change).',
+  },
+  {
+    num: '02', icon: Lock, title: 'Vault', abbr: 'Documents & credentials',
+    bold: 'Every document and credential your family will actually need — encrypted and surfaced by an AI that finds what you missed.',
+    body: 'Secure Document Vault (SDV — AES-256 encrypted, released only to who you choose). Digital Access Vault (DAV — passwords, logins, crypto keys, assigned to the right people). Estate Guardian\u2122 AI (EGA — an AI estate-law analyst that reads inside your vault and flags gaps, contradictions, and deadlines).',
+  },
+  {
+    num: '03', icon: DollarSign, title: 'Financial', abbr: 'Money & structure',
+    bold: 'The complete money picture and a visual map of every trust, entity, and structure that holds it together.',
+    body: 'CarryOn Financial Picture (CFP — a complete, encrypted view of accounts, investments, policies, bills, debts, and properties). CarryOn Entities & Structures (CES — a visual, pan-and-zoom org chart of every trust, LLC, partnership, charitable entity, and the people connected to each).',
+  },
+  {
+    num: '04', icon: Shield, title: 'Preparedness', abbr: 'Crisis playbook',
+    bold: 'The playbook your family follows on the hardest days — step-by-step actions, pre-built protocols, and a private channel to coordinate.',
+    body: 'Immediate Action Checklist (IAC — auto-built from your vault, fully customizable, ready for the first hours, days, and weeks). CarryOn Contingency Protocols (CCP — pre-authored response plans for medical, disaster, incapacity, transition). Estate Communications Tool (ECT — phone-number-free family messaging that works from any device).',
+  },
 ];
 
 const FAQS = [
@@ -240,14 +227,15 @@ const LandingPage = () => {
       <section id="features" className="py-20 sm:py-28 px-5 sm:px-8" data-testid="landing-features">
         <div className="max-w-6xl mx-auto">
           <div className="max-w-2xl mb-14">
-            <p className="text-sm uppercase tracking-[0.18em] mb-3" style={{ color: 'var(--gold)' }}>Eleven Pillars of Family Readiness</p>
+            <p className="text-sm uppercase tracking-[0.18em] mb-3" style={{ color: 'var(--gold)' }}>Total Estate Readiness</p>
             <h2 className="text-3xl sm:text-4xl font-semibold leading-tight mb-4 text-white" style={{ fontFamily: 'var(--serif)' }}>
-              Eleven pillars. <span className="italic" style={{ color: 'var(--gold)' }}>One family</span>. Ready for any week of the year.
+              Four pillars. <span className="italic" style={{ color: 'var(--gold)' }}>One family</span>. Ready for any week of the year.
             </h2>
             <p className="text-base" style={{ color: 'var(--t4)' }}>
               Most estate tools stop at the legal documents and only matter once. CarryOn matters every
               week — every trip, every hospital visit, every house-sitting weekend, every transition,
-              especially the final one.
+              especially the final one. Four pillars hold up everything, each bundling a small set of
+              focused functions.
             </p>
           </div>
 

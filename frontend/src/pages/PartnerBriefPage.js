@@ -239,7 +239,7 @@ export default function PartnerBriefPage() {
                   {(v.cares || []).map((x, j) => <li key={j} style={liStyle}>{x}</li>)}
                 </ul>
 
-                <div style={subhdStyle}>Pillars that resonate first</div>
+                <div style={subhdStyle}>Functions that resonate first</div>
                 <p style={{ ...pStyle, fontSize: 14 }}>{v.pillars}</p>
 
                 <div style={subhdStyle}>Qualifying questions</div>

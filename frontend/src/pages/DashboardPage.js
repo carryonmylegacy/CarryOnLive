@@ -1322,7 +1322,7 @@ const DashboardPage = () => {
         const ReadinessCard = ({ keyChipsPosition = 'top-right', dense = false }) => (
           <div className={`glass-card relative ${dense ? 'p-4 lg:px-6 lg:py-4' : 'p-5 lg:p-8'} mb-4`} data-testid="readiness-card">
             <h2 className={`${dense ? 'text-base lg:text-4xl xl:text-5xl 2xl:text-6xl mb-2 lg:mb-3' : 'text-base lg:text-3xl xl:text-4xl 2xl:text-5xl mb-4 lg:mb-5'} whitespace-nowrap font-bold text-[var(--t)] uppercase tracking-wider text-center`} style={{ fontFamily: 'var(--sans)' }}>
-              Estate Readiness
+              Total Estate Readiness
             </h2>
             {keyChipsPosition === 'top-right' && !dense && (
               <div className="hidden lg:flex lg:justify-end lg:mb-4 lg:px-2">

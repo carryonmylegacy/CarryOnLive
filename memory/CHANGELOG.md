@@ -1,6 +1,43 @@
 # CarryOn — Changelog
 
 
+## May 22, 2026 — Narrative reset: Four Pillars of Total Estate Readiness (V2026.05.22-i)
+
+**Why**: Founder direction — move the platform's whole story from a verbose 11-pillar laundry-list to a tight **four-pillar narrative driving to one outcome: Total Estate Readiness**. The 11 things that used to be called "pillars" are now called **functions**, grouped into the same four pillars the benefactor sidebar already uses (Estate / Vault / Financial / Preparedness). BEC is no longer in the main pillar list because it's a beneficiary-side capability — it shows up in a small italic footnote about what happens after transition.
+
+**Canonical Four Pillars** (mirrors `frontend/src/config/benefactorSections.js` exactly):
+- 🔵 **Pillar 01 — Estate** (people, plan, audit trail): Beneficiaries · MM · FFN · DTS · EPT
+- 🟡 **Pillar 02 — Vault** (documents, credentials, AI gap finder): SDV · DAV · EGA
+- 🟢 **Pillar 03 — Financial** (money picture and entity structure): CFP · CES
+- 🟣 **Pillar 04 — Preparedness** (crisis playbook and family hotline): IAC · CCP · ECT
+
+Not a pillar (beneficiary-side, mentioned as a transition footnote): **BEC** (Beneficiary Estate Concierge).
+
+**Files touched**:
+- `frontend/src/components/landing/LandingContent.js` — Rewrote `PILLARS` data from 11 flat items to 4 pillar objects each carrying a `functions[]` list with `{abbr, name, desc}`. Imported `Landmark`, `Coins`, `Siren` icons (matching sidebar). Replaced the JSX renderer: each pillar card now shows a colored number + icon column, a bold blurb, and a bulleted function list — colored by the pillar's accent (blue / gold / green / purple) instead of the old uniform gold. Dropped the central gold arrow shaft (no longer a linear narrative). Heading "Eleven Pillars of Family Readiness." → eyebrow "Total Estate Readiness" + h2 "Four Pillars. One Outcome." Closer tile "Comprehensive Family Preparedness." → "Total Estate Readiness." + new italic BEC footnote about post-transition. Platform Features card "Section Permissions" → "Pillar Permissions" with copy update.
+- `frontend/src/pages/LandingPage.js` (legacy `/landing-consumer`) — Rewrote `FEATURES` to 4 entries (Estate / Vault / Financial / Preparedness) each describing the functions inside. Eyebrow + headline + intro copy updated to "Total Estate Readiness" + "Four pillars. One family." Added `Landmark` import.
+- `backend/routes/partner_brief.py` — `pillars.title` "The Eleven Pillars" → "The Four Pillars of Total Estate Readiness". `pillars.intro` rewritten to explain pillar-vs-function. `pillars.items` rewritten from 11 to 4 entries; each pillar's `desc` lists the functions inside it with abbreviations. `pillars.foundational` now describes BEC as the beneficiary-side capability and Beneficiaries as the foundational primitive. `capabilities.intro` "the eleven pillars work" → "the four pillars work". `verticals.intro` "which pillars + capabilities" → "which functions + capabilities". Header intro / "full eleven" frame strings → "four pillars" / "all four".
+- `frontend/src/pages/PartnerBriefPage.js` — vertical card label "Pillars that resonate first" → "Functions that resonate first" (the `v.pillars` JSON field is preserved; only the user-visible label changed).
+- `frontend/src/components/admin/SalesBriefTab.js` — Accordion title "2. The Eleven Pillars" → "2. The Four Pillars".
+- `frontend/src/pages/DashboardPage.js` — Readiness gauge h2 "Estate Readiness" → "Total Estate Readiness".
+- `memory/PRD.md` — "Eleven Pillars" table fully replaced by a four-section "Four Pillars of Total Estate Readiness" structure. Each pillar gets its own function table (function · abbr · route · what it does). Added a "Not a pillar — beneficiary-side capability" table for BEC. Foundational primitive note rewritten so DTS and EPT are correctly described as Estate-pillar functions (not outside the four), and TMA is described as a delegation primitive that layers across all four.
+- `memory/B2B_SCREENING_BRIEF.md` — Mirror rewrite: 4-pillar table at the top, separate "function one-liners" table below (so call prep stays drop-in), BEC bullet as the explicit "not a pillar" callout, capabilities intro "the ten pillars" → "the four pillars". Removed CES capabilities row (it's a pillar function now).
+
+**Not changed (intentional)**:
+- `backend/routes/feature_gates.py::PLATFORM_FEATURES` — the function-level matrix is correct as-is. Pillars are a narrative grouping that lives in `benefactorSections.js`, not in the feature gates.
+- `benefactorSections.js` — already the source-of-truth pillar grouping. No change needed.
+- Admin sidebar's six sections (Operations / Finance / Marketing / Compliance / Platform / Admin) — founder explicitly scoped the rename to benefactor-facing surfaces (3a) plus user-visible "section" copy (3c). Admin internal labels left intact.
+- JSON shape `v.pillars` inside the partner brief verticals — kept as a key name so existing readers still work; only the user-visible label changed.
+- Route paths `/section/estate`, `/section/vault`, `/section/financial`, `/section/preparedness` — internal routes, not user copy.
+
+**Verification**:
+- `bash /app/housekeeping.sh --strict` → `ALL CHECKS PASSED — codebase is clean / READY TO PUSH`, 0 WARN / 0 FAIL.
+- ESLint clean on `LandingContent.js`, `LandingPage.js`; ruff clean on `partner_brief.py`.
+- HomePage smoke test (preview pod, 1280×900) — 19/19 narrative assertions pass: `TOTAL ESTATE READINESS` eyebrow, `Four Pillars. One Outcome.` h2, four pillar cards (Estate / Vault / Financial / Preparedness), every function present (Beneficiaries, MM, FFN, DTS, EPT, SDV, DAV, EGA, CFP, CES, IAC, CCP, ECT), BEC italic footnote, `Total Estate Readiness.` closer, `Four pillars. One family.` body, zero `Eleven Pillars`/`Ten Pillars` strings remaining anywhere in `/app/backend`, `/app/frontend/src`, `/app/memory/PRD.md`, `/app/memory/B2B_SCREENING_BRIEF.md`.
+- Visual screenshots confirm color-coded pillar cards rendering correctly (blue / gold / green / purple), function bullets formatted as `**Name** (ABBR) — one-line description`, BEC footnote rendering on the closer tile.
+
+
+
 ## May 22, 2026 — Eleven Pillars: CES promoted from capability to pillar #06 (V2026.05.22-h)
 
 **Why**: Founder confirmed Estate Plan Timeline (EPT) is NOT a pillar (audit-only) and asked to count CES — which had been broken out of CFP as its own toggleable feature on May 22 — as a real pillar. That makes **eleven pillars** total. All "Ten Pillars" copy needed to update everywhere it appeared, with CES inserted in the right narrative slot (right after CFP — CFP shows what's there, CES shows how it's wired).

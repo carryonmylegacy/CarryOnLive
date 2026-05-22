@@ -39,38 +39,54 @@ If pressed for "what does it actually do":
 
 ---
 
-## 2. The Eleven Pillars of Family Readiness
+## 2. The Four Pillars of Total Estate Readiness
+
+CarryOn collapses into a single north-star outcome: **Total Estate Readiness** for the family. Four pillars hold that up. Each pillar bundles a small set of focused **functions** (the actual feature surfaces — MM, SDV, EGA, etc.). Use the pillar name on the call so the partner gets it in one breath; drop the function abbreviation in casually so they can map it to whatever they already sell.
 
 These are the canonical names. **Use them exactly.** Do not paraphrase, rename, or "translate" them. The TM mark on Estate Guardian is required.
 
-| # | Canonical Name | Abbr | Plain-language one-liner you can use on a call |
+| # | Pillar | One-liner | Functions inside this pillar |
 |---|---|---|---|
-| 01 | **Milestone Messages** | MM | "Recorded video, audio, or written messages a person leaves to be delivered to specific loved ones at specific future moments — a wedding, a graduation, a 30th birthday, the day after they pass." |
-| 02 | **Secure Document Vault** | SDV | "AES-256 encrypted, beneficiary-keyed storage for the documents a family will actually need — wills, trusts, deeds, insurance policies, medical directives — Triple-Lock protected and released to the right person at the right time." |
-| 03 | **Estate Guardian™ AI** | EGA | "An estate-law AI trained on U.S. law across all 50 states that reads inside the client's vault, flags gaps and contradictions, surfaces deadlines and contact info, and auto-starts the family's action checklist. No human team reads the documents." |
-| 04 | **Immediate Action Checklist** | IAC | "A step-by-step playbook of what to do in the first hours, days, and weeks after someone passes — partially auto-created by Estate Guardian™ from the documents in the vault, fully customizable." |
-| 05 | **CarryOn Contingency Protocols** | CCP | "Pre-authored emergency plans the person sets up while healthy — what to do if they're in an accident, hospitalized, declared incapacitated, or pass — with the right people pre-notified and the right documents pre-routed." |
-| 06 | **Estate Communications Tool** | ECT | "Family-only end-to-end encrypted messaging that works from any device — no phone number required, so a beneficiary can log in from a friend's phone or a library computer and stay in sync." |
-| 07 | **Digital Access Vault** | DAV | "Encrypted storage for digital account credentials — banking, email, social, password-manager seeds, crypto wallet keys — so the family can actually GET INTO the accounts the will mentions." |
-| 08 | **Friends & Family Notification** | FFN | "Coordinated, dignified notification of everyone who needs to know — in the order and through the channel the person chose, while they were the one writing the message." |
-| 09 | **CarryOn Financial Picture** | CFP | "A complete, living picture of the household's bills, debts, accounts, and properties — so the family knows what's owed, what's owned, and what to do with all of it." |
-| 10 | **CarryOn Entities & Structures** | CES | "Visual pan-and-zoom org-chart of the household's trusts, LLCs, partnerships, S-corps, C-corps, charitable entities, properties, and the people connected to each. CFP shows what's there; CES shows how it's wired. Built for households with anything more complex than a single will." |
-| 11 | **Beneficiary Estate Concierge** | BEC | "An AI concierge for beneficiaries that activates after transition — answers plain-English questions, grounded only in the documents the benefactor specifically released to them, with inline citations to the source." |
+| 01 | 🔵 **Estate** | The people who matter, the plan you leave them, and the audit trail of every change along the way. | Beneficiaries · Milestone Messages (MM) · Friends & Family Notification (FFN) · Designated Trustee Services (DTS) · Estate Plan Timeline (EPT) |
+| 02 | 🟡 **Vault** | Every document and credential your family will actually need — encrypted, organized, and surfaced by an AI that finds what you missed. | Secure Document Vault (SDV) · Digital Access Vault (DAV) · Estate Guardian™ AI (EGA) |
+| 03 | 🟢 **Financial** | The complete money picture and a visual map of every trust, entity, and structure that holds it together. | CarryOn Financial Picture (CFP) · CarryOn Entities & Structures (CES) |
+| 04 | 🟣 **Preparedness** | The playbook your family follows on the hardest days — step-by-step actions, pre-built protocols, and a private channel to coordinate. | Immediate Action Checklist (IAC) · CarryOn Contingency Protocols (CCP) · Estate Communications Tool (ECT) |
+
+### Function one-liners (drop these in casually, do not lecture)
+
+| Abbr | Function | What to say on the call |
+|---|---|---|
+| MM | Milestone Messages | "Recorded video, audio, or written messages a person leaves to be delivered to specific loved ones at specific future moments — a wedding, a graduation, a 30th birthday, the day after they pass." |
+| FFN | Friends & Family Notification | "Coordinated, dignified notification of everyone who needs to know — in the order and through the channel the person chose, while they were the one writing the message." |
+| DTS | Designated Trustee Services | "Lets a designated trustee — an attorney, advisor, executor, or trusted family member — act on the benefactor's behalf with a full audit trail. Big for attorney + advisor verticals." |
+| EPT | Estate Plan Timeline | "A living audit log of every change to the plan — who edited what, when, and why. The legal-comfort piece for attorneys and trustees." |
+| SDV | Secure Document Vault | "AES-256 encrypted, beneficiary-keyed storage for the documents a family will actually need — wills, trusts, deeds, insurance policies, medical directives — Triple-Lock protected and released to the right person at the right time." |
+| DAV | Digital Access Vault | "Encrypted storage for digital account credentials — banking, email, social, password-manager seeds, crypto wallet keys — so the family can actually GET INTO the accounts the will mentions." |
+| EGA | Estate Guardian™ AI | "An estate-law AI trained on U.S. law across all 50 states that reads inside the client's vault, flags gaps and contradictions, surfaces deadlines and contact info, and auto-starts the family's action checklist. No human team reads the documents." |
+| CFP | CarryOn Financial Picture | "A complete, living picture of the household's bills, debts, accounts, and properties — so the family knows what's owed, what's owned, and what to do with all of it." |
+| CES | CarryOn Entities & Structures | "Visual pan-and-zoom org-chart of the household's trusts, LLCs, partnerships, S-corps, C-corps, charitable entities, properties, and the people connected to each. CFP shows what's there; CES shows how it's wired." |
+| IAC | Immediate Action Checklist | "A step-by-step playbook of what to do in the first hours, days, and weeks after someone passes — partially auto-created by Estate Guardian™ from the documents in the vault, fully customizable." |
+| CCP | CarryOn Contingency Protocols | "Pre-authored emergency plans the person sets up while healthy — what to do if they're in an accident, hospitalized, declared incapacitated, or pass — with the right people pre-notified and the right documents pre-routed." |
+| ECT | Estate Communications Tool | "Family-only end-to-end encrypted messaging that works from any device — no phone number required, so a beneficiary can log in from a friend's phone or a library computer and stay in sync." |
+
+### Not a pillar — beneficiary-side capability worth naming
+
+- **Beneficiary Estate Concierge (BEC)** — activates after transition. Beneficiaries can ask plain-English questions and get cited answers, grounded only in the documents the benefactor specifically released to them. Sits on the beneficiary portal, not the benefactor's four pillars.
 
 **Foundational element** (NOT a pillar; treat as the connective tissue under everything above):
-- **Beneficiaries** — every pillar is built around designated beneficiaries with role-based, granular access. The benefactor decides who sees what, when.
+- **Beneficiaries** — every pillar and every function is built around designated beneficiaries with role-based, granular access. The benefactor decides who sees what, when.
 
 ---
 
 ## 2.5 Platform-wide capabilities (NEW — added Feb 2026)
 
-These are not pillars. They are the connective tissue that makes the eleven pillars work as one product. Every screening call should at least *name* the ones that close that vertical's specific objection.
+These are not pillars and they are not functions inside a pillar. They are the connective tissue that makes the four pillars work as one product. Every screening call should at least *name* the ones that close that vertical's specific objection.
 
 | Capability | One-liner you can use on a call |
 |---|---|
 | **QuickStart Wizard** | "2-minute conversational wizard that produces a state-aware, family-tailored checklist the client takes verbatim to their attorney, CPA, advisor, and insurance agent. Sample available on the partner brief." |
 | **Estate Binder** | "One combined PDF assembled live from the family's vault — QuickStart Guide first, then IAC, then every other section. A single book the family hands to professionals." |
-| **Trustee Mode** | "A designated trustee (attorney, advisor, executor, family member) can step into the benefactor's account with a full audit trail — every change logged, every mutation undoable. Big for attorney + advisor verticals." |
+| **Trustee Mode (TMA)** | "A designated trustee (attorney, advisor, executor, family member) can step into the benefactor's account with a full audit trail — every change logged, every mutation undoable. Big for attorney + advisor verticals." |
 | **Offline-first PWA** | "Real Progressive Web App on iOS + Android. Dexie-backed sync so a beneficiary in a FEMA trailer or a library can still use it when they need it most." |
 | **White-label / partner-branded experiences** | "Partner-branded sign-up, brand override per tenant (logo, palette, footer copy), partner-specific intro packets. Family stays familiar; partner is the brand the client sees." |
 | **Permission-aware AI (xAI Grok)** | "All AI runs on xAI Grok with strict per-document permission scoping. Model only sees what the benefactor explicitly released. No human team reads documents. No cross-account training." |

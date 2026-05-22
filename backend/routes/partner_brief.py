@@ -175,12 +175,12 @@ DEFAULTS: dict[str, Any] = {
         "title": "CarryOn™ Partner Brief",
         "intro": (
             "A short overview of the platform — the AI-driven QuickStart that turns a 2-minute "
-            "conversation into a professional-prep checklist, the eleven pillars that organize the "
-            "family's full picture, the platform-wide capabilities (Estate Binder, Trustee Mode, "
-            "offline-first PWA, white-label partner experiences), and "
-            "how each one fits the kinds of businesses we partner with — life insurance, financial "
-            "planning, funeral homes, estate planning attorneys, and other related industries. "
-            "Our team uses this brief to screen partner calls before a discovery call with the founder."
+            "conversation into a professional-prep checklist, the four pillars of Total Estate Readiness "
+            "that organize the family's full picture, the platform-wide capabilities (Estate Binder, "
+            "Trustee Mode, offline-first PWA, white-label partner experiences), and how each one fits "
+            "the kinds of businesses we partner with \u2014 life insurance, financial planning, funeral "
+            "homes, estate planning attorneys, and other related industries. Our team uses this brief "
+            "to screen partner calls before a discovery call with the founder."
         ),
     },
     "one_breath": {
@@ -223,160 +223,93 @@ DEFAULTS: dict[str, Any] = {
         ),
     },
     "pillars": {
-        "title": "2. The Eleven Pillars of Family Readiness",
+        "title": "2. The Four Pillars of Total Estate Readiness",
         "intro": (
-            "These are the official names we use everywhere in CarryOn. Always include the ™ on Estate Guardian."
+            "Four pillars hold up everything CarryOn does. Each one bundles a small set of focused "
+            "functions that work together. Use the pillar name on a call, drop the function abbreviation "
+            "in casually so the partner can map it to what they already sell. Always include the \u2122 "
+            "on Estate Guardian."
         ),
         "items": [
             {
                 "n": "01",
-                "name": "Milestone Messages",
-                "abbr": "MM",
+                "name": "Estate",
+                "abbr": "People & plan",
                 "desc": (
-                    "Recorded video, audio, or written messages a benefactor leaves for the milestones "
-                    "they want to be part of — graduations, weddings, births, birthdays, or any moment "
-                    "they choose. Created infinitely over time and delivered exactly as the benefactor "
-                    "envisioned, even if they can't be there."
+                    "The people who matter, the plan you leave them, and the audit trail of every "
+                    "change along the way. Functions inside this pillar: Beneficiaries (name who "
+                    "matters and set what each person sees), Milestone Messages (MM \u2014 video, audio, "
+                    "or written messages delivered at specific future moments), Friends & Family "
+                    "Notification (FFN \u2014 coordinated, dignified notification list), Designated "
+                    "Trustee Services (DTS \u2014 lets an advisor act on behalf of the benefactor with "
+                    "a full audit trail), and Estate Plan Timeline (EPT \u2014 a living record of every "
+                    "edit, who made it, and when)."
                 ),
             },
             {
                 "n": "02",
-                "name": "Secure Document Vault",
-                "abbr": "SDV",
+                "name": "Vault",
+                "abbr": "Documents & credentials",
                 "desc": (
-                    "An AES-256 encrypted, per-estate vault for the documents a family will actually "
-                    "need — wills, trusts, deeds, insurance policies, medical directives. Triple-Lock "
-                    "protected; the benefactor decides who sees what and when. The vault is also the "
-                    "foundation that powers Estate Guardian™, the Immediate Action Checklist, and "
-                    "the rest of the platform."
+                    "Every document and credential the family will actually need \u2014 encrypted, "
+                    "organized, and surfaced by an AI that finds what was missed. Functions inside "
+                    "this pillar: Secure Document Vault (SDV \u2014 AES-256 per-estate encrypted vault "
+                    "with Triple-Lock, released only to the people the benefactor names), Digital "
+                    "Access Vault (DAV \u2014 banking, brokerage, email, social, password-manager seeds, "
+                    "crypto wallet keys, assigned to specific beneficiaries), and Estate Guardian\u2122 "
+                    "AI (EGA \u2014 an AI estate-law analyst that reads inside the encrypted vault and "
+                    "flags gaps, contradictions, and filing deadlines, then seeds the family's "
+                    "Immediate Action Checklist). No human team reads the documents."
                 ),
             },
             {
                 "n": "03",
-                "name": "Estate Guardian™ AI",
-                "abbr": "EGA",
+                "name": "Financial",
+                "abbr": "Money & structure",
                 "desc": (
-                    "An AI estate-law analyst trained on U.S. law across all 50 states, working "
-                    "entirely inside the benefactor's encrypted vault. EGA reviews their documents "
-                    "for gaps, contradictions, outdated provisions, and missing pieces — surfacing "
-                    "details like claim phone numbers, executor contacts, and filing deadlines, and "
-                    "auto-populating the beginnings of the family's Immediate Action Checklist. No "
-                    "human team reads the documents."
+                    "The complete money picture and a visual map of every entity and structure that "
+                    "holds it together. Functions inside this pillar: CarryOn Financial Picture (CFP "
+                    "\u2014 a complete, encrypted view of bank accounts, investments, insurance policies, "
+                    "bills, debts, and properties, with the right contact attached to each entry), and "
+                    "CarryOn Entities & Structures (CES \u2014 a visual, pan-and-zoom org chart of every "
+                    "trust, LLC, S-corp, C-corp, partnership, charitable entity, real property, and the "
+                    "beneficiaries and external advisors connected to each). CFP shows what's there; "
+                    "CES shows how it's wired."
                 ),
             },
             {
                 "n": "04",
-                "name": "Immediate Action Checklist",
-                "abbr": "IAC",
+                "name": "Preparedness",
+                "abbr": "Crisis playbook",
                 "desc": (
-                    "A step-by-step playbook for what the family needs to do on the hardest days of "
-                    "their lives. Partially auto-created by Estate Guardian™ from the documents in "
-                    "the vault and fully customizable — so when a crisis hits, the family knows "
-                    "exactly what to do, who to call, where every document lives, and what deadlines "
-                    "matter."
-                ),
-            },
-            {
-                "n": "05",
-                "name": "CarryOn Contingency Protocols",
-                "abbr": "CCP",
-                "desc": (
-                    "Pre-built response plans for the scenarios a family might face — medical "
-                    "emergencies, natural disasters, financial disruptions, incapacity, or the "
-                    "passing of a loved one. A Tap-to-Create Wizard walks the benefactor through "
-                    "building a protocol in minutes, connecting people, documents, checklists, and "
-                    "communication channels into one coordinated plan the family can execute together."
-                ),
-            },
-            {
-                "n": "06",
-                "name": "Estate Communications Tool",
-                "abbr": "ECT",
-                "desc": (
-                    "Secure, end-to-end encrypted family messaging that doesn't depend on a phone "
-                    "number or a specific device — so a beneficiary can log in from a friend's phone, "
-                    "a library computer, or a FEMA trailer after a disaster and pick up exactly where "
-                    "the family left off. Group and direct messaging, voice notes, image sharing, "
-                    "location sharing, and message pinning. When a contingency protocol activates, "
-                    "ECT is how the family coordinates."
-                ),
-            },
-            {
-                "n": "07",
-                "name": "Digital Access Vault",
-                "abbr": "DAV",
-                "desc": (
-                    "Encrypted storage for the modern family's digital credentials — banking and "
-                    "brokerage logins, email, social, subscription accounts, password-manager seeds, "
-                    "and crypto wallet keys — assigned to specific beneficiaries so nothing is lost "
-                    "and nothing is forgotten."
-                ),
-            },
-            {
-                "n": "08",
-                "name": "Friends & Family Notification",
-                "abbr": "FFN",
-                "desc": (
-                    "A personalized notification list of family, friends, colleagues, and anyone the "
-                    "beneficiaries should reach during a transition or emergency. Names, phone "
-                    "numbers, relationships, and special notes — organized so the people who matter "
-                    "most never hear the news through the grapevine."
-                ),
-            },
-            {
-                "n": "09",
-                "name": "CarryOn Financial Picture",
-                "abbr": "CFP",
-                "desc": (
-                    "A complete, encrypted picture of the household's financial life — bank accounts, "
-                    "investment portfolios, insurance policies, bills, debts, and properties — with "
-                    "balances tracked, anomalies flagged, and the right contact info attached to "
-                    "every entry. When transition happens, the family sees the full financial "
-                    "picture instantly instead of hunting through file cabinets and scattered logins."
-                ),
-            },
-            {
-                "n": "10",
-                "name": "CarryOn Entities & Structures",
-                "abbr": "CES",
-                "desc": (
-                    "A visual, pan-and-zoom org chart of the household's trusts, LLCs, partnerships, "
-                    "S-corps, C-corps, charitable entities, real properties, and the beneficiaries and "
-                    "external advisors connected to each. CFP shows what's there; CES shows how it's "
-                    "wired. Built for households with anything more complex than a single will — so "
-                    "when transition happens, the family and their attorney see the entire structure "
-                    "at a glance instead of reconstructing it from a filing cabinet. Distinct from "
-                    "CFP so partners can enable each independently per tier."
-                ),
-            },
-            {
-                "n": "11",
-                "name": "Beneficiary Estate Concierge",
-                "abbr": "BEC",
-                "desc": (
-                    "An AI concierge that activates for beneficiaries after transition. Beneficiaries "
-                    "can ask plain-English questions — \u201cWhere is the life insurance?\u201d "
-                    "\u201cWho's the executor?\u201d \u201cWhat did Dad want for the cabin?\u201d — "
-                    "and the Concierge answers using only the documents the benefactor specifically "
-                    "released to them, with inline citations linking each answer back to the exact "
-                    "source document. Clarity on the worst day of their life, without hunting through "
-                    "a folder of PDFs."
+                    "The playbook the family follows on the hardest days \u2014 step-by-step actions, "
+                    "pre-built response plans, and a private channel to coordinate. Functions inside "
+                    "this pillar: Immediate Action Checklist (IAC \u2014 a step-by-step playbook for the "
+                    "first hours, days, and weeks, partially auto-built from the vault by EGA, fully "
+                    "customizable), CarryOn Contingency Protocols (CCP \u2014 pre-authored response "
+                    "plans for medical emergencies, natural disasters, incapacity, or transition, "
+                    "with people, documents, checklists, and communication channels pre-wired), and "
+                    "Estate Communications Tool (ECT \u2014 phone-number-free family messaging that "
+                    "works from any device, so coordination keeps working when nothing else does)."
                 ),
             },
         ],
         "foundational": (
-            "Building block (not one of the eleven pillars): Beneficiaries — every "
-            "pillar is built around the people the user has named as their "
-            "beneficiaries, with separate permissions for each person. The "
-            "benefactor decides who sees what, and when."
+            "Not part of the four pillars but worth naming on the call: the Beneficiary Estate "
+            "Concierge (BEC) is an AI that activates for the beneficiaries after transition. It "
+            "answers plain-English questions (\u201cwhere's the life insurance?\u201d, "
+            "\u201cwho's the executor?\u201d, \u201cwhat did Dad want for the cabin?\u201d) using only "
+            "the documents the benefactor specifically released to each beneficiary, with inline "
+            "citations to the source. Beneficiaries themselves are the foundational primitive every "
+            "pillar is built around \u2014 the benefactor decides who sees what and when."
         ),
     },
     "capabilities": {
         "title": "2.5 Platform-wide capabilities",
         "intro": (
-            "These aren't separate pillars — they're the connective tissue that makes the eleven pillars "
-            "work as one product. Every partner should know about them because each one closes a "
-            "specific objection that comes up on discovery calls."
+            "These aren't pillars or functions inside a pillar \u2014 they're the connective tissue "
+            "that makes the four pillars work as one product. Every partner should know about them "
+            "because each one closes a specific objection that comes up on discovery calls."
         ),
         "items": [
             {
@@ -430,7 +363,7 @@ DEFAULTS: dict[str, Any] = {
     "verticals": {
         "title": "3. How it fits each kind of partner",
         "intro": (
-            "For each industry: what problem they want to solve, which pillars + capabilities matter "
+            "For each industry: what problem they want to solve, which functions + capabilities matter "
             "most to them, and the screening questions our team will ask."
         ),
         "items": [
@@ -560,7 +493,7 @@ DEFAULTS: dict[str, Any] = {
                 "frame": (
                     "Selling CarryOn as a workplace benefit. The QuickStart Wizard is the Day-1 "
                     "on-ramp every employee sees — 2 minutes, no jargon, a printable guide they can "
-                    "act on the same week. Then the full eleven pillars + Estate Binder become the "
+                    "act on the same week. Then the full four pillars + Estate Binder become the "
                     "family-preparedness piece on top of the usual financial-wellness stack. Screen "
                     "on plan-sponsor count, age skew, current EAP / financial-wellness offering."
                 ),
@@ -585,7 +518,7 @@ DEFAULTS: dict[str, Any] = {
             {
                 "name": "Military / veteran service organizations",
                 "frame": (
-                    "CarryOn has Military and Veteran tier discounts. Pillars: full eleven + Estate "
+                    "CarryOn has Military and Veteran tier discounts. Pillars: all four + Estate "
                     "Binder + Trustee Mode (for spouse-assisted account management during deployment), "
                     'presented as "leave nothing for your family to figure out." Screen on org '
                     "type, member count, and how often members deploy if active-duty."
@@ -594,7 +527,7 @@ DEFAULTS: dict[str, Any] = {
             {
                 "name": "Senior-living operators / CCRCs",
                 "frame": (
-                    "Resident move-in and family-coordination angle. Pillars: full eleven + QuickStart "
+                    "Resident move-in and family-coordination angle. Pillars: all four + QuickStart "
                     "at intake + Estate Binder as the resident-and-family deliverable. Screen on "
                     "resident count, independent vs assisted vs memory-care mix."
                 ),

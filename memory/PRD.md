@@ -107,37 +107,68 @@ guessing what the deceased would have wanted.
 
 ---
 
-## The Eleven Pillars of Family Readiness
+## The Four Pillars of Total Estate Readiness
 
-Source of truth: `/app/backend/routes/feature_gates.py::PLATFORM_FEATURES`
-and `/app/frontend/src/components/landing/LandingContent.js::PILLARS`.
-**Canonical names + abbreviations + order are platform law** — see
+Everything CarryOn does ladders to one outcome: **Total Estate Readiness** for
+the family. Four pillars hold that up. Each pillar bundles a small set of
+focused **functions** (the actual feature surfaces — MM, SDV, EGA, etc.).
+
+Source of truth for the function-level matrix:
+`/app/backend/routes/feature_gates.py::PLATFORM_FEATURES`. Source of truth
+for the pillar grouping: `/app/frontend/src/config/benefactorSections.js`
+(used by the benefactor sidebar) and
+`/app/frontend/src/components/landing/LandingContent.js::PILLARS` (homepage
+narrative). **Canonical names + abbreviations are platform law** — see
 `AGENT_RULES.md` Rule -2.
 
-| # | Pillar | Abbr | Route | Core | Default |
-|---|---|---|---|---|---|
-| 01 | Milestone Messages | MM | `/messages` | ✅ | ON |
-| 02 | Secure Document Vault | SDV | `/vault` | ✅ | ON |
-| 03 | Estate Guardian™ AI | EGA | `/guardian` | | ON |
-| 04 | Immediate Action Checklist | IAC | `/checklist` | ✅ | ON |
-| 05 | CarryOn Contingency Protocols | CCP | `/connected-protocol` | | OFF |
-| 06 | Estate Communications Tool | ECT | `/estate-chat` | | OFF |
-| 07 | Digital Access Vault | DAV | `/digital-wallet` | | ON |
-| 08 | Friends & Family Notification | FFN | `/ffn` | | ON |
-| 09 | CarryOn Financial Picture | CFP | `/financial` | | OFF |
-| 10 | CarryOn Entities & Structures | CES | `/entities` | | OFF |
-| 11 | Beneficiary Estate Concierge AI | BEC | `/beneficiary/concierge` | | OFF |
+### 🔵 Pillar 01 — Estate *(people, plan, audit trail)*
 
-Foundational primitive (not a pillar tile, but everything ties to it):
-**Beneficiaries** (`/beneficiaries`). Designated Trustee Services (DTS),
-Trustee Mode Access (TMA), and Estate Plan Timeline (EPT) are audit-side
-or delegation features, gated separately, **not** counted as pillars.
+| Function | Abbr | Route | What it does |
+|---|---|---|---|
+| Beneficiaries | — | `/beneficiaries` | Name who matters, set what each person sees, control when. |
+| Milestone Messages | MM | `/messages` | Video / audio / written messages delivered at specific future moments. |
+| Friends & Family Notification | FFN | `/ffn` | Coordinated, dignified call-list when something happens. |
+| Designated Trustee Services | DTS | `/trustee` | Lets an attorney / advisor / family member act on the benefactor's behalf with a full audit trail. |
+| Estate Plan Timeline | EPT | `/timeline` | A living record of every edit, who made it, and when. |
 
-CES was split out of CFP on May 22, 2026 so the founder can toggle the
-visual entity org-chart independently per tier and per partner. Data
-collections (`cfp_entities`, `cfp_external_people`,
-`cfp_entity_relationships`) are unchanged — disabling CES hides the
-route without deleting the underlying structures.
+### 🟡 Pillar 02 — Vault *(documents, credentials, AI gap finder)*
+
+| Function | Abbr | Route | What it does |
+|---|---|---|---|
+| Secure Document Vault | SDV | `/vault` | AES-256 encrypted vault for wills, trusts, deeds, policies, directives. Released only to people the benefactor names. |
+| Digital Access Vault | DAV | `/digital-wallet` | Passwords, bank logins, password-manager seeds, crypto keys — assigned to the right people. |
+| Estate Guardian™ AI | EGA | `/guardian` | AI estate-law analyst that reads inside the vault and flags gaps, contradictions, deadlines. |
+
+### 🟢 Pillar 03 — Financial *(money picture and entity structure)*
+
+| Function | Abbr | Route | What it does |
+|---|---|---|---|
+| CarryOn Financial Picture | CFP | `/financial` | Encrypted view of accounts, investments, policies, bills, debts, properties. |
+| CarryOn Entities & Structures | CES | `/entities` | Visual, pan-and-zoom org chart of every trust, LLC, partnership, charitable entity, and the people connected to each. |
+
+### 🟣 Pillar 04 — Preparedness *(crisis playbook and family hotline)*
+
+| Function | Abbr | Route | What it does |
+|---|---|---|---|
+| Immediate Action Checklist | IAC | `/checklist` | Step-by-step playbook for the first hours, days, and weeks. Auto-built from the vault by EGA, fully customizable. |
+| CarryOn Contingency Protocols | CCP | `/connected-protocol` | Pre-authored response plans for medical, disaster, incapacity, transition. |
+| Estate Communications Tool | ECT | `/estate-chat` | Phone-number-free family messaging that works from any device. |
+
+### Not a pillar — beneficiary-side capability
+
+| Function | Abbr | Route | What it does |
+|---|---|---|---|
+| Beneficiary Estate Concierge | BEC | `/beneficiary/concierge` | After transition: an AI concierge for beneficiaries that answers plain-English questions, grounded only in the documents the benefactor specifically released to them, with inline citations. |
+
+### Foundational primitive (not a pillar tile, but everything ties to it)
+**Beneficiaries** — every pillar and function is built around the people the
+benefactor has named, with separate per-person permissions. The benefactor
+decides who sees what, and when.
+
+**Trustee Mode Access (TMA)** is a delegation primitive that layers across
+all four pillars — a designated trustee can step into the benefactor's
+account with a full audit trail. It is not a function inside any one
+pillar; it is a way of using the platform on behalf of someone else.
 
 `default OFF` means the feature exists in code and tests, but each tier
 must be toggled ON by the founder in **Admin → Finance → Subs → Feature
