@@ -1,6 +1,40 @@
 # CarryOn — Changelog
 
 
+## May 22, 2026 — QuickStart Guide depth + personalization rewrite (V2026.05.22-m)
+
+**Why**: Founder review of an iOS-rendered QuickStart Guide called it "thin", "generic", and not "personalized enough." The prior prompt asked for "2-3 sentence intro" and "one-sentence checklist items," which produced a single thin page. The new prompt demands multi-page depth, named details, and state-law specifics.
+
+**Prompt rewrite (`backend/services/quickstart_ai.py::_SYSTEM_PROMPT`):**
+- Intro length 2-3 sentences → **4-6 sentences**, MUST use the user's first name twice and reference at least three concrete user facts (children by name, entity types, specific state combos).
+- Checklist items: 1 sentence → **2-3 sentences**, action verb first, then a follow-on sentence explaining WHY THIS SPECIFIC USER needs that action tied to their state / family / properties / entities. Aim for 5-8 items per professional.
+- `state_notes` upgraded from "1-3 sentences" → **4-6 sentence paragraph** that MUST cite at least three concrete state-law mechanisms (community vs. separate property, TOD-deed availability, homestead $, intestate succession, ancillary probate triggers).
+- Two new required output fields:
+  - `personalized_observations`: array of 3-5 short paragraphs flagging specific risks/opportunities for THIS user (e.g., "Your Nevada vacation home triggers ancillary probate unless…").
+  - `key_terms`: array of 4-6 plain-English glossary entries chosen FOR this user (e.g., include "Ancillary probate" if they own out-of-state real estate; include "Pour-over will" if a trust was recommended).
+- Strict JSON output format with the new shape documented inline in the prompt.
+
+**Parser hardened (`_parse_response`):**
+- `personalized_observations` coerced to a list of strings (length-capped at 600 chars per entry, drops blanks).
+- `key_terms` coerced to a list of `{term, definition}` dicts (term 80-char cap, definition 400-char cap, drops malformed entries).
+- Both fields fall back to empty lists on missing/malformed AI output so the PDF still renders.
+
+**PDF renderer extended (`backend/services/quickstart_pdf.py`):**
+- New "Personalized observations" section: gold `>` bullets, italic intro line explaining what the user is looking at, hangs cleanly under the state-law notes.
+- New "Key terms you'll hear" section: bold term followed by a plain-English definition, also with an italic helper line.
+- Both sections only render if the AI returned data — graceful absence on old payloads.
+
+**Sample PDF (`backend/routes/partner_brief.py::_SAMPLE_AI_PAYLOAD`) rebuilt:**
+- The hardcoded sample (used by the public `/api/partner-brief/sample-quickstart-pdf` CTA on the Partner Brief) was rewritten in the new richer shape. State-notes paragraph extended to 6 sentences with concrete CA mechanics (community-property nuance, $184.5 K small-estate threshold, no TOD-deed in CA, healthcare directive specifics, Nevada ancillary probate trigger). Added 4 personalized observations (NV ancillary probate, minor-child UTMA / trust gap, simultaneous-death insurance routing, CA-specific HIPAA / directive forms) and 5 glossary entries (Ancillary probate, Revocable living trust, Pour-over will, Per stirpes vs. per capita, Step-up in basis).
+- Sample PDF now renders to **3 pages** (was 2) at 7.5 KB.
+
+**Verification:**
+- `bash /app/housekeeping.sh --strict` → ALL CHECKS PASSED · READY TO PUSH · 0 WARN / 0 FAIL.
+- Ruff clean on all three Python files touched.
+- Live `GET /api/partner-brief/sample-quickstart-pdf` returns HTTP 200 / 7676 bytes / `%PDF-1.3`. Extracted text confirms the new sections render in order: snapshot → Estate Attorney → CPA → Financial Advisor → Life Insurance Agent → `Notes for CA` (6 sentences) → `Personalized observations` (4 risk callouts) → `Key terms you'll hear` (5 glossary entries).
+
+
+
 ## May 22, 2026 — QW round 2: second `[object Object]` site + beneficiary row mobile layout (V2026.05.22-l)
 
 **Same autofill bug, second site.** The prior fix only patched the residence step (5). The properties step (6) had a copy-pasted twin `onChange={(v) => updateRow(idx, { address: v })}` that suffered identically — browser autofill on the property-1 input wrote a React event object into the wizard's `list[0].address`, which serialised as `"[object Object]"` and locked the user out of advancing. Founder caught it on iOS Safari.

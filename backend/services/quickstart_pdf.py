@@ -299,6 +299,67 @@ def build_quickstart_pdf(
         pdf.set_text_color(*_INK)
         pdf.multi_cell(0, 6, _safe(state_notes), new_x="LMARGIN", new_y="NEXT")
 
+    # ── Personalized observations ────────────────────────────────────
+    obs = ai_payload.get("personalized_observations") or []
+    if obs:
+        _section_heading(pdf, "Personalized observations")
+        pdf.set_font("Helvetica", "I", 9.5)
+        pdf.set_text_color(*_MUTED)
+        pdf.multi_cell(
+            0,
+            5,
+            _safe(
+                "Specific risks and opportunities pulled from your inputs - "
+                "raise these with your professionals so the conversation skips "
+                "the generic preamble."
+            ),
+            new_x="LMARGIN",
+            new_y="NEXT",
+        )
+        pdf.ln(2)
+        pdf.set_font("Helvetica", "", 10.5)
+        pdf.set_text_color(*_INK)
+        for o in obs:
+            pdf.set_x(pdf.l_margin)
+            pdf.set_font("Helvetica", "B", 10.5)
+            pdf.set_text_color(*_GOLD)
+            pdf.cell(7, 6, _safe(">"), new_x="RIGHT", new_y="TOP")
+            pdf.set_font("Helvetica", "", 10.5)
+            pdf.set_text_color(*_INK)
+            pdf.multi_cell(0, 6, _safe(o), new_x="LMARGIN", new_y="NEXT")
+            pdf.ln(1)
+
+    # ── Key terms glossary ───────────────────────────────────────────
+    key_terms = ai_payload.get("key_terms") or []
+    if key_terms:
+        _section_heading(pdf, "Key terms you'll hear")
+        pdf.set_font("Helvetica", "I", 9.5)
+        pdf.set_text_color(*_MUTED)
+        pdf.multi_cell(
+            0,
+            5,
+            _safe(
+                "Plain-English definitions for the terms most likely to come "
+                "up in your meetings, picked based on your specific situation."
+            ),
+            new_x="LMARGIN",
+            new_y="NEXT",
+        )
+        pdf.ln(2)
+        for entry in key_terms:
+            term = entry.get("term") or ""
+            definition = entry.get("definition") or ""
+            if not term or not definition:
+                continue
+            pdf.set_x(pdf.l_margin)
+            pdf.set_font("Helvetica", "B", 10.5)
+            pdf.set_text_color(*_INK)
+            pdf.multi_cell(0, 6, _safe(term), new_x="LMARGIN", new_y="NEXT")
+            pdf.set_font("Helvetica", "", 10.5)
+            pdf.set_text_color(*_BODY)
+            pdf.multi_cell(0, 5.8, _safe(definition), new_x="LMARGIN", new_y="NEXT")
+            pdf.ln(1.5)
+
     # ── Next step ────────────────────────────────────────────────────
     next_step = ai_payload.get("next_step") or ""
     if next_step:

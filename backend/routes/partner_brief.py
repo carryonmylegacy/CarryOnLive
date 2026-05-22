@@ -142,11 +142,73 @@ _SAMPLE_AI_PAYLOAD: dict[str, Any] = {
         },
     ],
     "state_notes": (
-        "California is a community-property state, which affects how the home and retirement accounts "
-        "pass to Jane. Probate in California is unusually slow and expensive — a revocable trust is the "
-        "single biggest move you can make. Healthcare directives and HIPAA releases are critical because "
-        "California hospitals are strict about who can speak for whom."
+        "California is a community-property state, so the home and any income earned during marriage "
+        "generally pass to Jane by operation of law, but separate property (gifts, inheritances, "
+        "pre-marriage assets) does not - confirm which buckets your accounts fall into. California "
+        "probate is unusually slow and expensive on estates above the small-estate threshold "
+        "(currently around $184,500), which is why a funded revocable living trust is the single "
+        "biggest probate-avoidance move available. California does NOT offer a transfer-on-death "
+        "deed for real property, so retitling the San Diego home into the trust is the cleanest path. "
+        "Healthcare directives and HIPAA releases matter here because California hospitals are strict "
+        "about who can speak for an incapacitated patient. The Lake Tahoe property in Nevada will "
+        "trigger ancillary probate in NV unless it is owned by the trust or held jointly with right "
+        "of survivorship."
     ),
+    "personalized_observations": [
+        "Your Nevada vacation home is the single biggest probate-trigger in this picture. If it stays "
+        "titled in your individual names, NV will require its own probate proceeding on top of California - "
+        "double cost, double delay. Move it into a revocable trust or hold it via TBE / JTWROS "
+        "before the next refinance.",
+        "Bobby and Emma are still dependents. Without a UTMA custodian or testamentary trust inside "
+        "the will, California intestate rules can route an outright distribution to each at age 18, "
+        "which is rarely what parents intend. Pair a trust provision with a named successor trustee "
+        "you've actually had a conversation with.",
+        "Two life-insurance policies is great - but if Jane is the only named beneficiary on both, "
+        "a simultaneous-death scenario sends the proceeds through probate. Name Bobby + Emma as "
+        "per stirpes contingents and consider an ILIT if total coverage approaches estate-tax thresholds.",
+        "California's healthcare-directive and HIPAA-release forms are state-specific and out-of-state "
+        "forms are often rejected at the bedside. Re-sign these on California paper, name an alternate "
+        "agent in case Jane is also incapacitated, and store originals where Jane can reach them in "
+        "under 5 minutes.",
+    ],
+    "key_terms": [
+        {
+            "term": "Ancillary probate",
+            "definition": (
+                "A second probate proceeding opened in any state where the decedent owned real estate. "
+                "It is why the Lake Tahoe property is the most urgent action item in this guide."
+            ),
+        },
+        {
+            "term": "Revocable living trust",
+            "definition": (
+                "A trust you create and fund during your lifetime that holds title to your assets. "
+                "Assets inside it bypass probate and you can change the terms at any time."
+            ),
+        },
+        {
+            "term": "Pour-over will",
+            "definition": (
+                "A short will whose only job is to direct anything still in your individual name at "
+                "death INTO your living trust. Pairs with a funded revocable trust to catch leftovers."
+            ),
+        },
+        {
+            "term": "Per stirpes vs. per capita",
+            "definition": (
+                "Two ways a beneficiary's share splits if they die before you. Per stirpes sends their "
+                "share to their children; per capita splits it among surviving beneficiaries at the "
+                "same level. Almost always pick per stirpes for life insurance with minor children."
+            ),
+        },
+        {
+            "term": "Step-up in basis",
+            "definition": (
+                "When an heir inherits appreciated property, its tax basis resets to fair market value "
+                "at the date of death. Matters for the Lake Tahoe property and any taxable brokerage."
+            ),
+        },
+    ],
     "next_step": (
         "Schedule a 45-minute consult with a California-licensed estate attorney this month. Bring this guide; "
         "they'll know exactly what you're after."
