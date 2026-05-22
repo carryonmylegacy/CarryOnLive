@@ -112,7 +112,9 @@ export default function PartnerBriefPage() {
           <p style={tocLabelStyle}>Contents</p>
           <ol style={{ margin: 0, padding: 0, listStyle: 'none', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, fontSize: 14 }}>
             <li><a href="#one-breath" style={linkStyle}>{c.one_breath?.title}</a></li>
+            {c.quickstart?.title && <li><a href="#quickstart" style={linkStyle}>{c.quickstart.title}</a></li>}
             <li><a href="#pillars" style={linkStyle}>{c.pillars?.title}</a></li>
+            {c.capabilities?.title && <li><a href="#capabilities" style={linkStyle}>{c.capabilities.title}</a></li>}
             <li><a href="#verticals" style={linkStyle}>{c.verticals?.title}</a></li>
             <li><a href="#adjacent" style={linkStyle}>{c.adjacent?.title}</a></li>
             <li><a href="#screening" style={linkStyle}>{c.screening?.title}</a></li>
@@ -125,6 +127,48 @@ export default function PartnerBriefPage() {
           <Quote>{c.one_breath?.quote}</Quote>
           <p style={pStyle}>{c.one_breath?.paragraph}</p>
         </Section>
+
+        {/* 1.5 QuickStart Guide — visible CTA so a B2B prospect can
+              click and open the deterministic sample PDF the platform
+              actually produces. Server-rendered, no auth, no AI cost. */}
+        {c.quickstart && (
+          <Section id="quickstart" title={c.quickstart.title}>
+            <p style={pStyle}>{c.quickstart.paragraph}</p>
+            {Array.isArray(c.quickstart.bullets) && c.quickstart.bullets.length > 0 && (
+              <ul style={ulStyle}>
+                {c.quickstart.bullets.map((b, i) => <li key={i} style={liStyle}>{b}</li>)}
+              </ul>
+            )}
+            {c.quickstart.sample_pdf_url && (
+              <div className="no-print" style={{ marginTop: 18, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <a
+                  href={c.quickstart.sample_pdf_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  data-testid="partner-brief-quickstart-sample"
+                  style={{
+                    alignSelf: 'flex-start',
+                    padding: '10px 18px',
+                    borderRadius: 10,
+                    fontSize: 14,
+                    fontWeight: 700,
+                    background: 'linear-gradient(135deg,#d4af37,#b8962e)',
+                    color: '#080e1a',
+                    textDecoration: 'none',
+                    boxShadow: '0 8px 24px rgba(212,175,55,0.25)',
+                  }}
+                >
+                  {c.quickstart.sample_label || 'See a sample QuickStart Guide'}
+                </a>
+                {c.quickstart.sample_caption && (
+                  <p style={{ fontSize: 12, color: '#94A3B8', margin: 0, lineHeight: 1.5, maxWidth: 560 }}>
+                    {c.quickstart.sample_caption}
+                  </p>
+                )}
+              </div>
+            )}
+          </Section>
+        )}
 
         {/* 2. Pillars */}
         <Section id="pillars" title={c.pillars?.title}>
@@ -145,6 +189,21 @@ export default function PartnerBriefPage() {
             <p style={{ ...pStyle, marginTop: 18, fontSize: 14, color: '#94A3B8' }}>{c.pillars.foundational}</p>
           )}
         </Section>
+
+        {/* 2.5 Platform-wide capabilities — the connective tissue */}
+        {c.capabilities && (
+          <Section id="capabilities" title={c.capabilities.title}>
+            {c.capabilities.intro && <p style={pStyle}>{c.capabilities.intro}</p>}
+            <div style={{ display: 'grid', gap: 10 }}>
+              {(c.capabilities.items || []).map((cap, i) => (
+                <div key={i} style={pillarCardStyle}>
+                  <h4 style={{ fontSize: 15, fontWeight: 700, color: '#F8FAFC', margin: 0, marginBottom: 6 }}>{cap.name}</h4>
+                  <p style={{ fontSize: 14, color: '#CBD5E1', margin: 0, lineHeight: 1.6 }}>{cap.desc}</p>
+                </div>
+              ))}
+            </div>
+          </Section>
+        )}
 
         {/* 3. Verticals */}
         <Section id="verticals" title={c.verticals?.title}>

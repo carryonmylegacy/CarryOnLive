@@ -22,12 +22,133 @@ from datetime import datetime, timezone
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import StreamingResponse
 
 from config import db
 from guards import require_admin_scope
+from services.quickstart_pdf import build_quickstart_pdf
 from utils import get_current_user
 
 router = APIRouter()
+
+
+# ── Sample QuickStart Guide payload (deterministic — NO Grok call) ──
+# Powers the public `Sample QuickStart Guide` button on the Partner
+# Brief. Using a fixed payload here (instead of calling xAI on every
+# B2B page-view) gives us: free, fast, deterministic output that we
+# control. The visual rendering reuses `services/quickstart_pdf` so
+# the sample is *visually identical* to what a real client's PDF
+# looks like — only the data + AI text are pre-baked.
+_SAMPLE_USER_NAME = "The Mitchell Family"
+_SAMPLE_DATA: dict[str, Any] = {
+    "state": {"state_of_residence": "CA"},
+    "household": {
+        "marital_status": "married",
+        "children_dependent": 2,
+        "children_adult": 0,
+        "special_needs_dependent": False,
+    },
+    "beneficiaries": {
+        "beneficiaries": [
+            {"name": "Jane Mitchell", "relationship": "Spouse"},
+            {"name": "Bobby Mitchell", "relationship": "Son"},
+            {"name": "Emma Mitchell", "relationship": "Daughter"},
+        ]
+    },
+    "real_estate": {"primary_residence": True, "additional_count": 0, "multi_state": False},
+    "financial_accounts": {
+        "checking_savings": True,
+        "brokerage": False,
+        "retirement": True,
+        "hsa": False,
+        "crypto": False,
+    },
+    "life_insurance": {"status": "yes"},
+    "business": {"structure": "none"},
+    "existing_documents": {"documents": ["will"]},
+}
+_SAMPLE_AI_PAYLOAD: dict[str, Any] = {
+    "intro": (
+        "Hi Mitchell family — you're already further along than most. With a will in place, a "
+        "California primary residence, and life insurance covering Jane, Bobby, and Emma, the "
+        "real work now is closing the gaps between those pieces so the family never has to "
+        "scramble. Here's a one-page checklist you can take, verbatim, to each of your professionals."
+    ),
+    "professional_sections": [
+        {
+            "professional": "Estate Attorney",
+            "why_them": (
+                "California is a community-property state and your will alone doesn't avoid probate "
+                "for the primary residence — your attorney can solve that in a single sitting."
+            ),
+            "checklist": [
+                "Confirm whether your existing will is California-compliant and self-proving (saves the family weeks at probate).",
+                "Add a revocable living trust to keep the primary residence out of California probate; retitle the deed accordingly.",
+                "Draft a durable Power of Attorney + an Advance Healthcare Directive — neither is in your current packet.",
+                "Add a guardianship designation for Bobby and Emma so the court isn't the one choosing.",
+                "Confirm the life-insurance beneficiary designations match what your will intends — they override the will if they conflict.",
+            ],
+        },
+        {
+            "professional": "CPA / Tax Advisor",
+            "why_them": (
+                "Married-filing-jointly + California + retirement accounts have specific basis-step-up and beneficiary rules worth a 30-minute review."
+            ),
+            "checklist": [
+                "Walk through the 401(k) / IRA beneficiary-designation chain and confirm Jane is primary, kids contingent.",
+                "Discuss the step-up-in-basis on the primary residence so heirs don't pay tax on appreciation already realized.",
+                "Confirm California's $13.61 M federal estate-tax exemption posture for your household — if you're well under, simplify accordingly.",
+                "Set a recurring annual touchpoint to revisit retirement-account beneficiaries (these drift more than wills do).",
+            ],
+        },
+        {
+            "professional": "Financial Advisor",
+            "why_them": (
+                "You have retirement + checking but no brokerage / 529 — there's a clear gap your advisor can size against your goals."
+            ),
+            "checklist": [
+                "Open or confirm 529 plans for Bobby and Emma — California-based or otherwise — and name Jane as successor owner.",
+                "Confirm asset-allocation across retirement + emergency-fund + life-insurance face value is appropriate for a family of four.",
+                "Review whether a brokerage account with Transfer-on-Death registration makes sense to avoid probate on liquid assets.",
+                "Plan a 12-month and 36-month milestone review with your attorney CC'd so legal + financial stay aligned.",
+            ],
+        },
+        {
+            "professional": "Life Insurance Agent / Broker",
+            "why_them": (
+                "You have a policy — the question now is whether the coverage amount + beneficiaries actually match the household's income + dependents."
+            ),
+            "checklist": [
+                "Confirm coverage face value covers at least 10× combined household income or fully replaces it through Emma's college years.",
+                "Confirm Jane is primary beneficiary and Bobby + Emma are contingent (per stirpes, not per capita, in California).",
+                "If term, confirm the term length lasts beyond the kids' college years; if whole, confirm the cash-value strategy is current.",
+                "Add a 'where the policy lives' line to your family's preparedness binder so the claim isn't delayed at the worst time.",
+            ],
+        },
+    ],
+    "state_notes": (
+        "California is a community-property state, which affects how the home and retirement accounts "
+        "pass to Jane. Probate in California is unusually slow and expensive — a revocable trust is the "
+        "single biggest move you can make. Healthcare directives and HIPAA releases are critical because "
+        "California hospitals are strict about who can speak for whom."
+    ),
+    "next_step": (
+        "Schedule a 45-minute consult with a California-licensed estate attorney this month. Bring this guide; "
+        "they'll know exactly what you're after."
+    ),
+}
+
+
+def _render_sample_pdf() -> bytes:
+    """Render the deterministic sample QuickStart PDF for the
+    public Partner Brief CTA. Kept synchronous because fpdf2 is fast
+    enough and the result is cached by the CDN / browser anyway."""
+    return build_quickstart_pdf(
+        user_name=_SAMPLE_USER_NAME,
+        data=_SAMPLE_DATA,
+        ai_payload=_SAMPLE_AI_PAYLOAD,
+        generated_at=datetime.now(timezone.utc),
+    )
 
 
 # ── Default content (shipped with the app; matches the original
@@ -38,27 +159,52 @@ DEFAULTS: dict[str, Any] = {
         "eyebrow": "For partners thinking about working with CarryOn",
         "title": "CarryOn™ Partner Brief",
         "intro": (
-            "A short overview of the platform, the ten pillars, and how each one "
-            "fits the kinds of businesses we partner with — life insurance, "
-            "financial planning, funeral homes, estate planning attorneys, and "
-            "other related industries. Our team uses this brief to screen "
-            "partner calls before a discovery call with the founder."
+            "A short overview of the platform — the AI-driven QuickStart that turns a 2-minute "
+            "conversation into a professional-prep checklist, the ten pillars that organize the "
+            "family's full picture, the platform-wide capabilities (Estate Binder, Entities & "
+            "Structures, Trustee Mode, offline-first PWA, white-label partner experiences), and "
+            "how each one fits the kinds of businesses we partner with — life insurance, financial "
+            "planning, funeral homes, estate planning attorneys, and other related industries. "
+            "Our team uses this brief to screen partner calls before a discovery call with the founder."
         ),
     },
     "one_breath": {
         "title": "1. The platform in one breath",
         "quote": (
-            "CarryOn™ is the digital family preparedness platform that brings "
-            "together every aspect of a person’s life — so they and their loved "
-            "ones can carry on through anything."
+            "CarryOn™ is the digital family preparedness platform that brings together every "
+            "aspect of a person's life — so they and their loved ones can carry on through anything."
         ),
         "paragraph": (
-            "A single, secure platform where someone organizes their entire life "
-            "picture — important documents, financial accounts, digital logins, "
-            "who needs to be told what when something happens, recorded messages "
-            "for loved ones at future life moments, and an AI guide that can "
-            "answer their family’s questions when they’re not there to. It’s "
-            "built so the family is genuinely ready, not scrambling."
+            "A single, secure platform where someone organizes their entire life picture — important "
+            "documents, financial accounts, digital logins, who needs to be told what when something "
+            "happens, recorded messages for loved ones at future life moments, and an AI guide that "
+            "can answer their family's questions when they're not there to. It's built so the family "
+            "is genuinely ready, not scrambling."
+        ),
+    },
+    "quickstart": {
+        "title": "1.5 The QuickStart Guide — value in 2 minutes",
+        "paragraph": (
+            "Most adults have never thought seriously about estate planning. The QuickStart Wizard "
+            "fixes that on Day 1. In about two minutes — a few conversational questions about state "
+            "of residence, household, beneficiaries, real estate, accounts, life insurance, business "
+            "ownership, and existing documents — the platform produces a state-aware, family-tailored "
+            "one-page checklist the user can take, verbatim, to their estate attorney, CPA, financial "
+            "advisor, and life-insurance agent. It is not legal advice; it's the prepared client every "
+            "professional wishes they got. The guide opens the Estate Binder as the first section and "
+            "is regenerable at any time."
+        ),
+        "bullets": [
+            "Powered by the founder's own xAI Grok account — not an Emergent or third-party LLM key.",
+            "State-aware: California community-property nuances look different than a Texas homestead conversation.",
+            "Beneficiary-aware: every name the user enters becomes a tile the rest of the platform builds around.",
+            "Printable + binder-ready — every partner's client family hands the same paper to the same professional.",
+        ],
+        "sample_label": "See a sample QuickStart Guide",
+        "sample_pdf_url": "/api/partner-brief/sample-quickstart-pdf",
+        "sample_caption": (
+            "Sample household: a married California couple with two dependent kids, primary residence, "
+            "401(k) + checking, life insurance, and a basic will. Same renderer the live platform uses."
         ),
     },
     "pillars": {
@@ -196,9 +342,77 @@ DEFAULTS: dict[str, Any] = {
             "benefactor decides who sees what, and when."
         ),
     },
+    "capabilities": {
+        "title": "2.5 Platform-wide capabilities",
+        "intro": (
+            "These aren't separate pillars — they're the connective tissue that makes the ten pillars "
+            "work as one product. Every partner should know about them because each one closes a "
+            "specific objection that comes up on discovery calls."
+        ),
+        "items": [
+            {
+                "name": "Estate Binder",
+                "desc": (
+                    "One combined PDF assembled live from the family's vault: Title page + TOC + the "
+                    "QuickStart Guide + IAC + every other section the benefactor has built. The family "
+                    "receives a single book to hand to an attorney, executor, or CPA — not a scavenger "
+                    "hunt across email and file cabinets. Regenerable any time the underlying data "
+                    "changes; partners can include it in their own deliverable packet."
+                ),
+            },
+            {
+                "name": "CarryOn Entities & Structures (CES)",
+                "desc": (
+                    "A visual, pan-and-zoom org-chart for trusts, LLCs, partnerships, S-corps, "
+                    "C-corps, and the people / beneficiaries connected to each. Sits beside CFP "
+                    "(the financial picture) — CFP shows what's there, CES shows how it's wired. "
+                    "Built for households with anything more complex than a single will."
+                ),
+            },
+            {
+                "name": "Trustee Mode",
+                "desc": (
+                    "A designated trustee (attorney, advisor, executor, or trusted family member) can "
+                    "step into the benefactor's account with a full audit trail — every change is "
+                    "logged, every mutation is undoable, and a session banner makes the role explicit. "
+                    "Big for attorney + financial-advisor verticals where the professional wants to "
+                    "help the client maintain the platform without ever 'becoming' them."
+                ),
+            },
+            {
+                "name": "Offline-first PWA",
+                "desc": (
+                    "Installable on iOS and Android as a real Progressive Web App. Documents, "
+                    "checklists, and pending changes sync via Dexie when the device comes back online — "
+                    "so a beneficiary in a FEMA trailer, a library, or a hospital waiting room can "
+                    "still use the platform when they need it most."
+                ),
+            },
+            {
+                "name": "White-label partner experiences",
+                "desc": (
+                    "Partner-branded sign-up flows with partner code support, brand override per "
+                    "tenant (logo, palette, footer copy), and partner-specific intro packets. The "
+                    "family experience stays familiar; the partner gets to be the brand the client sees."
+                ),
+            },
+            {
+                "name": "Permission-aware AI (xAI Grok)",
+                "desc": (
+                    "All AI work — Estate Guardian, the Beneficiary Concierge, the QuickStart Wizard — "
+                    "runs on xAI Grok, with strict per-document permission scoping. The model only "
+                    "sees what the benefactor explicitly released. No human team reads the documents; "
+                    "no cross-account training; no third-party LLM key on the founder's AI surfaces."
+                ),
+            },
+        ],
+    },
     "verticals": {
         "title": "3. How it fits each kind of partner",
-        "intro": "For each industry: what problem they want to solve, which pillars matter most to them, and the screening questions our team will ask.",
+        "intro": (
+            "For each industry: what problem they want to solve, which pillars + capabilities matter "
+            "most to them, and the screening questions our team will ask."
+        ),
         "items": [
             {
                 "id": "life-insurance",
@@ -209,14 +423,23 @@ DEFAULTS: dict[str, Any] = {
                     "Standing out in a crowded market — they want to be the agent who also helped the family get organized.",
                     "Peace of mind on compliance: nothing in CarryOn changes or replaces the policy itself.",
                 ],
-                "pillars": "SDV (where the policy lives), EGA (analyzes the benefactor’s estate plan for gaps so the policy is properly named in the right documents), FFN (the agent gets notified when something happens), IAC (claims-filing step lives in the checklist), CFP (the policy shows up in the household financial picture), BEC (after the benefactor passes, beneficiaries can ask the AI Concierge \u201cwhere is the policy?\u201d and get a cited answer pulled from the documents the benefactor released to them).",
+                "pillars": (
+                    "QuickStart (state-aware checklist the policy maps into on Day 1), SDV (where the "
+                    "policy lives), EGA (analyzes the benefactor's estate plan for gaps so the policy "
+                    "is properly named in the right documents), FFN (the agent gets notified when "
+                    "something happens), IAC (claims-filing step lives in the checklist), CFP (the "
+                    "policy shows up in the household financial picture), Estate Binder (the printable "
+                    "packet the family hands to the claims processor), BEC (after the benefactor "
+                    "passes, beneficiaries can ask the AI Concierge \u201cwhere is the policy?\u201d and "
+                    "get a cited answer pulled from the documents the benefactor released to them)."
+                ),
                 "questions": [
                     "Are you looking for a tool to offer to the clients you already have, or a way to get referrals and earn on new clients you bring in?",
                     "Roughly how many policies do you have under management?",
                     'Do you currently offer any kind of "family preparedness" or "legacy" service to clients today, even informally?',
                     "Are you part of a larger agency / IMO / FMO, or independent?",
                 ],
-                "disqualify": "They’re really looking for a CRM, a quoting engine, or a lead-generation service. We’re not those.",
+                "disqualify": "They're really looking for a CRM, a quoting engine, or a lead-generation service. We're not those.",
             },
             {
                 "id": "financial-planners",
@@ -225,13 +448,22 @@ DEFAULTS: dict[str, Any] = {
                     'Estate-planning gap: clients have wealth but no organized "when something happens" plan for the family.',
                     "Standing out from other advisors: wealthy clients more and more expect a complete family-readiness plan, not just money advice.",
                     "Keeping the family relationship: when the primary client passes, the surviving spouse often leaves the advisor within 2 years. CarryOn keeps the family inside an organized hand-off.",
-                    "Peace of mind for compliance: CarryOn doesn’t give financial advice — it just organizes what the advisor and client have already decided.",
+                    "Peace of mind for compliance: CarryOn doesn't give financial advice — it just organizes what the advisor and client have already decided.",
                 ],
-                "pillars": "CFP (full household picture), SDV (estate documents in one place), EGA (an estate-law AI that spots gaps in the client’s plan and gives the advisor a clean punch-list to address), MM (the personal-legacy piece advisors can’t deliver themselves), CCP (plans for accident or incapacity), DAV (the digital-access gap most advisors quietly worry about), BEC (after transition, the surviving spouse / heirs can ask the AI Concierge plain-English questions about the plan and get cited answers from the documents the benefactor designated — keeps the family from feeling lost on day one).",
+                "pillars": (
+                    "QuickStart (the conversation-starter the advisor reviews with the client), CFP "
+                    "(full household picture), CES (the visual entity-and-structure chart for trust + "
+                    "LLC clients), SDV (estate documents in one place), EGA (an estate-law AI that "
+                    "spots gaps and gives the advisor a clean punch-list), MM (the personal-legacy "
+                    "piece advisors can't deliver themselves), CCP (plans for accident or incapacity), "
+                    "DAV (the digital-access gap most advisors quietly worry about), Trustee Mode "
+                    "(advisor-assisted maintenance with audit trail), BEC (after transition the heirs "
+                    "get cited answers — keeps the family from feeling lost on day one)."
+                ),
                 "questions": [
                     "What does your current family hand-off look like today when a client passes or becomes incapacitated?",
                     "Are you AUM-based, fee-only, hybrid? (Just for context — affects how a partnership would feel for them.)",
-                    "Roughly how many client households, and what’s the typical age range of the primary client?",
+                    "Roughly how many client households, and what's the typical age range of the primary client?",
                     "Do you work inside a broker-dealer / RIA umbrella, or independently?",
                     "Have you had a client family go through a death or major life event in the last 18 months? (If yes, gently ask what that hand-off looked like.)",
                 ],
@@ -242,16 +474,25 @@ DEFAULTS: dict[str, Any] = {
                 "title": "C. Funeral Homes / Cemetery Operators / Pre-Need Planners",
                 "cares": [
                     "Pre-need conversion: families who plan ahead spend more, dispute less, and refer more.",
-                    "After-care: the grieving family doesn’t just need a service — they need help with the next 90 days.",
+                    "After-care: the grieving family doesn't just need a service — they need help with the next 90 days.",
                     "Standing out from the big corporate chains — independents need a digital story.",
                     "Their families are often older and not comfortable with new tech — they need something a 70-year-old will actually use.",
                 ],
-                "pillars": 'IAC (the "first 30 days after death" page), FFN (notifying the right people, in the right order, in the family\u2019s voice), MM (the legacy piece — funeral homes are more and more being asked for video tribute services), SDV (death certificate, obituary draft, service plan), BEC (the AI Concierge gives the grieving family answers from the benefactor\u2019s actual documents — exactly what funeral homes wish they could give every family but can\u2019t deliver themselves).',
+                "pillars": (
+                    'QuickStart (the gentle Day-1 on-ramp for pre-need clients), IAC (the "first 30 '
+                    'days after death" page), FFN (notifying the right people, in the right order, '
+                    "in the family's voice), MM (the legacy piece — funeral homes are more and more "
+                    "being asked for video tribute services), SDV (death certificate, obituary draft, "
+                    "service plan), Estate Binder (the printable book the family leaves the funeral "
+                    "home with), BEC (the AI Concierge gives the grieving family answers from the "
+                    "benefactor's actual documents — exactly what funeral homes wish they could give "
+                    "every family but can't deliver themselves)."
+                ),
                 "questions": [
                     "Do you offer pre-need / pre-arrangement today, and what does that intake look like?",
                     "Are you independent, part of a regional chain, or part of a bigger company?",
                     "Do you have an after-care program — six-month follow-ups, grief resources?",
-                    "Roughly how many services per year? (Sizing question — DON’T quote pricing.)",
+                    "Roughly how many services per year? (Sizing question — DON'T quote pricing.)",
                     "Are you thinking about offering this to families at intake, including it in pre-need, or just referring to it as an after-care partner?",
                 ],
                 "disqualify": "",
@@ -260,12 +501,26 @@ DEFAULTS: dict[str, Any] = {
                 "id": "estate-attorneys",
                 "title": "D. Estate Planning Attorneys / Trust & Estate Firms",
                 "cares": [
-                    "Their work product (the will, the trust, the POA) sits in a drawer until the day it’s needed — and on that day, the family can’t find it, doesn’t understand it, and calls the attorney in a panic.",
+                    "Their work product (the will, the trust, the POA) sits in a drawer until the day it's needed — and on that day, the family can't find it, doesn't understand it, and calls the attorney in a panic.",
                     "Getting the documents to the family and explaining them is the slowest part of their job — they want the document actually used right, not just filed away.",
                     "Legal-risk comfort: nothing the family does inside CarryOn replaces or contradicts the actual legal document.",
                     "They want to look modern to younger clients without having to learn new software themselves.",
                 ],
-                "pillars": "SDV (their documents live there, locked and released correctly), EGA (an estate-law AI that flags gaps and contradictions in the client’s plan — gives the attorney a clean punch-list), IAC (the action checklist their POA / executor will actually use), DAV (the digital-account access the will references but the family can never find), CCP (separate plans for incapacity vs death), BEC (after death, the heirs can ask the AI Concierge plain-English questions grounded in the documents the attorney drafted — fewer panicked calls back to the firm).",
+                "pillars": (
+                    "QuickStart (clients show up to the first meeting already prepared with a state-"
+                    "aware checklist — the prepared client every attorney wishes they got), SDV (their "
+                    "documents live there, locked and released correctly), EGA (an estate-law AI that "
+                    "flags gaps and contradictions in the client's plan — gives the attorney a clean "
+                    "punch-list), CES (the visual structure chart for trust + LLC clients — the "
+                    "diagram that takes the lawyer 20 minutes to draw on a whiteboard), IAC (the "
+                    "action checklist their POA / executor will actually use), DAV (the digital-"
+                    "account access the will references but the family can never find), CCP (separate "
+                    "plans for incapacity vs death), Trustee Mode (firm-assisted plan maintenance "
+                    'with a full audit trail — never "becoming" the client), Estate Binder (a '
+                    "single book the attorney's family gets at execution), BEC (after death the heirs "
+                    "can ask the AI Concierge plain-English questions grounded in the attorney's own "
+                    "drafted documents — fewer panicked calls back to the firm)."
+                ),
                 "questions": [
                     "How does your firm currently hand the signed plan off to the client family today — paper copy, secure portal, document vault?",
                     "Do you offer plan-review or update services after the will is signed, or is it mostly one-time per client?",
@@ -282,23 +537,47 @@ DEFAULTS: dict[str, Any] = {
         "items": [
             {
                 "name": "Employee-benefits brokers / HR-tech",
-                "frame": "Selling CarryOn as a workplace benefit. Pillars: full ten, presented as financial-wellness + family-preparedness. Screen on plan-sponsor count, age skew, current EAP / financial-wellness offering.",
+                "frame": (
+                    "Selling CarryOn as a workplace benefit. The QuickStart Wizard is the Day-1 "
+                    "on-ramp every employee sees — 2 minutes, no jargon, a printable guide they can "
+                    "act on the same week. Then the full ten pillars + Estate Binder become the "
+                    "family-preparedness piece on top of the usual financial-wellness stack. Screen "
+                    "on plan-sponsor count, age skew, current EAP / financial-wellness offering."
+                ),
             },
             {
                 "name": "Hospice / palliative care providers",
-                "frame": "CarryOn is free for every American in hospice care — so this is a referral / awareness partnership, not a paid one. Pillars: IAC, MM, SDV, FFN, CCP. Screen on patient volume + service area.",
+                "frame": (
+                    "CarryOn is free for every American in hospice care — so this is a referral / "
+                    "awareness partnership, not a paid one. Pillars: IAC, MM, SDV, FFN, CCP, plus "
+                    "Estate Binder so the family leaves hospice with a single book. Screen on "
+                    "patient volume + service area."
+                ),
             },
             {
                 "name": "Religious communities / clergy",
-                "frame": 'Same family-preparedness pitch, often paired with a "blessing the plan" intake. Pillars: MM (legacy messages), FFN (community notification), IAC. Screen on congregation size + member-benefit vs referral.',
+                "frame": (
+                    'Same family-preparedness pitch, often paired with a "blessing the plan" '
+                    "intake. Pillars: MM (legacy messages), FFN (community notification), IAC. "
+                    "Screen on congregation size + member-benefit vs referral."
+                ),
             },
             {
                 "name": "Military / veteran service organizations",
-                "frame": 'CarryOn has Military and Veteran tier discounts. Pillars: full ten, presented as "leave nothing for your family to figure out." Screen on org type, member count, and how often members deploy if active-duty.',
+                "frame": (
+                    "CarryOn has Military and Veteran tier discounts. Pillars: full ten + Estate "
+                    "Binder + Trustee Mode (for spouse-assisted account management during deployment), "
+                    'presented as "leave nothing for your family to figure out." Screen on org '
+                    "type, member count, and how often members deploy if active-duty."
+                ),
             },
             {
                 "name": "Senior-living operators / CCRCs",
-                "frame": "Resident move-in and family-coordination angle. Pillars: full ten. Screen on resident count, independent vs assisted vs memory-care mix.",
+                "frame": (
+                    "Resident move-in and family-coordination angle. Pillars: full ten + QuickStart "
+                    "at intake + Estate Binder as the resident-and-family deliverable. Screen on "
+                    "resident count, independent vs assisted vs memory-care mix."
+                ),
             },
         ],
     },
@@ -436,3 +715,21 @@ async def reset_partner_brief(
     require_admin_scope(current_user, ["marketing"])
     await db.partner_brief_content.delete_one({"_id": "current"})
     return {"content": DEFAULTS, "is_customized": False}
+
+
+@router.get("/partner-brief/sample-quickstart-pdf")
+async def sample_quickstart_pdf() -> StreamingResponse:
+    """Public, no-auth — streams the deterministic sample QuickStart
+    PDF used by the Partner Brief's `See a sample QuickStart Guide`
+    CTA. Renders synchronously on each request (fpdf2 is fast; the
+    Brief itself is rarely loaded compared to consumer surfaces).
+    No AI call is made — content is baked into `_SAMPLE_AI_PAYLOAD`."""
+    pdf_bytes = _render_sample_pdf()
+    return StreamingResponse(
+        iter([pdf_bytes]),
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": 'inline; filename="CarryOn_QuickStart_Sample.pdf"',
+            "Cache-Control": "public, max-age=3600",
+        },
+    )

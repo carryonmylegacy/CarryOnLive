@@ -282,7 +282,10 @@ function BriefSummary({ content }) {
       <SummaryRow label="Header title" value={c.header?.title} />
       <SummaryRow label="Header intro" value={c.header?.intro} />
       <SummaryRow label="One-breath quote" value={c.one_breath?.quote} />
+      <SummaryRow label="QuickStart paragraph" value={c.quickstart?.paragraph} />
+      <SummaryRow label="QuickStart bullets" value={`${(c.quickstart?.bullets || []).length} bullets`} />
       <SummaryRow label="Pillars" value={`${(c.pillars?.items || []).length} pillars`} />
+      <SummaryRow label="Capabilities" value={`${(c.capabilities?.items || []).length} capabilities`} />
       <SummaryRow label="Industries" value={`${(c.verticals?.items || []).length} industries: ${(c.verticals?.items || []).map(v => v.title?.split(' ').slice(1).join(' ').replace('/', '/').slice(0, 22)).join(', ')}`} />
       <SummaryRow label="Other industries" value={`${(c.adjacent?.items || []).length} entries`} />
       <SummaryRow label="Short answers" value={`${(c.elevator?.items || []).length} entries`} />
@@ -317,6 +320,25 @@ function BriefEditor({ draft, upd, listAdd, listRemove }) {
         <Field label="Body paragraph" value={draft.one_breath?.paragraph || ''} onChange={(v) => upd(['one_breath', 'paragraph'], v)} multiline rows={5} testid="f-ob-paragraph" />
       </Accordion>
 
+      <Accordion title="1.5 QuickStart Guide (CTA + sample-PDF link)" testid="acc-quickstart">
+        <Field label="Section title" value={draft.quickstart?.title || ''} onChange={(v) => upd(['quickstart', 'title'], v)} testid="f-qs-title" />
+        <Field label="Body paragraph" value={draft.quickstart?.paragraph || ''} onChange={(v) => upd(['quickstart', 'paragraph'], v)} multiline rows={5} testid="f-qs-paragraph" />
+        <Field label="Sample-PDF button label" value={draft.quickstart?.sample_label || ''} onChange={(v) => upd(['quickstart', 'sample_label'], v)} testid="f-qs-sample-label" />
+        <Field label="Sample-PDF endpoint URL" value={draft.quickstart?.sample_pdf_url || ''} onChange={(v) => upd(['quickstart', 'sample_pdf_url'], v)} testid="f-qs-sample-url" />
+        <Field label="Sample-PDF caption (under the button)" value={draft.quickstart?.sample_caption || ''} onChange={(v) => upd(['quickstart', 'sample_caption'], v)} multiline rows={2} testid="f-qs-sample-caption" />
+        <div className="mt-4 mb-2 flex items-center justify-between">
+          <span className="text-xs font-bold uppercase tracking-wider text-[var(--gold)]">Bullet points (talking points under the paragraph)</span>
+          <button onClick={() => listAdd(['quickstart', 'bullets'], '')} className="text-xs px-2 py-1 rounded-md inline-flex items-center gap-1" style={{ background: 'rgba(var(--gold-rgb), 0.12)', border: '1px solid rgba(var(--gold-rgb), 0.30)', color: 'var(--gold)' }} data-testid="add-qs-bullet">
+            <Plus className="w-3 h-3" /> Add bullet
+          </button>
+        </div>
+        {(draft.quickstart?.bullets || []).map((b, i) => (
+          <ItemCard key={i} title={`Bullet ${i + 1}`} onRemove={() => listRemove(['quickstart', 'bullets'], i)} testid={`qs-bullet-${i}`}>
+            <Field label="Text" value={b || ''} onChange={(v) => upd(['quickstart', 'bullets', i], v)} multiline rows={2} testid={`f-qs-bullet-${i}`} />
+          </ItemCard>
+        ))}
+      </Accordion>
+
       <Accordion title="2. The Ten Pillars" testid="acc-pillars">
         <Field label="Section title" value={draft.pillars?.title || ''} onChange={(v) => upd(['pillars', 'title'], v)} testid="f-p-title" />
         <Field label="Section intro" value={draft.pillars?.intro || ''} onChange={(v) => upd(['pillars', 'intro'], v)} multiline rows={2} testid="f-p-intro" />
@@ -336,6 +358,23 @@ function BriefEditor({ draft, upd, listAdd, listRemove }) {
               <Field label="Name" value={p.name || ''} onChange={(v) => upd(['pillars', 'items', i, 'name'], v)} testid={`f-pillar-${i}-name`} />
             </div>
             <Field label="Description" value={p.desc || ''} onChange={(v) => upd(['pillars', 'items', i, 'desc'], v)} multiline rows={3} testid={`f-pillar-${i}-desc`} />
+          </ItemCard>
+        ))}
+      </Accordion>
+
+      <Accordion title="2.5 Platform-wide capabilities" testid="acc-capabilities">
+        <Field label="Section title" value={draft.capabilities?.title || ''} onChange={(v) => upd(['capabilities', 'title'], v)} testid="f-cap-title" />
+        <Field label="Section intro" value={draft.capabilities?.intro || ''} onChange={(v) => upd(['capabilities', 'intro'], v)} multiline rows={3} testid="f-cap-intro" />
+        <div className="mt-4 mb-2 flex items-center justify-between">
+          <span className="text-xs font-bold uppercase tracking-wider text-[var(--gold)]">Capability items</span>
+          <button onClick={() => listAdd(['capabilities', 'items'], { name: '', desc: '' })} className="text-xs px-2 py-1 rounded-md inline-flex items-center gap-1" style={{ background: 'rgba(var(--gold-rgb), 0.12)', border: '1px solid rgba(var(--gold-rgb), 0.30)', color: 'var(--gold)' }} data-testid="add-capability">
+            <Plus className="w-3 h-3" /> Add capability
+          </button>
+        </div>
+        {(draft.capabilities?.items || []).map((cap, i) => (
+          <ItemCard key={i} title={`Capability ${i + 1}`} onRemove={() => listRemove(['capabilities', 'items'], i)} testid={`capability-${i}`}>
+            <Field label="Name" value={cap.name || ''} onChange={(v) => upd(['capabilities', 'items', i, 'name'], v)} testid={`f-cap-${i}-name`} />
+            <Field label="Description" value={cap.desc || ''} onChange={(v) => upd(['capabilities', 'items', i, 'desc'], v)} multiline rows={3} testid={`f-cap-${i}-desc`} />
           </ItemCard>
         ))}
       </Accordion>

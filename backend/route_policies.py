@@ -276,6 +276,11 @@ ROUTE_POLICIES: dict = {
     "PUT /api/quickstart/step/{step_key}": {"auth": "required"},
     "POST /api/quickstart/reset": {"auth": "required"},
     "POST /api/quickstart/generate": {"auth": "required"},
+    # Public B2B Partner Brief — sample QuickStart PDF for the website CTA.
+    "GET /api/partner-brief/sample-quickstart-pdf": {
+        "auth": "public",
+        "notes": "Public sample for the B2B partner brief — no PII, deterministic",
+    },
     # ── Share Binder (anonymous public links + owner management) ───────────
     "POST /api/share/binder": {
         "auth": "required",

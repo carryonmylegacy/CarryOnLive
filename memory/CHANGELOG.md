@@ -1,6 +1,38 @@
 # CarryOn — Changelog
 
 
+## May 22, 2026 — B2B Partner Brief refresh (V2026.05.22-e)
+
+**Why**: The Partner Brief at `/partner-brief` was written before the QuickStart Wizard, CES, Estate Binder, Trustee Mode, and the offline-first PWA story existed. Founder asked for full alignment with the platform as it ships today, plus a real "See a sample QuickStart Guide" CTA so a B2B prospect can click and see the actual deliverable.
+
+**Backend** (`routes/partner_brief.py`):
+- New public endpoint `GET /api/partner-brief/sample-quickstart-pdf` — streams a deterministic sample PDF rendered by the same `services/quickstart_pdf.build_quickstart_pdf` the live platform uses. Sample household baked in: Mitchell family, California, married, 2 dependent kids (spouse Jane + son Bobby + daughter Emma), primary residence, 401(k) + checking, life insurance, will only. NO Grok call at view time — the `intro` / professional-checklists / state-notes / next-step are pre-baked into `_SAMPLE_AI_PAYLOAD` so the surface is free, fast, deterministic, and never serves bad AI output to a sales prospect.
+- `DEFAULTS` rewritten — header intro now mentions the QuickStart + ten pillars + platform-wide capabilities; new `quickstart` section (paragraph + 4 talking-point bullets + CTA button label + sample-PDF URL + sample caption); new `capabilities` section with 6 entries (Estate Binder, CarryOn Entities & Structures, Trustee Mode, Offline-first PWA, White-label partner experiences, Permission-aware AI on xAI Grok); each of the 4 verticals + 5 adjacent industries got surgical mentions of QuickStart / Trustee Mode / Estate Binder where they actually help that vertical close.
+- `route_policies.py`: added `GET /api/partner-brief/sample-quickstart-pdf` as `auth: public` with the deterministic-no-PII note.
+
+**Frontend** (`pages/PartnerBriefPage.js` + `components/admin/SalesBriefTab.js`):
+- Public brief page now renders the new `quickstart` section (with the gold-pill `See a sample QuickStart Guide` button + caption) and the new `capabilities` section.
+- TOC grew from 6 → 8 anchors.
+- Admin editor at Admin → Marketing → Sales Brief got two new accordions (`1.5 QuickStart Guide` and `2.5 Platform-wide capabilities`) plus dynamic add/remove for the QuickStart bullets list and the Capability items list, so the founder can edit every word from the portal.
+- Summary preview now shows QuickStart paragraph, QuickStart bullet count, and Capabilities count.
+
+**Memory** (`/app/memory/B2B_SCREENING_BRIEF.md`):
+- "Nine Pillars" header → "Ten Pillars" (BEC row added with canonical one-liner).
+- New "2.5 Platform-wide capabilities" table for the assistant's screening reference: QuickStart, Estate Binder, CES, Trustee Mode, Offline-first PWA, White-label, Permission-aware AI.
+- Elevator one-liner list extended to include BEC.
+
+**Verified end-to-end** at `/partner-brief`:
+- Header copy updated, TOC shows all 8 sections.
+- QuickStart section renders paragraph + bullets + gold CTA button + sample caption.
+- Capabilities section renders all 6 capability cards.
+- Sample-PDF endpoint returns 5 029 bytes of valid `%PDF-` content (verified via curl).
+- No partner_brief_content document existed (no custom edits to preserve), so the live brief is already serving the new DEFAULTS.
+
+### Housekeeping
+- 74 PASS, 0 WARN, 0 FAIL. **ALL CHECKS PASSED — READY TO PUSH.**
+
+
+
 ## May 22, 2026 — QuickStart Wizard (V2026.05.22-d)
 
 **Why**: New benefactors needed a frictionless, AI-driven first-login experience that produces a tailored "go-talk-to-your-pros" checklist they can print, take to an attorney/CPA/financial-advisor/insurance-agent, and start an informed conversation. The wizard is **not** an extension of the existing Getting Started flow — it's a pre-flight that produces a PDF, period. Getting Started picks up afterward to teach the platform.
