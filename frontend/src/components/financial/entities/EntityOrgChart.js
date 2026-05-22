@@ -758,6 +758,11 @@ export default function EntityOrgChart({
   // positions directly and let us write zoom + scroll synchronously
   // in the same event tick, so the visible content stays anchored.
   const pinchRef = useRef(null);
+  // True while at least 2 fingers are down. Drives `touchAction: none`
+  // on the container so iOS Safari doesn't fight our pinch with its
+  // own zoom/scroll heuristics (which add visible jitter even when
+  // we preventDefault()).
+  const [isPinching, setIsPinching] = useState(false);
   // Grab-to-pan state for LOCKED mode. Lets the user click-and-drag the
   // entire chart around the viewport (mouse only — touch keeps using
   // native momentum scroll via overflow:auto + touch-action:auto, which
@@ -785,11 +790,14 @@ export default function EntityOrgChart({
       pinchRef.current = {
         startDist: Math.max(20, dist), // avoid divide-by-tiny later
         startZoom: z,
-        anchorScreenX: ax,
-        anchorScreenY: ay,
+        // World point sitting under the gesturestart midpoint. Stays
+        // CONSTANT through the gesture; we re-anchor it to the LIVE
+        // screen midpoint on every move so finger-walk pans naturally
+        // without twisting the chart (Apple Maps / Figma behavior).
         anchorWorldX: (ax + el.scrollLeft) / z,
         anchorWorldY: (ay + el.scrollTop) / z,
       };
+      setIsPinching(true);
     };
     const onTouchMove = (e) => {
       const p = pinchRef.current;
@@ -797,33 +805,53 @@ export default function EntityOrgChart({
       if (e.touches.length !== 2) return;
       e.preventDefault();
       const t1 = e.touches[0], t2 = e.touches[1];
+      const cx = (t1.clientX + t2.clientX) / 2;
+      const cy = (t1.clientY + t2.clientY) / 2;
       const dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+      const rect = el.getBoundingClientRect();
+      const liveScreenX = cx - rect.left;
+      const liveScreenY = cy - rect.top;
       const ratio = dist / p.startDist;
       // Mild damping (0.85) — keeps the gesture from over-amplifying
       // small finger movements without making it feel laggy.
       const damped = Math.pow(ratio, 0.85);
       const next = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, p.startZoom * damped));
-      // Imperatively pin the anchor to the gesturestart midpoint:
-      // newScrollLeft = anchorWorldX * newZoom − anchorScreenX. Doing
-      // this synchronously in the same tick as setZoom (instead of in
-      // a useLayoutEffect on [zoom]) prevents the visible "snap" the
-      // user was seeing when React batched zoom updates.
-      zoomRef.current = next;
-      setZoom(+next.toFixed(4));
-      // After React commits the new transform, set scroll so the
-      // anchor stays under the fingers. Schedule via rAF so we run
-      // after the layout is up-to-date.
-      requestAnimationFrame(() => {
-        const lEl = containerRef.current;
-        if (!lEl) return;
-        lEl.scrollLeft = Math.max(0, p.anchorWorldX * next - p.anchorScreenX);
-        lEl.scrollTop = Math.max(0, p.anchorWorldY * next - p.anchorScreenY);
-      });
+      const prev = zoomRef.current;
+      const zoomChanged = Math.abs(next - prev) > 1e-4;
+      if (zoomChanged) {
+        // Hand the scroll correction to the existing useLayoutEffect
+        // on [zoom] so React commits zoom + scroll in the SAME paint.
+        // Going through scrollIntentRef instead of a manual rAF
+        // eliminates the 1-frame double-paint that read as jitter
+        // (chart would scale, then snap to new scroll position one
+        // frame later). Live midpoint → smooth finger-walk pan as
+        // part of the same gesture.
+        scrollIntentRef.current = {
+          type: 'anchor',
+          worldX: p.anchorWorldX,
+          worldY: p.anchorWorldY,
+          screenX: liveScreenX,
+          screenY: liveScreenY,
+        };
+        zoomRef.current = next;
+        // Don't toFixed() — rounding mid-gesture causes consecutive
+        // moves to collapse to the same zoom value, which then trips
+        // off again on the next tick. Raw float is smoother and React
+        // still bails on Object.is equality when truly unchanged.
+        setZoom(next);
+      } else {
+        // Pure pan inside the gesture (zoom unchanged). Outer dim
+        // hasn't changed → set scroll synchronously without going
+        // through React. No reflow, no setState churn.
+        el.scrollLeft = Math.max(0, p.anchorWorldX * next - liveScreenX);
+        el.scrollTop = Math.max(0, p.anchorWorldY * next - liveScreenY);
+      }
     };
     const onTouchEnd = (e) => {
       // End the pinch when we drop below 2 fingers.
       if (e.touches.length < 2) {
         pinchRef.current = null;
+        setIsPinching(false);
       }
     };
     el.addEventListener('touchstart', onTouchStart, { passive: false });
@@ -1319,7 +1347,7 @@ export default function EntityOrgChart({
         minHeight: 260,
         overflow: 'auto',
         WebkitOverflowScrolling: 'touch',
-        touchAction: draggingKey ? 'none' : 'auto',
+        touchAction: (draggingKey || isPinching) ? 'none' : 'auto',
         // Affordance: in locked mode the entire chart pans on mouse
         // drag, so show the grab/grabbing hand cursor. In unlocked
         // mode tiles are individually draggable, so leave the cursor
@@ -1395,6 +1423,13 @@ export default function EntityOrgChart({
             height: outerH,
             transform: zoom !== 1 ? `scale(${zoom})` : undefined,
             transformOrigin: 'top left',
+            // GPU compositing hints — promote this layer so pinch-zoom
+            // updates the GPU transform matrix instead of triggering a
+            // full repaint of the chart on every touchmove tick. Big
+            // smoothness win on iOS Safari + Android Chrome.
+            willChange: isPinching ? 'transform' : undefined,
+            backfaceVisibility: 'hidden',
+            WebkitBackfaceVisibility: 'hidden',
           }}
         >
         <div
