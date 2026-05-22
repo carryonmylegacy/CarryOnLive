@@ -91,16 +91,25 @@ const TrusteeBanner = () => {
         background: 'linear-gradient(90deg, #b45309 0%, #d97706 50%, #b45309 100%)',
         color: '#fff7ed',
         borderBottom: '2px solid #92400e',
-        padding: '6px 16px',
+        padding: '8px 16px 8px',
         textAlign: 'center',
         fontWeight: 700,
         letterSpacing: '0.02em',
         boxShadow: '0 2px 6px rgba(0,0,0,0.18)',
-        paddingTop: 'calc(6px + env(safe-area-inset-top, 0px))',
+        paddingTop: 'calc(2px + env(safe-area-inset-top, 0px))',
       }}
     >
-      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
-        <ShieldAlert size={16} aria-hidden="true" />
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10, fontSize: 13 }}>
+        <ShieldAlert
+          size={22}
+          strokeWidth={2.5}
+          aria-hidden="true"
+          style={{
+            flexShrink: 0,
+            color: '#fff7ed',
+            filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.35))',
+          }}
+        />
         TRUSTEE MODE — {trusteeName} acting on behalf of {acting}
       </span>
     </div>
