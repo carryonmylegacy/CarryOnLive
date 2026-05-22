@@ -39,12 +39,116 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from config import XAI_MODEL, XAI_MODEL_LIGHT, db, logger, xai_client
+from models import Document
+from services.audit import audit_log
+from services.encryption import encrypt_aes256, get_estate_salt
 from services.quickstart_ai import build_quickstart_prompt, parse_quickstart_response
 from services.quickstart_pdf import build_quickstart_pdf
 from services.storage import storage
-from utils import get_current_user
+from utils import get_current_user, update_estate_readiness
 
 router = APIRouter()
+
+
+# Category used for the QuickStart Guide row inside the SDV. Using
+# `estate_planning` keeps it alongside wills, trusts, POAs, etc. The
+# `is_quickstart_guide` flag below is what we key on for upsert.
+_QS_SDV_CATEGORY = "estate_planning"
+_QS_SDV_NAME = "QuickStart Estate Plan Guide"
+
+
+async def _upsert_quickstart_in_sdv(
+    *,
+    user_id: str,
+    estate_id: str,
+    pdf_bytes: bytes,
+) -> None:
+    """Save (or update in place) the generated QuickStart Guide as an
+    encrypted document in the user's Secure Document Vault so the
+    family can see it alongside the rest of their estate documents.
+
+    Idempotent — re-running QuickStart REPLACES the existing entry
+    in place (keyed by `is_quickstart_guide=True`) rather than
+    cluttering the SDV with duplicates.
+    """
+    if not estate_id:
+        return
+    existing = await db.documents.find_one(
+        {"estate_id": estate_id, "is_quickstart_guide": True},
+        {"_id": 0, "id": 1, "storage_key": 1},
+    )
+
+    estate_salt = await get_estate_salt(estate_id)
+    encrypted_b64 = encrypt_aes256(pdf_bytes, estate_salt)
+
+    if existing:
+        # Overwrite the existing S3 blob and refresh metadata in place.
+        await storage.upload(
+            encrypted_b64.encode("ascii"),
+            estate_id,
+            existing["id"],
+            "application/pdf",
+        )
+        await db.documents.update_one(
+            {"id": existing["id"]},
+            {
+                "$set": {
+                    "name": _QS_SDV_NAME,
+                    "file_type": "application/pdf",
+                    "file_size": len(pdf_bytes),
+                    "is_encrypted": True,
+                    "encryption_version": "aes-256-gcm",
+                    "updated_at": datetime.now(timezone.utc).isoformat(),
+                }
+            },
+        )
+        return
+
+    # Brand-new SDV row.
+    doc = Document(
+        estate_id=estate_id,
+        name=_QS_SDV_NAME,
+        category=_QS_SDV_CATEGORY,
+        file_type="application/pdf",
+        file_size=len(pdf_bytes),
+        file_data=None,
+        is_locked=False,
+        is_encrypted=True,
+        uploaded_by=user_id,
+    )
+    storage_key = await storage.upload(
+        encrypted_b64.encode("ascii"),
+        estate_id,
+        doc.id,
+        "application/pdf",
+    )
+    doc_dict = doc.model_dump()
+    doc_dict.update(
+        {
+            "storage_key": storage_key,
+            "encryption_version": "aes-256-gcm",
+            "is_quickstart_guide": True,
+            # System-generated row: surfaces in SDV listings but the
+            # platform owns it (regenerate to update, not edit by hand).
+            "system_managed": True,
+            "designated_beneficiaries": [],
+        }
+    )
+    await db.documents.insert_one(doc_dict)
+    await audit_log(
+        action="document.upload",
+        user_id=user_id,
+        resource_type="document",
+        resource_id=doc.id,
+        estate_id=estate_id,
+        details={
+            "name": _QS_SDV_NAME,
+            "category": _QS_SDV_CATEGORY,
+            "size": len(pdf_bytes),
+            "source": "quickstart_wizard",
+        },
+    )
+    await update_estate_readiness(estate_id)
 
 
 # ── Canonical step order. The wizard advances strictly in this order;
@@ -212,6 +316,36 @@ async def reset_progress(current_user: dict = Depends(get_current_user)):
     return await _get_or_create_progress(current_user["id"], estate_id)
 
 
+@router.post("/quickstart/reopen")
+async def reopen_progress(current_user: dict = Depends(get_current_user)):
+    """Mark the wizard as **not yet complete** so the modal will
+    re-open with all prior step data intact. Used by the dashboard's
+    *Edit & regenerate* button after the user has already generated
+    a guide once. Different from `/reset`:
+      • `/reset` deletes everything → wizard starts from scratch.
+      • `/reopen` only flips `complete=false` and snaps the cursor
+        back to the first step. Every answer the user previously
+        gave stays put, ready to be edited."""
+    user_id = current_user["id"]
+    estate_id = await _user_active_estate_id(user_id)
+    existing = await db.quickstart_progress.find_one({"user_id": user_id}, {"_id": 0})
+    if not existing:
+        return await _get_or_create_progress(user_id, estate_id)
+    now = datetime.now(timezone.utc).isoformat()
+    await db.quickstart_progress.update_one(
+        {"user_id": user_id},
+        {
+            "$set": {
+                "complete": False,
+                "current_step": STEP_ORDER[0],
+                "estate_id": estate_id,
+                "updated_at": now,
+            }
+        },
+    )
+    return await db.quickstart_progress.find_one({"user_id": user_id}, {"_id": 0})
+
+
 @router.post("/quickstart/generate")
 async def generate_guide(current_user: dict = Depends(get_current_user)):
     """Call xAI Grok with the collected data, render the PDF
@@ -283,6 +417,15 @@ async def generate_guide(current_user: dict = Depends(get_current_user)):
     except Exception as exc:  # noqa: BLE001
         logger.exception("QuickStart PDF cache upload failed")
         raise HTTPException(status_code=502, detail="Storage backend unavailable.") from exc
+
+    # Also save the same PDF (AES-encrypted) into the user's Secure
+    # Document Vault so the family sees it sitting alongside their
+    # wills/trusts/POAs. Re-runs replace the row in place — never
+    # duplicate.
+    try:
+        await _upsert_quickstart_in_sdv(user_id=user_id, estate_id=estate_id, pdf_bytes=pdf_bytes)
+    except Exception:  # noqa: BLE001
+        logger.exception("QuickStart SDV upsert failed (PDF cached + returned anyway)")
 
     now = datetime.now(timezone.utc).isoformat()
     await db.latest_pdfs.update_one(

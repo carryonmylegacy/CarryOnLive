@@ -275,6 +275,7 @@ ROUTE_POLICIES: dict = {
     "GET /api/quickstart/progress": {"auth": "required"},
     "PUT /api/quickstart/step/{step_key}": {"auth": "required"},
     "POST /api/quickstart/reset": {"auth": "required"},
+    "POST /api/quickstart/reopen": {"auth": "required"},
     "POST /api/quickstart/generate": {"auth": "required"},
     # Public B2B Partner Brief — sample QuickStart PDF for the website CTA.
     "GET /api/partner-brief/sample-quickstart-pdf": {

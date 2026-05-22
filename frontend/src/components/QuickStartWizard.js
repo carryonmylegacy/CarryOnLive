@@ -143,6 +143,8 @@ const QuickStartWizard = ({ forceOpen = false, onClose = () => {} }) => {
         // dashboard so they can come back at any time.
         try { sessionStorage.setItem(SESSION_SKIP_KEY, '1'); } catch { /* ignore */ }
         setDismissedThisSession(true);
+        try { window.dispatchEvent(new CustomEvent('carryon:quickstart-progress-changed')); }
+        catch { /* ignore */ }
         onClose();
       } else {
         setStepData(res.data?.data?.welcome || {});
@@ -214,6 +216,11 @@ const QuickStartWizard = ({ forceOpen = false, onClose = () => {} }) => {
       // Refresh progress so `complete=true` is reflected and the modal
       // closes on next render.
       await fetchProgress();
+      // Tell the rest of the app (Dashboard tile, etc.) that QW state
+      // changed so they can refetch and switch from the Resume CTA
+      // over to the "Your guide is ready" tile.
+      try { window.dispatchEvent(new CustomEvent('carryon:quickstart-progress-changed')); }
+      catch { /* ignore */ }
       onClose();
     } catch (e) {
       setError(e?.response?.data?.detail || 'Could not generate your guide. Please try again.');

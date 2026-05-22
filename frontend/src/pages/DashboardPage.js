@@ -110,11 +110,21 @@ const DashboardPage = () => {
     const eligible = user?.role === 'benefactor' || user?.is_also_benefactor;
     if (!eligible) return;
     let cancelled = false;
-    apiClient
-      .get(`${API_URL}/quickstart/progress`, getAuthHeaders())
-      .then((res) => { if (!cancelled) setQuickstartProgress(res.data); })
-      .catch(() => { /* non-fatal */ });
-    return () => { cancelled = true; };
+    const refetch = () => {
+      apiClient
+        .get(`${API_URL}/quickstart/progress`, getAuthHeaders())
+        .then((res) => { if (!cancelled) setQuickstartProgress(res.data); })
+        .catch(() => { /* non-fatal */ });
+    };
+    refetch();
+    // The wizard fires this event whenever progress changes
+    // (completion, reopen, skip-familiar) so the dashboard can swap
+    // between the Resume CTA, the complete tile, and nothing.
+    window.addEventListener('carryon:quickstart-progress-changed', refetch);
+    return () => {
+      cancelled = true;
+      window.removeEventListener('carryon:quickstart-progress-changed', refetch);
+    };
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Prefetch likely next routes after dashboard loads
@@ -932,11 +942,11 @@ const DashboardPage = () => {
         </div>
       </div>
 
-      {/* Resume QuickStart — appears when the user has dismissed the
-          QuickStart modal for this session but hasn't finished it.
-          Clicking dispatches the global event the DashboardLayout
-          listens for to force-reopen the modal. Independent of the
-          Getting Started flow below. */}
+      {/* QuickStart — two states:
+          (1) Not yet complete: Resume CTA opens the modal at the last step.
+          (2) Complete: shows a status tile with View PDF + Edit & regenerate.
+          Both rely on the dashboard listening for the `carryon:resume-quickstart`
+          event the DashboardLayout wires up to the QuickStartWizard modal. */}
       {(user?.role === 'benefactor' || user?.is_also_benefactor)
         && quickstartProgress
         && !quickstartProgress.complete && (
@@ -977,6 +987,84 @@ const DashboardPage = () => {
             <ChevronRight className="w-5 h-5 flex-shrink-0 text-[var(--t5)]" />
           </div>
         </button>
+      )}
+
+      {/* QuickStart complete — shows the guide-ready tile with two
+          actions: open the PDF in the same preview portal the rest of
+          the platform uses, and edit answers + regenerate without
+          losing prior inputs. */}
+      {(user?.role === 'benefactor' || user?.is_also_benefactor)
+        && quickstartProgress
+        && quickstartProgress.complete && (
+        <div
+          data-testid="quickstart-complete-tile"
+          className="glass-card w-full p-4 lg:p-5 mb-4 border-l-4 border-l-[#d4af37]"
+        >
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              <div
+                className="flex-shrink-0 w-10 h-10 lg:w-11 lg:h-11 rounded-full flex items-center justify-center"
+                style={{
+                  background: 'radial-gradient(circle, rgba(var(--gold-rgb), 0.22) 0%, rgba(var(--gold-rgb), 0.08) 70%)',
+                  border: '1px solid rgba(var(--gold-rgb), 0.35)',
+                }}
+              >
+                <Sparkles className="w-5 h-5" style={{ color: '#d4af37' }} />
+              </div>
+              <div className="min-w-0">
+                <h3 className="text-base lg:text-lg font-semibold text-[var(--t)] truncate">
+                  Your QuickStart Guide is ready
+                </h3>
+                <p className="text-xs lg:text-sm text-[var(--t4)] truncate">
+                  Saved in your Secure Document Vault and Estate Binder. Open or update it anytime.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <button
+                type="button"
+                data-testid="quickstart-view-pdf-btn"
+                onClick={async () => {
+                  try {
+                    const { openPdfPreview } = await import('../utils/openPdfPreview');
+                    const apiClientMod = await import('../utils/apiClient');
+                    await openPdfPreview({
+                      pdfType: 'quickstart_guide',
+                      title: 'QuickStart Estate Plan Guide',
+                      subtitle: quickstartProgress?.data?.residence?.state || '',
+                      filename: 'CarryOn_QuickStart_Guide.pdf',
+                      blobFetcher: async () => {
+                        const headers = getAuthHeaders().headers || {};
+                        const res = await apiClientMod.default.get(
+                          `${API_URL}/pdfs/latest/quickstart_guide`,
+                          { headers, responseType: 'blob' },
+                        );
+                        return new Blob([res.data], { type: 'application/pdf' });
+                      },
+                    });
+                  } catch (e) { console.error('QuickStart preview failed', e); }
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs lg:text-sm font-bold transition-all active:scale-[0.97]"
+                style={{ background: 'linear-gradient(135deg,#d4af37,#b8962e)', color: '#181818', boxShadow: '0 6px 18px rgba(var(--gold-rgb),0.25)' }}
+              >View PDF</button>
+              <button
+                type="button"
+                data-testid="quickstart-edit-btn"
+                onClick={async () => {
+                  try {
+                    const apiClientMod = await import('../utils/apiClient');
+                    await apiClientMod.default.post(`${API_URL}/quickstart/reopen`, {}, getAuthHeaders());
+                    try { sessionStorage.removeItem('carryon_quickstart_skipped_session'); } catch { /* ignore */ }
+                    window.dispatchEvent(new CustomEvent('carryon:quickstart-progress-changed'));
+                    window.dispatchEvent(new CustomEvent('carryon:resume-quickstart'));
+                  } catch (e) { console.error('QuickStart reopen failed', e); }
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs lg:text-sm font-bold transition-all active:scale-[0.97]"
+                style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--t)', border: '1px solid rgba(255,255,255,0.15)' }}
+              >Edit &amp; regenerate</button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Pick Up Where You Left Off — visible when the wizard has been
