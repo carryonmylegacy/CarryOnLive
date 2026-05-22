@@ -39,7 +39,7 @@ If pressed for "what does it actually do":
 
 ---
 
-## 2. The Ten Pillars of Family Readiness
+## 2. The Eleven Pillars of Family Readiness
 
 These are the canonical names. **Use them exactly.** Do not paraphrase, rename, or "translate" them. The TM mark on Estate Guardian is required.
 
@@ -54,7 +54,8 @@ These are the canonical names. **Use them exactly.** Do not paraphrase, rename, 
 | 07 | **Digital Access Vault** | DAV | "Encrypted storage for digital account credentials — banking, email, social, password-manager seeds, crypto wallet keys — so the family can actually GET INTO the accounts the will mentions." |
 | 08 | **Friends & Family Notification** | FFN | "Coordinated, dignified notification of everyone who needs to know — in the order and through the channel the person chose, while they were the one writing the message." |
 | 09 | **CarryOn Financial Picture** | CFP | "A complete, living picture of the household's bills, debts, accounts, and properties — so the family knows what's owed, what's owned, and what to do with all of it." |
-| 10 | **Beneficiary Estate Concierge** | BEC | "An AI concierge for beneficiaries that activates after transition — answers plain-English questions, grounded only in the documents the benefactor specifically released to them, with inline citations to the source." |
+| 10 | **CarryOn Entities & Structures** | CES | "Visual pan-and-zoom org-chart of the household's trusts, LLCs, partnerships, S-corps, C-corps, charitable entities, properties, and the people connected to each. CFP shows what's there; CES shows how it's wired. Built for households with anything more complex than a single will." |
+| 11 | **Beneficiary Estate Concierge** | BEC | "An AI concierge for beneficiaries that activates after transition — answers plain-English questions, grounded only in the documents the benefactor specifically released to them, with inline citations to the source." |
 
 **Foundational element** (NOT a pillar; treat as the connective tissue under everything above):
 - **Beneficiaries** — every pillar is built around designated beneficiaries with role-based, granular access. The benefactor decides who sees what, when.
@@ -63,13 +64,12 @@ These are the canonical names. **Use them exactly.** Do not paraphrase, rename, 
 
 ## 2.5 Platform-wide capabilities (NEW — added Feb 2026)
 
-These are not pillars. They are the connective tissue that makes the ten pillars work as one product. Every screening call should at least *name* the ones that close that vertical's specific objection.
+These are not pillars. They are the connective tissue that makes the eleven pillars work as one product. Every screening call should at least *name* the ones that close that vertical's specific objection.
 
 | Capability | One-liner you can use on a call |
 |---|---|
 | **QuickStart Wizard** | "2-minute conversational wizard that produces a state-aware, family-tailored checklist the client takes verbatim to their attorney, CPA, advisor, and insurance agent. Sample available on the partner brief." |
 | **Estate Binder** | "One combined PDF assembled live from the family's vault — QuickStart Guide first, then IAC, then every other section. A single book the family hands to professionals." |
-| **CarryOn Entities & Structures (CES)** | "Visual pan-and-zoom org-chart for trusts, LLCs, partnerships, and the people connected to each — sits beside CFP. CFP shows what's there, CES shows how it's wired." |
 | **Trustee Mode** | "A designated trustee (attorney, advisor, executor, family member) can step into the benefactor's account with a full audit trail — every change logged, every mutation undoable. Big for attorney + advisor verticals." |
 | **Offline-first PWA** | "Real Progressive Web App on iOS + Android. Dexie-backed sync so a beneficiary in a FEMA trailer or a library can still use it when they need it most." |
 | **White-label / partner-branded experiences** | "Partner-branded sign-up, brand override per tenant (logo, palette, footer copy), partner-specific intro packets. Family stays familiar; partner is the brand the client sees." |

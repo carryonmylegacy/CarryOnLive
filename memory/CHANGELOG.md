@@ -1,6 +1,38 @@
 # CarryOn — Changelog
 
 
+## May 22, 2026 — Eleven Pillars: CES promoted from capability to pillar #06 (V2026.05.22-h)
+
+**Why**: Founder confirmed Estate Plan Timeline (EPT) is NOT a pillar (audit-only) and asked to count CES — which had been broken out of CFP as its own toggleable feature on May 22 — as a real pillar. That makes **eleven pillars** total. All "Ten Pillars" copy needed to update everywhere it appeared, with CES inserted in the right narrative slot (right after CFP — CFP shows what's there, CES shows how it's wired).
+
+**Canonical Eleven Pillars** (HomePage order, used by `LandingContent.js` and `LandingPage.js`):
+
+01 MM · 02 SDV · 03 IAC · 04 EGA · 05 CFP · **06 CES** · 07 DAV · 08 FFN · 09 CCP · 10 ECT · 11 BEC
+
+**Partner-brief order** (preserved internal narrative — CES inserted right after CFP):
+
+01 MM · 02 SDV · 03 EGA · 04 IAC · 05 CCP · 06 ECT · 07 DAV · 08 FFN · 09 CFP · **10 CES** · 11 BEC
+
+**Files touched**:
+- `frontend/src/components/landing/LandingContent.js` — added pillar #06 CES (Network icon import), renumbered DAV→07, FFN→08, CCP→09, ECT→10, BEC→11. Section comment "EIGHT PILLARS" → "ELEVEN PILLARS". Heading "Ten Pillars of Family Readiness." → "Eleven Pillars of Family Readiness." Closer "Ten pillars. One family." → "Eleven pillars. One family."
+- `frontend/src/pages/LandingPage.js` (legacy `/landing-consumer`) — same insertion + renumber + heading update + source-of-truth comment update.
+- `backend/routes/partner_brief.py` — promoted CES from the `capabilities` block to a new pillar #10 in the `pillars.items` list (BEC pushed to #11); deleted the CES entry from `capabilities.items`; updated header intro to drop the "Entities & Structures" mention from the capabilities sentence and call out "eleven pillars"; `pillars.title` "Ten" → "Eleven"; foundational note "not one of the ten" → "not one of the eleven"; capabilities intro "the ten pillars work" → "the eleven pillars"; three vertical-frame strings "full ten" → "full eleven" (employee-benefits, military, senior-living).
+- `frontend/src/components/admin/SalesBriefTab.js` — accordion title "2. The Ten Pillars" → "2. The Eleven Pillars".
+- `memory/PRD.md` — "Ten Pillars of Family Readiness" table → "Eleven Pillars" with CES row inserted at position 10 (PRD order); added explicit note that EPT, DTS, and TMA are audit-side / delegation features, **not** pillars; added CES origin paragraph (split from CFP, data collections unchanged).
+- `memory/B2B_SCREENING_BRIEF.md` — pillars table "10" → "11" with CES row inserted at position 10; capabilities table loses the CES row; "connective tissue that makes the ten pillars" → "the eleven pillars".
+
+**Verification**:
+- `bash /app/housekeeping.sh --strict` → `ALL CHECKS PASSED — codebase is clean / READY TO PUSH`, 0 WARN / 0 FAIL.
+- `eslint` clean on both `LandingContent.js` and `LandingPage.js`; `ruff` clean on `partner_brief.py`.
+- HomePage smoke test (preview pod, 1280 × 900): heading reads "Eleven Pillars of Family Readiness", body contains "CarryOn Entities & Structures" with abbr "CES", all pillar numbers 01..11 present, no "Ten pillars" string remains.
+- Partner-brief page smoke test: "Eleven Pillars" present, "CES" + full CES description present, "Ten Pillars" absent. Capabilities section no longer mentions CES (correctly demoted).
+- `GET /api/partner-brief` → `content.pillars.title = "2. The Eleven Pillars of Family Readiness"`, `pillars.items` length **11**, abbrs `[MM, SDV, EGA, IAC, CCP, ECT, DAV, FFN, CFP, CES, BEC]`.
+- Zero residual matches for `ten pillars|Ten Pillars|full ten` across `/app/backend`, `/app/frontend/src`, `/app/memory/PRD.md`, `/app/memory/B2B_SCREENING_BRIEF.md` (archive + this changelog preserved as historical record).
+
+**Not changed (intentional)**: `backend/routes/feature_gates.py::PLATFORM_FEATURES` — the data model already had CES as a separate toggleable feature with `key: "ces"`, `route: "/entities"`, `default_off: True`. Nothing to refactor; the feature-gate matrix is the source of truth for tier × feature visibility and has been correct since the May 22 CES split.
+
+
+
 ## May 22, 2026 — Fork pickup: QuickStart → SDV verification (no code change)
 
 **Context**: Forked session to verify the prior agent's "QuickStart PDF saves into the Secure Document Vault + Edit & Regenerate" work, which the handoff flagged as code-complete-but-untested.

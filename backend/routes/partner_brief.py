@@ -175,9 +175,9 @@ DEFAULTS: dict[str, Any] = {
         "title": "CarryOn™ Partner Brief",
         "intro": (
             "A short overview of the platform — the AI-driven QuickStart that turns a 2-minute "
-            "conversation into a professional-prep checklist, the ten pillars that organize the "
-            "family's full picture, the platform-wide capabilities (Estate Binder, Entities & "
-            "Structures, Trustee Mode, offline-first PWA, white-label partner experiences), and "
+            "conversation into a professional-prep checklist, the eleven pillars that organize the "
+            "family's full picture, the platform-wide capabilities (Estate Binder, Trustee Mode, "
+            "offline-first PWA, white-label partner experiences), and "
             "how each one fits the kinds of businesses we partner with — life insurance, financial "
             "planning, funeral homes, estate planning attorneys, and other related industries. "
             "Our team uses this brief to screen partner calls before a discovery call with the founder."
@@ -223,7 +223,7 @@ DEFAULTS: dict[str, Any] = {
         ),
     },
     "pillars": {
-        "title": "2. The Ten Pillars of Family Readiness",
+        "title": "2. The Eleven Pillars of Family Readiness",
         "intro": (
             "These are the official names we use everywhere in CarryOn. Always include the ™ on Estate Guardian."
         ),
@@ -337,6 +337,20 @@ DEFAULTS: dict[str, Any] = {
             },
             {
                 "n": "10",
+                "name": "CarryOn Entities & Structures",
+                "abbr": "CES",
+                "desc": (
+                    "A visual, pan-and-zoom org chart of the household's trusts, LLCs, partnerships, "
+                    "S-corps, C-corps, charitable entities, real properties, and the beneficiaries and "
+                    "external advisors connected to each. CFP shows what's there; CES shows how it's "
+                    "wired. Built for households with anything more complex than a single will — so "
+                    "when transition happens, the family and their attorney see the entire structure "
+                    "at a glance instead of reconstructing it from a filing cabinet. Distinct from "
+                    "CFP so partners can enable each independently per tier."
+                ),
+            },
+            {
+                "n": "11",
                 "name": "Beneficiary Estate Concierge",
                 "abbr": "BEC",
                 "desc": (
@@ -351,7 +365,7 @@ DEFAULTS: dict[str, Any] = {
             },
         ],
         "foundational": (
-            "Building block (not one of the ten pillars): Beneficiaries — every "
+            "Building block (not one of the eleven pillars): Beneficiaries — every "
             "pillar is built around the people the user has named as their "
             "beneficiaries, with separate permissions for each person. The "
             "benefactor decides who sees what, and when."
@@ -360,7 +374,7 @@ DEFAULTS: dict[str, Any] = {
     "capabilities": {
         "title": "2.5 Platform-wide capabilities",
         "intro": (
-            "These aren't separate pillars — they're the connective tissue that makes the ten pillars "
+            "These aren't separate pillars — they're the connective tissue that makes the eleven pillars "
             "work as one product. Every partner should know about them because each one closes a "
             "specific objection that comes up on discovery calls."
         ),
@@ -373,15 +387,6 @@ DEFAULTS: dict[str, Any] = {
                     "receives a single book to hand to an attorney, executor, or CPA — not a scavenger "
                     "hunt across email and file cabinets. Regenerable any time the underlying data "
                     "changes; partners can include it in their own deliverable packet."
-                ),
-            },
-            {
-                "name": "CarryOn Entities & Structures (CES)",
-                "desc": (
-                    "A visual, pan-and-zoom org-chart for trusts, LLCs, partnerships, S-corps, "
-                    "C-corps, and the people / beneficiaries connected to each. Sits beside CFP "
-                    "(the financial picture) — CFP shows what's there, CES shows how it's wired. "
-                    "Built for households with anything more complex than a single will."
                 ),
             },
             {
@@ -555,7 +560,7 @@ DEFAULTS: dict[str, Any] = {
                 "frame": (
                     "Selling CarryOn as a workplace benefit. The QuickStart Wizard is the Day-1 "
                     "on-ramp every employee sees — 2 minutes, no jargon, a printable guide they can "
-                    "act on the same week. Then the full ten pillars + Estate Binder become the "
+                    "act on the same week. Then the full eleven pillars + Estate Binder become the "
                     "family-preparedness piece on top of the usual financial-wellness stack. Screen "
                     "on plan-sponsor count, age skew, current EAP / financial-wellness offering."
                 ),
@@ -580,7 +585,7 @@ DEFAULTS: dict[str, Any] = {
             {
                 "name": "Military / veteran service organizations",
                 "frame": (
-                    "CarryOn has Military and Veteran tier discounts. Pillars: full ten + Estate "
+                    "CarryOn has Military and Veteran tier discounts. Pillars: full eleven + Estate "
                     "Binder + Trustee Mode (for spouse-assisted account management during deployment), "
                     'presented as "leave nothing for your family to figure out." Screen on org '
                     "type, member count, and how often members deploy if active-duty."
@@ -589,7 +594,7 @@ DEFAULTS: dict[str, Any] = {
             {
                 "name": "Senior-living operators / CCRCs",
                 "frame": (
-                    "Resident move-in and family-coordination angle. Pillars: full ten + QuickStart "
+                    "Resident move-in and family-coordination angle. Pillars: full eleven + QuickStart "
                     "at intake + Estate Binder as the resident-and-family deliverable. Screen on "
                     "resident count, independent vs assisted vs memory-care mix."
                 ),

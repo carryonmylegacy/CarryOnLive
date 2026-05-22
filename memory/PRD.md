@@ -107,7 +107,7 @@ guessing what the deceased would have wanted.
 
 ---
 
-## The Ten Pillars of Family Readiness
+## The Eleven Pillars of Family Readiness
 
 Source of truth: `/app/backend/routes/feature_gates.py::PLATFORM_FEATURES`
 and `/app/frontend/src/components/landing/LandingContent.js::PILLARS`.
@@ -125,12 +125,19 @@ and `/app/frontend/src/components/landing/LandingContent.js::PILLARS`.
 | 07 | Digital Access Vault | DAV | `/digital-wallet` | | ON |
 | 08 | Friends & Family Notification | FFN | `/ffn` | | ON |
 | 09 | CarryOn Financial Picture | CFP | `/financial` | | OFF |
-| 10 | Beneficiary Estate Concierge AI | BEC | `/beneficiary/concierge` | | OFF |
+| 10 | CarryOn Entities & Structures | CES | `/entities` | | OFF |
+| 11 | Beneficiary Estate Concierge AI | BEC | `/beneficiary/concierge` | | OFF |
 
 Foundational primitive (not a pillar tile, but everything ties to it):
-**Beneficiaries** (`/beneficiaries`). Designated Trustee Services (DTS)
-and Estate Plan Timeline are audit-side features, gated separately, not
-counted as pillars.
+**Beneficiaries** (`/beneficiaries`). Designated Trustee Services (DTS),
+Trustee Mode Access (TMA), and Estate Plan Timeline (EPT) are audit-side
+or delegation features, gated separately, **not** counted as pillars.
+
+CES was split out of CFP on May 22, 2026 so the founder can toggle the
+visual entity org-chart independently per tier and per partner. Data
+collections (`cfp_entities`, `cfp_external_people`,
+`cfp_entity_relationships`) are unchanged — disabling CES hides the
+route without deleting the underlying structures.
 
 `default OFF` means the feature exists in code and tests, but each tier
 must be toggled ON by the founder in **Admin → Finance → Subs → Feature

@@ -339,7 +339,7 @@ function BriefEditor({ draft, upd, listAdd, listRemove }) {
         ))}
       </Accordion>
 
-      <Accordion title="2. The Ten Pillars" testid="acc-pillars">
+      <Accordion title="2. The Eleven Pillars" testid="acc-pillars">
         <Field label="Section title" value={draft.pillars?.title || ''} onChange={(v) => upd(['pillars', 'title'], v)} testid="f-p-title" />
         <Field label="Section intro" value={draft.pillars?.intro || ''} onChange={(v) => upd(['pillars', 'intro'], v)} multiline rows={2} testid="f-p-intro" />
         <Field label="Foundational note (under the pillar list)" value={draft.pillars?.foundational || ''} onChange={(v) => upd(['pillars', 'foundational'], v)} multiline rows={3} testid="f-p-foundational" />
