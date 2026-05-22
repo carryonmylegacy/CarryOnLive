@@ -1087,25 +1087,25 @@
 
   /* ── Universal back-button room-maker ──────────────────────────
      When `.main-content` has `with-back-button` (DashboardLayout
-     adds this class on every non-root route), bump the page wrapper
-     right by 52 px so the fixed top-left back chip lives in cleared
-     space INSIDE the page. The gradient still flows full-width
-     underneath the chip — this shifts the page's own padding so its
-     first foreground row (icon + title) starts to the right of the
-     chip on every viewport, mobile through desktop.
+     adds this class on every non-root route), shift ONLY the page's
+     first-child element (the icon-row / header row) to the right so
+     the fixed top-left back chip lives in cleared space beside the
+     page icon + title. Everything ELSE on the page (cards, banners,
+     toolbars below the header) stays at its natural left edge.
 
      DOM (set by `DashboardLayout` + OverlayScrollbarsComponent):
        main.main-content.with-back-button
          └─ div[data-overlayscrollbars-contents] (the viewport)
               ├─ <button> ← the fixed BackButton (skipped via :not)
-              └─ <div|main|section>  ← the actual page root
+              └─ <div|main|section>   ← the actual page root
+                   ├─ <header / icon-row>  ← THIS is what we shift
+                   └─ <rest of page>       ← untouched
 
-     `:not(button)` makes sure we don't waste the padding on the
-     fixed chip itself. The longhand `padding-left` beats Tailwind's
-     `p-4` / `.page` shorthand at the cascade level, so each page's
-     top / right / bottom padding stays untouched. */
-  .main-content.with-back-button > [data-overlayscrollbars-contents] > *:not(button) {
-    padding-left: 52px;
+     `:not(button)` skips the fixed chip (its own padding does
+     nothing visible). `padding-left` longhand wins over Tailwind's
+     `p-4`/`p-8` shorthand at the same selector specificity. */
+  .main-content.with-back-button > [data-overlayscrollbars-contents] > *:not(button) > *:first-child {
+    padding-left: 40px;
   }
   /* The fixed back chip itself — `left` is responsive so it sits
      inside the main-content area on desktop (not buried under the
@@ -1122,13 +1122,6 @@
     padding: 0;
   }
   @media (min-width: 1024px) {
-    /* Desktop pages typically use `p-8` (32 px) or `.page` (42 px).
-       Bump the room a touch so the back chip + a comfortable gap
-       sit cleanly to the left of the icon-row, not crammed against
-       the title text. */
-    .main-content.with-back-button > [data-overlayscrollbars-contents] > *:not(button) {
-      padding-left: 60px;
-    }
     /* Shift the chip right of the sidebar so it sits in cleared
        main-content space rather than overlapping the sidebar. */
     .universal-back-chip {
