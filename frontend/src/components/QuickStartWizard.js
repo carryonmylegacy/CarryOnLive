@@ -760,11 +760,11 @@ export const QuickStartStep = ({ stepKey, data, setData, user, brand, onGateChoi
                 style={{ ...inputStyle, fontSize: '16px' }}
                 data-testid={`qs-prop-address-${idx}`}
               />
-              <div className="grid grid-cols-[1fr_140px] gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 <select
                   value={p.kind || 'other'} onChange={(e) => updateRow(idx, { kind: e.target.value })}
                   data-testid={`qs-prop-kind-${idx}`}
-                  className="rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#d4af37]"
+                  className="min-w-0 w-full rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#d4af37]"
                   style={{ ...inputStyle, fontSize: '16px' }}
                 >
                   {[['vacation','Vacation / second home'],['rental','Rental property'],['land','Vacant land'],['commercial','Commercial property'],['other','Other']].map(([k, label]) => (
@@ -774,7 +774,7 @@ export const QuickStartStep = ({ stepKey, data, setData, user, brand, onGateChoi
                 <select
                   value={p.state || ''} onChange={(e) => updateRow(idx, { state: e.target.value })}
                   data-testid={`qs-prop-state-${idx}`}
-                  className="rounded-xl px-2 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#d4af37]"
+                  className="min-w-0 w-full rounded-xl px-2 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#d4af37]"
                   style={{ ...inputStyle, fontSize: '16px' }}
                 >
                   <option value="" style={{ color: '#0F172A' }}>State…</option>
