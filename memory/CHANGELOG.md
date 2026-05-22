@@ -1,6 +1,49 @@
 # CarryOn — Changelog
 
 
+## May 22, 2026 — Benefactor Portal 4-section menu + CES split-out (V2026.05.22)
+
+**Why**: Founder asked to consolidate the 13-item flat benefactor sidebar into 4 expandable section pills (mirroring the May 21 admin restructure), and to break out CarryOn Entities & Structures as its own toggleable pillar so it can be enabled per-tier and per-partner independently of CFP.
+
+**Menu (sidebar + hamburger, benefactor only)**:
+- Replaced flat 13-item nav with 4 expandable pills:
+  - 🟦 **ESTATE** (`#3B82F6`) — Beneficiaries · MM · FFN · DTS · EPT
+  - 🟨 **VAULT** (`#d4af37`) — SDV · DAV · EGA
+  - 🟩 **FINANCIAL** (`#22C993`) — CFP · **CES (new)**
+  - 🟪 **PREPAREDNESS** (`#B794F6`) — IAC · CCP · ECT
+- Dashboard pinned ABOVE; ACCOUNT (Settings/Subscription/Security/Support) anchored BELOW. Mirror of the admin portal layout.
+- Section state persists via `carryon_benefactor_section_expanded_v1`; auto-expands the section containing the active route.
+- Tier-gated: each child filtered against `enabledFeatures`; an empty section renders an italic "Not on your plan" line so the user knows the section exists.
+- ECT unread badge surfaces inline on the ECT tab pill (`benefactor-ect-unread-badge`).
+- Beneficiary side (`/beneficiary/*`), admin side (`/admin/*`), and operator side (`/ops/*`) all UNCHANGED — legacy menus preserved per founder instruction "just benefactor side for now."
+
+**New CES pillar** (CarryOn Entities & Structures):
+- New top-level route **`/entities`** wrapped in `<FeatureGate>`.
+- New `EntitiesPage.js` with section-style green gradient header + reuses the existing `<EntitiesSection>` component verbatim — zero behavior change to the org chart, free-drag tiles, edge routing, SDV linkage, financials, quick-info popover, docs modal, or Clean Up.
+- Added `ces` to `PLATFORM_FEATURES` in `feature_gates.py` immediately after `cfp` with `default_off=True` so EVERY tier defaults to OFF on first deploy. Founder toggles it on per tier via Admin → Finance → Subs → Feature Gates.
+- Added `ces` to `PARTNER_FEATURE_PILLARS` in `admin/partners.py` with `default_off=True` so every partner defaults to OFF. Founder toggles per partner via Admin → Finance → Partners.
+- Added `'/entities': 'ces'` and `'/beneficiary/entities': 'ces'` to `ROUTE_TO_FEATURE` so route-level FeatureGate works the same way as every other pillar.
+- **No data loss**: `cfp_entities`, `cfp_external_people`, and `cfp_entity_relationships` collections untouched by the toggle. Re-enabling CES restores access to existing structures.
+
+**CFP page surgery**:
+- `<EntitiesSection>` block REMOVED from `FinancialPortalPage.js` body.
+- Replaced with a glass-card linkout at `data-testid="cfp-ces-link"` containing a Network-icon chip, label "CarryOn Entities & Structures (CES)", and a green "Open Entities & Structures →" button (`cfp-ces-link-open`) that navigates to `/entities`.
+
+**Settings page**:
+- `MenuOrderCustomizer` retired from render now that the benefactor menu is fixed-shape. Component file left on disk in case the founder chooses to bring per-section reordering back later. `DockCustomizer` (mobile dock customizer) preserved unchanged.
+
+**Memory hygiene**:
+- Old PRD.md (3,057-line iteration journal) archived verbatim → `/app/memory/PRD_archive_2026-02-17.md`.
+- New `/app/memory/PRD.md` (428 lines) rewritten from scratch as a living spec, derived from actual code (feature_gates, plans, App.js routes, adminSections). Pinned the two inviolable operating rules (production-only testing + zero-WARN housekeeping) at the top.
+
+**Files**:
+- New: `frontend/src/config/benefactorSections.js`, `frontend/src/components/layout/BenefactorSectionNav.js`, `frontend/src/pages/EntitiesPage.js`
+- Edited: `frontend/src/components/layout/Sidebar.js`, `frontend/src/components/layout/MobileNav.js`, `frontend/src/App.js`, `frontend/src/pages/FinancialPortalPage.js`, `frontend/src/pages/SettingsPage.js`, `frontend/src/utils/featureGates.js`, `frontend/src/config/menuRegistry.js`, `backend/routes/feature_gates.py`, `backend/routes/admin/partners.py`
+- New backend test: `backend/tests/test_ces_restructure.py`
+
+**Gate**: `bash /app/scripts/check.sh` → `ALL CLEAR — SAFE TO PUSH` (0 WARN / 0 FAIL · ruff PASS · ESLint PASS · 34/34 fast tests PASS · 4/4 new CES tests PASS).
+
+
 ## May 21, 2026 — Admin Portal Section→Tab restructure (V2026.05.21.14)
 
 **Why**: Founder Dashboard was overloaded with the entire tab strip + tab content underneath. New IA cleanly splits the 60-something admin surfaces into 6 navigable sections.
