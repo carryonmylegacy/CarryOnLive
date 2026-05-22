@@ -60,13 +60,14 @@ const BackButton = () => {
       data-testid="universal-back-button"
       aria-label="Back to previous page"
       title="Back"
-      className="fixed inline-flex items-center justify-center rounded-full transition-all active:scale-90"
+      className="universal-back-chip fixed inline-flex items-center justify-center rounded-full transition-all active:scale-90"
       style={{
-        // Sits just inside the main-content's padding-top so the chip
-        // visually lands ON the page's icon-row (icon-chip is ~12px
-        // from page top via `pt-4` = 16px - some optical offset).
+        // `top` is inline because it depends on the runtime
+        // safe-area-inset and the offline-banner height variables.
+        // `left` is handled by `.universal-back-chip` in index.css
+        // so it can shift right of the sidebar on desktop without
+        // JS knowing the sidebar's current width.
         top: 'calc(env(safe-area-inset-top, 0px) + var(--cy-offline-banner-h, 0px) + 60px)',
-        left: '12px',
         width: 32,
         height: 32,
         zIndex: 60,

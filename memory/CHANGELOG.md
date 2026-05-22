@@ -1,6 +1,20 @@
 # CarryOn — Changelog
 
 
+## May 22, 2026 — Universal Back Button room-maker fix (V2026.05.22-c)
+
+**Why**: The universal back chip was overlapping page-title icons across both mobile and desktop. The prior CSS room-maker `.main-content.with-back-button > * > *:first-child { padding-left: 48px }` targeted the wrong DOM node because `OverlayScrollbarsComponent` wraps page content in a viewport `<div>` whose `*:first-child` is the **fixed** BackButton itself — so the padding landed on a position:fixed element and accomplished nothing visible. Additionally on desktop the back chip was buried under the sidebar (`left: 12 px` ignored the 260 px sidebar width).
+
+**Fix** (`frontend/src/index.css` + `components/layout/BackButton.js`):
+- Selector now targets the actual page root (`[data-overlayscrollbars-contents] > *:not(button)`), with `padding-left: 52px` on mobile / `60px` on desktop.
+- `left` for `.universal-back-chip` is responsive — `12 px` on mobile, `var(--sidebar-width) + 12 px` (272 px) on desktop, `84 px` when the sidebar is collapsed.
+- Verified at 390 px (PWA), 1280 px (desktop full sidebar), across `/section/{estate,vault,financial,preparedness}`, `/vault`, `/entities`. Chip and header icon now sit side-by-side with a clean ~8 px gap.
+
+### Housekeeping
+- 74 PASS, 0 WARN, 0 FAIL. **ALL CHECKS PASSED — READY TO PUSH.**
+
+
+
 ## May 22, 2026 — Benefactor Dashboard 4-section rollup + landing pages (V2026.05.22-b)
 
 **Why**: Founder asked to consolidate the 6 per-feature dashboard tiles into the same 4 sections that drive the new menu (Estate / Vault / Financial / Preparedness), introduce metrics for FFN / DAV / CES so they count toward readiness, and build a navigable landing page for each section.
