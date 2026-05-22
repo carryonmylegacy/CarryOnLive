@@ -417,23 +417,19 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
       ref={sectionRef}
       data-testid="entities-section"
     >
-      {/* Title row — chip + count, no card border, no divider. The
-          chart-wrapper card has been removed per founder direction
-          (May 22 2026): tree sits directly on the page background so
-          the new dot-matrix grid carries the visual weight. */}
-      <div className="flex items-center gap-2 min-w-0 mb-3">
-        <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-          style={{ background: 'rgba(var(--gold-rgb), 0.14)', color: 'var(--gold)' }}>
-          <Network className="w-4 h-4" />
-        </div>
-        <div className="min-w-0">
-          <h2 className="text-sm font-bold text-[var(--t)] truncate" style={{ fontFamily: 'var(--sans)' }}>
-            Entities &amp; Structures
-          </h2>
-          <p className="text-[11px] text-[var(--t5)]">
-            {entities.length} entit{entities.length === 1 ? 'y' : 'ies'} · {relationships.length} connection{relationships.length === 1 ? '' : 's'}
-          </p>
-        </div>
+      {/* Title row — count line only, rendered in the same weight/
+          color/family as the previous "Entities & Structures" h2 the
+          founder removed (May 22 2026) since the page header above
+          already says CES. The icon chip was dropped in the same
+          pass for the same reason: redundant with the page header. */}
+      <div className="min-w-0 mb-3">
+        <p
+          className="text-sm font-bold text-[var(--t)] truncate"
+          style={{ fontFamily: 'var(--sans)' }}
+          data-testid="entities-section-counts"
+        >
+          {entities.length} entit{entities.length === 1 ? 'y' : 'ies'} · {relationships.length} connection{relationships.length === 1 ? '' : 's'}
+        </p>
       </div>
 
       {/* Toolbar row — full width, buttons grow laterally to fill the
