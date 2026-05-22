@@ -18,18 +18,36 @@ admin saves a partial document, GET merges it over DEFAULTS so a
 typo or missing key never blanks the public page.
 """
 
-from datetime import datetime, timezone
+import asyncio
+import base64
+import re
+import uuid
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException
+import resend
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
+from pydantic import BaseModel, EmailStr, Field
 
-from config import db
+from config import RESEND_API_KEY, SENDER_EMAIL, XAI_MODEL, XAI_MODEL_LIGHT, db, logger, xai_client
 from guards import require_admin_scope
+from services.quickstart_ai import build_quickstart_prompt, parse_quickstart_response
 from services.quickstart_pdf import build_quickstart_pdf
 from utils import get_current_user
 
 router = APIRouter()
+
+
+# ── Anonymous "Try it on your own household" rate limits ─────────────
+# B2B prospects landing on /partner-brief can click "Try it on your
+# own household" → walk the QuickStart wizard without an account →
+# get the PDF emailed to them. xAI Grok is metered so we cap both
+# per-IP (anti-abuse) and platform-wide (cost ceiling). Counters live
+# in `partner_brief_try_attempts` keyed by `ip` (24-hour window).
+_TRY_LIMIT_PER_IP_24H = 5
+_TRY_LIMIT_PLATFORM_24H = 200
+_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 
 # ── Sample QuickStart Guide payload (deterministic — NO Grok call) ──
@@ -733,3 +751,221 @@ async def sample_quickstart_pdf() -> StreamingResponse:
             "Cache-Control": "public, max-age=3600",
         },
     )
+
+
+# ── POST /api/partner-brief/try-quickstart ──────────────────────────
+class TryQuickStartPayload(BaseModel):
+    name: str = Field(..., min_length=1, max_length=120)
+    email: EmailStr
+    data: dict[str, Any] = Field(default_factory=dict)
+
+
+async def _check_try_rate_limit(ip: str) -> None:
+    """Mongo-backed sliding-window counter so anonymous trial runs
+    can't be abused. Two ceilings — per-IP and platform-wide.
+    Each successful call inserts a `partner_brief_try_attempts` row;
+    we count rows in the trailing 24h window."""
+    cutoff = (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat()
+    ip_count = await db.partner_brief_try_attempts.count_documents({"ip": ip, "created_at": {"$gte": cutoff}})
+    if ip_count >= _TRY_LIMIT_PER_IP_24H:
+        raise HTTPException(
+            status_code=429,
+            detail=(
+                "You've reached the trial limit from this network for the "
+                "next 24 hours. Reach out at partnerships@carryon.us and "
+                "we'll send you a tailored guide directly."
+            ),
+        )
+    platform_count = await db.partner_brief_try_attempts.count_documents({"created_at": {"$gte": cutoff}})
+    if platform_count >= _TRY_LIMIT_PLATFORM_24H:
+        raise HTTPException(
+            status_code=429,
+            detail=(
+                "We're at our daily trial capacity — please come back tomorrow "
+                "or email partnerships@carryon.us so we can send you a guide directly."
+            ),
+        )
+
+
+def _build_email_html(*, name: str, ai_intro: str, brand_url: str) -> str:
+    safe_name = (name or "there").split(" ")[0]
+    safe_intro = (ai_intro or "").replace("<", "&lt;").replace(">", "&gt;")
+    return f"""<!doctype html><html><body style="font-family:Helvetica,Arial,sans-serif;background:#0f1629;color:#E5E7EB;padding:32px;">
+<div style="max-width:560px;margin:0 auto;background:#111c33;border:1px solid rgba(212,175,55,0.25);border-radius:14px;padding:28px;">
+<p style="font-size:22px;font-family:'Cormorant Garamond',Georgia,serif;color:#d4af37;margin:0 0 4px 0;">CarryOn&trade;</p>
+<p style="font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#94A3B8;margin:0 0 24px 0;">Your QuickStart Estate Plan Guide</p>
+<p style="font-size:16px;color:#F8FAFC;margin:0 0 14px 0;">Hi {safe_name},</p>
+<p style="font-size:15px;line-height:1.6;color:#CBD5E1;margin:0 0 14px 0;">Your tailored QuickStart Estate Plan Guide is attached as a PDF. Take it, verbatim, to your estate attorney, CPA, financial advisor, and life-insurance agent &mdash; you&rsquo;ll walk in ready.</p>
+<p style="font-size:14px;line-height:1.6;color:#94A3B8;font-style:italic;margin:0 0 22px 0;">{safe_intro}</p>
+<p style="font-size:14px;line-height:1.6;color:#CBD5E1;margin:0 0 8px 0;">When you&rsquo;re ready to keep going &mdash; document vault, milestone messages, beneficiary access, and the rest &mdash; the full CarryOn platform picks up right where this guide leaves off:</p>
+<p style="margin:18px 0 0 0;"><a href="{brand_url}" style="display:inline-block;padding:11px 22px;border-radius:10px;font-weight:700;font-size:14px;background:linear-gradient(135deg,#d4af37,#b8962e);color:#080e1a;text-decoration:none;">Explore CarryOn</a></p>
+<p style="font-size:11px;color:#64748B;margin:28px 0 0 0;line-height:1.5;">This guide is a preparation tool, not legal, tax, or financial advice. Confirm specifics with the licensed professionals of your choice.</p>
+</div></body></html>"""
+
+
+@router.post("/partner-brief/try-quickstart")
+async def try_quickstart(
+    payload: TryQuickStartPayload,
+    request: Request,
+) -> StreamingResponse:
+    """Public, no-auth — the B2B `Try it on your own household` CTA.
+    A prospect walks the standard 10-step wizard locally in the browser
+    (no per-step server saves; it's a one-shot trial), then POSTs the
+    full data + name + email here. We:
+
+      1. Rate-limit by IP + platform-wide (xAI is metered).
+      2. Validate email + minimal required fields.
+      3. Call xAI Grok (founder's `XAI_API_KEY`) to generate the
+         tailored intro + per-professional checklists.
+      4. Render the PDF via the *same* renderer the authenticated
+         wizard uses (visually identical to a real client's PDF).
+      5. Email the PDF as an attachment via Resend.
+      6. Store the lead in `partner_brief_leads` so the founder can
+         follow up.
+      7. Stream the PDF back inline so the page can show it
+         immediately, alongside the "check your inbox" confirmation.
+    """
+    if not xai_client:
+        raise HTTPException(status_code=503, detail="AI service not configured.")
+    if not _EMAIL_RE.match(payload.email):
+        raise HTTPException(status_code=400, detail="Please use a valid email address.")
+    state = (payload.data.get("state") or {}).get("state_of_residence")
+    if not state or len(state) != 2:
+        raise HTTPException(status_code=400, detail="Please choose your state of residence.")
+    bens = (payload.data.get("beneficiaries") or {}).get("beneficiaries") or []
+    if not isinstance(bens, list) or len(bens) == 0:
+        raise HTTPException(
+            status_code=400,
+            detail="Please add at least one beneficiary so the guide can be tailored.",
+        )
+
+    ip = (request.client.host if request.client else "unknown") or "unknown"
+    await _check_try_rate_limit(ip)
+
+    # ── xAI Grok call (same pattern as the authenticated wizard) ──
+    prompt_messages = build_quickstart_prompt(user_name=payload.name, data=payload.data)
+    completion = None
+    last_err: Exception | None = None
+    for model_name in (XAI_MODEL_LIGHT, XAI_MODEL):
+        try:
+            completion = await asyncio.wait_for(
+                asyncio.to_thread(
+                    xai_client.chat.completions.create,
+                    model=model_name,
+                    messages=prompt_messages,
+                    temperature=0.55,
+                    max_tokens=4096,
+                ),
+                timeout=80.0,
+            )
+            break
+        except Exception as exc:  # noqa: BLE001
+            last_err = exc
+            logger.warning(f"Partner trial Grok failed on {model_name}: {exc}")
+            continue
+    if completion is None:
+        logger.exception("Partner trial Grok failover exhausted")
+        raise HTTPException(
+            status_code=503,
+            detail=f"AI service is temporarily unavailable — please try again. ({last_err})",
+        )
+
+    ai_text = completion.choices[0].message.content or ""
+    parsed = parse_quickstart_response(ai_text)
+    pdf_bytes = build_quickstart_pdf(
+        user_name=payload.name,
+        data=payload.data,
+        ai_payload=parsed,
+        generated_at=datetime.now(timezone.utc),
+    )
+
+    # ── Email the PDF (best-effort — surfaces error but does not
+    # block returning the PDF inline). ──
+    email_status = {"ok": False, "error": None}
+    if RESEND_API_KEY:
+        try:
+            brand_url = "https://app.carryon.us"
+            html_body = _build_email_html(name=payload.name, ai_intro=parsed.get("intro", ""), brand_url=brand_url)
+            await asyncio.to_thread(
+                resend.Emails.send,
+                {
+                    "from": SENDER_EMAIL,
+                    "to": [payload.email],
+                    "subject": "Your CarryOn QuickStart Estate Plan Guide",
+                    "html": html_body,
+                    "attachments": [
+                        {
+                            "filename": "CarryOn_QuickStart_Guide.pdf",
+                            "content": base64.b64encode(pdf_bytes).decode("ascii"),
+                            "content_type": "application/pdf",
+                        }
+                    ],
+                },
+            )
+            email_status = {"ok": True, "error": None}
+        except Exception as exc:  # noqa: BLE001
+            logger.exception("Partner trial email failed")
+            email_status = {"ok": False, "error": str(exc)}
+    else:
+        email_status = {"ok": False, "error": "Email service not configured on this environment."}
+
+    # ── Persist the lead + the attempt counter ──
+    now_iso = datetime.now(timezone.utc).isoformat()
+    lead_doc = {
+        "id": str(uuid.uuid4()),
+        "name": payload.name,
+        "email": payload.email,
+        "state": state,
+        "data": payload.data,
+        "ai_summary": parsed.get("intro", "")[:600],
+        "ip": ip,
+        "user_agent": (request.headers.get("user-agent") or "")[:300],
+        "email_sent": email_status["ok"],
+        "email_error": email_status["error"],
+        "created_at": now_iso,
+        "source": "partner_brief_try",
+    }
+    await db.partner_brief_leads.insert_one(dict(lead_doc))
+    await db.partner_brief_try_attempts.insert_one({"ip": ip, "email": payload.email, "created_at": now_iso})
+
+    return StreamingResponse(
+        iter([pdf_bytes]),
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": 'inline; filename="CarryOn_QuickStart_Guide.pdf"',
+            "Cache-Control": "private, no-store",
+            "X-CarryOn-Email-Sent": "1" if email_status["ok"] else "0",
+        },
+    )
+
+
+@router.get("/partner-brief/leads")
+async def list_partner_brief_leads(
+    current_user: dict = Depends(get_current_user),
+) -> dict[str, Any]:
+    """Founder + marketing scope only — list the most recent 200
+    leads captured by the `Try it on your own household` CTA so the
+    team can follow up. Excludes `_id` and the full `data` blob to
+    keep the response light; the `state` and `ai_summary` columns
+    are usually enough to triage."""
+    require_admin_scope(current_user, ["marketing"])
+    cursor = (
+        db.partner_brief_leads.find(
+            {},
+            {
+                "_id": 0,
+                "id": 1,
+                "name": 1,
+                "email": 1,
+                "state": 1,
+                "ai_summary": 1,
+                "email_sent": 1,
+                "created_at": 1,
+                "source": 1,
+            },
+        )
+        .sort("created_at", -1)
+        .limit(200)
+    )
+    leads = await cursor.to_list(length=200)
+    return {"leads": leads, "count": len(leads)}

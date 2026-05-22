@@ -34,6 +34,10 @@ const STEPS = [
   'financial_accounts', 'life_insurance', 'business', 'existing_documents',
   'generate',
 ];
+// Re-exported so the public Partner-Brief trial page (which is not
+// authenticated) can reuse the same step list / validation / UI without
+// duplicating any copy. Keep these in lockstep.
+export { STEPS };
 
 const US_STATES = [
   'AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA',
@@ -357,7 +361,10 @@ const QuickStartWizard = ({ forceOpen = false, onClose = () => {} }) => {
 };
 
 // ─── Step content ─────────────────────────────────────────────────
-function isStepValid(stepKey, data) {
+// Both `isStepValid` and `QuickStartStep` are exported so the public
+// Partner-Brief trial page (`/quickstart/try`) can reuse the exact
+// same step UI + validation logic without any duplication.
+export function isStepValid(stepKey, data) {
   switch (stepKey) {
     case 'welcome':
       return true;
@@ -392,7 +399,7 @@ const inputStyle = {
   color: 'var(--t)',
 };
 
-const QuickStartStep = ({ stepKey, data, setData, user, brand }) => {
+export const QuickStartStep = ({ stepKey, data, setData, user, brand }) => {
   const set = (k, v) => setData({ ...data, [k]: v });
   const firstName = (user?.first_name || user?.name || '').split(' ')[0] || 'there';
 

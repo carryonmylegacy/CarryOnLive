@@ -1,6 +1,34 @@
 # CarryOn — Changelog
 
 
+## May 22, 2026 — Public QuickStart trial funnel + lead capture (V2026.05.22-f)
+
+**Why**: The Partner Brief's "See a sample" button shows what the deliverable looks like, but a B2B prospect (HR-benefits buyer, hospice director, attorney) closes faster when they can *feel* the platform on their own household before pitching it to their leadership team. Founder confirmed: a second "Try it on your own household" CTA, no sign-up required, results emailed.
+
+**Backend** (`routes/partner_brief.py`):
+- New public endpoint `POST /api/partner-brief/try-quickstart`. Walks the same 10-step data shape as the authenticated wizard, calls **xAI Grok** (founder's `XAI_API_KEY`, same as the authenticated path), renders the PDF with the *same* `services/quickstart_pdf` renderer the live platform uses, emails the PDF as an attachment via Resend, captures the lead in `partner_brief_leads`, and streams the PDF back inline so the page shows it immediately.
+- Mongo-backed sliding-window rate limiter (`partner_brief_try_attempts` collection): 5 attempts per IP per 24 h, 200 attempts platform-wide per 24 h. Hard ceiling on xAI spend even if the page goes viral.
+- New `GET /api/partner-brief/leads` (founder + marketing scope only) returning the latest 200 leads with name / email / state / AI-summary excerpt / email-sent flag, ready for follow-up.
+- Anti-abuse hygiene: email regex check, required state-of-residence + at least one beneficiary, IP + user-agent stamped on every lead.
+
+**Frontend** (new `pages/QuickStartTrialPage.js` + `pages/PartnerBriefPage.js` + `App.js` + reusable exports from `components/QuickStartWizard.js`):
+- New public route `/quickstart/try` — full-bleed trial page with its own "QUICKSTART TRIAL" top bar, "Anonymous trial — no sign-up required" gold pill, 10-step progress bar.
+- All 10 wizard steps reuse the **exact** UI + validation from the authenticated wizard via new named exports `STEPS`, `isStepValid`, and `QuickStartStep` from `QuickStartWizard.js` — zero duplication, so any future polish on the wizard automatically lands on both surfaces.
+- Trial data lives in `sessionStorage` only; nothing hits the server until the final POST, so an abandoned attempt costs us nothing.
+- Final step replaces "Generate" with a small name + email form + privacy reassurance ("AI runs on the founder's own xAI key — no third-party access").
+- On success: branded confirmation screen ("Your QuickStart Guide is ready, Pat") + Download PDF button + inline PDF preview iframe + "Back to Partner Brief" link.
+- New "Try it on your own household" outline-style CTA placed next to "See a sample QuickStart Guide" on the Partner Brief, with caption explaining the trial's mechanics (2 min, emailed, no sign-up).
+
+**Verified end-to-end** (preview pod, deterministic curl + screenshot):
+- `POST /api/partner-brief/try-quickstart` returns HTTP 200, 3 897-byte valid PDF, `X-CarryOn-Email-Sent: 1` (Resend confirmed delivery to `info@carryon.us`).
+- Lead captured in `partner_brief_leads` with name, email, state, AI summary, IP, source `partner_brief_try`.
+- Browser flow: Partner Brief → click "Try it on your own household" → land on `/quickstart/try` → walk 10 steps → submit name + email → success screen with download button + inline PDF preview rendered in 14 s.
+
+### Housekeeping
+- 74 PASS, 0 WARN, 0 FAIL. **ALL CHECKS PASSED — READY TO PUSH.**
+
+
+
 ## May 22, 2026 — B2B Partner Brief refresh (V2026.05.22-e)
 
 **Why**: The Partner Brief at `/partner-brief` was written before the QuickStart Wizard, CES, Estate Binder, Trustee Mode, and the offline-first PWA story existed. Founder asked for full alignment with the platform as it ships today, plus a real "See a sample QuickStart Guide" CTA so a B2B prospect can click and see the actual deliverable.

@@ -281,6 +281,15 @@ ROUTE_POLICIES: dict = {
         "auth": "public",
         "notes": "Public sample for the B2B partner brief — no PII, deterministic",
     },
+    # Public B2B Partner Brief — "Try it on your own household" anonymous trial.
+    "POST /api/partner-brief/try-quickstart": {
+        "auth": "public",
+        "notes": "Anonymous B2B trial; rate-limited per-IP + platform-wide; captures lead into partner_brief_leads",
+    },
+    "GET /api/partner-brief/leads": {
+        "auth": "required",
+        "notes": "Founder/marketing — list captured anonymous-trial leads for follow-up",
+    },
     # ── Share Binder (anonymous public links + owner management) ───────────
     "POST /api/share/binder": {
         "auth": "required",

@@ -141,30 +141,51 @@ export default function PartnerBriefPage() {
             )}
             {c.quickstart.sample_pdf_url && (
               <div className="no-print" style={{ marginTop: 18, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <a
-                  href={c.quickstart.sample_pdf_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  data-testid="partner-brief-quickstart-sample"
-                  style={{
-                    alignSelf: 'flex-start',
-                    padding: '10px 18px',
-                    borderRadius: 10,
-                    fontSize: 14,
-                    fontWeight: 700,
-                    background: 'linear-gradient(135deg,#d4af37,#b8962e)',
-                    color: '#080e1a',
-                    textDecoration: 'none',
-                    boxShadow: '0 8px 24px rgba(212,175,55,0.25)',
-                  }}
-                >
-                  {c.quickstart.sample_label || 'See a sample QuickStart Guide'}
-                </a>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+                  <a
+                    href={c.quickstart.sample_pdf_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    data-testid="partner-brief-quickstart-sample"
+                    style={{
+                      padding: '10px 18px',
+                      borderRadius: 10,
+                      fontSize: 14,
+                      fontWeight: 700,
+                      background: 'linear-gradient(135deg,#d4af37,#b8962e)',
+                      color: '#080e1a',
+                      textDecoration: 'none',
+                      boxShadow: '0 8px 24px rgba(212,175,55,0.25)',
+                    }}
+                  >
+                    {c.quickstart.sample_label || 'See a sample QuickStart Guide'}
+                  </a>
+                  <a
+                    href="/quickstart/try"
+                    data-testid="partner-brief-quickstart-try"
+                    style={{
+                      padding: '10px 18px',
+                      borderRadius: 10,
+                      fontSize: 14,
+                      fontWeight: 700,
+                      background: 'transparent',
+                      color: '#F8FAFC',
+                      textDecoration: 'none',
+                      border: '1px solid rgba(var(--gold-rgb), 0.55)',
+                    }}
+                  >
+                    Try it on your own household
+                  </a>
+                </div>
                 {c.quickstart.sample_caption && (
                   <p style={{ fontSize: 12, color: '#94A3B8', margin: 0, lineHeight: 1.5, maxWidth: 560 }}>
                     {c.quickstart.sample_caption}
                   </p>
                 )}
+                <p style={{ fontSize: 12, color: '#64748B', margin: 0, lineHeight: 1.5, maxWidth: 560 }}>
+                  The trial uses the same AI engine the live platform uses, takes about 2 minutes,
+                  and emails the guide to the address you provide. No sign-up required.
+                </p>
               </div>
             )}
           </Section>
