@@ -46,11 +46,11 @@ const TrusteeBanner = () => {
 
     const measure = () => {
       const h = ref.current?.offsetHeight || 0;
+      // Add a 6px breathing room below the banner so the mobile header
+      // logo/hamburger row doesn't kiss the orange edge.
+      const GAP_BELOW = 6;
       root.style.setProperty('--cy-trustee-banner-h', `${h}px`);
-      // Bump the offline-banner-h by the trustee height so existing
-      // layout that already steps down for offline ALSO steps down for
-      // trustee — without us having to touch every CSS rule.
-      root.style.setProperty('--cy-offline-banner-h', `${priorOfflinePx + h}px`);
+      root.style.setProperty('--cy-offline-banner-h', `${priorOfflinePx + h + GAP_BELOW}px`);
     };
     measure();
     const t = setTimeout(measure, 60);
@@ -91,12 +91,12 @@ const TrusteeBanner = () => {
         background: 'linear-gradient(90deg, #b45309 0%, #d97706 50%, #b45309 100%)',
         color: '#fff7ed',
         borderBottom: '2px solid #92400e',
-        padding: '8px 16px 8px',
+        padding: '0px 16px 10px',
         textAlign: 'center',
         fontWeight: 700,
         letterSpacing: '0.02em',
         boxShadow: '0 2px 6px rgba(0,0,0,0.18)',
-        paddingTop: 'calc(2px + env(safe-area-inset-top, 0px))',
+        paddingTop: 'env(safe-area-inset-top, 0px)',
       }}
     >
       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10, fontSize: 13 }}>
