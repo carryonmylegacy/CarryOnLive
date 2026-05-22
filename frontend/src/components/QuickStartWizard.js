@@ -579,7 +579,7 @@ export const QuickStartStep = ({ stepKey, data, setData, user, brand, onGateChoi
         </p>
         <Label>Personal residence</Label>
         <AddressAutocomplete
-          value={data?.address || ''}
+          value={(data?.address && data.address !== '[object Object]') ? data.address : ''}
           onChange={(e) => set('address', typeof e === 'string' ? e : (e?.target?.value ?? ''))}
           onSelect={onAddressSelect}
           placeholder="Start typing your home address…"
@@ -681,26 +681,34 @@ export const QuickStartStep = ({ stepKey, data, setData, user, brand, onGateChoi
             <p className="text-xs italic" style={mutedStyle}>No one added yet. Add at least one to continue.</p>
           )}
           {beneficiaries.map((b, idx) => (
-            <div key={idx} className="grid grid-cols-[1fr_140px_auto] gap-2 items-center">
+            <div key={idx} className="grid grid-cols-1 sm:grid-cols-[1fr_160px_auto] gap-2 sm:items-center">
               <input
                 type="text" value={b.name || ''} onChange={(e) => updateRow(idx, 'name', e.target.value)}
                 placeholder="Full name" data-testid={`qs-ben-name-${idx}`}
-                className="rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#d4af37]"
+                className="rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#d4af37] min-w-0"
                 style={{ ...inputStyle, fontSize: '16px' }}
               />
-              <select
-                value={b.relationship || ''} onChange={(e) => updateRow(idx, 'relationship', e.target.value)}
-                data-testid={`qs-ben-rel-${idx}`}
-                className="rounded-xl px-2 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#d4af37]"
-                style={{ ...inputStyle, fontSize: '16px' }}
-              >
-                <option value="" style={{ color: '#0F172A' }}>Relationship…</option>
-                {_RELS.map((r) => <option key={r} value={r} style={{ color: '#0F172A' }}>{r}</option>)}
-              </select>
+              <div className="flex items-center gap-2 min-w-0">
+                <select
+                  value={b.relationship || ''} onChange={(e) => updateRow(idx, 'relationship', e.target.value)}
+                  data-testid={`qs-ben-rel-${idx}`}
+                  className="flex-1 sm:flex-none sm:w-[160px] min-w-0 rounded-xl px-2 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#d4af37]"
+                  style={{ ...inputStyle, fontSize: '16px' }}
+                >
+                  <option value="" style={{ color: '#0F172A' }}>Relationship…</option>
+                  {_RELS.map((r) => <option key={r} value={r} style={{ color: '#0F172A' }}>{r}</option>)}
+                </select>
+                <button
+                  type="button" onClick={() => removeRow(idx)} data-testid={`qs-ben-remove-${idx}`}
+                  aria-label="Remove"
+                  className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 sm:hidden"
+                  style={{ background: 'rgba(255,255,255,0.08)', color: '#FCA5A5', border: '1px solid rgba(255,255,255,0.15)' }}
+                ><X className="w-4 h-4" /></button>
+              </div>
               <button
-                type="button" onClick={() => removeRow(idx)} data-testid={`qs-ben-remove-${idx}`}
+                type="button" onClick={() => removeRow(idx)}
                 aria-label="Remove"
-                className="w-9 h-9 rounded-lg flex items-center justify-center"
+                className="hidden sm:flex w-9 h-9 rounded-lg items-center justify-center flex-shrink-0"
                 style={{ background: 'rgba(255,255,255,0.08)', color: '#FCA5A5', border: '1px solid rgba(255,255,255,0.15)' }}
               ><X className="w-4 h-4" /></button>
             </div>
@@ -741,8 +749,8 @@ export const QuickStartStep = ({ stepKey, data, setData, user, brand, onGateChoi
                 ><X className="w-3.5 h-3.5" /></button>
               </div>
               <AddressAutocomplete
-                value={p.address || ''}
-                onChange={(v) => updateRow(idx, { address: v })}
+                value={(p.address && p.address !== '[object Object]') ? p.address : ''}
+                onChange={(e) => updateRow(idx, { address: typeof e === 'string' ? e : (e?.target?.value ?? '') })}
                 onSelect={({ street, city, state }) => updateRow(idx, {
                   address: [street, city].filter(Boolean).join(', '),
                   state: state || p.state || '',

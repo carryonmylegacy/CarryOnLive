@@ -1,6 +1,30 @@
 # CarryOn — Changelog
 
 
+## May 22, 2026 — QW round 2: second `[object Object]` site + beneficiary row mobile layout (V2026.05.22-l)
+
+**Same autofill bug, second site.** The prior fix only patched the residence step (5). The properties step (6) had a copy-pasted twin `onChange={(v) => updateRow(idx, { address: v })}` that suffered identically — browser autofill on the property-1 input wrote a React event object into the wizard's `list[0].address`, which serialised as `"[object Object]"` and locked the user out of advancing. Founder caught it on iOS Safari.
+
+Fixed by applying the same normalising shim at **every** AddressAutocomplete call inside the wizard:
+- `onChange={(e) => updateRow(idx, { address: typeof e === 'string' ? e : (e?.target?.value ?? '') })}`
+- Plus a defensive `value={(p.address && p.address !== '[object Object]') ? p.address : ''}` on the rendered input so any *already-poisoned* progress row self-heals on next render (the user doesn't have to manually delete the bad string before retyping). Same defensive value applied on the residence step (5).
+
+**Beneficiary row tightness on mobile.** Founder's first screenshot showed step 5 with three rows of "Name | Relationship | (no X visible)" pinched together — the `grid-cols-[1fr_140px_auto]` was too tight on a 390-px iPhone width. The X-remove button overflowed off-screen.
+
+Re-laid the grid in `QuickStartWizard.js::beneficiaries step`:
+- Mobile (`<sm`): `grid-cols-1` — name takes its own row, then a `flex` row holds `[Relationship dropdown | X button]` so the X is always reachable.
+- Desktop (`sm+`): keeps the original three-column layout but bumps the relationship column from 140 → 160 px so dropdown labels like "Daughter" / "Spouse" / "Granddaughter" don't clip.
+- Two render-only X buttons (one mobile-only, one desktop-only) hidden via `sm:hidden` / `hidden sm:flex` — DOM stays simple, no JS conditional logic needed.
+
+**Verification:**
+- `bash /app/housekeeping.sh --strict` → ALL CHECKS PASSED · READY TO PUSH · 0 WARN / 0 FAIL.
+- ESLint clean on `QuickStartWizard.js`.
+- Code grep confirms both AddressAutocomplete sites in the wizard now use the normalised onChange + defensive value:
+  - Line 582–583 (residence step)
+  - Line 752–753 (properties step)
+
+
+
 ## May 22, 2026 — Dashboard polish pass + critical QW autofill bug (V2026.05.22-k)
 
 **Critical bug fix — QW step 3 `[object Object]`.** Founder was stuck on the "Where do you live?" step because browser autofill fired an event-shaped value into `onChange={(v) => set('address', v)}`, which stored the entire React synthetic event into the wizard state. That serialised as the literal string `"[object Object]"` on next render — unrecoverable from the UI. Fixed in `QuickStartWizard.js` by normalising the handler: `onChange={(e) => set('address', typeof e === 'string' ? e : (e?.target?.value ?? ''))}`. Now browser autofill **and** Google Places selection both feed clean strings.
