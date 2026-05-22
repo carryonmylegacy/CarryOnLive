@@ -233,7 +233,7 @@ DEFAULTS: dict[str, Any] = {
         "items": [
             {
                 "n": "01",
-                "name": "Estate",
+                "name": "Legacy",
                 "abbr": "People & plan",
                 "desc": (
                     "The people who matter, the plan you leave them, and the audit trail of every "

@@ -23,7 +23,7 @@ const TRUST_BADGES = [
 // it in LandingContent.js first and mirror here.
 const FEATURES = [
   {
-    num: '01', icon: Landmark, title: 'Estate', abbr: 'People & plan',
+    num: '01', icon: Landmark, title: 'Legacy', abbr: 'People & plan',
     bold: 'The people who matter, the plan you leave them, and the audit trail of every change you make.',
     body: 'Beneficiaries (designate who matters, who sees what, when). Milestone Messages (MM — video/audio/written messages delivered at specific future moments). Friends & Family Notification (FFN — coordinated call-list when something happens). Designated Trustee Services (DTS — let an advisor act on your behalf, fully audited). Estate Plan Timeline (EPT — a living record of every change).',
   },

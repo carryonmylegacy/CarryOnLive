@@ -47,7 +47,7 @@ These are the canonical names. **Use them exactly.** Do not paraphrase, rename, 
 
 | # | Pillar | One-liner | Functions inside this pillar |
 |---|---|---|---|
-| 01 | 🔵 **Estate** | The people who matter, the plan you leave them, and the audit trail of every change along the way. | Beneficiaries · Milestone Messages (MM) · Friends & Family Notification (FFN) · Designated Trustee Services (DTS) · Estate Plan Timeline (EPT) |
+| 01 | 🔵 **Legacy** | The people who matter, the plan you leave them, and the audit trail of every change along the way. | Beneficiaries · Milestone Messages (MM) · Friends & Family Notification (FFN) · Designated Trustee Services (DTS) · Estate Plan Timeline (EPT) |
 | 02 | 🟡 **Vault** | Every document and credential your family will actually need — encrypted, organized, and surfaced by an AI that finds what you missed. | Secure Document Vault (SDV) · Digital Access Vault (DAV) · Estate Guardian™ AI (EGA) |
 | 03 | 🟢 **Financial** | The complete money picture and a visual map of every trust, entity, and structure that holds it together. | CarryOn Financial Picture (CFP) · CarryOn Entities & Structures (CES) |
 | 04 | 🟣 **Preparedness** | The playbook your family follows on the hardest days — step-by-step actions, pre-built protocols, and a private channel to coordinate. | Immediate Action Checklist (IAC) · CarryOn Contingency Protocols (CCP) · Estate Communications Tool (ECT) |

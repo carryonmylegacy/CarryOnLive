@@ -121,7 +121,12 @@ for the pillar grouping: `/app/frontend/src/config/benefactorSections.js`
 narrative). **Canonical names + abbreviations are platform law** — see
 `AGENT_RULES.md` Rule -2.
 
-### 🔵 Pillar 01 — Estate *(people, plan, audit trail)*
+### 🔵 Pillar 01 — Legacy *(people, plan, audit trail)*
+
+Internal data key: `estate` (route paths and config maps continue to use
+this stable identifier; only the user-visible label was renamed from
+"Estate" to "Legacy" on May 22, 2026 so the pillar reads as the broader
+*leaving-behind* concept rather than the legal-document narrow noun).
 
 | Function | Abbr | Route | What it does |
 |---|---|---|---|

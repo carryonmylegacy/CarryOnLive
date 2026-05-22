@@ -1,6 +1,46 @@
 # CarryOn — Changelog
 
 
+## May 22, 2026 — Pillar #01 relabeled "Legacy" + responsive Readiness gauge (V2026.05.22-j)
+
+**Task 1: Estate → Legacy pillar label.** Founder pivoted the first pillar from "Estate" to "Legacy" so the pillar reads as the broader "what you leave behind" concept rather than the narrow legal-document noun. **The data key `estate` and the URL `/section/estate` remain unchanged** — only the user-visible label flipped. This preserves all routing, feature-gate lookups, dashboard `sectionPercents.estate`, config maps, and 50+ internal references.
+
+**Files touched:**
+- `frontend/src/config/benefactorSections.js` — `label: 'Estate'` → `label: 'Legacy'` (sidebar pill).
+- `frontend/src/pages/DashboardPage.js` — Tile `title="Estate"` → `title="Legacy"`; KeyChip `chipLabel: 'Estate'` → `'Legacy'`; side-by-side dial-card h2 `Estate Readiness` → `Total Estate Readiness` (the prior session's rename had only caught the readiness-top layout).
+- `frontend/src/components/landing/LandingContent.js` — PILLARS[0].title `'Estate'` → `'Legacy'`.
+- `frontend/src/pages/LandingPage.js` (legacy `/landing-consumer`) — FEATURES[0].title `'Estate'` → `'Legacy'`.
+- `backend/routes/partner_brief.py` — pillars.items[0].name `'Estate'` → `'Legacy'`.
+- `memory/PRD.md` — Pillar 01 heading `Estate` → `Legacy` with an "internal data key: `estate`" note explaining why routes and config still use the old identifier.
+- `memory/B2B_SCREENING_BRIEF.md` — Four-pillar table row `🔵 Estate` → `🔵 Legacy`.
+
+**NOT touched (intentional — these "Estate" strings are the *noun*, not the pillar):** estate-name fallbacks like `estate?.name || 'Estate'` (sidebar/mobile-nav estate switcher, admin estate columns, beneficiary hub estate label, family tree estate node label, emergency-access estate selector, chat modal estate selector); `estate_id`, `estate_plan`, `Estate Guardian`, `Estate Communications`, `Estate Binder`, `Estate Concierge`, `Estate Plan Timeline`, `Estate Readiness`; the `/section/estate` route path and the `'estate'` config keys; PDF filename fallbacks; test-fixture last-names.
+
+**Task 2: Responsive readiness gauge + KeyChips, BNDR/EGA buttons unchanged.** Founder mandate (with annotated screenshot) — when the browser window grows, the gauge and the key chips should grow with it, but the BNDR (Binder) and EGA (Estate Guardian) corner buttons should stay locked at their current size.
+
+**Files touched:**
+- `frontend/src/components/dashboard/DashboardWidgets.js::SpeedometerGauge` — Replaced `max-w-[240px] lg:max-w-[460px]` (which pinned the gauge at 460 px on desktop regardless of window width) with inline `maxWidth: 'clamp(240px, 38vw, 680px)'`. Replaced `text-3xl lg:text-5xl` on the score digits with inline `fontSize: 'clamp(28px, 4.2vw, 64px)'`. Replaced `text-sm lg:text-lg` on the score label ("Strong" / "Excellent" / etc.) with inline `fontSize: 'clamp(13px, 1.4vw, 22px)'`. All three now scale smoothly across viewport widths instead of jumping at the `lg` breakpoint.
+- `frontend/src/pages/DashboardPage.js::KeyChips` — Bumped the existing `clamp()` on chip text from `calc(... * 0.011)` floor-to-`+8` ceiling to `calc(... * 0.015)` floor-to-`+14` ceiling so the key grows more visibly between 13" and 32" displays. Replaced the fixed `cfg.dot` color-dot size with a matching clamp so the dot scales alongside the label.
+- `EstateBinderButton.js` and `EgaQuickLink` — **not touched**. Their `w-12 h-12 lg:w-14 lg:h-14` classes already produce a fixed 56×56 px button at every desktop width.
+
+**Verification (preview pod, real measurements at three viewport widths):**
+
+| Viewport | Gauge SVG width | Score `%` font | Chip "% Legacy" font | BNDR button | EGA button |
+|---|---|---|---|---|---|
+| 1280 px | **428 px** | **53.8 px** | **19.2 px** | **56 × 56** | **56 × 56** |
+| 1600 px | **588 px** | **64 px** | **24 px** | **56 × 56** | **56 × 56** |
+| 1920 px | **618 px** | **64 px** | **28 px** | **56 × 56** | **56 × 56** |
+
+Gauge grows +44%, chips grow +46%, BNDR/EGA stay locked at 56×56 — exactly as requested.
+
+Screenshots also confirm the sidebar pill now reads **LEGACY** (blue gradient, Landmark icon) and the chip key reads **"56% Legacy"**.
+
+**Quality gates:**
+- `bash /app/housekeeping.sh --strict` → `ALL CHECKS PASSED — codebase is clean / READY TO PUSH`, 0 WARN / 0 FAIL.
+- ESLint clean on `DashboardWidgets.js`, `DashboardPage.js`; ruff clean on `partner_brief.py`.
+
+
+
 ## May 22, 2026 — Narrative reset: Four Pillars of Total Estate Readiness (V2026.05.22-i)
 
 **Why**: Founder direction — move the platform's whole story from a verbose 11-pillar laundry-list to a tight **four-pillar narrative driving to one outcome: Total Estate Readiness**. The 11 things that used to be called "pillars" are now called **functions**, grouped into the same four pillars the benefactor sidebar already uses (Estate / Vault / Financial / Preparedness). BEC is no longer in the main pillar list because it's a beneficiary-side capability — it shows up in a small italic footnote about what happens after transition.

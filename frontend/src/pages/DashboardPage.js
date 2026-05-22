@@ -1191,11 +1191,11 @@ const DashboardPage = () => {
             key: 'estate',
             chipColor: '#3B82F6',
             chipPercent: sectionPercents.estate,
-            chipLabel: 'Estate',
+            chipLabel: 'Legacy',
             tile: (
               <SectionStatCard
                 icon={Landmark}
-                title="Estate"
+                title="Legacy"
                 accent="#3B82F6"
                 stats={buildStats([
                   { featureKey: 'beneficiaries', title: 'Beneficiaries', value: stats.beneficiaries },
@@ -1296,14 +1296,26 @@ const DashboardPage = () => {
             >
               {ENTRIES.map((e) => (
                 <div key={e.key} className="flex items-center gap-2">
-                  <span className="rounded-full flex-shrink-0" style={{ background: e.chipColor, width: cfg.dot, height: cfg.dot }} />
+                  <span
+                    className="rounded-full flex-shrink-0"
+                    style={{
+                      background: e.chipColor,
+                      // Dot scales fluidly with viewport just like the
+                      // label text below — so the key feels balanced
+                      // with the gauge at every width.
+                      width: `clamp(${cfg.dot}px, calc(var(--app-100vw, 100vw) * 0.0095), ${cfg.dot + 8}px)`,
+                      height: `clamp(${cfg.dot}px, calc(var(--app-100vw, 100vw) * 0.0095), ${cfg.dot + 8}px)`,
+                    }}
+                  />
                   <span
                     className="text-[var(--t4)] font-bold whitespace-nowrap"
                     // Fluid: scales between the static cfg.font floor
                     // and a viewport-proportional ceiling so the key
-                    // grows with iPad-and-above viewports instead of
-                    // staying pinned at the discrete sm/md/lg jump.
-                    style={{ fontSize: `clamp(${cfg.font}px, calc(var(--app-100vw, 100vw) * 0.011), ${cfg.font + 8}px)` }}
+                    // grows visibly between 13" and 32" displays
+                    // instead of feeling pinned. Multiplier and ceiling
+                    // bumped May 22, 2026 per user mandate — the key
+                    // should breathe with the gauge.
+                    style={{ fontSize: `clamp(${cfg.font}px, calc(var(--app-100vw, 100vw) * 0.015), ${cfg.font + 14}px)` }}
                   >
                     {e.chipPercent}% {e.chipLabel}
                   </span>
@@ -1472,7 +1484,7 @@ const DashboardPage = () => {
                   className="text-3xl lg:text-4xl xl:text-5xl 2xl:text-6xl whitespace-nowrap font-semibold text-[var(--t)] mb-4 text-center tracking-tight"
                   style={{ fontFamily: 'var(--serif)' }}
                 >
-                  Estate Readiness
+                  Total Estate Readiness
                 </h2>
                 <div className="flex-1 flex items-center justify-center">
                   <ReadinessDial score={readinessScore} id="readiness-side" labelText={scoreInfo.label} labelColor={scoreInfo.color} />

@@ -20,7 +20,15 @@ export const SpeedometerGauge = ({ score, id = 'main', labelText, labelColor }) 
   }, []);
 
   return (
-    <div className="flex flex-col items-center w-full max-w-[240px] lg:max-w-[460px] mx-auto">
+    <div
+      className="flex flex-col items-center w-full mx-auto"
+      // Fluid sizing: gauge grows with viewport between a mobile floor
+      // and a generous desktop ceiling instead of clamping at a fixed
+      // 460px (May 22, 2026 user mandate). BNDR + EGA pills sit outside
+      // this wrapper and stay anchored to the parent card corners, so
+      // their sizes are unaffected.
+      style={{ maxWidth: 'clamp(240px, 38vw, 680px)' }}
+    >
       <svg viewBox="0 0 200 105" className="w-full h-auto">
         <defs>
           <linearGradient id={`${gId}-arc`} x1="0%" y1="0%" x2="100%" y2="0%">
@@ -62,10 +70,16 @@ export const SpeedometerGauge = ({ score, id = 'main', labelText, labelColor }) 
         </g>
       </svg>
       <div className="text-center mt-2 lg:mt-3">
-        <div className="text-3xl lg:text-5xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>
+        <div
+          className="font-bold text-[var(--t)]"
+          style={{ fontFamily: 'var(--sans)', fontSize: 'clamp(28px, 4.2vw, 64px)' }}
+        >
           {score}%
         </div>
-        <div className="text-sm lg:text-lg font-semibold mt-0.5" style={{ color: labelColor, fontFamily: 'var(--sans)' }}>
+        <div
+          className="font-semibold mt-0.5"
+          style={{ color: labelColor, fontFamily: 'var(--sans)', fontSize: 'clamp(13px, 1.4vw, 22px)' }}
+        >
           {labelText}
         </div>
       </div>

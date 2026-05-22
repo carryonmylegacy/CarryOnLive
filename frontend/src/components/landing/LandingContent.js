@@ -8,7 +8,7 @@ const PILLARS = [
   {
     num: '01',
     icon: Landmark,
-    title: 'Estate',
+    title: 'Legacy',
     abbr: 'People & plan',
     color: '#3B82F6',
     blurb: 'The people who matter, the plan you leave them, and the audit trail of every change you make along the way.',

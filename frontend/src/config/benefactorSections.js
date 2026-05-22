@@ -25,7 +25,7 @@ import {
 export const BENEFACTOR_SECTIONS = [
   {
     key: 'estate',
-    label: 'Estate',
+    label: 'Legacy',
     icon: Landmark,
     color: '#3B82F6', // blue
     pill: {
