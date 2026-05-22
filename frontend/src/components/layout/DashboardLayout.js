@@ -6,6 +6,7 @@ import '../../styles/overlay-scrollbars.css';
 import attachDragMomentum from '../../utils/scrollbarMomentum';
 import Sidebar from './Sidebar';
 import MobileNav from './MobileNav';
+import BackButton from './BackButton';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePullToRefresh } from '../../hooks/usePullToRefresh';
 import PullToRefreshIndicator from '../PullToRefreshIndicator';
@@ -239,6 +240,7 @@ const DashboardLayout = () => {
         role="main"
         aria-label="Main content"
       >
+        <BackButton />
         <Outlet />
       </OverlayScrollbarsComponent>
 

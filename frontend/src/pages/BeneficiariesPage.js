@@ -827,11 +827,6 @@ const BeneficiariesPage = () => {
             <p className="text-sm font-bold text-[var(--t)]">Getting Started — Add a Beneficiary</p>
             <p className="text-xs text-[var(--t4)]">Add someone you want to protect. Just a first name and relationship is enough to start.</p>
           </div>
-          <button onClick={() => navigate('/dashboard')}
-            className="flex-shrink-0 text-xs font-bold text-[var(--t4)] px-3 py-2 rounded-xl transition-colors hover:bg-[var(--s)]"
-            data-testid="back-to-dashboard-btn">
-            <ArrowLeft className="w-4 h-4 inline mr-1" />Back
-          </button>
         </div>
       )}
 

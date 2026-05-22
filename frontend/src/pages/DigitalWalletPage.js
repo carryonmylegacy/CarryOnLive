@@ -224,11 +224,6 @@ const DigitalWalletPage = () => {
             <p className="text-sm font-bold text-[var(--t)]">Getting Started — Save a Digital Login</p>
             <p className="text-xs text-[var(--t4)]">Store one account login (like email or banking) so your loved ones can access it when needed.</p>
           </div>
-          <button onClick={() => navigate('/dashboard')}
-            className="flex-shrink-0 text-xs font-bold text-[var(--t4)] px-3 py-2 rounded-xl transition-colors hover:bg-[var(--s)]"
-            data-testid="back-to-dashboard-btn">
-            <ArrowLeft className="w-4 h-4 inline mr-1" />Back
-          </button>
         </div>
       )}
 

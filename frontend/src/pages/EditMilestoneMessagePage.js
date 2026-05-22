@@ -488,10 +488,6 @@ export default function EditMilestoneMessagePage() {
       <div className="w-full max-w-[1400px] mx-auto p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6" data-testid="edit-message-delivered-page">
         <Card className="glass-card max-w-2xl">
           <CardContent className="space-y-4 p-6">
-            <Button variant="ghost" className="w-fit px-0 text-[var(--t3)] hover:bg-transparent hover:text-[var(--t)]" onClick={() => navigate('/messages')} data-testid="edit-message-back-from-delivered-button">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Messages
-            </Button>
             <h1 className="text-2xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>Delivered messages can’t be edited</h1>
             <p className="text-sm text-[var(--t5)]">This route is protected against direct edits after delivery, matching the original platform rules.</p>
           </CardContent>
@@ -510,10 +506,6 @@ export default function EditMilestoneMessagePage() {
     >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-3">
-          <Button variant="ghost" className="w-fit px-0 text-[var(--t3)] hover:bg-transparent hover:text-[var(--t)]" onClick={() => navigate('/messages')} data-testid="edit-message-back-button">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Messages
-          </Button>
           <div className="flex items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl" style={{ background: 'linear-gradient(135deg, rgba(139,92,246,0.2), rgba(124,58,237,0.15))' }}>
               <Pencil className="h-6 w-6 text-[#B794F6]" />
