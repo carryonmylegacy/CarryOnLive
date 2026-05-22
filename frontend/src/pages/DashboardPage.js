@@ -6,7 +6,7 @@ import { useAuth, useBrand } from '../contexts/AuthContext';
 import { useLabelCleaner, useBrandedLabelBuilder, joinBrandSuffix } from '../utils/brandLabel';
 import { cachedGet } from '../utils/apiCache';
 import { isFeatureKeyEnabled, isFeatureEnabled } from '../utils/featureGates';
-import { SpeedometerGauge, StatCard } from '../components/dashboard/DashboardWidgets';
+import { SpeedometerGauge, StatCard, SectionStatCard } from '../components/dashboard/DashboardWidgets';
 import { ReadinessDial } from '../components/dashboard/ReadinessDial';
 import { useDashboardPrefs } from '../hooks/useDashboardPrefs';
 import { 
@@ -27,7 +27,8 @@ import {
   DollarSign,
   Receipt,
   TrendingUp,
-  ShieldAlert
+  ShieldAlert,
+  Landmark, Vault, Coins, Siren,
 } from 'lucide-react';
 import TrialBanner from '../components/TrialBanner';
 import BillingStatusBanner from '../components/BillingStatusBanner';
@@ -59,7 +60,11 @@ const DashboardPage = () => {
   const [estates, setEstates] = useState([]);
   const [estate, setEstate] = useState(null);
   const [checklists, setChecklists] = useState([]);
-  const [stats, setStats] = useState({ documents: 0, messages: 0, beneficiaries: 0, ccp_plans: 0, ccp_drilled: 0 });
+  const [stats, setStats] = useState({
+    documents: 0, messages: 0, beneficiaries: 0,
+    ccp_plans: 0, ccp_drilled: 0,
+    ffn: 0, dav: 0, ces: 0,
+  });
   const [readiness, setReadiness] = useState({ documents: { score: 0 }, messages: { score: 0 }, checklist: { score: 0 } });
   const [financialSummary, setFinancialSummary] = useState(null);
   // Freshness stamps for the bottom BNDR + EGA pills. Hoisted out
@@ -259,7 +264,7 @@ const DashboardPage = () => {
       // a tick later — previously it fired on a separate apiClient.get().
       // Without this, CFP visibly jumped from 0 → real *after* the
       // dashboard had already faded in.
-      const [docsRes, msgsRes, bensRes, checklistRes, readinessRes, progressRes, ccpRes, financialRes, pdfsRes, egaTaskRes] = await Promise.all([
+      const [docsRes, msgsRes, bensRes, checklistRes, readinessRes, progressRes, ccpRes, financialRes, pdfsRes, egaTaskRes, ffnRes, davRes, cesRes] = await Promise.all([
         apiClient.get(`${API_URL}/documents/${estateId}`, getAuthHeaders()),
         apiClient.get(`${API_URL}/messages/${estateId}`, getAuthHeaders()),
         apiClient.get(`${API_URL}/beneficiaries/${estateId}`, getAuthHeaders()),
@@ -286,6 +291,13 @@ const DashboardPage = () => {
         // produced a visible 1 s pop-in below the BNDR/EGA buttons).
         apiClient.get(`${API_URL}/pdfs/latest`, getAuthHeaders()).catch(() => null),
         apiClient.get(`${API_URL}/guardian/iac-task-status`, getAuthHeaders()).catch(() => null),
+        // FFN / DAV / CES counts — feed the new section-rollup
+        // readiness algorithm (May 22 2026). All three tolerate a
+        // network blip with `null` so a single failure can't flash
+        // their section tile to 0%.
+        apiClient.get(`${API_URL}/ffn/${estateId}`, getAuthHeaders()).catch(() => null),
+        apiClient.get(`${API_URL}/digital-wallet/${estateId}`, getAuthHeaders()).catch(() => null),
+        apiClient.get(`${API_URL}/financial/entities/${estateId}`, getAuthHeaders()).catch(() => null),
       ]);
       // Preserve the previously-known count when the request failed.
       // Reading from the cache (priorCcpCount) is the right fallback —
@@ -305,6 +317,14 @@ const DashboardPage = () => {
         beneficiaries: bensRes.data.length,
         ccp_plans: ccpCount,
         ccp_drilled: ccpDrilledCount,
+        // FFN: list response { entries: [...] } or array — handle both.
+        ffn: Array.isArray(ffnRes?.data) ? ffnRes.data.length : (ffnRes?.data?.entries?.length || 0),
+        // DAV: list endpoint returns { entries: [...] } in current shape.
+        dav: Array.isArray(davRes?.data) ? davRes.data.length : (davRes?.data?.entries?.length || 0),
+        // CES: entities count (people are not entities; only the
+        // first-class trust/LLC/charity/property tiles count toward
+        // "has a tree" per user spec May 22 2026).
+        ces: Array.isArray(cesRes?.data?.entities) ? cesRes.data.entities.length : 0,
       };
       const financialPayload = financialRes?.data ?? priorFinancial;
       // Extract the BNDR + EGA freshness stamps from the parallel
@@ -465,29 +485,81 @@ const DashboardPage = () => {
   const drilledCountForCcp = Math.min(planCountForCcp, stats.ccp_drilled || 0);
   const ccpPercent = (planCountForCcp * 10) + (drilledCountForCcp * 10);
 
-  // Weighted overall readiness — priority order (Beneficiaries → IAC →
-  // MM → SDV → CFP → CCP) maps to weights 6..1. Total weight = 21.
-  // We override the backend's `overall_score` so the gauge always
-  // reflects all six tiles even before the backend learns about
-  // beneficiaries + CCP. The colored chips beside the gauge use the
-  // same per-category percents, so the math is fully transparent.
-  const READINESS_WEIGHTS = {
+  // New per-feature percents (May 22 2026 — per founder spec):
+  //   FFN: linear ramp 0..3 → 0..100% (3+ entries = full).
+  //   DAV: linear ramp 0..5 → 0..100% (5+ entries = full).
+  //   CES: binary — 100% if at least one entity exists in the tree.
+  const ffnPercent = Math.min(100, Math.round(((stats.ffn || 0) / 3) * 100));
+  const davPercent = Math.min(100, Math.round(((stats.dav || 0) / 5) * 100));
+  const cesPercent = (stats.ces || 0) > 0 ? 100 : 0;
+
+  // ── Section-rollup readiness (May 22 2026) ────────────────────────
+  // The 6 dashboard tiles consolidated into the 4 menu sections. Each
+  // section's percent is a weighted mean of its component features'
+  // percents, using the same per-feature weights that drove the
+  // pre-rollup gauge (so the gauge total stays mathematically
+  // continuous with what users were seeing before). Features with no
+  // scoring metric today (DTS, EPT, EGA, ECT) are NOT in the weight
+  // table — they don't drag the score down for users who haven't
+  // configured them.
+  const FEATURE_WEIGHTS = {
     beneficiaries: 6,
-    checklist: 5,
-    messages: 4,
-    documents: 3,
-    financials: 2,
+    mm: 4,
+    ffn: 2,
+    sdv: 3,
+    dav: 2,
+    cfp: 2,
+    ces: 1,
+    iac: 5,
     ccp: 1,
   };
-  const weightedSum =
-    beneficiariesPercent * READINESS_WEIGHTS.beneficiaries +
-    checklistPercent * READINESS_WEIGHTS.checklist +
-    msgsPercent * READINESS_WEIGHTS.messages +
-    docsPercent * READINESS_WEIGHTS.documents +
-    financialsPercent * READINESS_WEIGHTS.financials +
-    ccpPercent * READINESS_WEIGHTS.ccp;
-  const totalWeight = Object.values(READINESS_WEIGHTS).reduce((a, b) => a + b, 0);
-  const readinessScore = Math.round(weightedSum / totalWeight);
+  const FEATURE_PERCENTS = {
+    beneficiaries: beneficiariesPercent,
+    mm: msgsPercent,
+    ffn: ffnPercent,
+    sdv: docsPercent,
+    dav: davPercent,
+    cfp: financialsPercent,
+    ces: cesPercent,
+    iac: checklistPercent,
+    ccp: ccpPercent,
+  };
+  // Section → feature keys. Mirrors `benefactorSections.js` exactly,
+  // restricted to features that have a readiness metric today.
+  const SECTION_FEATURES = {
+    estate: ['beneficiaries', 'mm', 'ffn'],
+    vault: ['sdv', 'dav'],
+    financial: ['cfp', 'ces'],
+    preparedness: ['iac', 'ccp'],
+  };
+  // For each section, compute the weighted-mean percent across the
+  // features that (a) appear in that section AND (b) are enabled for
+  // the user's current tier. If a section has zero tier-enabled
+  // scoreable features, its percent is null → tile + key chip both
+  // vanish from the dashboard.
+  const sectionPercents = {};
+  const sectionWeights = {};
+  Object.entries(SECTION_FEATURES).forEach(([sec, feats]) => {
+    const enabledFeats = feats.filter((f) => isFeatureKeyEnabled(f, enabledFeatures));
+    if (enabledFeats.length === 0) {
+      sectionPercents[sec] = null;
+      sectionWeights[sec] = 0;
+      return;
+    }
+    const w = enabledFeats.reduce((acc, f) => acc + FEATURE_WEIGHTS[f], 0);
+    const ws = enabledFeats.reduce((acc, f) => acc + FEATURE_PERCENTS[f] * FEATURE_WEIGHTS[f], 0);
+    sectionPercents[sec] = Math.round(ws / w);
+    sectionWeights[sec] = w;
+  });
+
+  // Overall gauge — weighted mean of the section percents, weighted by
+  // the SUM of feature weights inside each section. Tier-aware: a
+  // section that's entirely OFF for the tier contributes nothing
+  // (neither to numerator nor denominator) so the gauge always
+  // reflects the tier's actual scope of features.
+  const overallNum = Object.entries(sectionPercents).reduce((acc, [sec, p]) => acc + (p == null ? 0 : p * sectionWeights[sec]), 0);
+  const overallDen = Object.values(sectionWeights).reduce((acc, w) => acc + w, 0);
+  const readinessScore = overallDen > 0 ? Math.round(overallNum / overallDen) : 0;
 
   // Dashboard layout/gauge preferences (per-device).
   const { layout: dashboardLayout } = useDashboardPrefs();
@@ -944,101 +1016,102 @@ const DashboardPage = () => {
           'circle').
           ════════════════════════════════════════════════════════════ */}
       {(() => {
+        // Section-rollup ENTRIES (May 22 2026). Each entry = one of
+        // the four benefactor menu sections; section vanishes from
+        // the grid AND the key chips if its `chipPercent` is null
+        // (= no tier-enabled scoreable features in that section).
+        // Stats list rendered inside each tile uses the founder's
+        // "Title - number" format (smaller, bold, no-wrap, one per
+        // line). Each stat row is independently tier-gated against
+        // its own feature key so users only see counts for features
+        // they actually have.
+        const billsN = financialSummary?.bills_count || 0;
+        const debtsN = financialSummary?.debts_count || 0;
+        const acctsN = financialSummary?.accounts_count || 0;
+        const propN = financialSummary?.property_count || 0;
+        const cfpN = billsN + debtsN + acctsN + propN;
+        const buildStats = (rows) =>
+          rows.filter((r) => r && isFeatureKeyEnabled(r.featureKey, enabledFeatures))
+            .map((r) => ({ title: r.title, value: r.value }));
         const ENTRIES = [
-          // Order = displayed order = priority order. Beneficiaries first.
-          isFeatureKeyEnabled('beneficiaries', enabledFeatures) && {
-            key: 'beneficiaries',
-            chipColor: '#22c55e',
-            chipPercent: beneficiariesPercent,
-            chipLabel: 'Beneficiaries',
+          sectionPercents.estate !== null && {
+            key: 'estate',
+            chipColor: '#3B82F6',
+            chipPercent: sectionPercents.estate,
+            chipLabel: 'Estate',
             tile: (
-              <StatCard
-                icon={Users}
-                value={stats.beneficiaries}
-                label="Beneficiaries"
+              <SectionStatCard
+                icon={Landmark}
+                title="Estate"
+                accent="#3B82F6"
+                stats={buildStats([
+                  { featureKey: 'beneficiaries', title: 'Beneficiaries', value: stats.beneficiaries },
+                  { featureKey: 'mm', title: 'Messages', value: stats.messages },
+                  { featureKey: 'ffn', title: 'FFN', value: stats.ffn },
+                ])}
                 cardClass="stat-card-beneficiaries"
-                onClick={() => navigate('/beneficiaries')}
-                sectionKey="beneficiaries"
+                onClick={() => navigate('/section/estate')}
+                sectionKey="estate"
               />
             ),
           },
-          isFeatureKeyEnabled('iac', enabledFeatures) && {
-            key: 'iac',
-            chipColor: '#f97316',
-            chipPercent: checklistPercent,
-            chipLabel: 'Checklist',
+          sectionPercents.vault !== null && {
+            key: 'vault',
+            chipColor: '#d4af37',
+            chipPercent: sectionPercents.vault,
+            chipLabel: 'Vault',
             tile: (
-              <StatCard
-                icon={CheckSquare}
-                value={totalTasks}
-                label={cleanLabel("Immediate Action Checklist (IAC)")}
-                cardClass="stat-card-checklist"
-                onClick={() => navigate('/checklist')}
-                sectionKey="checklist"
-              />
-            ),
-          },
-          isFeatureKeyEnabled('mm', enabledFeatures) && {
-            key: 'mm',
-            chipColor: '#8b5cf6',
-            chipPercent: msgsPercent,
-            chipLabel: 'Messages',
-            tile: (
-              <StatCard
-                icon={MessageSquare}
-                value={stats.messages}
-                label={cleanLabel("Milestone Messages (MM)")}
-                cardClass="stat-card-messages"
-                onClick={() => navigate('/messages')}
-                sectionKey="messages"
-              />
-            ),
-          },
-          isFeatureKeyEnabled('sdv', enabledFeatures) && {
-            key: 'sdv',
-            chipColor: '#2563eb',
-            chipPercent: docsPercent,
-            chipLabel: 'Docs',
-            tile: (
-              <StatCard
-                icon={FolderLock}
-                value={stats.documents}
-                label={cleanLabel("Secure Document Vault (SDV)")}
+              <SectionStatCard
+                icon={Vault}
+                title="Vault"
+                accent="#d4af37"
+                stats={buildStats([
+                  { featureKey: 'sdv', title: 'Documents', value: stats.documents },
+                  { featureKey: 'dav', title: 'Digital', value: stats.dav },
+                ])}
                 cardClass="stat-card-vault"
-                onClick={() => navigate('/vault')}
+                onClick={() => navigate('/section/vault')}
                 sectionKey="vault"
               />
             ),
           },
-          isFeatureKeyEnabled('cfp', enabledFeatures) && {
-            key: 'cfp',
-            chipColor: '#10b981',
-            chipPercent: financialsPercent,
-            chipLabel: 'Financials',
+          sectionPercents.financial !== null && {
+            key: 'financial',
+            chipColor: '#22C993',
+            chipPercent: sectionPercents.financial,
+            chipLabel: 'Financial',
             tile: (
-              <StatCard
-                icon={DollarSign}
-                value={(financialSummary?.bills_count || 0) + (financialSummary?.debts_count || 0) + (financialSummary?.accounts_count || 0) + (financialSummary?.property_count || 0)}
-                label={buildBrandedLabel(brand, 'Financial Picture (CFP)')}
+              <SectionStatCard
+                icon={Coins}
+                title="Financial"
+                accent="#22C993"
+                stats={buildStats([
+                  { featureKey: 'cfp', title: 'Financials', value: cfpN },
+                  { featureKey: 'ces', title: 'Entities', value: stats.ces },
+                ])}
                 cardClass="stat-card-financial"
-                onClick={() => navigate('/financial')}
-                sectionKey="financial_portal"
+                onClick={() => navigate('/section/financial')}
+                sectionKey="financial"
               />
             ),
           },
-          isFeatureKeyEnabled('ccp', enabledFeatures) && {
-            key: 'ccp',
-            chipColor: '#ef4444',
-            chipPercent: ccpPercent,
-            chipLabel: 'CCP',
+          sectionPercents.preparedness !== null && {
+            key: 'preparedness',
+            chipColor: '#B794F6',
+            chipPercent: sectionPercents.preparedness,
+            chipLabel: 'Preparedness',
             tile: (
-              <StatCard
-                icon={ShieldAlert}
-                value={stats.ccp_plans}
-                label={cleanLabel("Contingency Protocols (CCP)")}
+              <SectionStatCard
+                icon={Siren}
+                title="Preparedness"
+                accent="#B794F6"
+                stats={buildStats([
+                  { featureKey: 'iac', title: 'Checklist', value: totalTasks },
+                  { featureKey: 'ccp', title: 'CCP plans', value: stats.ccp_plans },
+                ])}
                 cardClass="stat-card-ccp"
-                onClick={() => navigate('/connected-protocol')}
-                sectionKey="connected_protocol"
+                onClick={() => navigate('/section/preparedness')}
+                sectionKey="preparedness"
               />
             ),
           },
@@ -1114,10 +1187,14 @@ const DashboardPage = () => {
                 <KeyChips size="lg" />
               </div>
             )}
-            {/* Mobile/PWA key — always two-and-two split-corner layout. */}
+            {/* Mobile/PWA key — split-corner layout. With at most 4
+                section entries it's a clean 2-and-2 split (was 3-and-3
+                when there were 6 per-feature entries). When the user's
+                tier disables a whole section, that section quietly
+                drops out and the remaining entries reflow. */}
             <div className="flex justify-between mb-3 px-2 lg:hidden">
               <div className="flex flex-col gap-1">
-                {ENTRIES.slice(0, 3).map((e) => (
+                {ENTRIES.slice(0, 2).map((e) => (
                   <div key={e.key} className="flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: e.chipColor }} />
                     <span className="text-[var(--t4)] font-bold" style={{ fontSize: 'clamp(12px, calc(var(--app-100vw, 100vw) * 0.032), 14px)' }}>{e.chipPercent}% {e.chipLabel}</span>
@@ -1125,7 +1202,7 @@ const DashboardPage = () => {
                 ))}
               </div>
               <div className="flex flex-col gap-1 items-end">
-                {ENTRIES.slice(3, 6).map((e) => (
+                {ENTRIES.slice(2, 4).map((e) => (
                   <div key={e.key} className="flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: e.chipColor }} />
                     <span className="text-[var(--t4)] font-bold" style={{ fontSize: 'clamp(12px, calc(var(--app-100vw, 100vw) * 0.032), 14px)' }}>{e.chipPercent}% {e.chipLabel}</span>
@@ -1145,8 +1222,8 @@ const DashboardPage = () => {
           <div
             className={
               chiclet
-                ? 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-4'
-                : 'grid grid-cols-3 gap-3 mb-4'
+                ? 'grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4'
+                : 'grid grid-cols-2 gap-3 mb-4'
             }
             data-testid="dashboard-stat-grid"
           >
@@ -1228,7 +1305,7 @@ const DashboardPage = () => {
                     content into adjacent tiles.
                 */}
                 <div
-                  className="grid grid-cols-3 gap-4 flex-1"
+                  className="grid grid-cols-2 gap-4 flex-1"
                   style={{ gridAutoRows: 'minmax(0, 1fr)' }}
                   data-testid="dashboard-stat-grid"
                 >

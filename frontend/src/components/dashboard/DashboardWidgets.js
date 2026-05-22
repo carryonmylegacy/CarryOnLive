@@ -145,3 +145,74 @@ export const StatCard = ({ icon: Icon, value, label, cardClass, onClick, classNa
     </div>
   </div>
 );
+
+/**
+ * SectionStatCard — section-rollup tile (May 22 2026).
+ *
+ * Same outer chrome as `StatCard` (cardClass background, glass-card,
+ * rounded-2xl, container-query sizing) so the dashboard's visual
+ * cadence is unchanged — only the inner content layout differs.
+ * Instead of one giant number + label, we render:
+ *
+ *   [icon]
+ *   SectionTitle              ← large, bold, container-query sized
+ *   Title - value             ← small bold no-wrap row, one per stat
+ *   Title - value
+ *   ...
+ *
+ * Each stat row renders only if the parent passed it in — the
+ * dashboard tier-gates rows BEFORE building `stats`, so this
+ * component stays presentational and never needs to know about
+ * feature keys.
+ */
+export const SectionStatCard = ({ icon: Icon, title, stats = [], cardClass, onClick, className = '', sectionKey, accent }) => (
+  <div
+    className={`${cardClass} rounded-2xl p-4 lg:p-5 cursor-pointer transition-transform duration-150 active:scale-[0.96] lg:hover:scale-[1.03] lg:hover:shadow-xl flex flex-col items-center justify-start w-full h-full overflow-hidden ${className}`}
+    onClick={onClick}
+    data-testid={`stat-card-${(sectionKey || title).toLowerCase().replace(/\s+/g, '-')}`}
+    aria-label={`${title} section`}
+    role="button"
+    style={{ containerType: 'inline-size' }}
+  >
+    <Icon
+      className="w-6 h-6 lg:w-8 lg:h-8 mb-2 lg:mb-3 opacity-90 flex-shrink-0"
+      style={{ color: accent }}
+    />
+    <div
+      className="font-bold text-center leading-tight flex-shrink-0 mb-2"
+      style={{
+        // Section title — same `clamp(0.8125rem, 6.5cqi, 1.5rem)` as
+        // the legacy `StatCard` label so the new tiles read at the
+        // same weight in the grid.
+        fontSize: 'clamp(0.875rem, 7cqi, 1.5rem)',
+        color: 'var(--t)',
+        fontFamily: 'var(--sans)',
+      }}
+    >
+      {title}
+    </div>
+    <div className="flex flex-col items-center gap-1 min-w-0 w-full overflow-hidden">
+      {stats.map((s) => (
+        <div
+          key={s.title}
+          className="font-bold whitespace-nowrap text-center max-w-full overflow-hidden text-ellipsis"
+          style={{
+            // Stat rows — "Title - number" per founder spec
+            // (May 22 2026). Smaller proportional font (5cqi)
+            // capped 11–14px so a 140px mobile tile reads at 11px,
+            // a 360px desktop tile reads at 14px. Bold white in
+            // dark mode (var(--t)), bold near-black in light mode
+            // (same var(--t) — adapts automatically).
+            fontSize: 'clamp(11px, 5cqi, 14px)',
+            color: 'var(--t)',
+            lineHeight: 1.3,
+          }}
+          data-testid={`section-stat-${(sectionKey || title).toLowerCase()}-${s.title.toLowerCase().replace(/\s+/g, '-')}`}
+        >
+          {s.title} - {s.value}
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
