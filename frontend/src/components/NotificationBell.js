@@ -141,17 +141,24 @@ const NotificationBell = ({ collapsed }) => {
         {!collapsed && <span>Notifications</span>}
         {unreadCount > 0 && (
           <span
-            className="absolute flex items-center justify-center text-[12px] font-bold text-white rounded-full"
+            // Rounded-square (not pill) so multi-digit counts read clearly
+            // per founder feedback May 22 2026 — the prior circular badge
+            // squeezed "9+" into too-tight a footprint.
+            className="absolute flex items-center justify-center text-[11px] font-bold text-white"
             style={{
               background: '#EF4444',
-              width: 18, height: 18,
+              minWidth: 22,
+              height: 18,
+              padding: '0 5px',
+              borderRadius: 5,
               top: collapsed ? 2 : '50%',
               right: collapsed ? 2 : 8,
               transform: collapsed ? 'none' : 'translateY(-50%)',
+              lineHeight: 1,
             }}
             data-testid="notification-badge"
           >
-            {unreadCount > 9 ? '9+' : unreadCount}
+            {unreadCount > 99 ? '99+' : unreadCount}
           </span>
         )}
       </button>

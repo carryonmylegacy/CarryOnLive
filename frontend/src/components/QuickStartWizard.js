@@ -237,28 +237,28 @@ const QuickStartWizard = ({ forceOpen = false, onClose = () => {} }) => {
       aria-modal="true"
       aria-labelledby="quickstart-title"
     >
-      {/* Backdrop */}
+      {/* Backdrop — lighter overlay (founder mandate May 22 2026:
+          modal was reading "too dark and somber"). Softer veil so
+          the dashboard glimmers through and the modal feels uplifted
+          rather than funereal. */}
       <div
         className="absolute inset-0"
         style={{
-          background: 'rgba(8,14,26,0.85)',
-          backdropFilter: 'blur(18px) saturate(130%)',
-          WebkitBackdropFilter: 'blur(18px) saturate(130%)',
+          background: 'rgba(15,28,52,0.55)',
+          backdropFilter: 'blur(14px) saturate(140%)',
+          WebkitBackdropFilter: 'blur(14px) saturate(140%)',
         }}
       />
 
-      {/* Card — opaque dark background + bright text so headings POP
-          regardless of the platform theme. Previously the modal used
-          `var(--card)` + `var(--t)` text which rendered as dim grey on
-          dim grey in the founder's screenshots. Forcing explicit hex
-          values here also keeps the modal readable in light mode where
-          the dashboard CSS variables flip but the modal stays dark. */}
+      {/* Card — warmer navy gradient with a gold sheen, matching the
+          LandingContent pillar cards. Brighter than the prior flat
+          #0F172A which read as funereal. */}
       <div
         className="relative w-full max-w-2xl mx-3 lg:mx-6 rounded-3xl overflow-hidden flex flex-col"
         style={{
-          background: '#0F172A',
-          border: '1px solid rgba(212,175,55,0.45)',
-          boxShadow: '0 30px 80px -10px rgba(0,0,0,0.75)',
+          background: 'linear-gradient(160deg, #1f3055 0%, #1d2c4f 45%, #20355e 100%)',
+          border: '1px solid rgba(212,175,55,0.55)',
+          boxShadow: '0 30px 80px -10px rgba(0,0,0,0.55), 0 0 80px rgba(212,175,55,0.10), inset 0 1px 0 rgba(255,255,255,0.06)',
           maxHeight: '92vh',
           color: '#F8FAFC',
         }}
@@ -580,7 +580,7 @@ export const QuickStartStep = ({ stepKey, data, setData, user, brand, onGateChoi
         <Label>Personal residence</Label>
         <AddressAutocomplete
           value={data?.address || ''}
-          onChange={(v) => set('address', v)}
+          onChange={(e) => set('address', typeof e === 'string' ? e : (e?.target?.value ?? ''))}
           onSelect={onAddressSelect}
           placeholder="Start typing your home address…"
           className="w-full rounded-xl px-3 py-3 focus:outline-none focus:ring-2 focus:ring-[#d4af37]"

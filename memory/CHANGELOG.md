@@ -1,6 +1,48 @@
 # CarryOn — Changelog
 
 
+## May 22, 2026 — Dashboard polish pass + critical QW autofill bug (V2026.05.22-k)
+
+**Critical bug fix — QW step 3 `[object Object]`.** Founder was stuck on the "Where do you live?" step because browser autofill fired an event-shaped value into `onChange={(v) => set('address', v)}`, which stored the entire React synthetic event into the wizard state. That serialised as the literal string `"[object Object]"` on next render — unrecoverable from the UI. Fixed in `QuickStartWizard.js` by normalising the handler: `onChange={(e) => set('address', typeof e === 'string' ? e : (e?.target?.value ?? ''))}`. Now browser autofill **and** Google Places selection both feed clean strings.
+
+**Icon swap on the four pillars.** Per founder mandate the pillar icons were realigned so each pillar reads more like its concept:
+- **Legacy** → `Heart` (was `Landmark`)
+- **Financial** → `Landmark` (was `Coins`; the bank-pillar silhouette suits Financial)
+- **Preparedness** → `Clock` (was `Siren`; clock-hands convey "ready for what's coming" instead of crisis alarm)
+- **Vault** → `Lock` (unchanged)
+
+Applied in:
+- `frontend/src/config/benefactorSections.js` — sidebar source-of-truth (also updates the AdminSectionLayout headers since they read the same registry).
+- `frontend/src/components/landing/LandingContent.js` — HomePage pillar cards.
+- Icon imports cleaned up (`Heart` and `Clock` added; `Coins` and `Siren` dropped from the benefactor registry but kept where still used elsewhere).
+
+**Pillar-tile typography bumped 2–3×.** `SectionStatCard` in `DashboardWidgets.js`:
+- Title: `clamp(0.875rem, 7cqi, 1.5rem)` → `clamp(1.25rem, 11cqi, 2.25rem)` (14–24 px → 20–36 px). On a 280 px tile this renders ~27 px instead of ~14 px.
+- Stat rows: `clamp(11px, 5cqi, 14px)` → `clamp(16px, 8.5cqi, 28px)`. On the same 280 px tile rows now render ~21 px instead of ~12 px.
+- Icon size bumped `w-6 h-6 lg:w-8 lg:h-8` → `w-7 h-7 lg:w-10 lg:h-10` to keep proportions.
+
+**Key chips: SHRINK to sandwich between BNDR + EGA buttons.** Founder's annotated screenshot showed the chips overlapping the corner buttons in the side-by-side dial layout. Two-step fix:
+- `DashboardPage.js` — wrapped the side-layout chips in a new `[data-testid="readiness-key-sandwich"]` div with `paddingLeft: 72, paddingRight: 72` (56 px button + 16 px breathing room). The chips physically cannot reach the corner buttons anymore.
+- `DashboardPage.js::KeyChips` — tightened the chip-text clamp from `clamp(font, ×0.015, font+14)` (which was *growing* the chips and *causing* the overlap) back down to `clamp(max(10, font-1), ×0.010, font+6)`. Dots tightened the same way.
+- `EstateBinderButton` + `EgaQuickLink` — UNTOUCHED. Their `w-12 h-12 lg:w-14 lg:h-14` keeps them at a fixed 56 × 56 px target.
+
+Live measurements at 1600 × 900: BNDR/EGA both 56 × 56 px (unchanged). Chip "56% Legacy" first chip starts at x=1081 px while BNDR right edge ends at x=1011 px → 70 px clean gap. Chip font 16 px down from the prior 24 px.
+
+**Notification badge — rounded square instead of circle.** Founder spec: "make the number in the Notifications tile a rounded corner square so the number inside of it has more room to be legible." Changed `NotificationBell.js` from `width:18 height:18 rounded-full` to `minWidth:22 height:18 padding:0 5px borderRadius:5`. Counts now show full digits cleanly up to `99+` (was `9+`).
+
+**Settings → Appearance & Navigation: QuickStart Wizard button above the Getting Started Guide toggle.** Founder asked for a place to re-open the QW and was worried the Getting Started Guide had been overwritten. **The Getting Started Guide is intact** — separate code path, separate API (`/onboarding/dismiss`, `/onboarding/reset`), separate localStorage keys (`carryon_onboarding_dismissed`, `carryon_welcome_guided_shown`). The QW is a totally distinct product (`/quickstart/reopen`, `/quickstart/progress`, sessionStorage `carryon_quickstart_skipped_session`). Added a `Sparkles` "QuickStart Wizard" row in `AppearanceCard.js` directly above the GS Guide toggle, with an "Open Wizard" gold CTA button. Clicking it calls `/api/quickstart/reopen`, clears the session-skip flag, and dispatches the same `carryon:resume-quickstart` event the Dashboard's Resume CTA fires. A long inline comment in the file pins the two products as explicitly distinct so future agents don't conflate them.
+
+**QW dark-mode lightened.** The founder called the modal "too dark and somber." Replaced the flat `#0F172A` card with a warmer gradient `linear-gradient(160deg, #1f3055 0%, #1d2c4f 45%, #20355e 100%)` matching the LandingContent pillar cards. Backdrop overlay opacity dropped 0.85 → 0.55 so the dashboard glimmers through. Border and shadow tinted with a subtle gold sheen.
+
+**Copy disambiguation.** Dashboard CTA "Resume your QuickStart" → "Resume the QuickStart Wizard" so the user can never confuse the **wizard** (the 10-step process) with the **guide** (the PDF artifact the wizard generates).
+
+**Verification:**
+- `bash /app/housekeeping.sh --strict` → ALL CHECKS PASSED · READY TO PUSH · 0 WARN / 0 FAIL.
+- ESLint clean on all 7 touched JS files.
+- Live measurements at 1600 × 900: LEGACY/VAULT/FINANCIAL/PREPAREDNESS sidebar pills render with Heart/Lock/Landmark/Clock icons. BNDR + EGA stay at 56×56 px. Key chips 16 px, sandwich padding 72 px each side, no overlap. Legacy tile title 26.8 px, stat rows 20.7 px (2× the prior sizing). Settings page exposes both the QuickStart Wizard "Open Wizard" button and the separate Getting Started Guide toggle.
+
+
+
 ## May 22, 2026 — Pillar #01 relabeled "Legacy" + responsive Readiness gauge (V2026.05.22-j)
 
 **Task 1: Estate → Legacy pillar label.** Founder pivoted the first pillar from "Estate" to "Legacy" so the pillar reads as the broader "what you leave behind" concept rather than the narrow legal-document noun. **The data key `estate` and the URL `/section/estate` remain unchanged** — only the user-visible label flipped. This preserves all routing, feature-gate lookups, dashboard `sectionPercents.estate`, config maps, and 50+ internal references.

@@ -203,32 +203,34 @@ export const SectionStatCard = ({ icon: Icon, title, stats = [], onClick, classN
       }}
     >
       <Icon
-        className="w-6 h-6 lg:w-8 lg:h-8 mb-2 lg:mb-3 opacity-95 flex-shrink-0"
+        className="w-7 h-7 lg:w-10 lg:h-10 mb-2 lg:mb-3 opacity-95 flex-shrink-0"
         style={{ color: accent }}
       />
       <div
-        className="font-bold text-center leading-tight flex-shrink-0 mb-2"
+        className="font-bold text-center leading-tight flex-shrink-0 mb-3"
         style={{
-          fontSize: 'clamp(0.875rem, 7cqi, 1.5rem)',
+          // Pillar title — bumped May 22 2026 per founder mandate.
+          // Title now scales from ~1.25rem on a 140 px mobile tile to
+          // ~2.25rem on a 360 px desktop tile (was 0.875 → 1.5rem).
+          fontSize: 'clamp(1.25rem, 11cqi, 2.25rem)',
           color: 'var(--t)',
           fontFamily: 'var(--sans)',
         }}
       >
         {title}
       </div>
-      <div className="flex flex-col items-center gap-1 min-w-0 w-full overflow-hidden">
+      <div className="flex flex-col items-center gap-1.5 min-w-0 w-full overflow-hidden">
         {stats.map((s) => (
           <div
             key={s.title}
             className="font-bold whitespace-nowrap text-center max-w-full overflow-hidden text-ellipsis"
             style={{
               // Stat rows — "Title - number" per founder spec
-              // (May 22 2026). Smaller proportional font (5cqi)
-              // capped 11–14px so a 140px mobile tile reads at 11px,
-              // a 360px desktop tile reads at 14px. Bold white in
-              // dark mode (var(--t)), bold near-black in light mode
-              // (same var(--t) — adapts automatically).
-              fontSize: 'clamp(11px, 5cqi, 14px)',
+              // (May 22 2026, bumped 2-3x same day per user request:
+              // the prior 11-14 px rows read as "laughable" on the
+              // dashboard). Now scales 16 → 28 px proportional to
+              // tile width via container-query inline sizing.
+              fontSize: 'clamp(16px, 8.5cqi, 28px)',
               color: 'var(--t)',
               lineHeight: 1.3,
             }}

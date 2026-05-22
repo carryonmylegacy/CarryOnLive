@@ -973,7 +973,7 @@ const DashboardPage = () => {
               </div>
               <div className="min-w-0">
                 <h3 className="text-base lg:text-lg font-semibold text-[var(--t)] truncate">
-                  Resume your QuickStart
+                  Resume the QuickStart Wizard
                 </h3>
                 <p className="text-xs lg:text-sm text-[var(--t4)] truncate">
                   {(() => {
@@ -1300,22 +1300,21 @@ const DashboardPage = () => {
                     className="rounded-full flex-shrink-0"
                     style={{
                       background: e.chipColor,
-                      // Dot scales fluidly with viewport just like the
-                      // label text below — so the key feels balanced
-                      // with the gauge at every width.
-                      width: `clamp(${cfg.dot}px, calc(var(--app-100vw, 100vw) * 0.0095), ${cfg.dot + 8}px)`,
-                      height: `clamp(${cfg.dot}px, calc(var(--app-100vw, 100vw) * 0.0095), ${cfg.dot + 8}px)`,
+                      // Dot tracks the chip-text clamp above so the
+                      // dot and label scale together.
+                      width: `clamp(${Math.max(8, cfg.dot - 2)}px, calc(var(--app-100vw, 100vw) * 0.007), ${cfg.dot + 4}px)`,
+                      height: `clamp(${Math.max(8, cfg.dot - 2)}px, calc(var(--app-100vw, 100vw) * 0.007), ${cfg.dot + 4}px)`,
                     }}
                   />
                   <span
                     className="text-[var(--t4)] font-bold whitespace-nowrap"
-                    // Fluid: scales between the static cfg.font floor
-                    // and a viewport-proportional ceiling so the key
-                    // grows visibly between 13" and 32" displays
-                    // instead of feeling pinned. Multiplier and ceiling
-                    // bumped May 22, 2026 per user mandate — the key
-                    // should breathe with the gauge.
-                    style={{ fontSize: `clamp(${cfg.font}px, calc(var(--app-100vw, 100vw) * 0.015), ${cfg.font + 14}px)` }}
+                    // Tighter clamp — the chips have to fit between
+                    // the BNDR + EGA corner buttons in the side
+                    // layout, so we shrink eagerly. Floor cfg.font−1,
+                    // viewport multiplier 0.010, ceiling cfg.font+6.
+                    // Bumped tighter May 22 2026 per founder mandate
+                    // ("shrink to accommodate the buttons").
+                    style={{ fontSize: `clamp(${Math.max(10, cfg.font - 1)}px, calc(var(--app-100vw, 100vw) * 0.010), ${cfg.font + 6}px)` }}
                   >
                     {e.chipPercent}% {e.chipLabel}
                   </span>
@@ -1489,7 +1488,17 @@ const DashboardPage = () => {
                 <div className="flex-1 flex items-center justify-center">
                   <ReadinessDial score={readinessScore} id="readiness-side" labelText={scoreInfo.label} labelColor={scoreInfo.color} />
                 </div>
-                <div className="mt-3 flex justify-center">
+                <div
+                  className="mt-3 flex justify-center w-full"
+                  // Sandwich the key between the fixed-size 56×56 px
+                  // BNDR (bottom-left) and EGA (bottom-right) buttons
+                  // that float over this card. Padding = button width
+                  // (56) + breathing room (16) so the chips can never
+                  // overlap the corner buttons. Per founder mandate
+                  // May 22 2026: key SHRINKS to fit, buttons stay put.
+                  style={{ paddingLeft: 72, paddingRight: 72 }}
+                  data-testid="readiness-key-sandwich"
+                >
                   <KeyChips size="md" columns={2} />
                 </div>
                 {/* Bottom-right EGA + bottom-left BNDR pills (side

@@ -15,7 +15,7 @@
 //   ESTATE → VAULT → FINANCIAL → PREPAREDNESS
 
 import {
-  Landmark, Lock, Coins, Siren,
+  Landmark, Lock,
   Users, MessageSquare, Heart, Shield, Clock,
   FolderLock, KeyRound, Sparkles,
   DollarSign, Network,
@@ -26,7 +26,7 @@ export const BENEFACTOR_SECTIONS = [
   {
     key: 'estate',
     label: 'Legacy',
-    icon: Landmark,
+    icon: Heart,
     color: '#3B82F6', // blue
     pill: {
       bgLight: 'rgba(219, 234, 254, 0.95)',
@@ -68,7 +68,7 @@ export const BENEFACTOR_SECTIONS = [
   {
     key: 'financial',
     label: 'Financial',
-    icon: Coins,
+    icon: Landmark,
     color: '#22C993', // emerald
     pill: {
       bgLight: 'rgba(220, 252, 231, 0.95)',
@@ -87,7 +87,7 @@ export const BENEFACTOR_SECTIONS = [
   {
     key: 'preparedness',
     label: 'Preparedness',
-    icon: Siren,
+    icon: Clock,
     color: '#B794F6', // purple
     pill: {
       bgLight: 'rgba(243, 232, 255, 0.95)',

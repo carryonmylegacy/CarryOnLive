@@ -1,5 +1,5 @@
 import React from 'react';
-import { Shield, Users, ChevronRight, Lock as LockIcon, Sparkles, FileCheck, UserCheck, Trash2, ClipboardCheck, MessageSquare, Key, Layers, Smartphone, MapPin, ShieldAlert, ArrowUpDown, SlidersHorizontal, Radio, MessageCircle, DollarSign, BookOpen, Network, Landmark, Coins, Siren } from 'lucide-react';
+import { Shield, Users, ChevronRight, Lock as LockIcon, Sparkles, FileCheck, UserCheck, Trash2, ClipboardCheck, MessageSquare, Key, Layers, Smartphone, MapPin, ShieldAlert, ArrowUpDown, SlidersHorizontal, Radio, MessageCircle, DollarSign, BookOpen, Network, Landmark, Heart, Clock } from 'lucide-react';
 import { RevealSection } from './RevealSection';
 import HomeVoicesStrip from '../HomeVoicesStrip';
 
@@ -7,7 +7,7 @@ import HomeVoicesStrip from '../HomeVoicesStrip';
 const PILLARS = [
   {
     num: '01',
-    icon: Landmark,
+    icon: Heart,
     title: 'Legacy',
     abbr: 'People & plan',
     color: '#3B82F6',
@@ -35,7 +35,7 @@ const PILLARS = [
   },
   {
     num: '03',
-    icon: Coins,
+    icon: Landmark,
     title: 'Financial',
     abbr: 'Money & structure',
     color: '#22C993',
@@ -47,7 +47,7 @@ const PILLARS = [
   },
   {
     num: '04',
-    icon: Siren,
+    icon: Clock,
     title: 'Preparedness',
     abbr: 'Crisis playbook',
     color: '#B794F6',
