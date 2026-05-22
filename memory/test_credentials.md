@@ -36,6 +36,14 @@
 - Password: Demo1234!
 - Role: **benefactor** (Pete Mitchell) — same role as on production. NOT an admin.
 
+### Preview Benefactor — Seeded Test Account (testing-agent created May 22 2026)
+- URL: `https://trustee-mode-pwa.preview.emergentagent.com`
+- Email: `testben1779455414@example.com`
+- Password: `TestPass1234!`
+- Role: benefactor (default tier, no estate data seeded)
+- Created via `/api/auth/register` + OTP verify during section-rollup regression tests. Use this when Pete Mitchell's account is locked by an active live session.
+
+
 ### Preview Admin/Founder (ONLY for admin-portal testing)
 - URL: `https://trustee-mode-pwa.preview.emergentagent.com`
 - Email: founder@carryon.us

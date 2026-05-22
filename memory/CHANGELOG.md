@@ -1,6 +1,42 @@
 # CarryOn — Changelog
 
 
+## May 22, 2026 — Benefactor Dashboard 4-section rollup + landing pages (V2026.05.22-b)
+
+**Why**: Founder asked to consolidate the 6 per-feature dashboard tiles into the same 4 sections that drive the new menu (Estate / Vault / Financial / Preparedness), introduce metrics for FFN / DAV / CES so they count toward readiness, and build a navigable landing page for each section.
+
+**Dashboard restructure** (`pages/DashboardPage.js`):
+- 6 `StatCard`s → 4 `SectionStatCard`s (new component in `components/dashboard/DashboardWidgets.js`).
+- Each tile now shows: section icon + section title + small bold `Title - number` stat rows (no wrap, one per line) — e.g. `Beneficiaries - 5`, `Messages - 12`, `FFN - 3`.
+- Stat rows are tier-gated: a row hides when the feature behind it is OFF for the user's tier.
+- Section tile click → `/section/{sectionKey}` landing page (not the underlying feature directly).
+- Grids reflowed: mobile `grid-cols-2`, desktop chiclet `sm:grid-cols-4`, side-by-side `grid-cols-2`.
+- Key chips: 6 → 4 entries with menu-matching colors (Estate blue, Vault gold, Financial green, Preparedness purple). Mobile split-corner now slices 0,2 / 2,4 instead of 0,3 / 3,6.
+
+**New readiness metrics** (per founder spec):
+- FFN: 100% at 3 entries, linear below.
+- DAV: 100% at 5 entries, linear below.
+- CES: binary — 100% with any entity in the tree.
+- Folded into a single weighted-mean algorithm with the existing per-feature percents (beneficiaries, mm, sdv, cfp, iac, ccp). Weights: `{beneficiaries:6, mm:4, ffn:2, sdv:3, dav:2, cfp:2, ces:1, iac:5, ccp:1}`.
+- **Section %** = weighted mean across the tier-enabled features in that section. **Overall gauge %** = weighted mean of section percents, weighted by total section weight.
+- Tier-aware: if a section has zero scoreable tier-enabled features, the section's tile AND key chip both vanish, and the gauge denominator drops accordingly. A tier without CFP/CES has no Financial section at all.
+
+**Section landing pages** (new `pages/SectionLandingPage.js` mounted at `/section/:sectionKey`):
+- Reads `sectionKey` URL param; looks up `BENEFACTOR_SECTIONS`; bad key → `Navigate to /dashboard`.
+- Gradient header (radial-gradient + icon chip + serif title + blurb) matching the existing benefactor-section visual cadence.
+- 2-col (desktop) / 1-col (mobile) grid of feature cards — one per **enabled** feature in the section. Each card: icon chip, feature name + abbreviation, one-line description, `Title - value` status line, chevron CTA. Card click → existing feature page (e.g. `/beneficiaries`, `/messages`, `/entities`).
+- All-gated state: shows a friendly "Not on your plan" panel instead of a redirect or 404.
+
+**Parallel fetches added** in `fetchEstateData`: `/api/ffn/{eid}`, `/api/digital-wallet/{eid}`, `/api/financial/entities/{eid}` — each with `.catch(() => null)` so a transient blip can't blank out section %.
+
+**Files**:
+- New: `frontend/src/pages/SectionLandingPage.js`
+- Edited: `frontend/src/pages/DashboardPage.js`, `frontend/src/components/dashboard/DashboardWidgets.js`, `frontend/src/App.js`
+- New backend test: `backend/tests/test_section_rollup.py`
+
+**Gate**: ESLint clean · ruff clean · fast suite 34/34 · backend section-rollup tests 5/5 · `ALL CLEAR — SAFE TO PUSH`. Testing agent verified 4 tiles + 14 stat rows (bold, no-wrap, `Title - number` format) + 4 landing pages render correctly on a freshly registered preview benefactor. Tier-toggle vanishing-tile path verified by code review (sectionPercents `null` branch + ENTRIES `.filter(Boolean)`).
+
+
 ## May 22, 2026 — Benefactor Portal 4-section menu + CES split-out (V2026.05.22)
 
 **Why**: Founder asked to consolidate the 13-item flat benefactor sidebar into 4 expandable section pills (mirroring the May 21 admin restructure), and to break out CarryOn Entities & Structures as its own toggleable pillar so it can be enabled per-tier and per-partner independently of CFP.
