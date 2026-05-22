@@ -1060,11 +1060,6 @@ const VaultPage = () => {
             <p className="text-sm font-bold text-[var(--t)]">Getting Started — Upload a Document</p>
             <p className="text-xs text-[var(--t4)]">Upload any important document (will, insurance, deed). Just pick a file and give it a name.</p>
           </div>
-          <button onClick={() => navigate('/dashboard')}
-            className="flex-shrink-0 text-xs font-bold text-[var(--t4)] px-3 py-2 rounded-xl transition-colors hover:bg-[var(--s)]"
-            data-testid="back-to-dashboard-btn">
-            <ArrowLeft className="w-4 h-4 inline mr-1" />Back
-          </button>
         </div>
       )}
 

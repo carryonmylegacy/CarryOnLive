@@ -1084,6 +1084,21 @@
   [data-theme="light"] .main-content::before {
     background: radial-gradient(ellipse at 50% 0%, transparent 50%, rgba(30,64,130,0.04) 100%);
   }
+
+  /* ── Universal back-button room-maker ──────────────────────────
+     When `.main-content` has `with-back-button` (DashboardLayout
+     adds this class on every non-root route), bump the page's
+     FIRST content row right by 48 px so the fixed top-left back
+     chip lives in cleared space INSIDE the page (the gradient
+     still flows full-width underneath the chip — this only shifts
+     the first foreground row, e.g. icon + title). Selector targets
+     two levels deep so it lands on the icon-row pattern used by
+     the section landings, EntitiesPage, and every benefactor /
+     beneficiary feature page. */
+  .main-content.with-back-button > * > *:first-child {
+    padding-left: 48px;
+  }
+
   
   /* Page Container */
   .page {

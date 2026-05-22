@@ -62,17 +62,6 @@ const PreTransitionPage = () => {
 
   return (
     <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 animate-fade-in" data-testid="pre-transition">
-      {/* Back to estates */}
-      <Button
-        variant="outline"
-        size="sm"
-        className="mb-5"
-        style={{ background: 'rgba(37,99,235,0.12)', border: '1px solid rgba(37,99,235,0.35)', color: '#60A5FA' }}
-        onClick={() => navigate('/beneficiary')}
-      >
-        <ChevronLeft className="w-4 h-4 mr-1" /> Back to My Estates
-      </Button>
-
       {/* Estate info */}
       <div className="text-center mb-8">
         <h1 className="text-2xl lg:text-3xl font-bold text-[var(--t)] mb-2" style={{ fontFamily: 'var(--sans)' }}>

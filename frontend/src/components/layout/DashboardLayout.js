@@ -89,6 +89,18 @@ const DashboardLayout = () => {
   const location = useLocation();
   const { user, subscriptionStatus, refreshUser } = useAuth();
   const isOnGuardian = location.pathname === '/guardian';
+  // Mirror of the BackButton's own `HIDDEN_EXACT` set — used to
+  // toggle the `with-back-button` class on `main-content` so the
+  // global CSS rule that bumps each page's first content row right
+  // only fires on pages that actually render the chip. Kept in
+  // sync manually because importing the set from BackButton would
+  // tie layout startup to its lazy chunk.
+  const BACK_HIDDEN = new Set([
+    '/dashboard', '/admin', '/ops', '/beneficiary',
+    '/beneficiary/dashboard', '/beneficiary/hub',
+    '/onboarding', '/transition',
+  ]);
+  const showUniversalBack = !BACK_HIDDEN.has(location.pathname);
   const [guardianMounted, setGuardianMounted] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => localStorage.getItem('carryon_sidebar_collapsed') === 'true');
   const [betaAccepted, setBetaAccepted] = useState(true);
@@ -236,7 +248,7 @@ const DashboardLayout = () => {
         events={OS_EVENTS}
         defer
         id="main-content"
-        className={`main-content ${sidebarCollapsed ? 'sb-collapsed' : ''}`}
+        className={`main-content ${sidebarCollapsed ? 'sb-collapsed' : ''} ${showUniversalBack ? 'with-back-button' : ''}`}
         role="main"
         aria-label="Main content"
       >

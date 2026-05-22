@@ -168,11 +168,6 @@ const BeneficiaryMessagesPage = () => {
   return (
     <div className="w-full max-w-[1400px] mx-auto p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-5 animate-fade-in" data-testid="beneficiary-messages"
       style={{ background: 'radial-gradient(ellipse at top left, rgba(139,92,246,0.12), transparent 55%)' }}>
-      {/* Back */}
-      <button onClick={() => navigate('/beneficiary/dashboard')} className="inline-flex items-center gap-1 text-sm font-bold text-[#60A5FA]">
-        <ChevronLeft className="w-4 h-4" /> Back to Dashboard
-      </button>
-
       {/* Header */}
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(139,92,246,0.2), rgba(124,58,237,0.15))' }}>

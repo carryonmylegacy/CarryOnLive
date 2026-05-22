@@ -144,10 +144,6 @@ const BeneficiaryVaultPage = () => {
 
   return (
     <div className="w-full max-w-[1400px] mx-auto p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6" data-testid="beneficiary-vault">
-      <button onClick={() => navigate('/beneficiary/dashboard')} className="inline-flex items-center gap-1 text-sm font-bold text-[#60A5FA] mb-4">
-        <ChevronLeft className="w-4 h-4" /> Back to Dashboard
-      </button>
-
       <div className="flex items-center gap-3 mb-5">
         <FolderLock className="w-6 h-6 text-[#60A5FA]" />
         <h1 className="text-xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>Secure Document Vault</h1>

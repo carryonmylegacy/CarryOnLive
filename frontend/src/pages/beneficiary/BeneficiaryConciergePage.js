@@ -774,9 +774,6 @@ function ConciergeUnavailable({ reason, onBack }) {
   const [title, body] = messageMap[reason] || ['Estate Concierge unavailable', 'This feature isn’t available right now.'];
   return (
     <div className="p-6 lg:p-8 max-w-2xl mx-auto" data-testid="concierge-unavailable">
-      <button onClick={onBack} className="inline-flex items-center gap-1 text-sm font-bold text-[#60A5FA] mb-4">
-        <ArrowLeft className="w-4 h-4" /> Back to dashboard
-      </button>
       <Card className="glass-card">
         <CardContent className="p-6 lg:p-8 text-center">
           <div className="w-12 h-12 mx-auto mb-3 rounded-xl flex items-center justify-center" style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.35)' }}>

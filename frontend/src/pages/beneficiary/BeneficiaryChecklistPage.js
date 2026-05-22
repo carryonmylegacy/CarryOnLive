@@ -80,10 +80,6 @@ const BeneficiaryChecklistPage = () => {
     <div className="w-full max-w-[1400px] mx-auto p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 space-y-5 animate-fade-in" data-testid="beneficiary-checklist"
       style={{ background: 'radial-gradient(ellipse at top left, rgba(245,158,11,0.12), transparent 55%)' }}>
 
-      <button onClick={() => navigate('/beneficiary/dashboard')} className="inline-flex items-center gap-1 text-sm font-bold text-[#60A5FA]">
-        <ChevronLeft className="w-4 h-4" /> Back to Dashboard
-      </button>
-
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(245,158,11,0.2), rgba(217,119,6,0.15))' }}>
           <CheckSquare className="w-5 h-5 text-[#F59E0B]" />

@@ -4,35 +4,30 @@ import { ArrowLeft } from 'lucide-react';
 
 /**
  * Universal back button — rendered once by `DashboardLayout` and
- * fixed to a top corner of the viewport so every authenticated page
- * gets a consistent affordance to return to the previous page
- * without taking vertical space in the layout (the page gradient
- * flows uninterrupted to the very top edge).
+ * fixed to the TOP-LEFT corner so every authenticated page gets a
+ * consistent affordance to return to the previous page.
  *
- * Visual (May 22 2026 — per founder feedback):
- *   • Icon-only circular chip (~32 px) instead of "← Back" pill —
- *     same iOS-Safari corner-chevron pattern users recognize
- *     instantly. Roughly 60% smaller footprint, so it stops
- *     visually clipping section titles even when the title is
- *     long. Tooltip + `aria-label` preserve discoverability.
+ * Visual (May 22 2026 — per founder direction):
+ *   • Icon-only circular chip (~32 px) — small footprint, reads as
+ *     native chrome (the universally-understood corner chevron).
  *   • Background uses `color-mix` over `var(--card)` so the chip
- *     reads as frosted glass in dark + light theme automatically.
- *   • `z-index: 60` so it always paints above any in-page modals
- *     or sticky toolbars (notably ECT's chat overlay at z:45).
+ *     reads as frosted glass on dark + light theme automatically.
+ *   • `z-index: 60` so it paints above any in-page modal or
+ *     sticky toolbar (notably ECT's chat overlay at z:45).
  *
- * Position (per-route override):
- *   • `/estate-chat` + `/beneficiary/estate-chat` → top-LEFT.
- *     ECT renders its own action toolbar (✓ / 🔍 / +) in the
- *     top-right and conflicts with our chip. Top-left is empty on
- *     both views, so the chip lives there.
- *   • Everything else → top-RIGHT, the natural empty corner across
- *     every other authenticated surface.
+ * Layout integration:
+ *   • Fixed top-left at the same vertical level as the typical
+ *     page icon-chip. The companion CSS rule in `index.css`
+ *     (`.main-content.with-back-button > *:first-child > *:first-child {
+ *     padding-left: 48px }`) bumps each page's first content row
+ *     right just enough to make room. The page's gradient still
+ *     flows full-width underneath the chip so the chip reads as
+ *     part of the integrated UX, not as floating chrome.
  *
- * Hidden destinations:
+ * Hidden destinations (root or modal-style surfaces):
  *   • `/dashboard`, `/admin`, `/ops`, `/beneficiary`,
  *     `/beneficiary/dashboard`, `/beneficiary/hub`, `/onboarding`,
- *     `/transition` — root or modal-style surfaces with no
- *     meaningful "before" within the SPA history.
+ *     `/transition`
  *
  * Click → `navigate(-1)` if history > 1, else `/dashboard` so a
  * deep-link doesn't dead-end on a closed-tab no-op.
@@ -53,25 +48,10 @@ const BackButton = () => {
   ]);
   if (HIDDEN_EXACT.has(location.pathname)) return null;
 
-  const LEFT_CORNER_ROUTES = new Set([
-    '/estate-chat',
-    '/beneficiary/estate-chat',
-  ]);
-  const isLeftCorner = LEFT_CORNER_ROUTES.has(location.pathname);
-
   const handleBack = () => {
     if (window.history.length > 1) navigate(-1);
     else navigate('/dashboard');
   };
-
-  // Positioning: top offset clears mobile header (h-12 = 48 px) +
-  // iOS safe-area + offline banner (if visible). Left/right offset
-  // is the same on both sides so the chip sits visually balanced
-  // against the opposite-corner content (hamburger on right or
-  // section icon on left).
-  const positionStyle = isLeftCorner
-    ? { left: '12px' }
-    : { right: '12px' };
 
   return (
     <button
@@ -82,8 +62,11 @@ const BackButton = () => {
       title="Back"
       className="fixed inline-flex items-center justify-center rounded-full transition-all active:scale-90"
       style={{
-        ...positionStyle,
-        top: 'calc(env(safe-area-inset-top, 0px) + var(--cy-offline-banner-h, 0px) + 54px)',
+        // Sits just inside the main-content's padding-top so the chip
+        // visually lands ON the page's icon-row (icon-chip is ~12px
+        // from page top via `pt-4` = 16px - some optical offset).
+        top: 'calc(env(safe-area-inset-top, 0px) + var(--cy-offline-banner-h, 0px) + 60px)',
+        left: '12px',
         width: 32,
         height: 32,
         zIndex: 60,

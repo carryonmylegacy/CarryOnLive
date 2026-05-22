@@ -1290,11 +1290,6 @@ const MessagesPage = () => {
             <p className="text-sm font-bold text-[var(--t)]">Getting Started — Leave a Milestone Message</p>
             <p className="text-xs text-[var(--t4)]">Record a real Milestone Message — pick the moment it should be delivered, who receives it, and add text or video. You can always edit it later.</p>
           </div>
-          <button onClick={() => navigate('/dashboard')}
-            className="flex-shrink-0 text-xs font-bold text-[var(--t4)] px-3 py-2 rounded-xl transition-colors hover:bg-[var(--s)]"
-            data-testid="back-to-dashboard-btn">
-            <ArrowLeft className="w-4 h-4 inline mr-1" />Back
-          </button>
         </div>
       )}
 
