@@ -415,32 +415,34 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
   return (
     <div
       ref={sectionRef}
-      className="rounded-2xl"
-      style={{
-        background: 'radial-gradient(ellipse at top, rgba(var(--gold-rgb), 0.08), transparent 60%), var(--card)',
-        // Defined gold-tinted boundary so E&S visually pops away from the
-        // softer `var(--b)` borders used by the rest of the CFP cards.
-        border: '1px solid rgba(var(--gold-rgb, 212,165,55), 0.32)',
-        boxShadow: '0 0 0 1px rgba(255,255,255,0.04), 0 10px 28px rgba(0,0,0,0.28)',
-      }}
       data-testid="entities-section"
     >
-      <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--b)] flex-wrap gap-2">
-        <div className="flex items-center gap-2 min-w-0">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center"
-            style={{ background: 'rgba(var(--gold-rgb), 0.14)', color: 'var(--gold)' }}>
-            <Network className="w-4 h-4" />
-          </div>
-          <div className="min-w-0">
-            <h2 className="text-sm font-bold text-[var(--t)] truncate" style={{ fontFamily: 'var(--sans)' }}>
-              Entities &amp; Structures
-            </h2>
-            <p className="text-[11px] text-[var(--t5)]">
-              {entities.length} entit{entities.length === 1 ? 'y' : 'ies'} · {relationships.length} connection{relationships.length === 1 ? '' : 's'}
-            </p>
-          </div>
+      {/* Title row — chip + count, no card border, no divider. The
+          chart-wrapper card has been removed per founder direction
+          (May 22 2026): tree sits directly on the page background so
+          the new dot-matrix grid carries the visual weight. */}
+      <div className="flex items-center gap-2 min-w-0 mb-3">
+        <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+          style={{ background: 'rgba(var(--gold-rgb), 0.14)', color: 'var(--gold)' }}>
+          <Network className="w-4 h-4" />
         </div>
-        <div className="flex items-center gap-1.5">
+        <div className="min-w-0">
+          <h2 className="text-sm font-bold text-[var(--t)] truncate" style={{ fontFamily: 'var(--sans)' }}>
+            Entities &amp; Structures
+          </h2>
+          <p className="text-[11px] text-[var(--t5)]">
+            {entities.length} entit{entities.length === 1 ? 'y' : 'ies'} · {relationships.length} connection{relationships.length === 1 ? '' : 's'}
+          </p>
+        </div>
+      </div>
+
+      {/* Toolbar row — full width, buttons grow laterally to fill the
+          row left-to-right so the toolbar reads as a deliberate strip
+          (rather than a packed huddle pushed left of the title). The
+          gold "+ Add" CTA stays its natural size on the right since
+          stretching a primary action looks awkward. */}
+      <div className="flex items-stretch gap-1.5 mb-3 w-full">
+        <div className="flex items-stretch gap-1.5 flex-1 min-w-0 flex-wrap sm:flex-nowrap">
           {/* Shared pill style — neutral white text+border, gold flash
               on tap (`active:` state). Per user instruction every
               toolbar button uses this EXCEPT the "+ Add" CTA (full
@@ -450,7 +452,7 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
           {/* eslint-disable-next-line no-unused-vars */}
           <button
             onClick={() => setViewMode((v) => v === 'chart' ? 'list' : 'chart')}
-            className="text-[11px] font-bold flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full whitespace-nowrap transition-all border border-[var(--b)] text-[var(--t3)] hover:text-[var(--t)] hover:border-[var(--t)] active:bg-[rgba(var(--gold-rgb), 0.18)] active:border-[var(--gold)] active:text-[var(--gold)]"
+            className="flex-1 min-w-0 text-[11px] font-bold flex items-center justify-center gap-1 px-2 sm:px-2.5 py-1.5 rounded-full whitespace-nowrap transition-all border border-[var(--b)] text-[var(--t3)] hover:text-[var(--t)] hover:border-[var(--t)] active:bg-[rgba(var(--gold-rgb), 0.18)] active:border-[var(--gold)] active:text-[var(--gold)]"
             data-testid="entities-toggle-view"
             title={viewMode === 'chart' ? 'Switch to list view' : 'Switch to chart view'}
             aria-label={viewMode === 'chart' ? 'List view' : 'Chart view'}
@@ -464,8 +466,8 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
               onClick={toggleLocked}
               className={
                 locked
-                  ? 'gold-pill text-[11px] font-bold flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full transition-all whitespace-nowrap'
-                  : 'text-[11px] font-bold flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full transition-all whitespace-nowrap border border-[var(--b)] text-[var(--t4)] bg-transparent'
+                  ? 'gold-pill flex-1 min-w-0 text-[11px] font-bold flex items-center justify-center gap-1 px-2 sm:px-2.5 py-1.5 rounded-full transition-all whitespace-nowrap'
+                  : 'flex-1 min-w-0 text-[11px] font-bold flex items-center justify-center gap-1 px-2 sm:px-2.5 py-1.5 rounded-full transition-all whitespace-nowrap border border-[var(--b)] text-[var(--t4)] bg-transparent'
               }
               style={locked ? {
                 /* Dark-mode keeps the original glow; the light-mode rule
@@ -484,7 +486,7 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
           {viewMode === 'chart' && (
             <button
               onClick={() => setCenterNonce((n) => n + 1)}
-              className="text-[11px] font-bold flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full whitespace-nowrap transition-all border border-[var(--b)] text-[var(--t3)] hover:text-[var(--t)] hover:border-[var(--t)] active:bg-[rgba(var(--gold-rgb), 0.18)] active:border-[var(--gold)] active:text-[var(--gold)]"
+              className="flex-1 min-w-0 text-[11px] font-bold flex items-center justify-center gap-1 px-2 sm:px-2.5 py-1.5 rounded-full whitespace-nowrap transition-all border border-[var(--b)] text-[var(--t3)] hover:text-[var(--t)] hover:border-[var(--t)] active:bg-[rgba(var(--gold-rgb), 0.18)] active:border-[var(--gold)] active:text-[var(--gold)]"
               data-testid="entities-center-chart"
               title="Center the tree in the viewport"
               aria-label="Center chart"
@@ -495,7 +497,7 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
           {viewMode === 'chart' && (
             <button
               onClick={() => setShowResetConfirm(true)}
-              className="text-[11px] font-bold flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full whitespace-nowrap transition-all border border-[var(--b)] text-[var(--t3)] hover:text-[var(--t)] hover:border-[var(--t)] active:bg-[rgba(var(--gold-rgb), 0.18)] active:border-[var(--gold)] active:text-[var(--gold)]"
+              className="flex-1 min-w-0 text-[11px] font-bold flex items-center justify-center gap-1 px-2 sm:px-2.5 py-1.5 rounded-full whitespace-nowrap transition-all border border-[var(--b)] text-[var(--t3)] hover:text-[var(--t)] hover:border-[var(--t)] active:bg-[rgba(var(--gold-rgb), 0.18)] active:border-[var(--gold)] active:text-[var(--gold)]"
               data-testid="entities-reset-layout"
               title="Reset tile positions to auto-layout (works while locked too)"
               aria-label="Reset layout"
@@ -506,7 +508,7 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
           {viewMode === 'chart' && (
             <button
               onClick={() => setExpanded((x) => !x)}
-              className="text-[11px] font-bold flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full whitespace-nowrap transition-all border border-[var(--b)] text-[var(--t3)] hover:text-[var(--t)] hover:border-[var(--t)] active:bg-[rgba(var(--gold-rgb), 0.18)] active:border-[var(--gold)] active:text-[var(--gold)]"
+              className="flex-1 min-w-0 text-[11px] font-bold flex items-center justify-center gap-1 px-2 sm:px-2.5 py-1.5 rounded-full whitespace-nowrap transition-all border border-[var(--b)] text-[var(--t3)] hover:text-[var(--t)] hover:border-[var(--t)] active:bg-[rgba(var(--gold-rgb), 0.18)] active:border-[var(--gold)] active:text-[var(--gold)]"
               data-testid="entities-toggle-expand"
               title={expanded ? 'Collapse' : 'Expand'}
               aria-label={expanded ? 'Collapse' : 'Expand'}
@@ -517,7 +519,7 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
           {viewMode === 'chart' && hiddenInfo.count > 0 && (
             <button
               onClick={hiddenInfo.showAll}
-              className="text-[11px] font-bold flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full whitespace-nowrap transition-all border border-[var(--b)] text-[var(--t3)] hover:text-[var(--t)] hover:border-[var(--t)] active:bg-[rgba(var(--gold-rgb), 0.18)] active:border-[var(--gold)] active:text-[var(--gold)]"
+              className="flex-1 min-w-0 text-[11px] font-bold flex items-center justify-center gap-1 px-2 sm:px-2.5 py-1.5 rounded-full whitespace-nowrap transition-all border border-[var(--b)] text-[var(--t3)] hover:text-[var(--t)] hover:border-[var(--t)] active:bg-[rgba(var(--gold-rgb), 0.18)] active:border-[var(--gold)] active:text-[var(--gold)]"
               data-testid="entities-show-hidden"
               title={`Restore all ${hiddenInfo.count} hidden tile${hiddenInfo.count === 1 ? '' : 's'}`}
               aria-label={`Show ${hiddenInfo.count} hidden tile${hiddenInfo.count === 1 ? '' : 's'}`}
@@ -529,7 +531,7 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
           {viewMode === 'chart' && legendHidden && (
             <button
               onClick={showLegend}
-              className="text-[11px] font-bold flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full whitespace-nowrap transition-all border border-[var(--b)] text-[var(--t3)] hover:text-[var(--t)] hover:border-[var(--t)] active:bg-[rgba(var(--gold-rgb), 0.18)] active:border-[var(--gold)] active:text-[var(--gold)]"
+              className="flex-1 min-w-0 text-[11px] font-bold flex items-center justify-center gap-1 px-2 sm:px-2.5 py-1.5 rounded-full whitespace-nowrap transition-all border border-[var(--b)] text-[var(--t3)] hover:text-[var(--t)] hover:border-[var(--t)] active:bg-[rgba(var(--gold-rgb), 0.18)] active:border-[var(--gold)] active:text-[var(--gold)]"
               data-testid="entities-show-legend"
               title="Show legend"
               aria-label="Show legend"
@@ -549,7 +551,7 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
                 // the live chart on a single tap.
                 navigate(`/financial/entities/${estateId}/print`);
               }}
-              className="text-[11px] font-bold flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-full whitespace-nowrap transition-all border border-[var(--b)] text-[var(--t3)] hover:text-[var(--t)] hover:border-[var(--t)] active:bg-[rgba(var(--gold-rgb), 0.18)] active:border-[var(--gold)] active:text-[var(--gold)]"
+              className="flex-1 min-w-0 text-[11px] font-bold flex items-center justify-center gap-1 px-2 sm:px-2.5 py-1.5 rounded-full whitespace-nowrap transition-all border border-[var(--b)] text-[var(--t3)] hover:text-[var(--t)] hover:border-[var(--t)] active:bg-[rgba(var(--gold-rgb), 0.18)] active:border-[var(--gold)] active:text-[var(--gold)]"
               data-testid="entities-print-button"
               title="Print as PDF (8.5×11)"
               aria-label="Print"
@@ -562,15 +564,15 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
             beneficiaries={beneficiaries || []}
             getAuthHeaders={getAuthHeaders}
           />
-          <Button
-            onClick={() => setShowWizard(true)}
-            className="px-2.5 sm:px-3 py-1.5 rounded-md text-xs font-semibold btn-gold-cta whitespace-nowrap"
-            data-testid="entities-add-button"
-            aria-label="Add entity"
-          >
-            <Plus className="w-3.5 h-3.5 sm:mr-1" /><span className="hidden sm:inline">Add</span>
-          </Button>
         </div>
+        <Button
+          onClick={() => setShowWizard(true)}
+          className="flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold btn-gold-cta whitespace-nowrap"
+          data-testid="entities-add-button"
+          aria-label="Add entity"
+        >
+          <Plus className="w-3.5 h-3.5 sm:mr-1" /><span className="hidden sm:inline">Add</span>
+        </Button>
       </div>
 
       <div style={{ height: maxH, position: 'relative' }}>

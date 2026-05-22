@@ -1430,6 +1430,16 @@ export default function EntityOrgChart({
             willChange: isPinching ? 'transform' : undefined,
             backfaceVisibility: 'hidden',
             WebkitBackfaceVisibility: 'hidden',
+            // Dot-matrix grid background — graph-paper feel, Railway
+            // style. The dots live in canvas coordinates so they pan +
+            // zoom WITH the tree, giving the user true reference
+            // points rather than a viewport-fixed pattern. `color-mix`
+            // pulls the dot color from `var(--t)` so it adapts cleanly
+            // to dark and light themes without a runtime branch.
+            backgroundImage:
+              'radial-gradient(circle, color-mix(in srgb, var(--t) 14%, transparent) 1px, transparent 1.4px)',
+            backgroundSize: '24px 24px',
+            backgroundPosition: '0 0',
           }}
         >
         <div
