@@ -767,7 +767,7 @@ export const QuickStartStep = ({ stepKey, data, setData, user, brand, onGateChoi
   // ── 5. Properties (multi-add with Google Places + per-property state) ──
   if (stepKey === 'properties') {
     const list = Array.isArray(data?.list) ? data.list : [];
-    const addRow = () => setData({ ...data, list: [...list, { address: '', state: '', kind: 'other' }] });
+    const addRow = () => setData({ ...data, list: [...list, { street: '', line2: '', city: '', state: '', zip: '', address: '', kind: 'other' }] });
     const updateRow = (idx, patch) => setData({ ...data, list: list.map((p, i) => i === idx ? { ...p, ...patch } : p) });
     const removeRow = (idx) => setData({ ...data, list: list.filter((_, i) => i !== idx) });
     return (
@@ -776,7 +776,9 @@ export const QuickStartStep = ({ stepKey, data, setData, user, brand, onGateChoi
         <p className="text-sm" style={mutedStyle}>
           Add any properties beyond your personal residence — rentals, vacation homes,
           land, anything that&apos;s in your name. State matters (out-of-state property
-          drives ancillary probate). Leave this blank if there are none.
+          drives ancillary probate). The full street/city/ZIP is optional — adding it
+          lets your guide reference each property by name. Leave this blank if there
+          are none.
         </p>
         <div className="space-y-3">
           {list.map((p, idx) => (
@@ -789,38 +791,76 @@ export const QuickStartStep = ({ stepKey, data, setData, user, brand, onGateChoi
                   style={{ background: 'rgba(255,255,255,0.08)', color: '#FCA5A5' }}
                 ><X className="w-3.5 h-3.5" /></button>
               </div>
-              <AddressAutocomplete
-                value={(p.address && p.address !== '[object Object]') ? p.address : ''}
-                onChange={(e) => updateRow(idx, { address: typeof e === 'string' ? e : (e?.target?.value ?? '') })}
-                onSelect={({ street, city, state }) => updateRow(idx, {
-                  address: [street, city].filter(Boolean).join(', '),
-                  state: state || p.state || '',
-                })}
-                placeholder="Start typing the property address…"
+              <select
+                value={p.kind || 'other'} onChange={(e) => updateRow(idx, { kind: e.target.value })}
+                data-testid={`qs-prop-kind-${idx}`}
                 className="w-full rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#d4af37]"
                 style={{ ...inputStyle, fontSize: '16px' }}
-                data-testid={`qs-prop-address-${idx}`}
+              >
+                {[['vacation','Vacation / second home'],['rental','Rental property'],['land','Vacant land'],['commercial','Commercial property'],['other','Other']].map(([k, label]) => (
+                  <option key={k} value={k} style={{ color: '#0F172A' }}>{label}</option>
+                ))}
+              </select>
+              {/* Full address — mirrors the residence step + Settings layout.
+                  Optional; if filled the guide PDF prints each property
+                  with its full street address for greater fidelity. */}
+              <AddressAutocomplete
+                value={p.street || ((p.address && p.address !== '[object Object]') ? p.address : '')}
+                onChange={(e) => updateRow(idx, { street: typeof e === 'string' ? e : (e?.target?.value ?? '') })}
+                onSelect={({ street, city, state, zip }) => updateRow(idx, {
+                  street: street || '',
+                  city: city || p.city || '',
+                  state: state || p.state || '',
+                  zip: zip || p.zip || '',
+                  address: [street, city].filter(Boolean).join(', '),
+                })}
+                placeholder="Street address (optional)"
+                className="w-full rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#d4af37]"
+                style={{ ...inputStyle, fontSize: '16px' }}
+                data-testid={`qs-prop-street-${idx}`}
               />
-              <div className="grid grid-cols-2 gap-2">
-                <select
-                  value={p.kind || 'other'} onChange={(e) => updateRow(idx, { kind: e.target.value })}
-                  data-testid={`qs-prop-kind-${idx}`}
-                  className="min-w-0 w-full rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#d4af37]"
-                  style={{ ...inputStyle, fontSize: '16px' }}
-                >
-                  {[['vacation','Vacation / second home'],['rental','Rental property'],['land','Vacant land'],['commercial','Commercial property'],['other','Other']].map(([k, label]) => (
-                    <option key={k} value={k} style={{ color: '#0F172A' }}>{label}</option>
-                  ))}
-                </select>
-                <select
-                  value={p.state || ''} onChange={(e) => updateRow(idx, { state: e.target.value })}
-                  data-testid={`qs-prop-state-${idx}`}
-                  className="min-w-0 w-full rounded-xl px-2 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#d4af37]"
-                  style={{ ...inputStyle, fontSize: '16px' }}
-                >
-                  <option value="" style={{ color: '#0F172A' }}>State…</option>
-                  {_STATE_LIST.map((s) => <option key={s} value={s} style={{ color: '#0F172A' }}>{s}</option>)}
-                </select>
+              <input
+                value={p.line2 || ''}
+                onChange={(e) => updateRow(idx, { line2: e.target.value })}
+                placeholder="Apt, suite, unit (optional)"
+                className="w-full rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#d4af37]"
+                style={{ ...inputStyle, fontSize: '16px' }}
+                data-testid={`qs-prop-line2-${idx}`}
+              />
+              <div className="grid grid-cols-4 gap-2">
+                <div className="col-span-2">
+                  <input
+                    value={p.city || ''}
+                    onChange={(e) => updateRow(idx, { city: e.target.value })}
+                    placeholder="City"
+                    className="w-full rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#d4af37]"
+                    style={{ ...inputStyle, fontSize: '16px' }}
+                    data-testid={`qs-prop-city-${idx}`}
+                  />
+                </div>
+                <div className="relative">
+                  <select
+                    value={p.state || ''} onChange={(e) => updateRow(idx, { state: e.target.value })}
+                    data-testid={`qs-prop-state-${idx}`}
+                    className="w-full appearance-none rounded-xl px-2 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#d4af37]"
+                    style={{ ...inputStyle, fontSize: '16px' }}
+                  >
+                    <option value="" style={{ color: '#0F172A' }}>State</option>
+                    {_STATE_LIST.map((s) => <option key={s} value={s} style={{ color: '#0F172A' }}>{s}</option>)}
+                  </select>
+                  <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: '#CBD5E1' }} />
+                </div>
+                <div>
+                  <input
+                    value={p.zip || ''}
+                    onChange={(e) => updateRow(idx, { zip: e.target.value.replace(/[^0-9-]/g, '').slice(0, 10) })}
+                    placeholder="ZIP"
+                    inputMode="numeric"
+                    className="w-full rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#d4af37]"
+                    style={{ ...inputStyle, fontSize: '16px' }}
+                    data-testid={`qs-prop-zip-${idx}`}
+                  />
+                </div>
               </div>
             </div>
           ))}
@@ -863,35 +903,63 @@ export const QuickStartStep = ({ stepKey, data, setData, user, brand, onGateChoi
     );
   }
 
-  // ── 7. Business — MULTI-SELECT entity types ───────────────────────
+  // ── 7. Business — MULTI-SELECT entity types + per-type count ──────
   if (stepKey === 'business') {
     const types = Array.isArray(data?.types) ? data.types : [];
+    const counts = (data?.counts && typeof data.counts === 'object') ? data.counts : {};
     const isNone = data?.none === true;
     const toggle = (k) => {
-      if (types.includes(k)) setData({ ...data, types: types.filter((t) => t !== k), none: false });
-      else setData({ ...data, types: [...types, k], none: false });
+      if (types.includes(k)) {
+        const nextCounts = { ...counts };
+        delete nextCounts[k];
+        setData({ ...data, types: types.filter((t) => t !== k), counts: nextCounts, none: false });
+      } else {
+        setData({ ...data, types: [...types, k], counts: { ...counts, [k]: counts[k] || 1 }, none: false });
+      }
     };
-    const toggleNone = () => setData({ none: !isNone, types: [] });
+    const setCount = (k, raw) => {
+      const v = raw === '' ? '' : Math.max(1, Math.min(50, Number(raw) || 1));
+      setData({ ...data, counts: { ...counts, [k]: v } });
+    };
+    const toggleNone = () => setData({ none: !isNone, types: [], counts: {} });
     return (
       <div className="space-y-3" data-testid="qs-step-business">
         <h3 className="text-lg lg:text-xl font-bold" style={headingStyle}>Business ownership</h3>
         <p className="text-sm" style={mutedStyle}>
-          Select every entity type you own all or part of. Most business owners have more than one.
+          Select every entity type you own all or part of. If you have more than one of
+          a given type (e.g. two LLCs), enter the count on the right.
         </p>
         <button
           type="button" onClick={toggleNone} data-testid="qs-biz-none"
           className="w-full rounded-xl px-3 py-3 text-sm font-bold transition-all active:scale-[0.98] text-left"
           style={pillButtonStyle(isNone)}
         >None — I don&apos;t own a business</button>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
-          {_ENTITY_TYPES.map(([k, label]) => (
-            <button
-              key={k} type="button" onClick={() => toggle(k)} data-testid={`qs-biz-${k}`}
-              disabled={isNone}
-              className="rounded-xl px-3 py-3 text-sm font-bold transition-all active:scale-[0.97] text-left disabled:opacity-40"
-              style={pillButtonStyle(types.includes(k))}
-            >{label}</button>
-          ))}
+        <div className="grid grid-cols-1 gap-2">
+          {_ENTITY_TYPES.map(([k, label]) => {
+            const selected = types.includes(k);
+            return (
+              <div key={k} className="grid grid-cols-[1fr_72px] gap-2 items-stretch">
+                <button
+                  type="button" onClick={() => toggle(k)} data-testid={`qs-biz-${k}`}
+                  disabled={isNone}
+                  className="rounded-xl px-3 py-3 text-sm font-bold transition-all active:scale-[0.97] text-left disabled:opacity-40"
+                  style={pillButtonStyle(selected)}
+                >{label}</button>
+                <input
+                  type="number" min="1" max="50"
+                  value={selected ? (counts[k] ?? 1) : ''}
+                  onChange={(e) => setCount(k, e.target.value)}
+                  disabled={isNone || !selected}
+                  placeholder="#"
+                  inputMode="numeric"
+                  aria-label={`How many ${label}`}
+                  data-testid={`qs-biz-count-${k}`}
+                  className="rounded-xl px-2 py-3 text-sm text-center font-bold focus:outline-none focus:ring-2 focus:ring-[#d4af37] disabled:opacity-40"
+                  style={{ ...inputStyle, fontSize: '16px' }}
+                />
+              </div>
+            );
+          })}
         </div>
       </div>
     );

@@ -187,8 +187,17 @@ def _human_state_summary(data: dict[str, Any]) -> str:
             if not isinstance(p, dict):
                 continue
             kind = (p.get("kind") or "property").replace("_", " ")
-            loc = p.get("address") or p.get("state") or "(no address)"
-            st = p.get("state") or ""
+            # Prefer a full street address when the user provided it
+            # (Feb 26 2026 founder direction — higher-fidelity prompt
+            # so Grok can reference each property by name in the guide).
+            street = (p.get("street") or "").strip()
+            city = (p.get("city") or "").strip()
+            zipc = (p.get("zip") or "").strip()
+            st = (p.get("state") or "").strip()
+            if street and city and st:
+                loc = f"{street}, {city}, {st}{(' ' + zipc) if zipc else ''}"
+            else:
+                loc = p.get("address") or st or "(no address)"
             prop_bits.append(f"{kind} in {st or '?'} ({loc})")
         parts.append("Other properties owned: " + "; ".join(prop_bits) + ".")
     else:
@@ -218,13 +227,22 @@ def _human_state_summary(data: dict[str, Any]) -> str:
     elif li.get("status"):
         parts.append(f"Life insurance: {li.get('status')}.")
 
-    # Business — NEW: multi-select entity types + explicit "none" toggle.
+    # Business — NEW: multi-select entity types + per-type count + explicit "none".
     biz = data.get("business") or {}
     if biz.get("none"):
         parts.append("Business ownership: none.")
     elif isinstance(biz.get("types"), list) and biz.get("types"):
-        types = ", ".join(t.replace("_", " ").upper() for t in biz["types"])
-        parts.append(f"Business entities owned: {types}.")
+        counts = biz.get("counts") or {}
+        bits: list[str] = []
+        for t in biz["types"]:
+            label = t.replace("_", " ").upper()
+            try:
+                n = int(counts.get(t) or 1)
+            except (TypeError, ValueError):
+                n = 1
+            n = max(1, n)
+            bits.append(f"{n} {label}" if n > 1 else label)
+        parts.append(f"Business entities owned: {', '.join(bits)}.")
     elif biz.get("structure") and biz["structure"] != "none":
         parts.append(f"Business ownership: {biz['structure']}.")
 

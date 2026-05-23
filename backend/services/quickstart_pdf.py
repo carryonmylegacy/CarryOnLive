@@ -124,7 +124,15 @@ def _format_real_estate(data: dict[str, Any]) -> str:
                 continue
             kind = (p.get("kind") or "property").replace("_", " ").title()
             st = p.get("state") or "?"
-            addr = p.get("address") or ""
+            # Prefer a full street address when the user provided it
+            # (Feb 26 2026 founder direction — higher PDF fidelity).
+            street = (p.get("street") or "").strip()
+            city = (p.get("city") or "").strip()
+            zipc = (p.get("zip") or "").strip()
+            if street and city:
+                addr = f"{street}, {city}, {st}{(' ' + zipc) if zipc else ''}"
+            else:
+                addr = p.get("address") or ""
             bits.append(f"{kind} ({st}){' — ' + addr if addr else ''}")
         return " | ".join(bits)
     # Legacy fallback.
@@ -155,7 +163,17 @@ def _format_business(data: dict[str, Any]) -> str:
         return "None"
     types = biz.get("types") or []
     if isinstance(types, list) and types:
-        return ", ".join(t.replace("_", " ").upper() for t in types)
+        counts = biz.get("counts") or {}
+        bits: list[str] = []
+        for t in types:
+            label = t.replace("_", " ").upper()
+            try:
+                n = int(counts.get(t) or 1)
+            except (TypeError, ValueError):
+                n = 1
+            n = max(1, n)
+            bits.append(f"{n}× {label}" if n > 1 else label)
+        return ", ".join(bits)
     # Legacy single-structure fallback.
     structure = biz.get("structure")
     if structure and structure != "none":
