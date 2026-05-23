@@ -28,7 +28,7 @@ import {
   Receipt,
   TrendingUp,
   ShieldAlert,
-  Landmark, Lock, Coins, Siren,
+  Landmark, Lock, Heart,
 } from 'lucide-react';
 import TrialBanner from '../components/TrialBanner';
 import BillingStatusBanner from '../components/BillingStatusBanner';
@@ -1020,7 +1020,10 @@ const DashboardPage = () => {
       {/* QuickStart complete — shows the guide-ready tile with two
           actions: open the PDF in the same preview portal the rest of
           the platform uses, and edit answers + regenerate without
-          losing prior inputs. */}
+          losing prior inputs.
+          Layout: on narrow viewports (PWA / tablet) the headline +
+          subtitle sit ABOVE the action buttons so the text never gets
+          squeezed; from `lg:` up the original side-by-side row returns. */}
       {(user?.role === 'benefactor' || user?.is_also_benefactor)
         && quickstartProgress
         && quickstartProgress.complete
@@ -1029,8 +1032,28 @@ const DashboardPage = () => {
           data-testid="quickstart-complete-tile"
           className="glass-card w-full p-4 lg:p-5 mb-4 border-l-4 border-l-[#d4af37] relative"
         >
-          <div className="flex items-center justify-between gap-3 flex-wrap">
-            <div className="flex items-center gap-3 min-w-0 flex-1">
+          {/* Dismiss X — absolute top-right so the responsive
+              column-stack never has to make room for it. */}
+          <button
+            type="button"
+            data-testid="quickstart-tile-dismiss"
+            aria-label="Hide this tile"
+            title="Hide. Re-open from Settings → Appearance → QuickStart Tile on Dashboard."
+            onClick={() => {
+              try { localStorage.setItem('carryon_quickstart_tile_dismissed', '1'); } catch { /* ignore */ }
+              setQuickstartTileDismissed(true);
+              try { window.dispatchEvent(new CustomEvent('carryon:quickstart-tile-visibility-changed', { detail: { visible: false } })); } catch { /* ignore */ }
+              toast.success('Tile hidden. Re-open it from Settings → Appearance → QuickStart Tile on Dashboard.');
+            }}
+            className="absolute top-2 right-2 w-7 h-7 rounded-lg flex items-center justify-center transition-all active:scale-[0.92] hover:bg-[var(--s)]"
+            style={{ color: 'var(--t5)', border: '1px solid rgba(255,255,255,0.10)' }}
+          ><X className="w-3.5 h-3.5" /></button>
+
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+            {/* Headline + subtitle block. Sits ABOVE the buttons on
+                narrow viewports; collapses to the left of the buttons
+                from `lg:` up. `pr-8` reserves room for the absolute X. */}
+            <div className="flex items-start gap-3 min-w-0 flex-1 pr-8 lg:pr-0">
               <div
                 className="flex-shrink-0 w-10 h-10 lg:w-11 lg:h-11 rounded-full flex items-center justify-center"
                 style={{
@@ -1040,11 +1063,11 @@ const DashboardPage = () => {
               >
                 <Sparkles className="w-5 h-5" style={{ color: '#d4af37' }} />
               </div>
-              <div className="min-w-0">
-                <h3 className="text-base lg:text-lg font-semibold text-[var(--t)] truncate">
+              <div className="min-w-0 flex-1">
+                <h3 className="text-base lg:text-lg font-semibold text-[var(--t)]">
                   Your QuickStart Guide is ready
                 </h3>
-                <p className="text-xs lg:text-sm text-[var(--t4)] truncate">
+                <p className="text-xs lg:text-sm text-[var(--t4)]">
                   Saved in your Secure Document Vault and Estate Binder. Open or update it anytime.
                 </p>
               </div>
@@ -1090,21 +1113,7 @@ const DashboardPage = () => {
                 }}
                 className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs lg:text-sm font-bold transition-all active:scale-[0.97]"
                 style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--t)', border: '1px solid rgba(255,255,255,0.15)' }}
-              >Edit &amp; regenerate</button>
-              <button
-                type="button"
-                data-testid="quickstart-tile-dismiss"
-                aria-label="Hide this tile"
-                title="Hide. Re-open from Settings → Appearance → QuickStart Tile on Dashboard."
-                onClick={() => {
-                  try { localStorage.setItem('carryon_quickstart_tile_dismissed', '1'); } catch { /* ignore */ }
-                  setQuickstartTileDismissed(true);
-                  try { window.dispatchEvent(new CustomEvent('carryon:quickstart-tile-visibility-changed', { detail: { visible: false } })); } catch { /* ignore */ }
-                  toast.success('Tile hidden. Re-open it from Settings → Appearance → QuickStart Tile on Dashboard.');
-                }}
-                className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-all active:scale-[0.92] hover:bg-[var(--s)]"
-                style={{ color: 'var(--t5)', border: '1px solid rgba(255,255,255,0.10)' }}
-              ><X className="w-3.5 h-3.5" /></button>
+              >Edit &amp; Regenerate</button>
             </div>
           </div>
         </div>
@@ -1237,7 +1246,7 @@ const DashboardPage = () => {
             chipLabel: 'Legacy',
             tile: (
               <SectionStatCard
-                icon={Landmark}
+                icon={Heart}
                 title="Legacy"
                 accent="#3B82F6"
                 stats={buildStats([
@@ -1276,7 +1285,7 @@ const DashboardPage = () => {
             chipLabel: 'Financial',
             tile: (
               <SectionStatCard
-                icon={Coins}
+                icon={Landmark}
                 title="Financial"
                 accent="#22C993"
                 stats={buildStats([
@@ -1295,7 +1304,7 @@ const DashboardPage = () => {
             chipLabel: 'Preparedness',
             tile: (
               <SectionStatCard
-                icon={Siren}
+                icon={Clock}
                 title="Preparedness"
                 accent="#B794F6"
                 stats={buildStats([
@@ -1375,7 +1384,7 @@ const DashboardPage = () => {
         // to the gauge inside it.
         const ReadinessCard = ({ keyChipsPosition = 'top-right', dense = false }) => (
           <div className={`glass-card relative ${dense ? 'p-4 lg:px-6 lg:py-4' : 'p-5 lg:p-8'} mb-4`} data-testid="readiness-card">
-            <h2 className={`${dense ? 'text-base lg:text-4xl xl:text-5xl 2xl:text-6xl mb-2 lg:mb-3' : 'text-base lg:text-3xl xl:text-4xl 2xl:text-5xl mb-4 lg:mb-5'} whitespace-nowrap font-bold text-[var(--t)] uppercase tracking-wider text-center`} style={{ fontFamily: 'var(--sans)' }}>
+            <h2 className={`${dense ? 'text-lg sm:text-xl md:text-2xl lg:text-4xl xl:text-5xl 2xl:text-6xl mb-2 lg:mb-3' : 'text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl 2xl:text-5xl mb-4 lg:mb-5'} whitespace-nowrap font-bold text-[var(--t)] uppercase tracking-wider text-center`} style={{ fontFamily: 'var(--sans)' }}>
               Total Estate Readiness
             </h2>
             {keyChipsPosition === 'top-right' && !dense && (

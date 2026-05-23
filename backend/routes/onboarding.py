@@ -81,8 +81,27 @@ async def get_onboarding_progress(current_user: dict = Depends(get_current_user)
     estates = await db.estates.find({"owner_id": current_user["id"]}, {"_id": 0, "id": 1}).to_list(1)
     estate_id = estates[0]["id"] if estates else None
 
+    # Replay mode (Feb 26 2026) — when the user toggles ON the
+    # "Getting Started Guide" in Settings after having already
+    # completed it, `/onboarding/reset` flips `replay_mode=True` and
+    # clears `completed_steps`. While in replay mode we *do not*
+    # auto-detect from live data — we only honor the explicit
+    # `complete-step` POSTs the user makes as they walk through the
+    # wizard again. This guarantees the wizard starts at 1 of 7 even
+    # when the underlying beneficiaries / docs / messages already
+    # exist. Replay mode auto-clears below when all 7 steps have been
+    # re-completed.
+    replay_mode = bool(progress.get("replay_mode", False))
+
     completed = {}
-    if estate_id:
+    if replay_mode:
+        # Pull completion strictly from the stored map (gradually
+        # populated by the user re-walking through the wizard).
+        stored = progress.get("completed_steps", {})
+        for step in ONBOARDING_STEPS:
+            if stored.get(step["key"]):
+                completed[step["key"]] = True
+    elif estate_id:
         # At least one beneficiary added
         completed["add_beneficiary"] = await db.beneficiaries.count_documents({"estate_id": estate_id}) > 0
         completed["upload_document"] = await db.documents.count_documents({"estate_id": estate_id}) > 0
@@ -98,16 +117,17 @@ async def get_onboarding_progress(current_user: dict = Depends(get_current_user)
         # DAV credential stored
         completed["add_credential"] = await db.digital_wallet.count_documents({"estate_id": estate_id}) > 0
     # review_readiness is manual — preserve from stored progress
-    if progress.get("completed_steps", {}).get("review_readiness"):
+    if not replay_mode and progress.get("completed_steps", {}).get("review_readiness"):
         completed["review_readiness"] = True
     # review_settings is manual — preserve from stored progress
-    if progress.get("completed_steps", {}).get("review_settings"):
+    if not replay_mode and progress.get("completed_steps", {}).get("review_settings"):
         completed["review_settings"] = True
     # Optional steps that were skipped are marked complete
     stored_completed = progress.get("completed_steps", {})
-    for step in ONBOARDING_STEPS:
-        if step.get("optional") and stored_completed.get(step["key"]):
-            completed[step["key"]] = True
+    if not replay_mode:
+        for step in ONBOARDING_STEPS:
+            if step.get("optional") and stored_completed.get(step["key"]):
+                completed[step["key"]] = True
 
     # Persist updated completion
     await db.onboarding_progress.update_one(
@@ -129,6 +149,16 @@ async def get_onboarding_progress(current_user: dict = Depends(get_current_user)
     total = len(ONBOARDING_STEPS)
     done = sum(1 for s in steps_with_status if s["completed"])
     all_complete = done == total
+
+    # Auto-clear replay mode the moment all 7 steps have been re-
+    # completed during this replay session so subsequent fetches go
+    # back to the normal auto-detect path.
+    if replay_mode and all_complete:
+        await db.onboarding_progress.update_one(
+            {"user_id": current_user["id"]},
+            {"$set": {"replay_mode": False}},
+        )
+        replay_mode = False
 
     # Auto-dismiss if all complete, auto-restore if steps become incomplete again
     # BUT: once celebration_shown is True, the user finished onboarding once — never re-show
@@ -276,12 +306,37 @@ async def mark_celebration_shown(current_user: dict = Depends(get_current_user))
 
 @router.post("/onboarding/reset")
 async def reset_onboarding(current_user: dict = Depends(get_current_user)):
-    """Re-enable the onboarding wizard (undo dismiss)."""
+    """Re-enable the onboarding wizard and force a clean replay from step 1.
+
+    Per Feb 26 2026 founder mandate: when the user toggles ON the
+    "Getting Started Guide" in Settings — particularly if they had
+    already completed it — the wizard must reappear at "1 of 7", not
+    instantly skip ahead to whichever steps still happen to be auto-
+    detected as complete. We achieve this by:
+
+      • Clearing `completed_steps` so no manual flags carry over.
+      • Clearing `celebration_shown` so the wizard isn't auto-hidden.
+      • Setting `replay_mode=True` which makes
+        `get_onboarding_progress` ignore live-data auto-detection
+        until the user has re-completed every step in order.
+    """
     await db.onboarding_progress.update_one(
         {"user_id": current_user["id"]},
-        {"$set": {"dismissed": False, "manually_dismissed": False, "resume_banner_hidden": False}},
+        {
+            "$set": {
+                "dismissed": False,
+                "manually_dismissed": False,
+                "resume_banner_hidden": False,
+                "celebration_shown": False,
+                "completed_steps": {},
+                "replay_mode": True,
+                "replay_started_at": datetime.now(timezone.utc).isoformat(),
+                "user_id": current_user["id"],
+            }
+        },
+        upsert=True,
     )
-    return {"success": True}
+    return {"success": True, "replay_mode": True}
 
 
 # ===================== QUICK-START TEMPLATES =====================

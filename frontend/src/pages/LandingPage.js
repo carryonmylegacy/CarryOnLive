@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Lock, Shield, ArrowRight, Check, Users, FileText, Sparkles,
-  MessageCircle, KeyRound, ChevronDown, DollarSign, BookOpen, Network, Landmark,
+  MessageCircle, KeyRound, ChevronDown, BookOpen, Network, Landmark,
+  Heart, Clock,
 } from 'lucide-react';
 import { recordFunnelEvent } from '../utils/funnelTelemetry';
 import { API_URL } from '../config';
@@ -23,7 +24,7 @@ const TRUST_BADGES = [
 // it in LandingContent.js first and mirror here.
 const FEATURES = [
   {
-    num: '01', icon: Landmark, title: 'Legacy', abbr: 'People & plan',
+    num: '01', icon: Heart, title: 'Legacy', abbr: 'People & plan',
     bold: 'The people who matter, the plan you leave them, and the audit trail of every change you make.',
     body: 'Beneficiaries (designate who matters, who sees what, when). Milestone Messages (MM — video/audio/written messages delivered at specific future moments). Friends & Family Notification (FFN — coordinated call-list when something happens). Designated Trustee Services (DTS — let an advisor act on your behalf, fully audited). Estate Plan Timeline (EPT — a living record of every change).',
   },
@@ -33,12 +34,12 @@ const FEATURES = [
     body: 'Secure Document Vault (SDV — AES-256 encrypted, released only to who you choose). Digital Access Vault (DAV — passwords, logins, crypto keys, assigned to the right people). Estate Guardian\u2122 AI (EGA — an AI estate-law analyst that reads inside your vault and flags gaps, contradictions, and deadlines).',
   },
   {
-    num: '03', icon: DollarSign, title: 'Financial', abbr: 'Money & structure',
+    num: '03', icon: Landmark, title: 'Financial', abbr: 'Money & structure',
     bold: 'The complete money picture and a visual map of every trust, entity, and structure that holds it together.',
     body: 'CarryOn Financial Picture (CFP — a complete, encrypted view of accounts, investments, policies, bills, debts, and properties). CarryOn Entities & Structures (CES — a visual, pan-and-zoom org chart of every trust, LLC, partnership, charitable entity, and the people connected to each).',
   },
   {
-    num: '04', icon: Shield, title: 'Preparedness', abbr: 'Crisis playbook',
+    num: '04', icon: Clock, title: 'Preparedness', abbr: 'Crisis playbook',
     bold: 'The playbook your family follows on the hardest days — step-by-step actions, pre-built protocols, and a private channel to coordinate.',
     body: 'Immediate Action Checklist (IAC — auto-built from your vault, fully customizable, ready for the first hours, days, and weeks). CarryOn Contingency Protocols (CCP — pre-authored response plans for medical, disaster, incapacity, transition). Estate Communications Tool (ECT — phone-number-free family messaging that works from any device).',
   },

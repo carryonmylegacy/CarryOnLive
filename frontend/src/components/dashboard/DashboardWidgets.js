@@ -78,7 +78,7 @@ export const SpeedometerGauge = ({ score, id = 'main', labelText, labelColor }) 
         </div>
         <div
           className="font-semibold mt-0.5"
-          style={{ color: labelColor, fontFamily: 'var(--sans)', fontSize: 'clamp(13px, 1.4vw, 22px)' }}
+          style={{ color: labelColor, fontFamily: 'var(--sans)', fontSize: 'clamp(15px, 2.6vw, 24px)' }}
         >
           {labelText}
         </div>
@@ -209,10 +209,11 @@ export const SectionStatCard = ({ icon: Icon, title, stats = [], onClick, classN
       <div
         className="font-bold text-center leading-tight flex-shrink-0 mb-3"
         style={{
-          // Pillar title — bumped May 22 2026 per founder mandate.
-          // Title now scales from ~1.25rem on a 140 px mobile tile to
-          // ~2.25rem on a 360 px desktop tile (was 0.875 → 1.5rem).
-          fontSize: 'clamp(1.25rem, 11cqi, 2.25rem)',
+          // Pillar title — slightly reduced max from 2.25rem to 1.875rem
+          // (Feb 26 2026) so on tablet/PWA tile widths it doesn't dwarf
+          // the Total Estate Readiness header above. Mobile floor stays
+          // at 1.25rem.
+          fontSize: 'clamp(1.25rem, 9.5cqi, 1.875rem)',
           color: 'var(--t)',
           fontFamily: 'var(--sans)',
         }}
@@ -225,12 +226,10 @@ export const SectionStatCard = ({ icon: Icon, title, stats = [], onClick, classN
             key={s.title}
             className="font-bold whitespace-nowrap text-center max-w-full overflow-hidden text-ellipsis"
             style={{
-              // Stat rows — "Title - number" per founder spec
-              // (May 22 2026, bumped 2-3x same day per user request:
-              // the prior 11-14 px rows read as "laughable" on the
-              // dashboard). Now scales 16 → 28 px proportional to
-              // tile width via container-query inline sizing.
-              fontSize: 'clamp(16px, 8.5cqi, 28px)',
+              // Stat rows — "Title - number". Capped slightly lower
+              // (Feb 26 2026) from 28 → 24 px max so the pillar tiles
+              // don't crowd the gauge title on tablet/PWA.
+              fontSize: 'clamp(14px, 7.5cqi, 24px)',
               color: 'var(--t)',
               lineHeight: 1.3,
             }}

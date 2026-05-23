@@ -1,6 +1,38 @@
 # CarryOn — Changelog
 
 
+## Feb 26, 2026 — Icons, QW tile responsive, GS replay, tablet sizing (V2026.02.26-b)
+
+**Four explicit founder instructions addressed in one pass.**
+
+**1) QW Completion Tile — responsive layout (PWA).** The "Your QuickStart Guide is ready" headline + subtitle now sit ABOVE the View PDF / Edit & Regenerate buttons on narrow viewports (tablet + PWA), and collapse to the left of the buttons from `lg:` up. The container switched from `flex items-center justify-between gap-3 flex-wrap` to `flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3`, and `truncate` was removed from both the headline and the subtitle so text wraps naturally. The X-dismiss is now absolutely positioned top-right so the responsive column-stack never has to make room for it. Capitalized "Edit & Regenerate" per founder instruction.
+
+**2) Getting Started Guide — replay mode.** Toggling ON the Getting Started Guide in Settings now truly restarts the wizard at step 1 of 7, even if every underlying data point already exists. Backend changes to `routes/onboarding.py`:
+- `/onboarding/reset`: now also clears `completed_steps={}`, `celebration_shown=False`, and sets `replay_mode=True` + `replay_started_at=now()`.
+- `get_onboarding_progress`: when `replay_mode=True`, the auto-detect block is skipped — completion is read strictly from the stored `completed_steps` map, which the user re-populates step-by-step. Replay mode auto-clears the moment all 7 steps are re-completed, restoring the normal auto-detect behavior.
+
+**3) Pillar icons (CONSISTENCY).** All surfaces now use the same set:
+- **Legacy → Heart** (was Landmark in `LandingPage.js` and the Dashboard tile)
+- **Vault → Lock** (unchanged)
+- **Financial → Landmark** (was DollarSign on Landing, Coins on Dashboard)
+- **Preparedness → Clock** (was Shield on Landing, Siren on Dashboard)
+- `benefactorSections.js` (sidebar/mobile-nav source of truth) was already correct; the section-landing pages already inherit from it. `LandingPage.js` and `DashboardPage.js` tile icons updated to match.
+
+**4) Tablet/PWA sizing rebalance.** Per founder report that the Total Estate Readiness title looked "disproportionately small" next to the giant pillar tile titles:
+- `ReadinessCard` title: `text-base lg:text-3xl xl:text-4xl 2xl:text-5xl` → `text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl 2xl:text-5xl` (dense variant matched). On a 768px tablet, the header now scales to `text-2xl` (~24px) instead of `text-base` (16px).
+- `SpeedometerGauge` label ("Strong"): `clamp(13px, 1.4vw, 22px)` → `clamp(15px, 2.6vw, 24px)` — grows faster on tablet.
+- `SectionStatCard` pillar title: capped slightly lower (`clamp(1.25rem, 9.5cqi, 1.875rem)`, was 2.25rem max) so pillar tiles no longer dwarf the gauge title on tablet/PWA.
+- `SectionStatCard` stat rows: capped slightly lower (`clamp(14px, 7.5cqi, 24px)`, was 28px max).
+
+**Quality gates:**
+- `bash /app/housekeeping.sh --strict` → 0 WARN / 0 FAIL.
+- Ruff clean on `routes/onboarding.py`; ESLint clean on all touched JS.
+- Manual screenshot verification at 768×1400 tablet/PWA: Legacy=Heart, Vault=Lock, Financial=Landmark, Preparedness=Clock; "TOTAL ESTATE READINESS" now visually proportional to "53% Building" and the pillar tile titles.
+- Backend curl regression: `/onboarding/reset` → `/onboarding/progress` returns `completed_count=0`; `complete-step/<key>` increments to 1, demonstrating replay mode behaves correctly.
+
+
+
+
 ## Feb 26, 2026 — Settings: "Open Wizard" button → "QuickStart Tile on Dashboard" toggle (V2026.02.26-a)
 
 **Why**: Founder asked to remove the duplicated launch path. The QW is now exclusively launched from the dashboard tile (View PDF / Edit & regenerate). Settings should *control tile visibility* — not re-launch the wizard.
