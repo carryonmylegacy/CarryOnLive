@@ -60,13 +60,13 @@ const BackButton = () => {
       style={{
         // `top` is inline because it depends on the runtime
         // safe-area-inset and the offline-banner height variables.
-        // Sits at the vertical level of the typical page icon-chip
-        // (48px tall, ~80px below the top safe-area on a content
-        // page) so the chip reads as a sibling of the icon.
+        // `+ 60px` places the chip's vertical center on the same
+        // axis as the typical 48×48 page icon-chip (Feb 26 2026:
+        // tuned by founder request — "exactly a beam the icon").
         // `left` is handled by `.universal-back-chip` in index.css
         // so it can shift right of the sidebar on desktop without
         // JS knowing the sidebar's current width.
-        top: 'calc(env(safe-area-inset-top, 0px) + var(--cy-offline-banner-h, 0px) + 76px)',
+        top: 'calc(env(safe-area-inset-top, 0px) + var(--cy-offline-banner-h, 0px) + 60px)',
         width: 32,
         height: 44,
         borderRadius: 14,
