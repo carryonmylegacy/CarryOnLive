@@ -1,6 +1,27 @@
 # CarryOn — Changelog
 
 
+## Feb 26, 2026 — Prominent circle-X across all dashboard onboarding tiles (V2026.02.26-c)
+
+**Why**: Founder review of the desktop QW tile screenshot showed the X dismiss being partially covered by the Edit & Regenerate button's corner, and the X itself was visually weak. Founder also asked to (a) right-justify the View PDF / Edit & Regenerate buttons in PWA mode and (b) mirror the same prominent dismiss X across every onboarding tile on the dashboard.
+
+**Changes:**
+- **QW Complete tile (`DashboardPage.js`)**:
+  - X upgraded from `w-7 h-7 rounded-lg bg-white/5` to `w-9 h-9 rounded-full` with `rgba(255,255,255,0.10)` background, `1.5px solid rgba(255,255,255,0.30)` border, drop shadow, and a `strokeWidth={2.5}` `w-5 h-5` icon — visible from across the room.
+  - Added `lg:pr-14` to the parent flex row so the View PDF / Edit & Regenerate buttons never reach the corner the X occupies. No more overlap on desktop.
+  - Buttons container now `self-end lg:self-auto` so on PWA / tablet the buttons right-align under the headline (previously they wrapped left-justified).
+- **Resume QuickStart Wizard tile**: converted from `<button>` to `<div role="button" tabIndex={0}>` so it can host a nested dismiss button. Added the same prominent circle-X. Session-scoped dismiss (`carryon_resume_qw_tile_dismissed`) — reappears on next page load if QW still incomplete.
+- **Pick Up Where You Left Off (Getting Started resume) tile**: same conversion, same X, session-scoped dismiss (`carryon_resume_gs_tile_dismissed`).
+- **OnboardingWizard.js**: upgraded the three existing dismiss Xs (main wizard header, welcome tile, offline-coach tile) to the same `w-9 h-9` prominent circle style for site-wide consistency.
+
+**Quality gates:**
+- `bash /app/housekeeping.sh --strict` → 0 WARN / 0 FAIL.
+- ESLint clean on `DashboardPage.js` + `OnboardingWizard.js`.
+- Manual screenshots at 768×1024 (PWA) and 1440×900 (desktop) confirm: (a) PWA buttons right-justified beneath the headline, (b) prominent X visible top-right on all three tiles, (c) on desktop the View PDF / Edit & Regenerate buttons no longer touch the X.
+
+
+
+
 ## Feb 26, 2026 — Icons, QW tile responsive, GS replay, tablet sizing (V2026.02.26-b)
 
 **Four explicit founder instructions addressed in one pass.**

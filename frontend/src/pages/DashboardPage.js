@@ -99,6 +99,21 @@ const DashboardPage = () => {
     try { return localStorage.getItem('carryon_quickstart_tile_dismissed') === '1'; }
     catch { return false; }
   });
+  // Session-only dismissal of the "Resume QuickStart Wizard" tile —
+  // sticks for the tab only. Re-appears on next page load if the user
+  // still has incomplete QW progress. (Mirrors the X dismiss pattern
+  // across every dashboard onboarding tile per Feb 26 2026 mandate.)
+  const [resumeQwTileDismissed, setResumeQwTileDismissed] = useState(() => {
+    try { return sessionStorage.getItem('carryon_resume_qw_tile_dismissed') === '1'; }
+    catch { return false; }
+  });
+  // Session-only dismissal of the "Pick Up Where You Left Off" GS
+  // resume tile. Re-appears on next page load if GS still has work
+  // remaining and the user hasn't disabled GS in Settings.
+  const [resumeGsTileDismissed, setResumeGsTileDismissed] = useState(() => {
+    try { return sessionStorage.getItem('carryon_resume_gs_tile_dismissed') === '1'; }
+    catch { return false; }
+  });
   // Listen for the Settings toggle (or any future re-open path) — when
   // the user flips the "QuickStart Tile on Dashboard" toggle, sync the
   // tile visibility immediately. Also legacy: the `resume-quickstart`
@@ -977,18 +992,48 @@ const DashboardPage = () => {
           event the DashboardLayout wires up to the QuickStartWizard modal. */}
       {(user?.role === 'benefactor' || user?.is_also_benefactor)
         && quickstartProgress
-        && !quickstartProgress.complete && (
-        <button
-          type="button"
+        && !quickstartProgress.complete
+        && !resumeQwTileDismissed && (
+        <div
+          role="button"
+          tabIndex={0}
           data-testid="resume-quickstart-btn"
           onClick={() => {
             try { sessionStorage.removeItem('carryon_quickstart_skipped_session'); } catch { /* ignore */ }
             window.dispatchEvent(new CustomEvent('carryon:resume-quickstart'));
           }}
-          className="glass-card w-full p-4 lg:p-5 mb-4 border-l-4 border-l-[#d4af37] text-left transition-transform duration-150 active:scale-[0.98] lg:hover:scale-[1.01] lg:hover:shadow-[0_12px_36px_-6px_rgba(var(--gold-rgb), 0.25)]"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              try { sessionStorage.removeItem('carryon_quickstart_skipped_session'); } catch { /* ignore */ }
+              window.dispatchEvent(new CustomEvent('carryon:resume-quickstart'));
+            }
+          }}
+          className="glass-card relative w-full p-4 lg:p-5 mb-4 border-l-4 border-l-[#d4af37] text-left transition-transform duration-150 active:scale-[0.98] lg:hover:scale-[1.01] lg:hover:shadow-[0_12px_36px_-6px_rgba(var(--gold-rgb), 0.25)]"
           style={{ cursor: 'pointer' }}
         >
-          <div className="flex items-center justify-between gap-3">
+          {/* Prominent circle-X dismiss — session-scoped. Same look as the
+              QuickStart-complete and Pick-Up-Where-You-Left-Off tiles. */}
+          <button
+            type="button"
+            data-testid="resume-quickstart-tile-dismiss"
+            aria-label="Hide this tile"
+            onClick={(e) => {
+              e.stopPropagation();
+              try { sessionStorage.setItem('carryon_resume_qw_tile_dismissed', '1'); } catch { /* ignore */ }
+              setResumeQwTileDismissed(true);
+              toast.success('Hidden for this session. It will reappear next visit if the wizard is still incomplete.');
+            }}
+            className="absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-90 lg:hover:scale-110 z-10"
+            style={{
+              background: 'rgba(255,255,255,0.10)',
+              border: '1.5px solid rgba(255,255,255,0.30)',
+              color: 'var(--t)',
+              boxShadow: '0 2px 10px rgba(0,0,0,0.30)',
+            }}
+          ><X className="w-5 h-5" strokeWidth={2.5} /></button>
+
+          <div className="flex items-center justify-between gap-3 pr-12">
             <div className="flex items-center gap-3 min-w-0">
               <div
                 className="flex-shrink-0 w-10 h-10 lg:w-11 lg:h-11 rounded-full flex items-center justify-center"
@@ -1014,7 +1059,7 @@ const DashboardPage = () => {
             </div>
             <ChevronRight className="w-5 h-5 flex-shrink-0 text-[var(--t5)]" />
           </div>
-        </button>
+        </div>
       )}
 
       {/* QuickStart complete — shows the guide-ready tile with two
@@ -1033,7 +1078,9 @@ const DashboardPage = () => {
           className="glass-card w-full p-4 lg:p-5 mb-4 border-l-4 border-l-[#d4af37] relative"
         >
           {/* Dismiss X — absolute top-right so the responsive
-              column-stack never has to make room for it. */}
+              column-stack never has to make room for it. Prominent
+              circle-X style (Feb 26 2026) mirrored across every
+              onboarding tile on the dashboard. */}
           <button
             type="button"
             data-testid="quickstart-tile-dismiss"
@@ -1045,15 +1092,20 @@ const DashboardPage = () => {
               try { window.dispatchEvent(new CustomEvent('carryon:quickstart-tile-visibility-changed', { detail: { visible: false } })); } catch { /* ignore */ }
               toast.success('Tile hidden. Re-open it from Settings → Appearance → QuickStart Tile on Dashboard.');
             }}
-            className="absolute top-2 right-2 w-7 h-7 rounded-lg flex items-center justify-center transition-all active:scale-[0.92] hover:bg-[var(--s)]"
-            style={{ color: 'var(--t5)', border: '1px solid rgba(255,255,255,0.10)' }}
-          ><X className="w-3.5 h-3.5" /></button>
+            className="absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-90 lg:hover:scale-110 z-10"
+            style={{
+              background: 'rgba(255,255,255,0.10)',
+              border: '1.5px solid rgba(255,255,255,0.30)',
+              color: 'var(--t)',
+              boxShadow: '0 2px 10px rgba(0,0,0,0.30)',
+            }}
+          ><X className="w-5 h-5" strokeWidth={2.5} /></button>
 
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 lg:pr-14">
             {/* Headline + subtitle block. Sits ABOVE the buttons on
                 narrow viewports; collapses to the left of the buttons
-                from `lg:` up. `pr-8` reserves room for the absolute X. */}
-            <div className="flex items-start gap-3 min-w-0 flex-1 pr-8 lg:pr-0">
+                from `lg:` up. `pr-12` reserves room for the absolute X. */}
+            <div className="flex items-start gap-3 min-w-0 flex-1 pr-12 lg:pr-0">
               <div
                 className="flex-shrink-0 w-10 h-10 lg:w-11 lg:h-11 rounded-full flex items-center justify-center"
                 style={{
@@ -1072,7 +1124,7 @@ const DashboardPage = () => {
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="flex items-center gap-2 flex-shrink-0 self-end lg:self-auto">
               <button
                 type="button"
                 data-testid="quickstart-view-pdf-btn"
@@ -1128,9 +1180,11 @@ const DashboardPage = () => {
        onboardingProgress?.manually_dismissed === true &&
        onboardingProgress?.resume_banner_hidden !== true &&
        !onboardingProgress?.all_complete &&
+       !resumeGsTileDismissed &&
        (onboardingProgress?.steps || []).some(s => !s.completed) && (
-        <button
-          type="button"
+        <div
+          role="button"
+          tabIndex={0}
           data-testid="resume-getting-started-btn"
           onClick={async () => {
             // Re-fetch progress to be safe — state may be stale if the
@@ -1148,10 +1202,36 @@ const DashboardPage = () => {
             setGuidedStep({ ...next, beneficiary_names: prog?.beneficiary_names || [] });
             setShowGuidedFlow(true);
           }}
-          className="glass-card w-full p-4 lg:p-5 mb-4 border-l-4 border-l-[#d4af37] text-left transition-transform duration-150 active:scale-[0.98] lg:hover:scale-[1.01] lg:hover:shadow-[0_12px_36px_-6px_rgba(var(--gold-rgb), 0.25)]"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              e.currentTarget.click();
+            }
+          }}
+          className="glass-card relative w-full p-4 lg:p-5 mb-4 border-l-4 border-l-[#d4af37] text-left transition-transform duration-150 active:scale-[0.98] lg:hover:scale-[1.01] lg:hover:shadow-[0_12px_36px_-6px_rgba(var(--gold-rgb), 0.25)]"
           style={{ cursor: 'pointer' }}
         >
-          <div className="flex items-center justify-between gap-3">
+          {/* Prominent circle-X dismiss — session-scoped. */}
+          <button
+            type="button"
+            data-testid="resume-getting-started-tile-dismiss"
+            aria-label="Hide this tile"
+            onClick={(e) => {
+              e.stopPropagation();
+              try { sessionStorage.setItem('carryon_resume_gs_tile_dismissed', '1'); } catch { /* ignore */ }
+              setResumeGsTileDismissed(true);
+              toast.success('Hidden for this session. To stop showing it permanently, toggle off the Getting Started Guide in Settings.');
+            }}
+            className="absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-90 lg:hover:scale-110 z-10"
+            style={{
+              background: 'rgba(255,255,255,0.10)',
+              border: '1.5px solid rgba(255,255,255,0.30)',
+              color: 'var(--t)',
+              boxShadow: '0 2px 10px rgba(0,0,0,0.30)',
+            }}
+          ><X className="w-5 h-5" strokeWidth={2.5} /></button>
+
+          <div className="flex items-center justify-between gap-3 pr-12">
             <div className="flex items-center gap-3 min-w-0">
               <div
                 className="flex-shrink-0 w-10 h-10 lg:w-11 lg:h-11 rounded-full flex items-center justify-center"
@@ -1176,7 +1256,7 @@ const DashboardPage = () => {
             </div>
             <ChevronRight className="w-5 h-5 flex-shrink-0 text-[var(--t5)]" />
           </div>
-        </button>
+        </div>
       )}
 
       {/* Onboarding Wizard — shown early so it's visible on mobile */}

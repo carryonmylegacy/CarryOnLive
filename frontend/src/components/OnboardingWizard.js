@@ -341,8 +341,18 @@ const OnboardingWizard = ({ onAllComplete }) => {
             <p className="text-[var(--t5)] text-base">{progress.completed_count} of {progress.total_steps} complete</p>
           </div>
         </div>
-        <button onClick={() => setDismissPhase('confirm')} className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-[var(--t4)] active:scale-90 transition-transform" data-testid="onboarding-dismiss">
-          <X className="w-4 h-4" />
+        <button
+          onClick={() => setDismissPhase('confirm')}
+          className="w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-90 lg:hover:scale-110 flex-shrink-0"
+          style={{
+            background: 'rgba(255,255,255,0.10)',
+            border: '1.5px solid rgba(255,255,255,0.30)',
+            color: 'var(--t)',
+            boxShadow: '0 2px 10px rgba(0,0,0,0.30)',
+          }}
+          data-testid="onboarding-dismiss"
+        >
+          <X className="w-5 h-5" strokeWidth={2.5} />
         </button>
       </div>
 
@@ -362,10 +372,17 @@ const OnboardingWizard = ({ onAllComplete }) => {
               <p className="text-lg font-bold text-[var(--t)]">Welcome to Your Estate</p>
               <p className="text-base text-[var(--t4)]">You now have both views — switch between your <strong style={{ color: '#d4af37' }}>Benefactor</strong> estate and your <strong style={{ color: '#60A5FA' }}>Beneficiary</strong> access anytime using the <strong>Switch View</strong> section {window.innerWidth >= 1024 ? 'in the menu on the left' : 'in the hamburger menu'}.</p>
             </div>
-            <button onClick={() => { localStorage.setItem('carryon_welcome_tile_dismissed', 'true'); setWelcomeDismissed(true); }}
-              className="w-7 h-7 rounded-full bg-white/5 flex items-center justify-center text-[var(--t4)] active:scale-90 transition-transform flex-shrink-0"
+            <button
+              onClick={() => { localStorage.setItem('carryon_welcome_tile_dismissed', 'true'); setWelcomeDismissed(true); }}
+              className="w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-90 lg:hover:scale-110 flex-shrink-0"
+              style={{
+                background: 'rgba(255,255,255,0.10)',
+                border: '1.5px solid rgba(255,255,255,0.30)',
+                color: 'var(--t)',
+                boxShadow: '0 2px 10px rgba(0,0,0,0.30)',
+              }}
               data-testid="welcome-tile-dismiss">
-              <X className="w-3.5 h-3.5" />
+              <X className="w-5 h-5" strokeWidth={2.5} />
             </button>
           </div>
         )}
@@ -393,10 +410,17 @@ const OnboardingWizard = ({ onAllComplete }) => {
                 <li>When you sign in offline some pages may show cached data only &mdash; full functionality returns the moment you reconnect.</li>
               </ul>
             </div>
-            <button onClick={() => { localStorage.setItem('carryon_offline_coach_dismissed', 'true'); setOfflineCoachDismissed(true); }}
-              className="w-7 h-7 rounded-full bg-white/5 flex items-center justify-center text-[var(--t4)] active:scale-90 transition-transform flex-shrink-0"
+            <button
+              onClick={() => { localStorage.setItem('carryon_offline_coach_dismissed', 'true'); setOfflineCoachDismissed(true); }}
+              className="w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-90 lg:hover:scale-110 flex-shrink-0"
+              style={{
+                background: 'rgba(255,255,255,0.10)',
+                border: '1.5px solid rgba(255,255,255,0.30)',
+                color: 'var(--t)',
+                boxShadow: '0 2px 10px rgba(0,0,0,0.30)',
+              }}
               data-testid="onboarding-offline-coach-dismiss">
-              <X className="w-3.5 h-3.5" />
+              <X className="w-5 h-5" strokeWidth={2.5} />
             </button>
           </div>
         )}
