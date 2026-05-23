@@ -23,7 +23,7 @@ const STEP_CONFIG = {
   review_settings: { icon: Settings, color: '#64748b', bg: 'rgba(100,116,139,0.08)', border: 'rgba(100,116,139,0.2)', route: '/settings', label: 'Review Your Settings', desc: 'Open Settings and Security Settings to customize your portal' },
 };
 
-const OnboardingWizard = ({ onAllComplete }) => {
+const OnboardingWizard = ({ onAllComplete, onContentChange }) => {
   const { user, getAuthHeaders, enabledFeatures } = useAuth();
   const navigate = useNavigate();
   const [progress, setProgress] = useState(null);
@@ -62,6 +62,30 @@ const OnboardingWizard = ({ onAllComplete }) => {
     window.addEventListener('carryon:welcome-tile-visibility-changed', onWelcomeVis);
     return () => window.removeEventListener('carryon:welcome-tile-visibility-changed', onWelcomeVis);
   }, []);
+
+  // Compute "would the wizard render any content?" — fires onContentChange
+  // whenever the answer flips so the parent dashboard can decide whether
+  // to render its outer "Getting Started" wrapper around us.
+  const wouldRenderContent = (() => {
+    if (loading || !progress) return false;
+    if (!(user?.role === 'benefactor' || user?.is_also_benefactor)) return false;
+    if (manuallyDismissed && !showAll) return false;
+    const visibleSteps = (progress.steps || []).filter(s => {
+      const cfg = STEP_CONFIG[s.key];
+      return !cfg || isFeatureEnabled(cfg.route, enabledFeatures);
+    });
+    const incomplete = visibleSteps.filter(s => !s.completed);
+    const allDone = incomplete.length === 0 && visibleSteps.length > 0;
+    if (allDone && progress.celebration_shown) return false;
+    if (allDone) return false;
+    // Has at least one step OR an undismissed welcome/offline coach inside.
+    const hasWelcome = user?.is_also_benefactor && !welcomeDismissed;
+    const hasOffline = !offlineCoachDismissed;
+    return incomplete.length > 0 || hasWelcome || hasOffline;
+  })();
+  useEffect(() => {
+    if (typeof onContentChange === 'function') onContentChange(wouldRenderContent);
+  }, [wouldRenderContent, onContentChange]);
 
   const fetchProgress = async () => {
     try {
@@ -382,8 +406,8 @@ const OnboardingWizard = ({ onAllComplete }) => {
               <ArrowLeftRight className="w-7 h-7 text-[#d4af37]" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-lg font-bold text-[var(--t)]">Welcome to Your Estate</p>
-              <p className="text-base text-[var(--t4)]">You now have both views — switch between your <strong style={{ color: '#d4af37' }}>Benefactor</strong> estate and your <strong style={{ color: '#60A5FA' }}>Beneficiary</strong> access anytime using the <strong>Switch View</strong> section {window.innerWidth >= 1024 ? 'in the menu on the left' : 'in the hamburger menu'}.</p>
+              <p className="text-lg font-bold text-[var(--t)]">Welcome — Two Views</p>
+              <p className="text-base text-[var(--t4)]">Switch between your <strong style={{ color: '#d4af37' }}>Benefactor</strong> estate and <strong style={{ color: '#60A5FA' }}>Beneficiary</strong> access anytime via <strong>Switch View</strong> {window.innerWidth >= 1024 ? 'in the left menu' : 'in the hamburger menu'}.</p>
             </div>
             <button
               onClick={() => { localStorage.setItem('carryon_welcome_tile_dismissed', 'true'); setWelcomeDismissed(true); }}
@@ -412,15 +436,12 @@ const OnboardingWizard = ({ onAllComplete }) => {
               <WifiOff className="w-7 h-7 text-[#60A5FA]" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-lg font-bold text-[var(--t)] mb-2">How Offline Mode Works</p>
+              <p className="text-lg font-bold text-[var(--t)] mb-2">Offline Mode — Quick Setup</p>
               <ul className="text-sm font-semibold text-[var(--t4)] space-y-1.5 leading-relaxed list-disc pl-5">
-                <li>Available only when CarryOn is <strong style={{ color: '#60A5FA' }}>installed as a PWA</strong> (added to your home screen or dock).</li>
-                <li>You must <strong style={{ color: '#60A5FA' }}>sign in once while online</strong> from that installed app before offline access can work.</li>
-                <li>After that first login, give the app <strong style={{ color: '#60A5FA' }}>~30 seconds</strong> on a stable connection so it can sync your estate to this device.</li>
-                <li>Then turn it on in <strong style={{ color: '#d4af37' }}>Settings &rarr; Offline &rarr; &ldquo;Offline access on this device&rdquo;</strong> and re-enter your password to encrypt the credential locally.</li>
-                <li>Your password is <strong style={{ color: '#60A5FA' }}>never stored</strong> &mdash; only the encrypted sign-in credential lives on this device.</li>
-                <li>Stays active for <strong style={{ color: '#60A5FA' }}>90 days</strong>; you can revoke it anytime from the same Settings switch.</li>
-                <li>When you sign in offline some pages may show cached data only &mdash; full functionality returns the moment you reconnect.</li>
+                <li>Install CarryOn to your <strong style={{ color: '#60A5FA' }}>home screen</strong> (PWA only).</li>
+                <li>Sign in once while <strong style={{ color: '#60A5FA' }}>online</strong> and wait ~30s for sync.</li>
+                <li>Enable in <strong style={{ color: '#d4af37' }}>Settings → Offline</strong>. Stays active 90 days; revoke anytime.</li>
+                <li>Your password is <strong style={{ color: '#60A5FA' }}>never stored</strong> — only an encrypted credential.</li>
               </ul>
             </div>
             <button

@@ -1,6 +1,35 @@
 # CarryOn — Changelog
 
 
+## Feb 26, 2026 — TRUE single-wrapper unified onboarding stack + copy diet (V2026.02.26-g)
+
+**Why**: Founder review of mobile screenshots showed `OnboardingWizard.js` (which renders the 8-step "Get Started with CarryOn", "Welcome to Your Estate", "How Offline Mode Works", and the active step nudge) was being rendered OUTSIDE the dashboard wrapper added in V…f. Result: the wrapper boxed only the 2 QW tiles; everything else floated free below it, defeating the "one main tile" intent. Founder also demanded the verbose copy be cut down — estate planning is daunting enough without paragraphs of text.
+
+**Structural changes (`DashboardPage.js`):**
+- Moved `<OnboardingWizard>` *inside* the `onboarding-prompts-group` wrapper, just before the gold "Hide all for today" pill. The wrapper now houses every onboarding artifact in the order: Resume/Complete QuickStart → Get Started with CarryOn (+ progress bar) → Welcome — Two Views → Offline Mode — Quick Setup → active step nudge → Pick Up Where You Left Off (if applicable) → Gold pill.
+- New `onboardingWizardHasContent` state, fed by a new `onContentChange` callback prop on `OnboardingWizard`. The wrapper's `anyVisible` IIFE now ORs this in, so the wrapper renders if any of the six possible artifacts has content (and renders nothing if every one of them is dismissed).
+- Gold pill label tightened "Hide all Getting Started prompts for today" → "Hide all for today" (the "GETTING STARTED" wrapper label provides full context, so the button copy no longer needs to repeat it).
+
+**Copy diet:**
+- `DashboardPage.js`
+  - QW complete subtitle: "Saved in your Secure Document Vault and Estate Binder. Open or update it anytime." → "Saved to your Vault. Update anytime."
+  - Resume QW heading: "Resume the QuickStart Wizard" → "Resume QuickStart Wizard"
+  - Resume QW subtitle: "{N} step(s) left to generate your guide" → "{N} step(s) to your guide"
+  - Pick Up subtitle: "Resume Getting Started — {N} step(s) remaining" → "{N} step(s) remaining"
+- `OnboardingWizard.js`
+  - Welcome tile heading: "Welcome to Your Estate" → "Welcome — Two Views"
+  - Welcome tile body: cut from 36 words down to 19, removed redundant "You now have both views" preamble.
+  - Offline Mode heading: "How Offline Mode Works" → "Offline Mode — Quick Setup"
+  - Offline Mode bullets: cut from 7 dense bullets to 4 (~60% shorter).
+
+**Quality gates:**
+- `bash /app/housekeeping.sh --strict` → 0 WARN / 0 FAIL.
+- ESLint clean on both touched files.
+- Manual mobile screenshot (420×1700 PWA viewport) confirms: 6 visible artifacts + gold pill all inside the one `onboarding-prompts-group` wrapper, in the correct order. Playwright `parent.contains(child)` assertion confirms the OnboardingWizard is now DOM-nested inside the wrapper.
+
+
+
+
 ## Feb 26, 2026 — Welcome Tile toggle + "Show again now" reset (V2026.02.26-e)
 
 **Why**: Founder wants Settings → Appearance to expose toggles for every onboarding tile that can appear on the dashboard, plus an in-Settings way to revert the "Hide all Getting Started prompts for today" master gate before midnight.

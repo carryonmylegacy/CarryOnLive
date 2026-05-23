@@ -150,6 +150,9 @@ const DashboardPage = () => {
     } catch { return false; }
   }, []);
   const [onboardingHiddenForToday, setOnboardingHiddenForToday] = useState(isOnboardingHiddenForToday);
+  // OnboardingWizard child reports its visibility via callback so we
+  // know whether to render the outer "Getting Started" wrapper.
+  const [onboardingWizardHasContent, setOnboardingWizardHasContent] = useState(false);
   // Re-check the gate when the tab regains focus — covers the
   // "user left the laptop open overnight" case so the tiles
   // reappear after local midnight without a manual refresh.
@@ -1065,7 +1068,7 @@ const DashboardPage = () => {
           && !onboardingProgress?.all_complete
           && !resumeGsTileDismissed
           && (onboardingProgress?.steps || []).some(s => !s.completed);
-        return qwIncompleteVisible || qwCompleteVisible || gsResumeVisible;
+        return qwIncompleteVisible || qwCompleteVisible || gsResumeVisible || onboardingWizardHasContent;
       })() && (
       <div
         data-testid="onboarding-prompts-group"
@@ -1140,13 +1143,13 @@ const DashboardPage = () => {
               </div>
               <div className="min-w-0">
                 <h3 className="text-base lg:text-lg font-semibold text-[var(--t)] truncate">
-                  Resume the QuickStart Wizard
+                  Resume QuickStart Wizard
                 </h3>
                 <p className="text-xs lg:text-sm text-[var(--t4)] truncate">
                   {(() => {
                     const idx = Math.max(0, ['gate','welcome','residence','household','beneficiaries','properties','life_insurance','business','existing_documents','generate'].indexOf(quickstartProgress.current_step || 'gate'));
                     const total = 10;
-                    return `${total - idx} step${total - idx === 1 ? '' : 's'} left to generate your guide`;
+                    return `${total - idx} step${total - idx === 1 ? '' : 's'} to your guide`;
                   })()}
                 </p>
               </div>
@@ -1214,7 +1217,7 @@ const DashboardPage = () => {
                   Your QuickStart Guide is ready
                 </h3>
                 <p className="text-xs lg:text-sm text-[var(--t4)]">
-                  Saved in your Secure Document Vault and Estate Binder. Open or update it anytime.
+                  Saved to your Vault. Update anytime.
                 </p>
               </div>
             </div>
@@ -1343,7 +1346,7 @@ const DashboardPage = () => {
                 <p className="text-xs lg:text-sm text-[var(--t4)] truncate">
                   {(() => {
                     const remaining = (onboardingProgress?.steps || []).filter(s => !s.completed).length;
-                    return `Resume Getting Started — ${remaining} step${remaining === 1 ? '' : 's'} remaining`;
+                    return `${remaining} step${remaining === 1 ? '' : 's'} remaining`;
                   })()}
                 </p>
               </div>
@@ -1352,6 +1355,18 @@ const DashboardPage = () => {
           </div>
         </div>
       )}
+
+        {/* OnboardingWizard children — main 8-step "Get Started",
+            Welcome to Your Estate, How Offline Mode Works,
+            Add Someone You Love. All nested INSIDE the wrapper so the
+            gold pill at the bottom hides the entire onboarding stack
+            in one shot. */}
+        <TileErrorBoundary name="onboarding-wizard">
+          <OnboardingWizard
+            onAllComplete={() => { /* celebration handled by fetchEstateData via backend flag */ }}
+            onContentChange={setOnboardingWizardHasContent}
+          />
+        </TileErrorBoundary>
 
         {/* Gold pill — hides the whole group until next local midnight. */}
         <div className="flex justify-center pt-1 pb-1">
@@ -1369,18 +1384,13 @@ const DashboardPage = () => {
             }}
           >
             <X className="w-4 h-4" strokeWidth={2.5} />
-            Hide all Getting Started prompts for today
+            Hide all for today
           </button>
         </div>
       </div>
       )}
 
-      {/* Onboarding Wizard — shown early so it's visible on mobile */}
-      <TileErrorBoundary name="onboarding-wizard">
-        <OnboardingWizard onAllComplete={() => {
-          // Celebration is handled by fetchEstateData via backend flag — no-op here
-        }} />
-      </TileErrorBoundary>
+      {/* (Onboarding Wizard is rendered INSIDE the wrapper above — see "Getting Started Prompts Group") */}
 
       {/* CarryOn Financial Picture — Guide Tile (above gauge, only when empty & feature enabled) */}
       {isFeatureKeyEnabled('cfp', enabledFeatures) && financialSummary && (financialSummary.bills_count === 0 && financialSummary.debts_count === 0 && financialSummary.accounts_count === 0 && (financialSummary.property_count || 0) === 0) && (
