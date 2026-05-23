@@ -22,7 +22,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { toast } from '../../../utils/toast';
 import { API_URL } from '../../../config';
 import {
-  ROLE_OPTIONS, rolesForCategory, isEquityRole, FORMATION_STATES, getTypeMeta, getBucketMeta, getEntityPalette,
+  ROLE_OPTIONS, rolesForCategory, isEquityRole, FORMATION_STATES, getTypeMeta, getBucketMeta, getEntityPalette, TYPES,
 } from '../../../config/entityCatalog';
 import DocumentLinker from './DocumentLinker';
 import FinancialFields from './FinancialFields';
@@ -51,6 +51,12 @@ export default function EntityDetailPanel({
   const [saving, setSaving] = useState(false);
   // Edit form state for entity
   const [name, setName] = useState('');
+  // The catalog `type` id is editable too — primarily for `trust`
+  // category tiles that arrive from the QuickStart Wizard as a
+  // generic `unspecified` placeholder. The user picks the exact
+  // subtype (revocable, ILIT, SLAT…) on the Edit panel and the
+  // chart/AI/PDF immediately use the correct legal language.
+  const [entType, setEntType] = useState('');
   const [state, setState] = useState('');
   const [notes, setNotes] = useState('');
   const [linkedDocIds, setLinkedDocIds] = useState([]);
@@ -117,6 +123,7 @@ export default function EntityDetailPanel({
     setNewSourceKey(''); setNewRole('owner'); setNewPct('');
     if (!node) return;    if (node.kind === 'entity' && node.entity) {
       setName(node.entity.name || '');
+      setEntType(node.entity.type || '');
       setState(node.entity.formation_state || '');
       setNotes(node.entity.notes || '');
       setLinkedDocIds(node.entity.document_ids || []);
@@ -192,6 +199,7 @@ export default function EntityDetailPanel({
     try {
       await apiClient.patch(`${API_URL}/financial/entities/${ent.id}`, {
         name: name.trim() || ent.name,
+        type: entType || ent.type,
         formation_state: state || null,
         notes: notes.trim() || null,
         document_ids: linkedDocIds.filter(Boolean),
@@ -471,6 +479,35 @@ export default function EntityDetailPanel({
                 <Label className="text-[var(--t4)]">Name</Label>
                 <Input value={name} onChange={(e) => setName(e.target.value)} className="input-field" data-testid="detail-edit-name" />
               </div>
+              {ent?.category === 'trust' && (
+                <div className="space-y-2 border-t border-[var(--b2)] pt-4">
+                  <Label className="text-[var(--t4)]">
+                    Trust type
+                    {ent?.type === 'unspecified' && (
+                      <span className="ml-1.5 text-[11px] font-normal text-amber-400">— pick one to finish setting this trust up</span>
+                    )}
+                  </Label>
+                  <Select value={entType || 'unspecified'} onValueChange={(v) => setEntType(v)}>
+                    <SelectTrigger className="input-field select-themed" data-testid="detail-edit-trust-type">
+                      <SelectValue placeholder="Choose a trust type" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)] max-h-72">
+                      {(TYPES.trust || []).map((t) => (
+                        <SelectItem key={t.id} value={t.id}>
+                          <span className="font-semibold">{t.friendly}</span>
+                          {t.legal && t.legal !== t.friendly ? <span className="text-[var(--t5)] ml-1.5">— {t.legal}</span> : null}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {entType && entType !== 'unspecified' && (() => {
+                    const m = getTypeMeta('trust', entType);
+                    return m?.blurb ? (
+                      <div className="text-[11px] text-[var(--t5)] italic">{m.blurb}</div>
+                    ) : null;
+                  })()}
+                </div>
+              )}
               {meta?.state_relevant && (
                 <div className="space-y-2 border-t border-[var(--b2)] pt-4">
                   <Label className="text-[var(--t4)]">Formation state</Label>

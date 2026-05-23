@@ -195,6 +195,7 @@ export const TYPES = {
   ],
 
   trust: [
+    { id: 'unspecified',      friendly: 'Trust (pick type)',                legal: 'Trust — type not yet specified',            accent: 'indigo', state_relevant: false, blurb: 'Placeholder trust tile dropped here from your QuickStart Wizard. Tap Edit and choose the exact trust type so the rest of the chart, the AI, and your guide use the right language.' },
     { id: 'revocable_living', friendly: 'Revocable Living Trust',           legal: 'Revocable Living Trust (RLT)',              accent: 'indigo', state_relevant: false, blurb: 'A trust you can change or cancel anytime while you’re alive. Avoids probate but offers no asset protection.' },
     { id: 'irrevocable',      friendly: 'Irrevocable Trust (general)',      legal: 'Irrevocable Trust',                         accent: 'bronze', state_relevant: false, blurb: 'A trust that locks in once created. You give up control in exchange for tax savings and asset protection.' },
     { id: 'testamentary',     friendly: 'Testamentary Trust',               legal: 'Testamentary Trust',                        accent: 'indigo', state_relevant: false, blurb: 'A trust written into your will that comes alive only when you pass away.' },

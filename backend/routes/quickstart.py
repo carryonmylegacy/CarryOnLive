@@ -150,6 +150,60 @@ async def _seed_ces_tiles_from_qw_business(
             )
 
 
+async def _seed_ces_trust_tiles(
+    *,
+    estate_id: str,
+    user_id: str,
+    target_n: int,
+) -> None:
+    """Drop N unconnected trust placeholder tiles on the CES.
+
+    Mirrors `_seed_ces_tiles_from_qw_business` semantics — idempotent,
+    only ever adds, never removes. Tiles are created with the catalog
+    type `unspecified` so the user can come back and pick the exact
+    subtype (revocable, ILIT, SLAT, etc.) on the Edit panel.
+    """
+    if not estate_id or target_n <= 0:
+        return
+    target_n = min(50, int(target_n))
+    existing = await db.cfp_entities.count_documents(
+        {
+            "estate_id": estate_id,
+            "category": "trust",
+            "quickstart_seed": True,
+            "deleted_at": None,
+        }
+    )
+    to_create = max(0, target_n - existing)
+    for i in range(to_create):
+        slot = existing + i + 1
+        name = "Trust" if target_n == 1 and existing == 0 else f"Trust {slot}"
+        now = datetime.now(timezone.utc).isoformat()
+        await db.cfp_entities.insert_one(
+            {
+                "id": str(uuid.uuid4()),
+                "estate_id": estate_id,
+                "owner_user_id": user_id,
+                "category": "trust",
+                "type": "unspecified",
+                "name": name,
+                "formation_state": None,
+                "ein_last_four": None,
+                "formation_date": None,
+                "tax_election": None,
+                "registered_agent": None,
+                "notes": None,
+                "document_ids": [],
+                "gross_assets": None,
+                "gross_debts": None,
+                "quickstart_seed": True,
+                "created_at": now,
+                "updated_at": now,
+                "deleted_at": None,
+            }
+        )
+
+
 async def _upsert_quickstart_in_sdv(
     *,
     user_id: str,
@@ -438,6 +492,25 @@ async def save_step(
             biz=biz_data,
             residence_state=residence_state or None,
         )
+
+    # ── Seed CES org-chart tiles for claimed trusts ────────────────
+    # The QW existing-documents step asks "how many trusts do you have?"
+    # but doesn't drill into the specific subtype (revocable, ILIT,
+    # SLAT, etc.). Drop one unconnected placeholder tile per trust
+    # using the catalog's `unspecified` type — the user picks the
+    # actual subtype on the CES Edit panel afterwards.
+    if step_key == "existing_documents":
+        docs_data = payload.data if isinstance(payload.data, dict) else {}
+        try:
+            trust_count = int(((docs_data.get("counts") or {}).get("trusts") or 0))
+        except (TypeError, ValueError):
+            trust_count = 0
+        if estate_id and trust_count > 0:
+            await _seed_ces_trust_tiles(
+                estate_id=estate_id,
+                user_id=user_id,
+                target_n=trust_count,
+            )
 
     next_step = payload.next_step or step_key
     if next_step not in STEP_ORDER:
