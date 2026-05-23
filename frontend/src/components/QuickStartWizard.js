@@ -581,32 +581,66 @@ export const QuickStartStep = ({ stepKey, data, setData, user, brand, onGateChoi
         <h3 className="text-lg lg:text-xl font-bold" style={headingStyle}>Where do you live?</h3>
         <p className="text-sm" style={mutedStyle}>
           Estate laws vary state by state. Start typing your home address and pick the
-          match — we&apos;ll grab the state automatically. (You can leave the address blank
-          and just choose a state if you&apos;d rather.)
+          match — we&apos;ll fill in the city, state, and ZIP automatically. (You can leave
+          the address blank and just choose a state if you&apos;d rather.)
         </p>
         <Label>Personal residence</Label>
+        {/* Field set mirrors the Settings → Personal Info → Address layout
+            (Feb 26 2026 founder direction) so any full address captured
+            here propagates 1:1 onto the user profile without a second
+            entry pass in Settings. */}
         <AddressAutocomplete
-          value={(data?.address && data.address !== '[object Object]') ? data.address : ''}
-          onChange={(e) => set('address', typeof e === 'string' ? e : (e?.target?.value ?? ''))}
+          value={data?.street || ((data?.address && data.address !== '[object Object]') ? data.address : '')}
+          onChange={(e) => set('street', typeof e === 'string' ? e : (e?.target?.value ?? ''))}
           onSelect={onAddressSelect}
-          placeholder="Start typing your home address…"
+          placeholder="Street address"
           className="w-full rounded-xl px-3 py-3 focus:outline-none focus:ring-2 focus:ring-[#d4af37]"
           style={{ ...inputStyle, fontSize: '16px' }}
-          data-testid="qs-residence-address"
+          data-testid="qs-residence-street"
         />
-        <Label>State of residence</Label>
-        <div className="relative">
-          <select
-            value={data?.state || ''}
-            onChange={(e) => set('state', e.target.value)}
-            data-testid="qs-residence-state"
-            className="w-full appearance-none rounded-xl px-3 py-3 focus:outline-none focus:ring-2 focus:ring-[#d4af37]"
-            style={{ ...inputStyle, fontSize: '16px' }}
-          >
-            <option value="" style={{ color: '#0F172A' }}>Choose your state…</option>
-            {_STATE_LIST.map((s) => <option key={s} value={s} style={{ color: '#0F172A' }}>{s}</option>)}
-          </select>
-          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: '#CBD5E1' }} />
+        <input
+          value={data?.line2 || ''}
+          onChange={(e) => set('line2', e.target.value)}
+          placeholder="Apt, suite, unit (optional)"
+          className="w-full rounded-xl px-3 py-3 focus:outline-none focus:ring-2 focus:ring-[#d4af37]"
+          style={{ ...inputStyle, fontSize: '16px' }}
+          data-testid="qs-residence-line2"
+        />
+        <div className="grid grid-cols-4 gap-2">
+          <div className="col-span-2">
+            <input
+              value={data?.city || ''}
+              onChange={(e) => set('city', e.target.value)}
+              placeholder="City"
+              className="w-full rounded-xl px-3 py-3 focus:outline-none focus:ring-2 focus:ring-[#d4af37]"
+              style={{ ...inputStyle, fontSize: '16px' }}
+              data-testid="qs-residence-city"
+            />
+          </div>
+          <div className="relative">
+            <select
+              value={data?.state || ''}
+              onChange={(e) => set('state', e.target.value)}
+              data-testid="qs-residence-state"
+              className="w-full appearance-none rounded-xl px-3 py-3 focus:outline-none focus:ring-2 focus:ring-[#d4af37]"
+              style={{ ...inputStyle, fontSize: '16px' }}
+            >
+              <option value="" style={{ color: '#0F172A' }}>State</option>
+              {_STATE_LIST.map((s) => <option key={s} value={s} style={{ color: '#0F172A' }}>{s}</option>)}
+            </select>
+            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: '#CBD5E1' }} />
+          </div>
+          <div>
+            <input
+              value={data?.zip || ''}
+              onChange={(e) => set('zip', e.target.value.replace(/[^0-9-]/g, '').slice(0, 10))}
+              placeholder="ZIP"
+              inputMode="numeric"
+              className="w-full rounded-xl px-3 py-3 focus:outline-none focus:ring-2 focus:ring-[#d4af37]"
+              style={{ ...inputStyle, fontSize: '16px' }}
+              data-testid="qs-residence-zip"
+            />
+          </div>
         </div>
       </div>
     );

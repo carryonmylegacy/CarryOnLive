@@ -296,6 +296,7 @@ async def save_step(
     if step_key == "residence":
         rd = payload.data if isinstance(payload.data, dict) else {}
         street = (rd.get("street") or "").strip()
+        line2 = (rd.get("line2") or "").strip()
         city = (rd.get("city") or "").strip()
         state = (rd.get("state") or "").strip().upper()
         zipc = (rd.get("zip") or "").strip()
@@ -322,6 +323,7 @@ async def save_step(
                     {
                         "$set": {
                             "address_street": street,
+                            "address_line2": line2,
                             "address_city": city,
                             "address_state": state,
                             "address_zip": zipc[:5],
