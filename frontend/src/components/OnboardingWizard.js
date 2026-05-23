@@ -6,7 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 import {
   Users, FileUp, MessageSquare, CheckSquare,
   ChevronRight, X, Sparkles, Check, KeyRound, ArrowLeftRight,
-  AlertTriangle, Settings, WifiOff
+  AlertTriangle, Settings, WifiOff, ListChecks
 } from 'lucide-react';
 import { Progress } from '../components/ui/progress';
 import { API_URL } from '../config';
@@ -347,7 +347,7 @@ const OnboardingWizard = ({ onAllComplete, onContentChange }) => {
   }
 
   return (
-    <div className="mb-6 overflow-hidden" data-testid="onboarding-wizard">
+    <div className="space-y-3" data-testid="onboarding-wizard">
       <div style={{
         animation: 'wizardSlideIn 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards',
         opacity: 0,
@@ -374,20 +374,20 @@ const OnboardingWizard = ({ onAllComplete, onContentChange }) => {
         }
         .tile-pop { animation: waterBalloonPop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1), ripplePulse 1s ease-out; }
       `}</style>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: 'rgba(var(--gold-rgb), 0.12)', border: '1px solid rgba(var(--gold-rgb), 0.2)' }}>
-            <Sparkles className="w-6 h-6 text-[#d4af37]" />
-          </div>
-          <div>
-            <h3 className="text-[var(--t)] font-bold text-xl lg:text-2xl" style={{ fontFamily: 'var(--sans)' }}>{user?.partner_slug ? 'Get Started' : 'Get Started with CarryOn'}</h3>
-            <p className="text-[var(--t5)] text-base">{progress.completed_count} of {progress.total_steps} complete</p>
-          </div>
-        </div>
+
+      {/* ─────────── Setup Checklist tile (was "Get Started with CarryOn") ───────────
+          Single glass-card shell with a blue left border, matching the
+          QuickStart Wizard tile in DashboardPage. Header + progress +
+          the active next-step CTA are all *inside* this one tile so the
+          eye never has to jump back and forth to figure out what to do
+          next. Per Feb 26 founder mandate: visual cohesion + "Setup
+          Checklist" is the new name (replaces "Get Started with
+          CarryOn" / "Getting Started Guide" — too close to QuickStart
+          Wizard). */}
+      <div className="glass-card relative w-full p-4 lg:p-5 border-l-4 border-l-[#60A5FA]" data-testid="setup-checklist-tile">
         <button
           onClick={() => setDismissPhase('confirm')}
-          className="w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-90 lg:hover:scale-110 flex-shrink-0"
+          className="absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-90 lg:hover:scale-110 z-10"
           style={{
             background: 'rgba(255,255,255,0.10)',
             border: '1.5px solid rgba(255,255,255,0.30)',
@@ -395,87 +395,39 @@ const OnboardingWizard = ({ onAllComplete, onContentChange }) => {
             boxShadow: '0 2px 10px rgba(0,0,0,0.30)',
           }}
           data-testid="onboarding-dismiss"
+          aria-label="Hide Setup Checklist"
         >
           <X className="w-5 h-5" strokeWidth={2.5} />
         </button>
-      </div>
 
-      <Progress value={progress.progress_pct} className="h-2.5 mb-5 bg-[var(--s)]" />
+        <div className="flex items-center gap-3 min-w-0 pr-12 mb-3">
+          <div
+            className="flex-shrink-0 w-10 h-10 lg:w-11 lg:h-11 rounded-full flex items-center justify-center"
+            style={{
+              background: 'radial-gradient(circle, rgba(96,165,250,0.22) 0%, rgba(96,165,250,0.08) 70%)',
+              border: '1px solid rgba(96,165,250,0.35)',
+            }}
+          >
+            <ListChecks className="w-5 h-5" style={{ color: '#60A5FA' }} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <h3 className="text-base lg:text-lg font-semibold text-[var(--t)]">Setup Checklist</h3>
+            <p className="text-xs lg:text-sm text-[var(--t4)]">{progress.completed_count} of {progress.total_steps} done</p>
+          </div>
+        </div>
 
-      {/* Step Tiles */}
-      <div className="space-y-3">
-        {/* Welcome tile for beneficiaries who just created their own estate */}
-        {user?.is_also_benefactor && !welcomeDismissed && (
-          <div className="rounded-2xl p-5 flex items-center gap-4 text-left"
-            style={{ background: 'linear-gradient(135deg, rgba(var(--gold-rgb), 0.08), rgba(96,165,250,0.08))', border: '1px solid rgba(var(--gold-rgb), 0.2)' }}>
-            <div className="w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0"
-              style={{ background: 'rgba(var(--gold-rgb), 0.12)', border: '1px solid rgba(var(--gold-rgb), 0.25)' }}>
-              <ArrowLeftRight className="w-7 h-7 text-[#d4af37]" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-lg font-bold text-[var(--t)]">Welcome — Two Views</p>
-              <p className="text-base text-[var(--t4)]">Switch between your <strong style={{ color: '#d4af37' }}>Benefactor</strong> estate and <strong style={{ color: '#60A5FA' }}>Beneficiary</strong> access anytime via <strong>Switch View</strong> {window.innerWidth >= 1024 ? 'in the left menu' : 'in the hamburger menu'}.</p>
-            </div>
-            <button
-              onClick={() => { localStorage.setItem('carryon_welcome_tile_dismissed', 'true'); setWelcomeDismissed(true); }}
-              className="w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-90 lg:hover:scale-110 flex-shrink-0"
-              style={{
-                background: 'rgba(255,255,255,0.10)',
-                border: '1.5px solid rgba(255,255,255,0.30)',
-                color: 'var(--t)',
-                boxShadow: '0 2px 10px rgba(0,0,0,0.30)',
-              }}
-              data-testid="welcome-tile-dismiss">
-              <X className="w-5 h-5" strokeWidth={2.5} />
-            </button>
-          </div>
-        )}
-        {/* Offline Mode coaching tile — single info card that explains
-            the rules of offline access in plain bullets. Dismissible
-            once. Sits above the active step so users see it before
-            walking through the checklist. */}
-        {!offlineCoachDismissed && (
-          <div className="rounded-2xl p-5 flex items-start gap-4 text-left"
-            style={{ background: 'linear-gradient(135deg, rgba(96,165,250,0.08), rgba(var(--gold-rgb), 0.06))', border: '1px solid rgba(96,165,250,0.2)' }}
-            data-testid="onboarding-offline-coach">
-            <div className="w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0"
-              style={{ background: 'rgba(96,165,250,0.12)', border: '1px solid rgba(96,165,250,0.25)' }}>
-              <WifiOff className="w-7 h-7 text-[#60A5FA]" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-lg font-bold text-[var(--t)] mb-2">Offline Mode — Quick Setup</p>
-              <ul className="text-sm font-semibold text-[var(--t4)] space-y-1.5 leading-relaxed list-disc pl-5">
-                <li>Install CarryOn to your <strong style={{ color: '#60A5FA' }}>home screen</strong> (PWA only).</li>
-                <li>Sign in once while <strong style={{ color: '#60A5FA' }}>online</strong> and wait ~30s for sync.</li>
-                <li>Enable in <strong style={{ color: '#d4af37' }}>Settings → Offline</strong>. Stays active 90 days; revoke anytime.</li>
-                <li>Your password is <strong style={{ color: '#60A5FA' }}>never stored</strong> — only an encrypted credential.</li>
-              </ul>
-            </div>
-            <button
-              onClick={() => { localStorage.setItem('carryon_offline_coach_dismissed', 'true'); setOfflineCoachDismissed(true); }}
-              className="w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-90 lg:hover:scale-110 flex-shrink-0"
-              style={{
-                background: 'rgba(255,255,255,0.10)',
-                border: '1.5px solid rgba(255,255,255,0.30)',
-                color: 'var(--t)',
-                boxShadow: '0 2px 10px rgba(0,0,0,0.30)',
-              }}
-              data-testid="onboarding-offline-coach-dismiss">
-              <X className="w-5 h-5" strokeWidth={2.5} />
-            </button>
-          </div>
-        )}
+        <Progress value={progress.progress_pct} className="h-2 mb-3 bg-[var(--s)]" />
+
+        {/* Active next-step CTA — inline, right where the user's eye is. */}
         {stepsToShow.map((step) => {
           const config = STEP_CONFIG[step.key];
           if (!config) return null;
           const Icon = config.icon;
           const isPop = popping[step.key];
           const isComplete = step.completed && !isPop;
-
           const label = step.key === 'create_message' && benNames.length > 0
             ? `Leave a message for ${benLabel}!`
             : config.label;
-
           return (
             <div
               key={step.key}
@@ -489,44 +441,122 @@ const OnboardingWizard = ({ onAllComplete, onContentChange }) => {
             >
               <button
                 onClick={() => handleStepClick(step)}
-                className="w-full rounded-2xl p-5 flex items-center gap-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg active:scale-[0.98] cursor-pointer"
+                className="w-full rounded-xl p-3 flex items-center gap-3 text-left transition-all duration-200 active:scale-[0.98] cursor-pointer"
                 style={{
-                  background: isComplete ? 'var(--s)' : config.bg,
-                  border: `1px solid ${isComplete ? 'var(--b)' : config.border}`,
-                  boxShadow: isComplete ? 'none' : `0 4px 16px -4px ${config.color}20`,
+                  background: isComplete ? 'var(--s)' : `${config.color}10`,
+                  border: `1px solid ${isComplete ? 'var(--b)' : `${config.color}30`}`,
                   opacity: isComplete ? 0.5 : 1,
                 }}
                 data-testid={`onboarding-step-${step.key}`}
               >
-                <div className="w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0"
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
                   style={{
-                    background: isComplete ? 'rgba(16,185,129,0.1)' : `${config.color}15`,
+                    background: isComplete ? 'rgba(16,185,129,0.1)' : `${config.color}20`,
                     border: `1px solid ${isComplete ? 'rgba(16,185,129,0.2)' : `${config.color}30`}`,
                   }}>
                   {isComplete ? (
-                    <Check className="w-7 h-7 text-[#22C993]" />
+                    <Check className="w-5 h-5 text-[#22C993]" />
                   ) : (
-                    <Icon className="w-7 h-7" style={{ color: config.color }} />
+                    <Icon className="w-5 h-5" style={{ color: config.color }} />
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className={`text-lg font-bold ${isComplete ? 'text-[var(--t5)] line-through' : 'text-[var(--t)]'}`}>
+                  <p className={`text-sm lg:text-base font-semibold ${isComplete ? 'text-[var(--t5)] line-through' : 'text-[var(--t)]'}`}>
                     {label}
                     {step.optional && !isComplete && <span className="text-xs font-normal text-[var(--t5)] ml-2">(optional)</span>}
                   </p>
-                  <p className={`text-base ${isComplete ? 'text-[var(--t5)]' : 'text-[var(--t4)]'}`}>{config.desc}</p>
+                  <p className={`text-xs ${isComplete ? 'text-[var(--t5)]' : 'text-[var(--t4)]'}`}>{config.desc}</p>
                 </div>
                 {isComplete ? (
-                  <span className="text-sm text-[#22C993] font-bold flex-shrink-0">Done</span>
+                  <span className="text-xs text-[#22C993] font-bold flex-shrink-0">Done</span>
                 ) : (
-                  <ChevronRight className="w-6 h-6 flex-shrink-0" style={{ color: config.color }} />
+                  <ChevronRight className="w-5 h-5 flex-shrink-0" style={{ color: config.color }} />
                 )}
               </button>
             </div>
           );
         })}
       </div>
-      </div>
+
+      {/* ─────────── Welcome — Two Views tile (dual-role users only) ───────────
+          Same glass-card shell, purple left border (info, not an action). */}
+      {user?.is_also_benefactor && !welcomeDismissed && (
+        <div className="glass-card relative w-full p-4 lg:p-5 border-l-4 border-l-[#a78bfa]" data-testid="welcome-two-views-tile">
+          <button
+            onClick={() => { localStorage.setItem('carryon_welcome_tile_dismissed', 'true'); setWelcomeDismissed(true); }}
+            className="absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-90 lg:hover:scale-110 z-10"
+            style={{
+              background: 'rgba(255,255,255,0.10)',
+              border: '1.5px solid rgba(255,255,255,0.30)',
+              color: 'var(--t)',
+              boxShadow: '0 2px 10px rgba(0,0,0,0.30)',
+            }}
+            data-testid="welcome-tile-dismiss"
+            aria-label="Hide Welcome tip"
+          >
+            <X className="w-5 h-5" strokeWidth={2.5} />
+          </button>
+          <div className="flex items-start gap-3 min-w-0 pr-12">
+            <div
+              className="flex-shrink-0 w-10 h-10 lg:w-11 lg:h-11 rounded-full flex items-center justify-center"
+              style={{
+                background: 'radial-gradient(circle, rgba(167,139,250,0.22) 0%, rgba(167,139,250,0.08) 70%)',
+                border: '1px solid rgba(167,139,250,0.35)',
+              }}
+            >
+              <ArrowLeftRight className="w-5 h-5" style={{ color: '#a78bfa' }} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h3 className="text-base lg:text-lg font-semibold text-[var(--t)]">Welcome — Two Views</h3>
+              <p className="text-xs lg:text-sm text-[var(--t4)]">
+                Switch between your <strong style={{ color: '#d4af37' }}>Benefactor</strong> estate and <strong style={{ color: '#60A5FA' }}>Beneficiary</strong> access anytime via <strong>Switch View</strong> in the {window.innerWidth >= 1024 ? 'left menu' : 'hamburger menu'}.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─────────── Offline Mode tile ───────────
+          Same shell, cyan left border. */}
+      {!offlineCoachDismissed && (
+        <div className="glass-card relative w-full p-4 lg:p-5 border-l-4 border-l-[#0EA5E9]" data-testid="onboarding-offline-coach">
+          <button
+            onClick={() => { localStorage.setItem('carryon_offline_coach_dismissed', 'true'); setOfflineCoachDismissed(true); }}
+            className="absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-90 lg:hover:scale-110 z-10"
+            style={{
+              background: 'rgba(255,255,255,0.10)',
+              border: '1.5px solid rgba(255,255,255,0.30)',
+              color: 'var(--t)',
+              boxShadow: '0 2px 10px rgba(0,0,0,0.30)',
+            }}
+            data-testid="onboarding-offline-coach-dismiss"
+            aria-label="Hide Offline Mode tip"
+          >
+            <X className="w-5 h-5" strokeWidth={2.5} />
+          </button>
+          <div className="flex items-start gap-3 min-w-0 pr-12">
+            <div
+              className="flex-shrink-0 w-10 h-10 lg:w-11 lg:h-11 rounded-full flex items-center justify-center"
+              style={{
+                background: 'radial-gradient(circle, rgba(14,165,233,0.22) 0%, rgba(14,165,233,0.08) 70%)',
+                border: '1px solid rgba(14,165,233,0.35)',
+              }}
+            >
+              <WifiOff className="w-5 h-5" style={{ color: '#0EA5E9' }} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h3 className="text-base lg:text-lg font-semibold text-[var(--t)] mb-1.5">Offline Mode — Quick Setup</h3>
+              <ul className="text-xs lg:text-sm text-[var(--t4)] space-y-1 list-disc pl-5">
+                <li>Install CarryOn to your <strong style={{ color: '#0EA5E9' }}>home screen</strong> (PWA only).</li>
+                <li>Sign in once while <strong style={{ color: '#0EA5E9' }}>online</strong> and wait ~30s for sync.</li>
+                <li>Enable in <strong style={{ color: '#d4af37' }}>Settings → Offline</strong>. Stays 90 days; revoke anytime.</li>
+                <li>Your password is <strong style={{ color: '#0EA5E9' }}>never stored</strong> — only an encrypted credential.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
     </div>
   );
 };

@@ -1,6 +1,40 @@
 # CarryOn — Changelog
 
 
+## Feb 26, 2026 — Onboarding terminology lockdown + visual cohesion (V2026.02.26-i)
+
+**Why**: Founder review of mobile screenshots showed (a) inconsistent terminology — "QuickStart Guide" vs "QuickStart Wizard", "Get Started with CarryOn" vs "Getting Started Guide" all blurred together; (b) the four inner tiles each had a different visual treatment (gold-border card vs no-card-just-header vs gradient-bg cards); (c) the actionable "next step" CTA was floating at the BOTTOM of the wizard, far from the progress bar showing "0 of 8" at the top — pure cognitive friction.
+
+**Terminology locked:**
+- **Onboarding** = the entire wrapper / top label (was "Getting Started").
+- **QuickStart Wizard** = the PDF generator (single term across UI + comments).
+- **Setup Checklist** = the 8-step dashboard task list (replaces "Get Started with CarryOn" header AND "Getting Started Guide" label). Pick-Up tile renamed "Resume Setup Checklist".
+
+**Visual cohesion (`OnboardingWizard.js` major restructure):**
+- Killed the bare-flexbox header. All three artifacts inside the wizard now use the SAME shell as the dashboard's QuickStart Wizard tile: `glass-card relative w-full p-4 lg:p-5 border-l-4 border-l-[color]` with prominent top-right circle-X dismiss.
+- Color-coded left borders by purpose so the eye reads them at a glance:
+  - QuickStart Wizard tile = `#d4af37` gold (one-shot action).
+  - Setup Checklist tile = `#60A5FA` blue (ongoing setup).
+  - Welcome — Two Views tile = `#a78bfa` purple (info, dual-role only).
+  - Offline Mode tile = `#0EA5E9` cyan (info, install / setup).
+- Active-step CTA moved INTO the Setup Checklist tile, directly below the progress bar — header + progress + next-step all live in the same card now, exactly where the user's eye lands.
+- All icon-circles unified to `w-10 h-10 lg:w-11 lg:h-11 rounded-full` with radial-gradient bg matching the brand color (instead of the previous mix of squircle/rounded-xl/rounded-2xl chips).
+- Headings unified to `text-base lg:text-lg font-semibold`, subtitles to `text-xs lg:text-sm text-[var(--t4)]`.
+
+**User-facing copy updates:**
+- Wrapper label "GETTING STARTED" → "ONBOARDING".
+- Settings → Appearance: "Getting Started Guide" → "Setup Checklist" (toggle label, copy, toasts).
+- Settings → "Getting Started prompts paused" → "Onboarding prompts paused"; toast: "Onboarding prompts will appear again on your dashboard."
+- Dashboard pill aria-label / toast: "Hide all onboarding prompts for today".
+
+**Quality gates:**
+- `bash /app/housekeeping.sh --strict` → 0 WARN / 0 FAIL.
+- ESLint clean on `DashboardPage.js`, `OnboardingWizard.js`, `AppearanceCard.js`.
+- Mobile screenshot (420×1600 PWA) confirms: 4 sibling tiles, identical shell, color-coded by purpose, active-step CTA inline with the Setup Checklist progress bar, gold "Hide all for today" pill at the bottom.
+
+
+
+
 ## Feb 26, 2026 — Onboarding group collapse/expand disclosure (V2026.02.26-h)
 
 **Why**: Founder agreed to auto-collapse the unified Getting Started wrapper into a single one-line disclosure when it would otherwise stack 3+ tiles — preserves the "less verbose, less scrolling" preference for the lazy/non-tech-savvy novice while still keeping every artifact one tap away.

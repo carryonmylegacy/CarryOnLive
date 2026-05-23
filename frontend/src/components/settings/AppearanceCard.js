@@ -139,8 +139,8 @@ const AppearanceCard = ({ isStaff }) => {
             </div>
             <div className="flex items-center justify-between">
               <div>
-                <h4 className="text-[var(--t)] font-medium">Getting Started Guide</h4>
-                <p className="text-[var(--t5)] text-sm">Show the onboarding wizard on your dashboard</p>
+                <h4 className="text-[var(--t)] font-medium">Setup Checklist</h4>
+                <p className="text-[var(--t5)] text-sm">Show the 8-step setup wizard on your dashboard</p>
               </div>
               <Switch
                 checked={onboardingVisible}
@@ -155,7 +155,7 @@ const AppearanceCard = ({ isStaff }) => {
                     localStorage.setItem('carryon_welcome_guided_shown', 'true');
                     try { await apiClient.post(`${API_URL}/onboarding/dismiss`, { hide_resume_banner: true }, getAuthHeaders()); } catch (e) { /* ignore */ }
                   }
-                  toast.success(checked ? 'Getting Started Guide turned on — saved.' : 'Getting Started Guide hidden — saved.');
+                  toast.success(checked ? 'Setup Checklist turned on — saved.' : 'Setup Checklist hidden — saved.');
                 }}
                 data-testid="settings-onboarding-toggle"
               />
@@ -209,7 +209,7 @@ const AppearanceCard = ({ isStaff }) => {
                 }}
               >
                 <div className="min-w-0">
-                  <h4 className="text-[var(--t)] font-medium">Getting Started prompts paused</h4>
+                  <h4 className="text-[var(--t)] font-medium">Onboarding prompts paused</h4>
                   <p className="text-[var(--t5)] text-xs">
                     Hidden until {formatResetTime(hiddenUntil)}. They'll reappear automatically tomorrow.
                   </p>

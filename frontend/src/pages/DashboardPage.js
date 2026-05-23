@@ -205,7 +205,7 @@ const DashboardPage = () => {
     try { localStorage.setItem('carryon_onboarding_hidden_until', midnight.toISOString()); } catch { /* ignore */ }
     setOnboardingHiddenForToday(true);
     try { window.dispatchEvent(new CustomEvent('carryon:onboarding-hidden-changed', { detail: { hidden: true, until: midnight.toISOString() } })); } catch { /* ignore */ }
-    toast.success('Getting Started prompts hidden — they\'ll reappear tomorrow.');
+    toast.success('Onboarding prompts hidden — they\'ll reappear tomorrow.');
   };
 
   const guidedDismissedRef = useRef(false);
@@ -1134,7 +1134,7 @@ const DashboardPage = () => {
             aria-expanded={!isCollapsed}
             aria-controls="onboarding-prompts-group-body"
           >
-            <span data-testid="onboarding-prompts-group-label">Getting Started</span>
+            <span data-testid="onboarding-prompts-group-label">Onboarding</span>
             {totalCount > 0 && (
               <span className="text-[var(--t4)] normal-case tracking-normal font-medium">
                 — {totalCount} {totalCount === 1 ? 'prompt' : 'prompts'}
@@ -1151,7 +1151,7 @@ const DashboardPage = () => {
             <button
               type="button"
               data-testid="onboarding-hide-all-today-mini"
-              aria-label="Hide all Getting Started prompts for today"
+              aria-label="Hide all onboarding prompts for today"
               title="Hide all for today"
               onClick={hideAllOnboardingForToday}
               className="w-7 h-7 rounded-full flex items-center justify-center transition-all active:scale-90 lg:hover:scale-110"
@@ -1431,7 +1431,7 @@ const DashboardPage = () => {
               </div>
               <div className="min-w-0">
                 <h3 className="text-base lg:text-lg font-semibold text-[var(--t)] truncate">
-                  Pick Up Where You Left Off
+                  Resume Setup Checklist
                 </h3>
                 <p className="text-xs lg:text-sm text-[var(--t4)] truncate">
                   {(() => {
