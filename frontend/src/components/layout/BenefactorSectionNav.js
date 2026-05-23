@@ -137,11 +137,12 @@ const BenefactorSectionNav = ({
                   style={{ width: 18, height: 18, color: pillText }}
                 />
                 <span
-                  className="font-bold uppercase tracking-wider truncate"
+                  className="font-black uppercase tracking-wider truncate"
                   style={{
                     fontSize: isMobile ? 13 : 12,
                     letterSpacing: '0.08em',
                     color: pillText,
+                    fontWeight: 900,
                   }}
                 >
                   {s.label}
