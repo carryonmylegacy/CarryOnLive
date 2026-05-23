@@ -14,7 +14,7 @@ import {
   MessageSquare, 
   Users, 
   CheckSquare,
-  ChevronRight,
+  ChevronRight, ChevronDown,
   Clock,
   CheckCircle2,
   Circle,
@@ -150,9 +150,24 @@ const DashboardPage = () => {
     } catch { return false; }
   }, []);
   const [onboardingHiddenForToday, setOnboardingHiddenForToday] = useState(isOnboardingHiddenForToday);
-  // OnboardingWizard child reports its visibility via callback so we
-  // know whether to render the outer "Getting Started" wrapper.
+  // OnboardingWizard child reports its visibility + the number of
+  // discrete tiles it would render (welcome + offline coach + step
+  // nudge) via callback so we know whether to render the outer
+  // "Getting Started" wrapper around it AND when to auto-collapse
+  // that wrapper (3+ total tiles → collapsed by default).
   const [onboardingWizardHasContent, setOnboardingWizardHasContent] = useState(false);
+  const [onboardingWizardTileCount, setOnboardingWizardTileCount] = useState(0);
+  const handleOnboardingWizardContent = useCallback((hasContent, count) => {
+    setOnboardingWizardHasContent(hasContent);
+    setOnboardingWizardTileCount(typeof count === 'number' ? count : (hasContent ? 1 : 0));
+  }, []);
+  // User-overridable collapse preference for the Getting Started
+  // group wrapper. localStorage values: '1' = always collapsed,
+  // '0' = always expanded, missing = auto (collapsed if 3+ tiles).
+  const [groupCollapseOverride, setGroupCollapseOverride] = useState(() => {
+    try { return localStorage.getItem('carryon_onboarding_group_collapsed'); }
+    catch { return null; }
+  });
   // Re-check the gate when the tab regains focus — covers the
   // "user left the laptop open overnight" case so the tiles
   // reappear after local midnight without a manual refresh.
@@ -1069,18 +1084,93 @@ const DashboardPage = () => {
           && !resumeGsTileDismissed
           && (onboardingProgress?.steps || []).some(s => !s.completed);
         return qwIncompleteVisible || qwCompleteVisible || gsResumeVisible || onboardingWizardHasContent;
-      })() && (
+      })() && (() => {
+        // Total artifact count drives the auto-collapse default.
+        const eligible = user?.role === 'benefactor' || user?.is_also_benefactor;
+        const qwIncompleteVisible = eligible && quickstartProgress && !quickstartProgress.complete && !resumeQwTileDismissed;
+        const qwCompleteVisible = eligible && quickstartProgress && quickstartProgress.complete && !quickstartTileDismissed;
+        const gsResumeVisible = eligible
+          && onboardingProgress?.manually_dismissed === true
+          && onboardingProgress?.resume_banner_hidden !== true
+          && !onboardingProgress?.all_complete
+          && !resumeGsTileDismissed
+          && (onboardingProgress?.steps || []).some(s => !s.completed);
+        const totalCount = (qwIncompleteVisible ? 1 : 0)
+          + (qwCompleteVisible ? 1 : 0)
+          + (gsResumeVisible ? 1 : 0)
+          + onboardingWizardTileCount;
+        // Collapse decision: user preference wins; otherwise auto-collapse
+        // when 3+ tiles are stacked (per founder Feb 26 mandate — less
+        // verbose, less scrolling).
+        const isCollapsed = groupCollapseOverride === '1'
+          ? true
+          : groupCollapseOverride === '0'
+          ? false
+          : totalCount >= 3;
+        const setCollapsed = (next) => {
+          try { localStorage.setItem('carryon_onboarding_group_collapsed', next ? '1' : '0'); } catch { /* ignore */ }
+          setGroupCollapseOverride(next ? '1' : '0');
+        };
+        return (
       <div
         data-testid="onboarding-prompts-group"
+        data-collapsed={isCollapsed ? 'true' : 'false'}
         className="mb-4 rounded-2xl relative p-3 lg:p-4"
         style={{
           border: '1px solid rgba(212, 175, 55, 0.18)',
           background: 'linear-gradient(180deg, rgba(212, 175, 55, 0.04), rgba(212, 175, 55, 0.01))',
         }}
       >
-        <div className="text-[11px] lg:text-xs font-bold uppercase tracking-[0.18em] text-[var(--t5)] mb-2 px-1" data-testid="onboarding-prompts-group-label">
-          Getting Started
+        {/* Header — clickable disclosure when 3+ tiles are stacked.
+            Collapsed state surfaces a tiny X next to the chevron so the
+            "Hide all for today" escape hatch is always one tap away
+            without expanding the group. */}
+        <div className="flex items-center justify-between gap-2 px-1 mb-2">
+          <button
+            type="button"
+            data-testid="onboarding-prompts-group-toggle"
+            onClick={() => setCollapsed(!isCollapsed)}
+            className="flex items-center gap-2 text-[11px] lg:text-xs font-bold uppercase tracking-[0.18em] text-[var(--t5)] transition-colors hover:text-[var(--t)]"
+            aria-expanded={!isCollapsed}
+            aria-controls="onboarding-prompts-group-body"
+          >
+            <span data-testid="onboarding-prompts-group-label">Getting Started</span>
+            {totalCount > 0 && (
+              <span className="text-[var(--t4)] normal-case tracking-normal font-medium">
+                — {totalCount} {totalCount === 1 ? 'prompt' : 'prompts'}
+              </span>
+            )}
+            <ChevronDown
+              className={`w-3.5 h-3.5 transition-transform duration-200 ${isCollapsed ? '' : 'rotate-180'}`}
+              strokeWidth={2.5}
+            />
+          </button>
+          {/* Tiny X — only when collapsed, mirrors the gold-pill behavior
+              at the bottom of the expanded view. */}
+          {isCollapsed && (
+            <button
+              type="button"
+              data-testid="onboarding-hide-all-today-mini"
+              aria-label="Hide all Getting Started prompts for today"
+              title="Hide all for today"
+              onClick={hideAllOnboardingForToday}
+              className="w-7 h-7 rounded-full flex items-center justify-center transition-all active:scale-90 lg:hover:scale-110"
+              style={{
+                background: 'rgba(255,255,255,0.10)',
+                border: '1.5px solid rgba(255,255,255,0.30)',
+                color: 'var(--t)',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
+              }}
+            >
+              <X className="w-3.5 h-3.5" strokeWidth={2.5} />
+            </button>
+          )}
         </div>
+
+        {/* Body — kept mounted always (display:none when collapsed)
+            so per-tile dismiss flags + OnboardingWizard's
+            `onContentChange` callback keep firing accurately. */}
+        <div id="onboarding-prompts-group-body" style={{ display: isCollapsed ? 'none' : 'block' }}>
 
       {/* QuickStart — two states:
           (1) Not yet complete: Resume CTA opens the modal at the last step.
@@ -1358,13 +1448,14 @@ const DashboardPage = () => {
 
         {/* OnboardingWizard children — main 8-step "Get Started",
             Welcome to Your Estate, How Offline Mode Works,
-            Add Someone You Love. All nested INSIDE the wrapper so the
-            gold pill at the bottom hides the entire onboarding stack
-            in one shot. */}
+            Add Someone You Love. Kept mounted inside the body div
+            (display:none when collapsed) so its `onContentChange`
+            callback keeps firing and the disclosure count stays
+            accurate. */}
         <TileErrorBoundary name="onboarding-wizard">
           <OnboardingWizard
             onAllComplete={() => { /* celebration handled by fetchEstateData via backend flag */ }}
-            onContentChange={setOnboardingWizardHasContent}
+            onContentChange={handleOnboardingWizardContent}
           />
         </TileErrorBoundary>
 
@@ -1387,8 +1478,10 @@ const DashboardPage = () => {
             Hide all for today
           </button>
         </div>
+        </div>
       </div>
-      )}
+        );
+      })()}
 
       {/* (Onboarding Wizard is rendered INSIDE the wrapper above — see "Getting Started Prompts Group") */}
 

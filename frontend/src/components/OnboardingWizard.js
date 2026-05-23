@@ -63,29 +63,36 @@ const OnboardingWizard = ({ onAllComplete, onContentChange }) => {
     return () => window.removeEventListener('carryon:welcome-tile-visibility-changed', onWelcomeVis);
   }, []);
 
-  // Compute "would the wizard render any content?" — fires onContentChange
-  // whenever the answer flips so the parent dashboard can decide whether
-  // to render its outer "Getting Started" wrapper around us.
-  const wouldRenderContent = (() => {
-    if (loading || !progress) return false;
-    if (!(user?.role === 'benefactor' || user?.is_also_benefactor)) return false;
-    if (manuallyDismissed && !showAll) return false;
+  // Compute "would the wizard render?" + how many discrete inner
+  // artifacts it would render (welcome tile + offline coach + the
+  // active step nudge OR the full step list when showAll). Both fire
+  // via `onContentChange(hasContent, count)` so the parent dashboard
+  // can (a) decide whether to render its outer "Getting Started"
+  // wrapper around us and (b) auto-collapse the wrapper when the
+  // total tile count crosses the 3+ threshold.
+  const wouldRender = (() => {
+    if (loading || !progress) return { ok: false, count: 0 };
+    if (!(user?.role === 'benefactor' || user?.is_also_benefactor)) return { ok: false, count: 0 };
+    if (manuallyDismissed && !showAll) return { ok: false, count: 0 };
     const visibleSteps = (progress.steps || []).filter(s => {
       const cfg = STEP_CONFIG[s.key];
       return !cfg || isFeatureEnabled(cfg.route, enabledFeatures);
     });
     const incomplete = visibleSteps.filter(s => !s.completed);
     const allDone = incomplete.length === 0 && visibleSteps.length > 0;
-    if (allDone && progress.celebration_shown) return false;
-    if (allDone) return false;
-    // Has at least one step OR an undismissed welcome/offline coach inside.
+    if (allDone && progress.celebration_shown) return { ok: false, count: 0 };
+    if (allDone) return { ok: false, count: 0 };
     const hasWelcome = user?.is_also_benefactor && !welcomeDismissed;
     const hasOffline = !offlineCoachDismissed;
-    return incomplete.length > 0 || hasWelcome || hasOffline;
+    // Step display mirrors the render path below: showAll → every
+    // step; otherwise → 1 next step (or 0 if there are none).
+    const stepRenderCount = showAll ? visibleSteps.length : (incomplete.length > 0 ? 1 : 0);
+    const count = (hasWelcome ? 1 : 0) + (hasOffline ? 1 : 0) + stepRenderCount;
+    return { ok: count > 0, count };
   })();
   useEffect(() => {
-    if (typeof onContentChange === 'function') onContentChange(wouldRenderContent);
-  }, [wouldRenderContent, onContentChange]);
+    if (typeof onContentChange === 'function') onContentChange(wouldRender.ok, wouldRender.count);
+  }, [wouldRender.ok, wouldRender.count, onContentChange]);
 
   const fetchProgress = async () => {
     try {

@@ -1,6 +1,26 @@
 # CarryOn — Changelog
 
 
+## Feb 26, 2026 — Onboarding group collapse/expand disclosure (V2026.02.26-h)
+
+**Why**: Founder agreed to auto-collapse the unified Getting Started wrapper into a single one-line disclosure when it would otherwise stack 3+ tiles — preserves the "less verbose, less scrolling" preference for the lazy/non-tech-savvy novice while still keeping every artifact one tap away.
+
+**Changes (`DashboardPage.js` + `OnboardingWizard.js`):**
+- `OnboardingWizard.onContentChange` callback now passes `(hasContent, count)` where `count` includes the visible welcome tile, the offline coach, and the active step tile(s) the wizard would otherwise render. Dashboard wires this into `onboardingWizardTileCount` state via a stable `useCallback`.
+- `DashboardPage` computes `totalCount` = QW resume + QW complete + Pick Up GS + onboardingWizardTileCount. Collapse decision: user preference (`localStorage.carryon_onboarding_group_collapsed`, '1' or '0') wins; otherwise auto-collapse when `totalCount >= 3`.
+- New disclosure header replacing the static "GETTING STARTED" label: `<button data-testid="onboarding-prompts-group-toggle">` showing `GETTING STARTED — {N} prompt(s)` plus a chevron that flips on expand/collapse. ARIA `aria-expanded` + `aria-controls` for screen-reader hygiene.
+- Body kept mounted (display:none when collapsed) so per-tile dismiss flags + the wizard's content callback keep firing and the count stays accurate.
+- Collapsed-only `<button data-testid="onboarding-hide-all-today-mini">` — a tiny 28px circle X next to the disclosure that fires the same `hideAllOnboardingForToday` action as the bottom gold pill (which itself only renders when expanded).
+- Added `ChevronDown` to the lucide-react imports.
+
+**Quality gates:**
+- `bash /app/housekeeping.sh --strict` → 0 WARN / 0 FAIL.
+- ESLint clean on both files.
+- Mobile screenshot (420×900) confirms: default-collapsed disclosure "GETTING STARTED — 4 prompts ▾" with mini X; one click expands to the full stack with gold pill at the bottom; one more click re-collapses; the preference persists in localStorage so subsequent dashboard loads honor it.
+
+
+
+
 ## Feb 26, 2026 — TRUE single-wrapper unified onboarding stack + copy diet (V2026.02.26-g)
 
 **Why**: Founder review of mobile screenshots showed `OnboardingWizard.js` (which renders the 8-step "Get Started with CarryOn", "Welcome to Your Estate", "How Offline Mode Works", and the active step nudge) was being rendered OUTSIDE the dashboard wrapper added in V…f. Result: the wrapper boxed only the 2 QW tiles; everything else floated free below it, defeating the "one main tile" intent. Founder also demanded the verbose copy be cut down — estate planning is daunting enough without paragraphs of text.
