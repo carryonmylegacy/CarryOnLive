@@ -24,12 +24,58 @@ const AppearanceCard = ({ isStaff }) => {
     try { return localStorage.getItem('carryon_quickstart_tile_dismissed') !== '1'; }
     catch { return true; }
   });
+  // "Welcome to Your Estate" — the third onboarding tile that
+  // appears for users who are BOTH benefactor AND beneficiary,
+  // explaining how to switch between the two portal views. Hidden
+  // via `localStorage.carryon_welcome_tile_dismissed` from the
+  // tile's own X button.
+  const [welcomeTileVisible, setWelcomeTileVisible] = useState(() => {
+    try { return localStorage.getItem('carryon_welcome_tile_dismissed') !== 'true'; }
+    catch { return true; }
+  });
+  // Reflect the "Hide all Getting Started prompts for today" master
+  // gate set from the dashboard's gold pill. When active, expose a
+  // "Show again now" reset so the user can re-enable the whole group
+  // before midnight without leaving Settings.
+  const computeHiddenUntil = () => {
+    try {
+      const until = localStorage.getItem('carryon_onboarding_hidden_until');
+      if (!until) return null;
+      const t = new Date(until).getTime();
+      return Number.isFinite(t) && t > Date.now() ? until : null;
+    } catch { return null; }
+  };
+  const [hiddenUntil, setHiddenUntil] = useState(computeHiddenUntil);
 
   useEffect(() => {
     apiClient.get(`${API_URL}/onboarding/status`, getAuthHeaders()).then(res => {
       setOnboardingVisible(!res.data.dismissed);
     }).catch(() => {});
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Re-check the master gate when the user re-focuses the Settings
+  // tab (it may have been cleared/set from another tab or by midnight
+  // elapsing while Settings was idle).
+  useEffect(() => {
+    const recheck = () => setHiddenUntil(computeHiddenUntil());
+    document.addEventListener('visibilitychange', recheck);
+    window.addEventListener('focus', recheck);
+    window.addEventListener('carryon:onboarding-hidden-changed', recheck);
+    return () => {
+      document.removeEventListener('visibilitychange', recheck);
+      window.removeEventListener('focus', recheck);
+      window.removeEventListener('carryon:onboarding-hidden-changed', recheck);
+    };
+  }, []);
+
+  // Helper: friendly local-time label for the next-midnight reset.
+  const formatResetTime = (iso) => {
+    try {
+      const d = new Date(iso);
+      // Local-time formatting — falls back to ISO if Intl is missing.
+      return d.toLocaleString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+    } catch { return iso; }
+  };
 
   return (
     <Card className="glass-card">
@@ -114,6 +160,81 @@ const AppearanceCard = ({ isStaff }) => {
                 data-testid="settings-onboarding-toggle"
               />
             </div>
+            {/*
+              "Welcome to Your Estate" tile — the third onboarding
+              prompt, shown only to users who hold BOTH a benefactor
+              AND beneficiary role (its content teaches them to flip
+              between the two portal views). Toggle ON re-enables it
+              on the next dashboard render; OFF hides it the same way
+              the tile's own X dismiss does.
+            */}
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="text-[var(--t)] font-medium">Welcome to Your Estate Tile</h4>
+                <p className="text-[var(--t5)] text-sm">Reminder that explains how to switch between your Benefactor and Beneficiary views. Only appears if your account holds both roles.</p>
+              </div>
+              <Switch
+                checked={welcomeTileVisible}
+                onCheckedChange={(checked) => {
+                  setWelcomeTileVisible(checked);
+                  try {
+                    if (checked) {
+                      localStorage.removeItem('carryon_welcome_tile_dismissed');
+                    } else {
+                      localStorage.setItem('carryon_welcome_tile_dismissed', 'true');
+                    }
+                  } catch { /* ignore */ }
+                  try {
+                    window.dispatchEvent(new CustomEvent('carryon:welcome-tile-visibility-changed', { detail: { visible: checked } }));
+                  } catch { /* ignore */ }
+                  toast.success(checked ? 'Welcome tile shown on dashboard — saved.' : 'Welcome tile hidden — saved.');
+                }}
+                data-testid="settings-welcome-tile-toggle"
+              />
+            </div>
+            {/*
+              "Hide all Getting Started prompts for today" reset —
+              visible ONLY when the master gate set by the dashboard's
+              gold pill is still active. Lets the user un-hide the
+              whole group before midnight without ever leaving
+              Settings.
+            */}
+            {hiddenUntil && (
+              <div
+                className="flex items-center justify-between gap-3 rounded-xl p-3"
+                data-testid="settings-onboarding-hidden-banner"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(var(--gold-rgb), 0.10), rgba(var(--gold-rgb), 0.04))',
+                  border: '1px solid rgba(var(--gold-rgb), 0.30)',
+                }}
+              >
+                <div className="min-w-0">
+                  <h4 className="text-[var(--t)] font-medium">Getting Started prompts paused</h4>
+                  <p className="text-[var(--t5)] text-xs">
+                    Hidden until {formatResetTime(hiddenUntil)}. They'll reappear automatically tomorrow.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  data-testid="settings-onboarding-show-again"
+                  onClick={() => {
+                    try { localStorage.removeItem('carryon_onboarding_hidden_until'); } catch { /* ignore */ }
+                    setHiddenUntil(null);
+                    try { window.dispatchEvent(new CustomEvent('carryon:onboarding-hidden-changed', { detail: { hidden: false } })); } catch { /* ignore */ }
+                    toast.success('Getting Started prompts will appear again on your dashboard.');
+                  }}
+                  className="flex-shrink-0 px-4 py-2 rounded-full text-xs lg:text-sm font-bold transition-all active:scale-[0.96] lg:hover:scale-[1.03]"
+                  style={{
+                    background: 'linear-gradient(135deg, #d4af37, #b8962e)',
+                    color: '#181818',
+                    border: '1px solid rgba(255,255,255,0.18)',
+                    boxShadow: '0 4px 12px rgba(var(--gold-rgb), 0.25)',
+                  }}
+                >
+                  Show again now
+                </button>
+              </div>
+            )}
           </>
         )}
       </CardContent>

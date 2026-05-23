@@ -50,6 +50,19 @@ const OnboardingWizard = ({ onAllComplete }) => {
     else setLoading(false);
   }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Listen for the Settings → Appearance → Welcome Tile toggle so the
+  // tile can re-appear immediately without a page reload (Feb 26 2026
+  // founder mandate — Settings should offer toggles for every
+  // onboarding tile that can show on the dashboard).
+  useEffect(() => {
+    const onWelcomeVis = (e) => {
+      const visible = !!(e && e.detail && e.detail.visible);
+      setWelcomeDismissed(!visible);
+    };
+    window.addEventListener('carryon:welcome-tile-visibility-changed', onWelcomeVis);
+    return () => window.removeEventListener('carryon:welcome-tile-visibility-changed', onWelcomeVis);
+  }, []);
+
   const fetchProgress = async () => {
     try {
       const res = await apiClient.get(`${API_URL}/onboarding/progress`, getAuthHeaders());

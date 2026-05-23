@@ -1,6 +1,26 @@
 # CarryOn — Changelog
 
 
+## Feb 26, 2026 — Welcome Tile toggle + "Show again now" reset (V2026.02.26-e)
+
+**Why**: Founder wants Settings → Appearance to expose toggles for every onboarding tile that can appear on the dashboard, plus an in-Settings way to revert the "Hide all Getting Started prompts for today" master gate before midnight.
+
+**Changes:**
+- `AppearanceCard.js`:
+  - New `settings-welcome-tile-toggle` Switch for the third onboarding tile ("Welcome to Your Estate" — the benefactor/beneficiary view-switch reminder rendered by `OnboardingWizard.js`). Toggle ON/OFF writes `localStorage.carryon_welcome_tile_dismissed` and dispatches `carryon:welcome-tile-visibility-changed` for live cross-component sync.
+  - New gold-bordered "Getting Started prompts paused" banner, visible only while `localStorage.carryon_onboarding_hidden_until` is in the future. Shows the precise local reset time (Intl-formatted) and a prominent gold "Show again now" pill (`data-testid="settings-onboarding-show-again"`) that clears the gate and fires `carryon:onboarding-hidden-changed`.
+  - Cross-tab/cross-route reactivity: `visibilitychange`, `focus`, and the custom event all re-check `hiddenUntil` so the banner appears/disappears without a refresh.
+- `OnboardingWizard.js`: now listens for `carryon:welcome-tile-visibility-changed` and updates `welcomeDismissed` live.
+- `DashboardPage.js`: the gold pill click now also dispatches `carryon:onboarding-hidden-changed` so any open Settings tab updates instantly; the dashboard's recheck `useEffect` also subscribes so a "Show again now" click from Settings flips the dashboard wrapper back on.
+
+**Quality gates:**
+- `bash /app/housekeeping.sh --strict` → 0 WARN / 0 FAIL.
+- ESLint clean on `AppearanceCard.js`, `OnboardingWizard.js`, `DashboardPage.js`.
+- Screenshot verification (1280×900 desktop Settings): all four onboarding surfaces present and stacked vertically — QuickStart Tile, Getting Started Guide, Welcome to Your Estate, "Getting Started prompts paused" banner with "Show again now" gold pill. Toggles tested for presence; reset banner tested with a pre-set hidden_until.
+
+
+
+
 ## Feb 26, 2026 — "Getting Started" group wrapper + Hide-for-today master gate (V2026.02.26-d)
 
 **Why**: Founder asked for a single visual container around the three dashboard onboarding tiles ("Resume the QuickStart Wizard", "Your QuickStart Guide is ready", "Pick Up Where You Left Off") plus a prominent gold pill to silence the whole group until midnight local-time.

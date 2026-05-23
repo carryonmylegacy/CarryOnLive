@@ -157,6 +157,7 @@ const DashboardPage = () => {
     const recheck = () => setOnboardingHiddenForToday(isOnboardingHiddenForToday());
     document.addEventListener('visibilitychange', recheck);
     window.addEventListener('focus', recheck);
+    window.addEventListener('carryon:onboarding-hidden-changed', recheck);
     // Schedule a one-shot timer to flip the gate at local midnight if
     // the tab stays open (no user interaction needed).
     let timerId = null;
@@ -172,6 +173,7 @@ const DashboardPage = () => {
     return () => {
       document.removeEventListener('visibilitychange', recheck);
       window.removeEventListener('focus', recheck);
+      window.removeEventListener('carryon:onboarding-hidden-changed', recheck);
       if (timerId) clearTimeout(timerId);
     };
   }, [onboardingHiddenForToday, isOnboardingHiddenForToday]);
@@ -184,6 +186,7 @@ const DashboardPage = () => {
     const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0, 0);
     try { localStorage.setItem('carryon_onboarding_hidden_until', midnight.toISOString()); } catch { /* ignore */ }
     setOnboardingHiddenForToday(true);
+    try { window.dispatchEvent(new CustomEvent('carryon:onboarding-hidden-changed', { detail: { hidden: true, until: midnight.toISOString() } })); } catch { /* ignore */ }
     toast.success('Getting Started prompts hidden — they\'ll reappear tomorrow.');
   };
 
