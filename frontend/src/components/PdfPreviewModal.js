@@ -606,6 +606,7 @@ const PdfPreviewModal = () => {
           }
           .pdf-preview-modal .pdf-preview-toolbar {
             display: flex; gap: 8px;
+            flex-wrap: wrap;
             padding: 12px;
             padding-top: max(12px, env(safe-area-inset-top));
             padding-left: max(12px, env(safe-area-inset-left));
@@ -617,6 +618,7 @@ const PdfPreviewModal = () => {
             display: inline-flex; align-items: center; gap: 6px;
             padding: 8px 14px; border-radius: 9999px;
             font-size: 13px; font-weight: 700;
+            white-space: nowrap;
             cursor: pointer;
             -webkit-tap-highlight-color: transparent;
           }
