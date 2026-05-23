@@ -65,12 +65,19 @@ const QuickStartWizard = ({ forceOpen = false, onClose = () => {} }) => {
     catch { return false; }
   });
   // When the dashboard Resume CTA forces us open, clear the local
-  // dismissal so the modal shows immediately.
+  // dismissal AND refetch progress — the wizard's internal `progress`
+  // state may be stale (e.g. the user previously completed the wizard
+  // and then hit Edit & regenerate on the dashboard, which flipped
+  // server-side `complete` from true → false; without a refetch the
+  // wizard's local copy still says complete=true and shouldRender
+  // returns null, making the Resume button feel "dead").
   useEffect(() => {
     if (forceOpen) {
       try { sessionStorage.removeItem(SESSION_SKIP_KEY); } catch { /* ignore */ }
       setDismissedThisSession(false);
+      if (eligible) fetchProgress();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [forceOpen]);
 
   const fetchProgress = async () => {
