@@ -280,6 +280,56 @@ async def save_step(
             materialized.append({"name": name, "relationship": relationship, "beneficiary_id": ben_id})
         merged["beneficiaries"] = {"beneficiaries": materialized}
 
+    # ── Mirror a complete QW residence address onto the user profile ──
+    # Founder direction (Feb 26 2026): if the wizard captured a *full,
+    # valid* US address (street + city + 2-letter state + 5-digit ZIP),
+    # auto-populate the same fields on the user document so the user
+    # never has to re-enter their address in Settings before running
+    # EGA for the first time. Anything less than a full address — bare
+    # state pick, skipped, or partial — is rejected here so Settings
+    # still requires manual entry (and EGA's "needs an address" prompt
+    # still fires).
+    #
+    # We NEVER overwrite an address the user has already entered. The
+    # update is conditional on `address_street` being empty/missing so
+    # founder-edited values are sacred.
+    if step_key == "residence":
+        rd = payload.data if isinstance(payload.data, dict) else {}
+        street = (rd.get("street") or "").strip()
+        city = (rd.get("city") or "").strip()
+        state = (rd.get("state") or "").strip().upper()
+        zipc = (rd.get("zip") or "").strip()
+        is_full = (
+            len(street) >= 3
+            and len(city) >= 2
+            and len(state) == 2
+            and state.isalpha()
+            and len(zipc) >= 5
+            and zipc[:5].isdigit()
+        )
+        if is_full:
+            existing_user = (
+                await db.users.find_one(
+                    {"id": user_id},
+                    {"_id": 0, "address_street": 1},
+                )
+                or {}
+            )
+            already_has_address = bool((existing_user.get("address_street") or "").strip())
+            if not already_has_address:
+                await db.users.update_one(
+                    {"id": user_id},
+                    {
+                        "$set": {
+                            "address_street": street,
+                            "address_city": city,
+                            "address_state": state,
+                            "address_zip": zipc[:5],
+                            "updated_at": datetime.now(timezone.utc).isoformat(),
+                        }
+                    },
+                )
+
     next_step = payload.next_step or step_key
     if next_step not in STEP_ORDER:
         next_step = step_key
