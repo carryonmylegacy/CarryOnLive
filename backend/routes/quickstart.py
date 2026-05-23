@@ -57,6 +57,99 @@ _QS_SDV_CATEGORY = "estate_planning"
 _QS_SDV_NAME = "QuickStart Estate Plan Guide"
 
 
+# ── QuickStart entity type → CES catalog mapping ───────────────────
+# Feb 26 2026 founder direction: every entity the user claims in the
+# QW business step is seeded as an unconnected tile on the CES org
+# chart so they can drag + wire it without re-keying. Keys MUST match
+# `_ENTITY_TYPES` in `QuickStartWizard.js`; values map to the catalog
+# in `frontend/src/config/entityCatalog.js` (category, type_id,
+# friendly_label).
+_QW_ENTITY_MAP: dict[str, tuple[str, str, str]] = {
+    "sole_prop": ("business", "sole_prop", "Sole Proprietorship"),
+    "llc": ("business", "llc", "LLC"),
+    "s_corp": ("business", "s_corp", "S-Corp"),
+    "c_corp": ("business", "c_corp", "C-Corp"),
+    "partnership": ("business", "gen_partnership", "General Partnership"),
+    "limited_partnership": ("business", "lp", "Limited Partnership"),
+    "nonprofit": ("charity", "nonprofit_501c3", "Nonprofit"),
+    "holding_company": ("specialized", "holding_co", "Holding Company"),
+}
+
+
+async def _seed_ces_tiles_from_qw_business(
+    *,
+    estate_id: str,
+    user_id: str,
+    biz: dict,
+    residence_state: str | None,
+) -> None:
+    """Insert unconnected CES tiles for every entity the user claims
+    in the QW business step. Idempotent: only ADDS new seeds (counts
+    that grow from one save to the next). Never removes — the user
+    owns cleanup on the CES page. A seed is identified by
+    `quickstart_seed=True` on the `cfp_entities` row.
+    """
+    if not estate_id or not isinstance(biz, dict):
+        return
+    if biz.get("none") is True:
+        return
+    types = biz.get("types") or []
+    if not isinstance(types, list) or not types:
+        return
+    counts = biz.get("counts") or {}
+    formation_state = (residence_state or "").strip().upper() or None
+    for t in types:
+        mapping = _QW_ENTITY_MAP.get(t)
+        if not mapping:
+            continue
+        category, ces_type, friendly = mapping
+        try:
+            target_n = int(counts.get(t) or 1)
+        except (TypeError, ValueError):
+            target_n = 1
+        target_n = max(1, min(50, target_n))
+        existing = await db.cfp_entities.count_documents(
+            {
+                "estate_id": estate_id,
+                "category": category,
+                "type": ces_type,
+                "quickstart_seed": True,
+                "deleted_at": None,
+            }
+        )
+        to_create = max(0, target_n - existing)
+        for i in range(to_create):
+            slot = existing + i + 1
+            # Use a bare friendly name when only one will ever exist for
+            # this type (clean look). Number subsequent ones so the user
+            # can tell duplicates apart on the org chart.
+            name = friendly if target_n == 1 and existing == 0 else f"{friendly} {slot}"
+            now = datetime.now(timezone.utc).isoformat()
+            await db.cfp_entities.insert_one(
+                {
+                    "id": str(uuid.uuid4()),
+                    "estate_id": estate_id,
+                    "owner_user_id": user_id,
+                    "category": category,
+                    "type": ces_type,
+                    "name": name,
+                    "formation_state": formation_state,
+                    "ein_last_four": None,
+                    "formation_date": None,
+                    "tax_election": None,
+                    "registered_agent": None,
+                    "notes": None,
+                    "document_ids": [],
+                    "gross_assets": None,
+                    "gross_debts": None,
+                    "quickstart_seed": True,
+                    "created_at": now,
+                    "updated_at": now,
+                    "deleted_at": None,
+                }
+            )
+
+
 async def _upsert_quickstart_in_sdv(
     *,
     user_id: str,
@@ -331,6 +424,20 @@ async def save_step(
                         }
                     },
                 )
+
+    # ── Seed CES org-chart tiles from claimed business entities ────
+    # Feb 26 2026 founder direction. Tiles are dropped unconnected so
+    # the user can drag + wire them on the CES page without having to
+    # re-key each entity.
+    if step_key == "business":
+        biz_data = payload.data if isinstance(payload.data, dict) else {}
+        residence_state = ((merged.get("residence") or {}).get("state") or "").strip()
+        await _seed_ces_tiles_from_qw_business(
+            estate_id=estate_id,
+            user_id=user_id,
+            biz=biz_data,
+            residence_state=residence_state or None,
+        )
 
     next_step = payload.next_step or step_key
     if next_step not in STEP_ORDER:
