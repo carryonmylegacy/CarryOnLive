@@ -329,11 +329,26 @@ const DashboardPage = () => {
     // fetch. The cache often has stale ccp_plans or no financialSummary
     // at all, so the reveal shows zeros/old values for those three —
     // then the network response updates them visibly a moment later.
-    // Fix: hold the reveal until the network fetch completes (or a 2s
-    // safety timeout fires for genuinely-slow networks). Cache values
-    // are still applied to state immediately so the dashboard is
-    // already rendered to its final tiles when reveal fires.
+    // Fix: hold the reveal until the network fetch completes (or a
+    // 1500 ms safety timeout fires for genuinely-slow networks). Cache
+    // values are still applied to state immediately so the dashboard
+    // is already rendered to its final tiles when reveal fires.
+    //
+    // Perf rescue (Feb 26 2026 user report — "dashboard takes 4-5 s
+    // every time"): the strict `cacheComplete` gate was punishing
+    // users whose financial summary or freshness stamps are
+    // legitimately `null` — the splash held for the full network
+    // round-trip every visit. The gate now treats nullable fields as
+    // "complete when the key is present" and the safety timer below
+    // caps splash time at 1500 ms regardless of cache shape.
     let revealedFromCache = false;
+    let safetyRevealTimer = null;
+    const revealDashboard = () => {
+      if (revealedFromCache) return;
+      revealedFromCache = true;
+      setLoading(false);
+      requestAnimationFrame(() => requestAnimationFrame(() => setDashboardReady(true)));
+    };
     try {
       const tile = await getLocalDashboardTile(estateId);
       if (tile) {
@@ -354,33 +369,38 @@ const DashboardPage = () => {
         // Cache-first reveal (Feb 16, 2026 user-perf report): we used
         // to hold the splash up until the network call returned so
         // CFP/CCP values never jumped from 0 → real. The compromise:
-        // reveal IMMEDIATELY when the cached snapshot is complete
-        // (stats has CFP+CCP numerics + we have a cached financial
-        // summary AND the BNDR/EGA freshness stamps). Otherwise hold
-        // the splash so the user never sees a stale 0 morph to a real
-        // number 1s later — the regression flagged on May 22, 2026.
+        // reveal IMMEDIATELY when the cached snapshot has been
+        // populated by a prior successful fetch — checked by
+        // confirming the *keys* exist on the tile, not that their
+        // values are truthy. `financialSummary: null` is a legitimate
+        // shape for users with no financial data and used to falsely
+        // gate the reveal off, holding the splash for 4-5 s every
+        // visit (Feb 26 2026 founder report).
         const cacheComplete = !!(
           tile.stats
           && typeof tile.stats.ccp_plans === 'number'
           && typeof tile.stats.ccp_drilled === 'number'
-          && tile.financialSummary
           && tile.readiness
+          && 'financialSummary' in tile
           && 'lastBinderAt' in tile
           && 'lastEgaAt' in tile
         );
         if (cacheComplete) {
-          revealedFromCache = true;
-          setLoading(false);
-          requestAnimationFrame(() => requestAnimationFrame(() => setDashboardReady(true)));
+          revealDashboard();
         }
       }
     } catch { /* non-fatal */ }
+    // Safety net: even if the cache shape is unusual or the user is
+    // brand-new (no cache row yet), never hold the splash longer than
+    // 1500 ms. The network fetch keeps running in the background and
+    // silently updates each tile when it returns.
+    safetyRevealTimer = setTimeout(revealDashboard, 1500);
     if (typeof navigator !== 'undefined' && navigator.onLine === false) {
       // Genuinely offline — reveal with cached values now since no
-      // network update is coming. (The 2s safety timer would also
-      // fire, but doing it eagerly avoids a needless 2s splash hold.)
-      setLoading(false);
-      requestAnimationFrame(() => requestAnimationFrame(() => setDashboardReady(true)));
+      // network update is coming. Clears the safety timer so we
+      // don't double-fire the reveal.
+      if (safetyRevealTimer) clearTimeout(safetyRevealTimer);
+      revealDashboard();
       return;
     }
     try {
@@ -547,6 +567,7 @@ const DashboardPage = () => {
       }
     } catch (error) { console.error('Fetch estate data error:', error); }
     finally {
+      if (safetyRevealTimer) clearTimeout(safetyRevealTimer);
       setLoading(false);
       // Delay reveal until overlay is rendered
       requestAnimationFrame(() => {
