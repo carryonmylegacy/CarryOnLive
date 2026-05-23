@@ -1,6 +1,28 @@
 # CarryOn — Changelog
 
 
+## Feb 26, 2026 — "Getting Started" group wrapper + Hide-for-today master gate (V2026.02.26-d)
+
+**Why**: Founder asked for a single visual container around the three dashboard onboarding tiles ("Resume the QuickStart Wizard", "Your QuickStart Guide is ready", "Pick Up Where You Left Off") plus a prominent gold pill to silence the whole group until midnight local-time.
+
+**Changes (`DashboardPage.js`):**
+- New wrapper `<div data-testid="onboarding-prompts-group">` with subtle gold-tinted border + gradient bg, sitting between the welcome header and the Total Estate Readiness gauge. The wrapper auto-fits whichever 1-3 tiles happen to be visible (IIFE computes `qwIncompleteVisible || qwCompleteVisible || gsResumeVisible`; if all three are false the wrapper renders nothing).
+- "GETTING STARTED" small-caps label inside the top-left of the wrapper so the group's intent is obvious.
+- Bottom of the wrapper hosts a prominent gold pill `data-testid="onboarding-hide-all-today"` with X icon + "Hide all Getting Started prompts for today" label, styled with the same brand gold gradient + lift shadow used elsewhere in the platform.
+- Click handler writes `localStorage.carryon_onboarding_hidden_until` = next-local-midnight ISO string (computed via `new Date(y, m, d+1, 0, 0, 0, 0)` so it honors whichever timezone the runtime is in). The gate (`onboardingHiddenForToday`) is then `true` and the entire wrapper short-circuits.
+- Auto-recheck listeners on `visibilitychange` + window `focus` so the wrapper reappears the moment the user comes back after midnight. Also a one-shot `setTimeout` aligned to the stored midnight so the gate flips automatically while the tab is open.
+- Every per-tile X dismiss flow is preserved — individual session/local flags continue to work independently.
+
+**Quality gates:**
+- `bash /app/housekeeping.sh --strict` → 0 WARN / 0 FAIL.
+- ESLint clean on `DashboardPage.js`.
+- Manual screenshot verification PWA (768×1100) + desktop (1440×900):
+  - Before click: GETTING STARTED label visible, both visible tiles enclosed, prominent gold pill bottom-centered.
+  - After click: entire wrapper removed, toast "Getting Started prompts hidden — they'll reappear tomorrow." displayed, `localStorage.carryon_onboarding_hidden_until = '2026-05-24T00:00:00.000Z'` (local midnight).
+
+
+
+
 ## Feb 26, 2026 — Prominent circle-X across all dashboard onboarding tiles (V2026.02.26-c)
 
 **Why**: Founder review of the desktop QW tile screenshot showed the X dismiss being partially covered by the Edit & Regenerate button's corner, and the X itself was visually weak. Founder also asked to (a) right-justify the View PDF / Edit & Regenerate buttons in PWA mode and (b) mirror the same prominent dismiss X across every onboarding tile on the dashboard.

@@ -134,6 +134,59 @@ const DashboardPage = () => {
       window.removeEventListener('carryon:quickstart-tile-visibility-changed', onVisibilityChanged);
     };
   }, []);
+
+  // "Hide all Getting Started prompts for today" — single master gate
+  // covering the QuickStart Complete / Resume QuickStart / Pick Up
+  // Where You Left Off tiles. Persisted in localStorage as an ISO
+  // timestamp of the next local-midnight; auto-clears when that
+  // moment passes. Independent from each tile's own X-dismiss so all
+  // existing individual flows continue to work.
+  const isOnboardingHiddenForToday = useCallback(() => {
+    try {
+      const until = localStorage.getItem('carryon_onboarding_hidden_until');
+      if (!until) return false;
+      const untilMs = new Date(until).getTime();
+      return Number.isFinite(untilMs) && untilMs > Date.now();
+    } catch { return false; }
+  }, []);
+  const [onboardingHiddenForToday, setOnboardingHiddenForToday] = useState(isOnboardingHiddenForToday);
+  // Re-check the gate when the tab regains focus — covers the
+  // "user left the laptop open overnight" case so the tiles
+  // reappear after local midnight without a manual refresh.
+  useEffect(() => {
+    const recheck = () => setOnboardingHiddenForToday(isOnboardingHiddenForToday());
+    document.addEventListener('visibilitychange', recheck);
+    window.addEventListener('focus', recheck);
+    // Schedule a one-shot timer to flip the gate at local midnight if
+    // the tab stays open (no user interaction needed).
+    let timerId = null;
+    try {
+      const until = localStorage.getItem('carryon_onboarding_hidden_until');
+      if (until) {
+        const ms = new Date(until).getTime() - Date.now();
+        if (ms > 0 && ms < 24 * 60 * 60 * 1000) {
+          timerId = setTimeout(recheck, ms + 500);
+        }
+      }
+    } catch { /* ignore */ }
+    return () => {
+      document.removeEventListener('visibilitychange', recheck);
+      window.removeEventListener('focus', recheck);
+      if (timerId) clearTimeout(timerId);
+    };
+  }, [onboardingHiddenForToday, isOnboardingHiddenForToday]);
+
+  const hideAllOnboardingForToday = () => {
+    // Compute next local midnight (Date components honor the runtime
+    // timezone so this naturally resets at midnight wherever the
+    // platform is being accessed).
+    const now = new Date();
+    const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0, 0);
+    try { localStorage.setItem('carryon_onboarding_hidden_until', midnight.toISOString()); } catch { /* ignore */ }
+    setOnboardingHiddenForToday(true);
+    toast.success('Getting Started prompts hidden — they\'ll reappear tomorrow.');
+  };
+
   const guidedDismissedRef = useRef(false);
   const lastCompletedAtRef = useRef(null);
 
@@ -985,6 +1038,44 @@ const DashboardPage = () => {
         </div>
       </div>
 
+      {/* ── Getting Started Prompts Group ─────────────────────────────
+          Master wrapper enclosing the three dashboard onboarding tiles
+          ("Resume the QuickStart Wizard", "Your QuickStart Guide is
+          ready", "Pick Up Where You Left Off"). The wrapper enlarges
+          to fit whichever 1-3 tiles happen to be present, and a
+          single prominent gold pill at the bottom hides the entire
+          group until the next local-midnight (Feb 26 2026 founder
+          mandate). Each inner tile's own X dismiss still works
+          independently so per-tile flows are preserved.
+
+          NOTE: the inner-tile JSX kept its original visibility
+          conditions verbatim — `anyOnboardingVisible` is the OR of
+          the same booleans, so any tile that would have rendered
+          before still renders here, just inside the wrapper. */}
+      {!onboardingHiddenForToday && (() => {
+        const eligible = user?.role === 'benefactor' || user?.is_also_benefactor;
+        const qwIncompleteVisible = eligible && quickstartProgress && !quickstartProgress.complete && !resumeQwTileDismissed;
+        const qwCompleteVisible = eligible && quickstartProgress && quickstartProgress.complete && !quickstartTileDismissed;
+        const gsResumeVisible = eligible
+          && onboardingProgress?.manually_dismissed === true
+          && onboardingProgress?.resume_banner_hidden !== true
+          && !onboardingProgress?.all_complete
+          && !resumeGsTileDismissed
+          && (onboardingProgress?.steps || []).some(s => !s.completed);
+        return qwIncompleteVisible || qwCompleteVisible || gsResumeVisible;
+      })() && (
+      <div
+        data-testid="onboarding-prompts-group"
+        className="mb-4 rounded-2xl relative p-3 lg:p-4"
+        style={{
+          border: '1px solid rgba(212, 175, 55, 0.18)',
+          background: 'linear-gradient(180deg, rgba(212, 175, 55, 0.04), rgba(212, 175, 55, 0.01))',
+        }}
+      >
+        <div className="text-[10px] lg:text-xs font-bold uppercase tracking-[0.18em] text-[var(--t5)] mb-2 px-1" data-testid="onboarding-prompts-group-label">
+          Getting Started
+        </div>
+
       {/* QuickStart — two states:
           (1) Not yet complete: Resume CTA opens the modal at the last step.
           (2) Complete: shows a status tile with View PDF + Edit & regenerate.
@@ -1257,6 +1348,28 @@ const DashboardPage = () => {
             <ChevronRight className="w-5 h-5 flex-shrink-0 text-[var(--t5)]" />
           </div>
         </div>
+      )}
+
+        {/* Gold pill — hides the whole group until next local midnight. */}
+        <div className="flex justify-center pt-1 pb-1">
+          <button
+            type="button"
+            data-testid="onboarding-hide-all-today"
+            onClick={hideAllOnboardingForToday}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-xs lg:text-sm font-bold transition-all active:scale-[0.96] lg:hover:scale-[1.03]"
+            style={{
+              background: 'linear-gradient(135deg, #d4af37, #b8962e)',
+              color: '#181818',
+              border: '1px solid rgba(255,255,255,0.18)',
+              boxShadow: '0 6px 18px rgba(var(--gold-rgb), 0.30)',
+              letterSpacing: '0.02em',
+            }}
+          >
+            <X className="w-4 h-4" strokeWidth={2.5} />
+            Hide all Getting Started prompts for today
+          </button>
+        </div>
+      </div>
       )}
 
       {/* Onboarding Wizard — shown early so it's visible on mobile */}
