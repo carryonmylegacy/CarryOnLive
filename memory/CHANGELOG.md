@@ -1,6 +1,22 @@
 # CarryOn — Changelog
 
 
+## Feb 26, 2026 — Settings: "Open Wizard" button → "QuickStart Tile on Dashboard" toggle (V2026.02.26-a)
+
+**Why**: Founder asked to remove the duplicated launch path. The QW is now exclusively launched from the dashboard tile (View PDF / Edit & regenerate). Settings should *control tile visibility* — not re-launch the wizard.
+
+**Changes:**
+- `frontend/src/components/settings/AppearanceCard.js`: replaced `settings-quickstart-open-btn` button with `settings-quickstart-tile-toggle` Switch. Toggle ON removes `carryon_quickstart_tile_dismissed` from localStorage; OFF sets it. Both paths fire a new `carryon:quickstart-tile-visibility-changed` CustomEvent so the dashboard re-renders without reload.
+- `frontend/src/pages/DashboardPage.js`: now listens for the visibility-changed event and reactively flips `quickstartTileDismissed`. Tile X-close still works and now also fires the same event so other open Settings tabs stay in sync. Stale "Re-open from Settings → Appearance → Open Wizard" copy updated to "→ QuickStart Tile on Dashboard."
+
+**Quality gates:**
+- `bash /app/housekeeping.sh --strict` → 0 WARN / 0 FAIL.
+- ESLint clean on AppearanceCard.js and DashboardPage.js.
+- Manual screenshot verification: toggle renders below Dark Mode + above Getting Started Guide on benefactor Settings; old Open Wizard button confirmed removed.
+
+
+
+
 ## May 22, 2026 — QW dashboard tile X-close + EGA "QW vs Vault Gap" quick action (V2026.05.22-n)
 
 **Dashboard QW completion tile is now dismissible.** Founder asked for an X with a popup explaining how to bring it back, mirroring the Getting Started Guide pattern.

@@ -14,6 +14,16 @@ const AppearanceCard = ({ isStaff }) => {
   const { getAuthHeaders } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [onboardingVisible, setOnboardingVisible] = useState(false);
+  // The QuickStart tile on the Dashboard is controlled by the same
+  // `carryon_quickstart_tile_dismissed` localStorage flag the tile's
+  // own "X" dismiss button writes. Toggle ON = tile visible (flag
+  // removed); Toggle OFF = tile hidden (flag set). The dashboard
+  // listens for `carryon:quickstart-tile-visibility-changed` to
+  // reactively re-render without a page reload.
+  const [quickstartTileVisible, setQuickstartTileVisible] = useState(() => {
+    try { return localStorage.getItem('carryon_quickstart_tile_dismissed') !== '1'; }
+    catch { return true; }
+  });
 
   useEffect(() => {
     apiClient.get(`${API_URL}/onboarding/status`, getAuthHeaders()).then(res => {
@@ -47,49 +57,39 @@ const AppearanceCard = ({ isStaff }) => {
         {!isStaff && (
           <>
             {/*
-              QuickStart Wizard restart — SEPARATE product from the
-              Getting Started Guide below. The QW is a 10-step
-              conversational onboarding that produces a personalized
-              Estate Plan Checklist PDF (saved to the SDV). The
-              Getting Started Guide is the long-form, in-app
-              walk-through that opens contextual "Getting Started"
-              callouts on each pillar page. Per founder mandate
-              May 22 2026: must NEVER be conflated.
+              QuickStart Wizard tile visibility — SEPARATE product from
+              the Getting Started Guide below. Toggle ON re-shows the
+              QuickStart tile on the Dashboard (View PDF, Edit &
+              regenerate). Toggle OFF hides it. The tile itself houses
+              the wizard launch — there is no separate "Open Wizard"
+              button per founder mandate Feb 26 2026.
             */}
             <div className="flex items-center justify-between">
               <div>
                 <h4 className="text-[var(--t)] font-medium flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-[var(--gold)]" />
-                  QuickStart Wizard
+                  QuickStart Tile on Dashboard
                 </h4>
-                <p className="text-[var(--t5)] text-sm">A 2-minute conversational wizard that generates your personalized Estate Plan Guide PDF. Reopen any time to edit answers and regenerate the guide.</p>
+                <p className="text-[var(--t5)] text-sm">Show the QuickStart Wizard tile on your dashboard so you can open the guide PDF or edit your answers anytime.</p>
               </div>
-              <button
-                type="button"
-                className="px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap"
-                style={{
-                  background: 'linear-gradient(135deg, var(--gold), #b8962e)',
-                  color: '#080e1a',
-                  border: '1px solid rgba(255,255,255,0.10)',
-                  boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
-                }}
-                data-testid="settings-quickstart-open-btn"
-                onClick={async () => {
+              <Switch
+                checked={quickstartTileVisible}
+                onCheckedChange={(checked) => {
+                  setQuickstartTileVisible(checked);
                   try {
-                    await apiClient.post(`${API_URL}/quickstart/reopen`, {}, getAuthHeaders());
-                  } catch (e) {
-                    // Reopen is best-effort — even if it 404s (e.g.,
-                    // user never completed the wizard yet) the resume
-                    // event still pops the wizard from its current
-                    // step.
-                  }
-                  try { sessionStorage.removeItem('carryon_quickstart_skipped_session'); } catch { /* ignore */ }
-                  try { window.dispatchEvent(new CustomEvent('carryon:resume-quickstart')); } catch { /* ignore */ }
-                  toast.success('QuickStart Wizard opened — answer or edit your steps to regenerate your guide.');
+                    if (checked) {
+                      localStorage.removeItem('carryon_quickstart_tile_dismissed');
+                    } else {
+                      localStorage.setItem('carryon_quickstart_tile_dismissed', '1');
+                    }
+                  } catch { /* ignore */ }
+                  try {
+                    window.dispatchEvent(new CustomEvent('carryon:quickstart-tile-visibility-changed', { detail: { visible: checked } }));
+                  } catch { /* ignore */ }
+                  toast.success(checked ? 'QuickStart tile shown on dashboard — saved.' : 'QuickStart tile hidden — saved.');
                 }}
-              >
-                Open Wizard
-              </button>
+                data-testid="settings-quickstart-tile-toggle"
+              />
             </div>
             <div className="flex items-center justify-between">
               <div>

@@ -93,22 +93,31 @@ const DashboardPage = () => {
   const [quickstartProgress, setQuickstartProgress] = useState(null);
   // Per-user dismissal of the "Your QuickStart Guide is ready" tile.
   // localStorage (not sessionStorage) so closing it sticks across
-  // refreshes — the user must explicitly re-open the wizard from
-  // Settings → Appearance → Open Wizard to bring this tile back.
+  // refreshes — the user can re-show it via Settings → Appearance →
+  // QuickStart Tile on Dashboard toggle.
   const [quickstartTileDismissed, setQuickstartTileDismissed] = useState(() => {
     try { return localStorage.getItem('carryon_quickstart_tile_dismissed') === '1'; }
     catch { return false; }
   });
-  // Listen for the Settings "Open Wizard" button (or any future re-open
-  // path) — when fired, clear the dismissal so the tile reappears on
-  // the next regen.
+  // Listen for the Settings toggle (or any future re-open path) — when
+  // the user flips the "QuickStart Tile on Dashboard" toggle, sync the
+  // tile visibility immediately. Also legacy: the `resume-quickstart`
+  // event clears the dismissal so the tile reappears on next regen.
   useEffect(() => {
     const onResume = () => {
       try { localStorage.removeItem('carryon_quickstart_tile_dismissed'); } catch { /* ignore */ }
       setQuickstartTileDismissed(false);
     };
+    const onVisibilityChanged = (e) => {
+      const visible = !!(e && e.detail && e.detail.visible);
+      setQuickstartTileDismissed(!visible);
+    };
     window.addEventListener('carryon:resume-quickstart', onResume);
-    return () => window.removeEventListener('carryon:resume-quickstart', onResume);
+    window.addEventListener('carryon:quickstart-tile-visibility-changed', onVisibilityChanged);
+    return () => {
+      window.removeEventListener('carryon:resume-quickstart', onResume);
+      window.removeEventListener('carryon:quickstart-tile-visibility-changed', onVisibilityChanged);
+    };
   }, []);
   const guidedDismissedRef = useRef(false);
   const lastCompletedAtRef = useRef(null);
@@ -1086,11 +1095,12 @@ const DashboardPage = () => {
                 type="button"
                 data-testid="quickstart-tile-dismiss"
                 aria-label="Hide this tile"
-                title="Hide. Re-open from Settings → Appearance → Open Wizard."
+                title="Hide. Re-open from Settings → Appearance → QuickStart Tile on Dashboard."
                 onClick={() => {
                   try { localStorage.setItem('carryon_quickstart_tile_dismissed', '1'); } catch { /* ignore */ }
                   setQuickstartTileDismissed(true);
-                  toast.success('Tile hidden. Re-open it from Settings → Appearance → Open Wizard.');
+                  try { window.dispatchEvent(new CustomEvent('carryon:quickstart-tile-visibility-changed', { detail: { visible: false } })); } catch { /* ignore */ }
+                  toast.success('Tile hidden. Re-open it from Settings → Appearance → QuickStart Tile on Dashboard.');
                 }}
                 className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-all active:scale-[0.92] hover:bg-[var(--s)]"
                 style={{ color: 'var(--t5)', border: '1px solid rgba(255,255,255,0.10)' }}
