@@ -1125,12 +1125,12 @@ const DashboardPage = () => {
             Collapsed state surfaces a tiny X next to the chevron so the
             "Hide all for today" escape hatch is always one tap away
             without expanding the group. */}
-        <div className="flex items-center justify-between gap-2 px-1 mb-2">
+        <div className="flex items-center justify-between gap-2 px-1 mb-3 lg:mb-4">
           <button
             type="button"
             data-testid="onboarding-prompts-group-toggle"
             onClick={() => setCollapsed(!isCollapsed)}
-            className="flex items-center gap-2 text-[11px] lg:text-xs font-bold uppercase tracking-[0.18em] text-[var(--t5)] transition-colors hover:text-[var(--t)]"
+            className="flex-1 flex items-center gap-2 text-sm lg:text-base font-bold uppercase tracking-[0.15em] text-[var(--t)] transition-colors hover:text-[var(--gold)]"
             aria-expanded={!isCollapsed}
             aria-controls="onboarding-prompts-group-body"
           >
@@ -1141,7 +1141,7 @@ const DashboardPage = () => {
               </span>
             )}
             <ChevronDown
-              className={`w-3.5 h-3.5 transition-transform duration-200 ${isCollapsed ? '' : 'rotate-180'}`}
+              className={`w-4 h-4 lg:w-5 lg:h-5 transition-transform duration-200 ${isCollapsed ? '' : 'rotate-180'}`}
               strokeWidth={2.5}
             />
           </button>
@@ -1169,8 +1169,11 @@ const DashboardPage = () => {
 
         {/* Body — kept mounted always (display:none when collapsed)
             so per-tile dismiss flags + OnboardingWizard's
-            `onContentChange` callback keep firing accurately. */}
-        <div id="onboarding-prompts-group-body" style={{ display: isCollapsed ? 'none' : 'block' }}>
+            `onContentChange` callback keep firing accurately. Uses
+            `space-y-4` to enforce uniform 16px vertical gaps between
+            EVERY tile inside the wrapper (QW, Pick Up, OnboardingWizard
+            children, gold pill). */}
+        <div id="onboarding-prompts-group-body" className="space-y-4" style={{ display: isCollapsed ? 'none' : 'block' }}>
 
       {/* QuickStart — two states:
           (1) Not yet complete: Resume CTA opens the modal at the last step.
@@ -1196,7 +1199,7 @@ const DashboardPage = () => {
               window.dispatchEvent(new CustomEvent('carryon:resume-quickstart'));
             }
           }}
-          className="glass-card relative w-full p-4 lg:p-5 mb-4 border-l-4 border-l-[#d4af37] text-left transition-transform duration-150 active:scale-[0.98] lg:hover:scale-[1.01] lg:hover:shadow-[0_12px_36px_-6px_rgba(var(--gold-rgb), 0.25)]"
+          className="glass-card relative w-full p-4 lg:p-5 border-l-4 border-l-[#d4af37] text-left transition-transform duration-150 active:scale-[0.98] lg:hover:scale-[1.01] lg:hover:shadow-[0_12px_36px_-6px_rgba(var(--gold-rgb), 0.25)]"
           style={{ cursor: 'pointer' }}
         >
           {/* Prominent circle-X dismiss — session-scoped. Same look as the
@@ -1262,7 +1265,7 @@ const DashboardPage = () => {
         && !quickstartTileDismissed && (
         <div
           data-testid="quickstart-complete-tile"
-          className="glass-card w-full p-4 lg:p-5 mb-4 border-l-4 border-l-[#d4af37] relative"
+          className="glass-card w-full p-4 lg:p-5 border-l-4 border-l-[#d4af37] relative"
         >
           {/* Dismiss X — absolute top-right so the responsive
               column-stack never has to make room for it. Prominent
@@ -1395,7 +1398,7 @@ const DashboardPage = () => {
               e.currentTarget.click();
             }
           }}
-          className="glass-card relative w-full p-4 lg:p-5 mb-4 border-l-4 border-l-[#d4af37] text-left transition-transform duration-150 active:scale-[0.98] lg:hover:scale-[1.01] lg:hover:shadow-[0_12px_36px_-6px_rgba(var(--gold-rgb), 0.25)]"
+          className="glass-card relative w-full p-4 lg:p-5 border-l-4 border-l-[#d4af37] text-left transition-transform duration-150 active:scale-[0.98] lg:hover:scale-[1.01] lg:hover:shadow-[0_12px_36px_-6px_rgba(var(--gold-rgb), 0.25)]"
           style={{ cursor: 'pointer' }}
         >
           {/* Prominent circle-X dismiss — session-scoped. */}
@@ -1460,7 +1463,7 @@ const DashboardPage = () => {
         </TileErrorBoundary>
 
         {/* Gold pill — hides the whole group until next local midnight. */}
-        <div className="flex justify-center pt-1 pb-1">
+        <div className="flex justify-center pt-2">
           <button
             type="button"
             data-testid="onboarding-hide-all-today"

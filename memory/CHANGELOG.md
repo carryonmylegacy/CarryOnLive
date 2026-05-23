@@ -1,6 +1,25 @@
 # CarryOn — Changelog
 
 
+## Feb 26, 2026 — Onboarding header polish + uniform tile spacing (V2026.02.26-j)
+
+**Why**: Founder review of the mobile screenshot noted (a) the "ONBOARDING — 4 prompts" header was tiny 11px small-caps that didn't match platform typography scale, and (b) the first two tiles had clean 16px gaps but the bottom three (Setup Checklist / Welcome / Offline) were scrunched together and almost overlapping the gold pill.
+
+**Changes:**
+- `DashboardPage.js` header: `text-[11px] lg:text-xs` → `text-sm lg:text-base`; tracking `0.18em` → `0.15em`; color `var(--t5)` → `var(--t)` (full strength); hover state now goes gold (was just lighter gray); chevron `w-3.5` → `w-4 lg:w-5`. Added `flex-1` to the toggle button so the disclosure spans the tile width.
+- `DashboardPage.js` body: added `space-y-4` to `<div id="onboarding-prompts-group-body">` so EVERY child (QW tile, Pick Up tile, OnboardingWizard, gold pill) gets a uniform 16px top gap.
+- Removed legacy `mb-4` from the QW Resume / QW Complete / Pick Up tiles so the body's `space-y-4` is the single source of truth.
+- `OnboardingWizard.js`: replaced the outer `space-y-3` wrapper with the animation div carrying `space-y-4`, so the Setup Checklist / Welcome / Offline tiles inside the wizard get the SAME 16px gap as the wrapper's other children.
+- Gold pill container `pt-1 pb-1` → `pt-2` (visual breathing room from the last tile above; bottom padding now comes from the wrapper's `p-3 lg:p-4`).
+
+**Quality gates:**
+- `bash /app/housekeeping.sh --strict` → 0 WARN / 0 FAIL.
+- ESLint clean on `DashboardPage.js`, `OnboardingWizard.js`.
+- Mobile screenshot (420×1600 PWA) confirms a perfect rhythm: header → 16px → QW → 16px → Setup Checklist → 16px → Welcome → 16px → Offline → 16px → Gold pill. The "ONBOARDING — 4 prompts ▴" header now reads at the same hierarchy level as other dashboard section labels.
+
+
+
+
 ## Feb 26, 2026 — Onboarding terminology lockdown + visual cohesion (V2026.02.26-i)
 
 **Why**: Founder review of mobile screenshots showed (a) inconsistent terminology — "QuickStart Guide" vs "QuickStart Wizard", "Get Started with CarryOn" vs "Getting Started Guide" all blurred together; (b) the four inner tiles each had a different visual treatment (gold-border card vs no-card-just-header vs gradient-bg cards); (c) the actionable "next step" CTA was floating at the BOTTOM of the wizard, far from the progress bar showing "0 of 8" at the top — pure cognitive friction.

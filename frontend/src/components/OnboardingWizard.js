@@ -347,12 +347,15 @@ const OnboardingWizard = ({ onAllComplete, onContentChange }) => {
   }
 
   return (
-    <div className="space-y-3" data-testid="onboarding-wizard">
-      <div style={{
-        animation: 'wizardSlideIn 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards',
-        opacity: 0,
-        transform: 'translateY(-30px)',
-      }}>
+    <div data-testid="onboarding-wizard">
+      <div
+        className="space-y-4"
+        style={{
+          animation: 'wizardSlideIn 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards',
+          opacity: 0,
+          transform: 'translateY(-30px)',
+        }}
+      >
       <style>{`
         @keyframes wizardSlideIn {
           0% { opacity: 0; transform: translateY(-30px); }
