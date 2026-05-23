@@ -41,6 +41,14 @@ const BackButton = () => {
     '/beneficiary/hub',
     '/onboarding',
     '/transition',
+    // ECT (Estate Comms Tool) ships its own back-to-Dashboard button in
+    // the ECTChannelList header on desktop, and the mobile platform
+    // header serves the same role on mobile. Showing the universal
+    // chip here both duplicates that affordance AND overlaps the
+    // ECT page's chat-bubble icon (its icon-row lives deep inside
+    // ECTChannelList, out of reach of the room-maker CSS).
+    '/estate-chat',
+    '/beneficiary/estate-chat',
   ]);
   if (HIDDEN_EXACT.has(location.pathname)) return null;
 

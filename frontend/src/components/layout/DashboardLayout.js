@@ -100,6 +100,10 @@ const DashboardLayout = () => {
     '/dashboard', '/admin', '/ops', '/beneficiary',
     '/beneficiary/dashboard', '/beneficiary/hub',
     '/onboarding', '/transition',
+    // Keep in lockstep with `BackButton.js` HIDDEN_EXACT — ECT
+    // ships its own back affordance, so the `with-back-button`
+    // class must not be applied here.
+    '/estate-chat', '/beneficiary/estate-chat',
   ]);
   const showUniversalBack = !BACK_HIDDEN.has(location.pathname);
   const [guardianMounted, setGuardianMounted] = useState(false);
