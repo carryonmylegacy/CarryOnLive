@@ -1075,7 +1075,7 @@ const DashboardPage = () => {
           background: 'linear-gradient(180deg, rgba(212, 175, 55, 0.04), rgba(212, 175, 55, 0.01))',
         }}
       >
-        <div className="text-[10px] lg:text-xs font-bold uppercase tracking-[0.18em] text-[var(--t5)] mb-2 px-1" data-testid="onboarding-prompts-group-label">
+        <div className="text-[11px] lg:text-xs font-bold uppercase tracking-[0.18em] text-[var(--t5)] mb-2 px-1" data-testid="onboarding-prompts-group-label">
           Getting Started
         </div>
 
