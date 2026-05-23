@@ -7,27 +7,23 @@ import { ArrowLeft } from 'lucide-react';
  * fixed to the TOP-LEFT corner so every authenticated page gets a
  * consistent affordance to return to the previous page.
  *
- * Visual (May 22 2026 — per founder direction):
- *   • Icon-only circular chip (~32 px) — small footprint, reads as
- *     native chrome (the universally-understood corner chevron).
+ * Visual (Feb 26 2026 — per founder direction):
+ *   • Tall rounded-rectangle "tile" (~32 × 44 px) — thinner
+ *     horizontally, taller vertically — so it reads as a sibling
+ *     of the page's gradient icon-chip (typically 48 × 48) sitting
+ *     to ITS left, not as a floating circle in the corner above.
+ *   • `border-radius: 14px` (matches the rounded-2xl page icon
+ *     chip rhythm) so the eye groups it with the page header.
  *   • Background uses `color-mix` over `var(--card)` so the chip
  *     reads as frosted glass on dark + light theme automatically.
  *   • `z-index: 60` so it paints above any in-page modal or
- *     sticky toolbar (notably ECT's chat overlay at z:45).
+ *     sticky toolbar.
  *
- * Layout integration:
- *   • Fixed top-left at the same vertical level as the typical
- *     page icon-chip. The companion CSS rule in `index.css`
- *     (`.main-content.with-back-button > *:first-child > *:first-child {
- *     padding-left: 48px }`) bumps each page's first content row
- *     right just enough to make room. The page's gradient still
- *     flows full-width underneath the chip so the chip reads as
- *     part of the integrated UX, not as floating chrome.
- *
- * Hidden destinations (root or modal-style surfaces):
- *   • `/dashboard`, `/admin`, `/ops`, `/beneficiary`,
- *     `/beneficiary/dashboard`, `/beneficiary/hub`, `/onboarding`,
- *     `/transition`
+ * Hidden in two cases:
+ *   • Root / modal-style surfaces (see `HIDDEN_EXACT`).
+ *   • Any time a `<SlidePanel>` is open (body has class
+ *     `slide-panel-open`) — the panel has its own back chevron
+ *     so showing both is redundant.
  *
  * Click → `navigate(-1)` if history > 1, else `/dashboard` so a
  * deep-link doesn't dead-end on a closed-tab no-op.
@@ -60,16 +56,20 @@ const BackButton = () => {
       data-testid="universal-back-button"
       aria-label="Back to previous page"
       title="Back"
-      className="universal-back-chip fixed inline-flex items-center justify-center rounded-full transition-all active:scale-90"
+      className="universal-back-chip fixed inline-flex items-center justify-center transition-all active:scale-90"
       style={{
         // `top` is inline because it depends on the runtime
         // safe-area-inset and the offline-banner height variables.
+        // Sits at the vertical level of the typical page icon-chip
+        // (48px tall, ~80px below the top safe-area on a content
+        // page) so the chip reads as a sibling of the icon.
         // `left` is handled by `.universal-back-chip` in index.css
         // so it can shift right of the sidebar on desktop without
         // JS knowing the sidebar's current width.
-        top: 'calc(env(safe-area-inset-top, 0px) + var(--cy-offline-banner-h, 0px) + 60px)',
+        top: 'calc(env(safe-area-inset-top, 0px) + var(--cy-offline-banner-h, 0px) + 76px)',
         width: 32,
-        height: 32,
+        height: 44,
+        borderRadius: 14,
         zIndex: 60,
         background: 'color-mix(in srgb, var(--card) 80%, transparent)',
         color: 'var(--t)',
@@ -88,7 +88,7 @@ const BackButton = () => {
         e.currentTarget.style.borderColor = 'color-mix(in srgb, var(--t) 32%, transparent)';
       }}
     >
-      <ArrowLeft className="w-4 h-4" />
+      <ArrowLeft className="w-4 h-4" strokeWidth={2.5} />
     </button>
   );
 };

@@ -1132,6 +1132,12 @@
       left: 84px;
     }
   }
+  /* Hide the universal back chip whenever a SlidePanel modal is open —
+     the panel ships its own back chevron in its header so showing
+     both creates the redundancy founder flagged Feb 26 2026. */
+  body.slide-panel-open .universal-back-chip {
+    display: none !important;
+  }
 
   
   /* Page Container */

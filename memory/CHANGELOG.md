@@ -1,6 +1,23 @@
 # CarryOn — Changelog
 
 
+## Feb 26, 2026 — Universal back-chip reshaped + SlidePanel redundancy fix (V2026.02.26-k)
+
+**Why**: Founder review showed (a) the universal back button sitting "awkwardly to the upper-left" as a small 32×32 circle, disconnected from the page's icon-chip header; and (b) a visible redundancy on `/beneficiaries` (and similar pages) when a `<SlidePanel>` opened — the panel's own back chevron + the universal chip + the slide-out close button all stacked together.
+
+**Changes (`BackButton.js` + `index.css`):**
+- Shape: circular 32×32 chip → **rectangular 32×44 rounded-2xl tile** (radius 14px). Visually reads as a sibling of the page's 48×48 gradient icon-chip — same frosted-glass color-mix bg, same border weight, same hover-to-gold transition.
+- Position: `top: + 60px` → `+ 76px` so the chip's vertical center lands closer to the page icon row across section, pillar, and feature pages. Single position applies platform-wide for visual uniformity.
+- Hidden whenever a SlidePanel is mounted (`body.slide-panel-open .universal-back-chip { display: none !important; }`) — eliminates the "two back arrows" redundancy without changing the panel's own UI.
+
+**Quality gates:**
+- `bash /app/housekeeping.sh --strict` → 0 WARN / 0 FAIL.
+- ESLint clean on `BackButton.js`.
+- Mobile screenshot at /beneficiaries (PWA 420×1000) confirms the new tall pill rendering inline-left of the "Beneficiaries" page heading; bounding-box check shows w=32, h=44.
+
+
+
+
 ## Feb 26, 2026 — Onboarding header polish + uniform tile spacing (V2026.02.26-j)
 
 **Why**: Founder review of the mobile screenshot noted (a) the "ONBOARDING — 4 prompts" header was tiny 11px small-caps that didn't match platform typography scale, and (b) the first two tiles had clean 16px gaps but the bottom three (Setup Checklist / Welcome / Offline) were scrunched together and almost overlapping the gold pill.
