@@ -530,6 +530,7 @@ async def chat_with_guardian(data: ChatRequest, current_user: dict = Depends(get
             "generate_todo",
             "generate_iac",
             "find_inconsistencies",
+            "quickstart_gap_check",
         ) or any(
             keyword in data.message.lower()
             for keyword in [
@@ -740,6 +741,29 @@ For EACH finding, return:
 
 Be exhaustive. The user is preparing for a B2B pitch where this output is a key demo, so the more specific findings you can surface, the better."""
 
+    elif data.action == "quickstart_gap_check":
+        user_message_text = """Compare my personalized QuickStart Estate Plan Guide PDF against every OTHER document in my Secure Document Vault. The QuickStart Guide is the one filed under the "QuickStart Estate Plan Guide" name in the vault \u2014 it contains my professional-prep checklist, my personalized observations, my state-law notes, and my key terms glossary. It is the source-of-truth checklist of what I should have addressed.
+
+Your job is to tell me, item-by-item, which checklist actions have been ADDRESSED by an uploaded document in my vault and which remain as GAPS.
+
+Use this output structure exactly:
+
+1. ADDRESSED \u2014 Checklist items already covered by a vault document.
+   For each: cite the checklist item verbatim from the QuickStart Guide, then identify by exact filename the vault document that addresses it, then summarize in one sentence HOW that document satisfies the item. Group these by the professional the item was assigned to in the Guide (Estate Attorney, CPA / Tax Advisor, Financial Advisor, Life Insurance Agent, Business Attorney / CPA, etc.).
+
+2. GAPS \u2014 Checklist items NOT yet covered by any vault document.
+   For each: cite the checklist item verbatim, name which document type would satisfy it (e.g. "Florida-executed Durable POA, witnessed and notarized", "Trust funding schedule attached to the revocable trust", "Beneficiary designation form from the insurance carrier"), and rank urgency: critical / high / medium / low. Group by the same professional headings.
+
+3. PERSONALIZED-OBSERVATION COVERAGE \u2014 For each `personalized_observations` item in the Guide, state whether the user has uploaded a document that responds to it. If not, flag the specific document or action the user still needs.
+
+4. RECOMMENDED NEXT THREE ACTIONS \u2014 Pick the three highest-leverage GAPS and write them as imperative sentences the user can act on this week.
+
+Exclude the QuickStart Estate Plan Guide PDF itself from the comparison. Only treat the OTHER documents in the vault as potential coverage.
+
+If no QuickStart Guide is present in the vault, respond with a single short line: "I don't see a QuickStart Estate Plan Guide in your vault yet \u2014 open the QuickStart Wizard from your Dashboard or from Settings \u2192 Appearance to generate one first." Do not invent a checklist from thin air.
+
+Be specific. Name documents by their exact vault filename. Quote checklist items verbatim. Cite state statutes where they're relevant to a gap."""
+
     try:
         # Build conversation history from DB for multi-turn context
         history_messages = [{"role": "system", "content": system_message}]
@@ -810,6 +834,7 @@ Be exhaustive. The user is preparing for a B2B pitch where this output is a key 
                 "analyze_readiness",
                 "state_law_brief",
                 "find_inconsistencies",
+                "quickstart_gap_check",
             )
             or needs_content
         )
@@ -862,6 +887,7 @@ Be exhaustive. The user is preparing for a B2B pitch where this output is a key 
             "analyze_readiness",
             "state_law_brief",
             "find_inconsistencies",
+            "quickstart_gap_check",
         )
 
         # Acquire the platform-wide concurrency token for heavy actions

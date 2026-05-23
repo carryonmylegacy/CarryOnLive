@@ -34,6 +34,7 @@ import {
   MicOff,
   Landmark,
   AlertCircle,
+  GitCompare,
   ChevronRight
 } from 'lucide-react';
 
@@ -58,6 +59,7 @@ const actionButtons = [
   { key: 'analyze_readiness', label: 'Readiness Score', icon: Gauge, color: '#F5A623' },
   { key: 'beneficiary_review', label: 'Beneficiary Review', icon: Users, color: '#8b5cf6' },
   { key: 'state_law_brief', label: 'State Law Brief', icon: Landmark, color: '#ef4444' },
+  { key: 'quickstart_gap_check', label: 'QW vs Vault Gap', icon: GitCompare, color: '#14B8A6' },
 ];
 
 // ═══════════════════════════════════════════════
@@ -439,7 +441,7 @@ const GuardianPage = () => {
     const activeSessionId = overrideSessionId || sessionId;
 
     const displayText = action
-      ? { analyze_vault: 'Analyze my Document Vault', find_inconsistencies: 'Find inconsistencies, mismatches, and gaps in my estate documents and recommend specific fixes', analyze_readiness: 'Analyze my Estate Readiness Score', beneficiary_review: 'Review my beneficiary designations and coverage', state_law_brief: 'Give me a brief on my state\'s estate planning laws' }[action] || messageText
+      ? { analyze_vault: 'Analyze my Document Vault', find_inconsistencies: 'Find inconsistencies, mismatches, and gaps in my estate documents and recommend specific fixes', analyze_readiness: 'Analyze my Estate Readiness Score', beneficiary_review: 'Review my beneficiary designations and coverage', state_law_brief: 'Give me a brief on my state\'s estate planning laws', quickstart_gap_check: 'Compare my QuickStart Estate Plan Guide to the other documents in my vault and tell me which checklist items are addressed and which gaps remain' }[action] || messageText
       : messageText;
 
     setMessages(prev => [...prev, { role: 'user', content: displayText }]);

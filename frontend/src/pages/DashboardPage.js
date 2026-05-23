@@ -91,6 +91,25 @@ const DashboardPage = () => {
   // above the GS CTA when the user has session-skipped the wizard but
   // hasn't finished it. Independent of the GS (`onboarding`) flow.
   const [quickstartProgress, setQuickstartProgress] = useState(null);
+  // Per-user dismissal of the "Your QuickStart Guide is ready" tile.
+  // localStorage (not sessionStorage) so closing it sticks across
+  // refreshes — the user must explicitly re-open the wizard from
+  // Settings → Appearance → Open Wizard to bring this tile back.
+  const [quickstartTileDismissed, setQuickstartTileDismissed] = useState(() => {
+    try { return localStorage.getItem('carryon_quickstart_tile_dismissed') === '1'; }
+    catch { return false; }
+  });
+  // Listen for the Settings "Open Wizard" button (or any future re-open
+  // path) — when fired, clear the dismissal so the tile reappears on
+  // the next regen.
+  useEffect(() => {
+    const onResume = () => {
+      try { localStorage.removeItem('carryon_quickstart_tile_dismissed'); } catch { /* ignore */ }
+      setQuickstartTileDismissed(false);
+    };
+    window.addEventListener('carryon:resume-quickstart', onResume);
+    return () => window.removeEventListener('carryon:resume-quickstart', onResume);
+  }, []);
   const guidedDismissedRef = useRef(false);
   const lastCompletedAtRef = useRef(null);
 
@@ -995,10 +1014,11 @@ const DashboardPage = () => {
           losing prior inputs. */}
       {(user?.role === 'benefactor' || user?.is_also_benefactor)
         && quickstartProgress
-        && quickstartProgress.complete && (
+        && quickstartProgress.complete
+        && !quickstartTileDismissed && (
         <div
           data-testid="quickstart-complete-tile"
-          className="glass-card w-full p-4 lg:p-5 mb-4 border-l-4 border-l-[#d4af37]"
+          className="glass-card w-full p-4 lg:p-5 mb-4 border-l-4 border-l-[#d4af37] relative"
         >
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -1062,6 +1082,19 @@ const DashboardPage = () => {
                 className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs lg:text-sm font-bold transition-all active:scale-[0.97]"
                 style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--t)', border: '1px solid rgba(255,255,255,0.15)' }}
               >Edit &amp; regenerate</button>
+              <button
+                type="button"
+                data-testid="quickstart-tile-dismiss"
+                aria-label="Hide this tile"
+                title="Hide. Re-open from Settings → Appearance → Open Wizard."
+                onClick={() => {
+                  try { localStorage.setItem('carryon_quickstart_tile_dismissed', '1'); } catch { /* ignore */ }
+                  setQuickstartTileDismissed(true);
+                  toast.success('Tile hidden. Re-open it from Settings → Appearance → Open Wizard.');
+                }}
+                className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-all active:scale-[0.92] hover:bg-[var(--s)]"
+                style={{ color: 'var(--t5)', border: '1px solid rgba(255,255,255,0.10)' }}
+              ><X className="w-3.5 h-3.5" /></button>
             </div>
           </div>
         </div>

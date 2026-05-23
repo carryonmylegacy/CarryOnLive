@@ -1,6 +1,29 @@
 # CarryOn — Changelog
 
 
+## May 22, 2026 — QW dashboard tile X-close + EGA "QW vs Vault Gap" quick action (V2026.05.22-n)
+
+**Dashboard QW completion tile is now dismissible.** Founder asked for an X with a popup explaining how to bring it back, mirroring the Getting Started Guide pattern.
+- New `quickstartTileDismissed` localStorage flag (key: `carryon_quickstart_tile_dismissed`). Persists across reloads.
+- Added an X button on the tile with `data-testid="quickstart-tile-dismiss"` — clicking sets the flag + fires a toast: `"Tile hidden. Re-open it from Settings → Appearance → Open Wizard."`
+- Listens for the existing `carryon:resume-quickstart` event so the Settings → Appearance → Open Wizard button automatically clears the dismissal — the tile re-appears the next time the user has a completed guide.
+- The tile render gate is now: `complete && !quickstartTileDismissed`. Resume-CTA logic is unaffected (it only renders when `progress` exists and `!progress.complete`).
+
+**EGA Quick Actions: new "QW vs Vault Gap" button.** Founder wanted a one-click cross-reference between the QuickStart Guide PDF and every other document in the Secure Document Vault.
+- Frontend: added `{ key: 'quickstart_gap_check', label: 'QW vs Vault Gap', icon: GitCompare, color: '#14B8A6' }` to `actionButtons` in `GuardianPage.js`. Action grid is already responsive — the sixth button fits as the second item on the second row of the 2-col mobile / 3-col desktop layout. Added the action's display-text mapping so the user sees `"Compare my QuickStart Estate Plan Guide to the other documents in my vault and tell me which checklist items are addressed and which gaps remain"` while it's loading.
+- Backend (`routes/guardian.py`): added `quickstart_gap_check` to the `needs_content` list (forces vault doc content fetch), to `use_heavy_model` (the prompt is long and document-heavy → leads with `XAI_MODEL` + falls back through the model ladder under load), and to `_is_heavy` (acquires the platform-wide concurrency token so a click-storm can't blast x.ai's per-key ceiling). Added a long, structured prompt that asks the model to:
+  1. List items already **ADDRESSED** by an uploaded vault doc (item verbatim → matching filename → one-sentence explanation), grouped by professional.
+  2. List remaining **GAPS** (item verbatim → required doc type → urgency: critical / high / medium / low), grouped by professional.
+  3. Cross-check coverage of every **personalized_observation** from the Guide against actual uploaded documents.
+  4. Pick the **top three highest-leverage gaps** as imperative this-week actions.
+  5. Explicit safety net: if no QuickStart Guide is present in the vault, respond with a single helpful one-liner directing the user to generate one, instead of inventing a checklist.
+
+**Quality gates:**
+- `bash /app/housekeeping.sh --strict` → ALL CHECKS PASSED · READY TO PUSH · 0 WARN / 0 FAIL.
+- Ruff clean on `routes/guardian.py`; ESLint clean on both `GuardianPage.js` and `DashboardPage.js`.
+
+
+
 ## May 22, 2026 — QuickStart Guide depth + personalization rewrite (V2026.05.22-m)
 
 **Why**: Founder review of an iOS-rendered QuickStart Guide called it "thin", "generic", and not "personalized enough." The prior prompt asked for "2-3 sentence intro" and "one-sentence checklist items," which produced a single thin page. The new prompt demands multi-page depth, named details, and state-law specifics.
