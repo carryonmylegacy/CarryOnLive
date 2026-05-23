@@ -479,35 +479,50 @@ export default function EntityDetailPanel({
                 <Label className="text-[var(--t4)]">Name</Label>
                 <Input value={name} onChange={(e) => setName(e.target.value)} className="input-field" data-testid="detail-edit-name" />
               </div>
-              {ent?.category === 'trust' && (
-                <div className="space-y-2 border-t border-[var(--b2)] pt-4">
-                  <Label className="text-[var(--t4)]">
-                    Trust type
-                    {ent?.type === 'unspecified' && (
-                      <span className="ml-1.5 text-[11px] font-normal text-amber-400">— pick one to finish setting this trust up</span>
-                    )}
-                  </Label>
-                  <Select value={entType || 'unspecified'} onValueChange={(v) => setEntType(v)}>
-                    <SelectTrigger className="input-field select-themed" data-testid="detail-edit-trust-type">
-                      <SelectValue placeholder="Choose a trust type" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)] max-h-72">
-                      {(TYPES.trust || []).map((t) => (
-                        <SelectItem key={t.id} value={t.id}>
-                          <span className="font-semibold">{t.friendly}</span>
-                          {t.legal && t.legal !== t.friendly ? <span className="text-[var(--t5)] ml-1.5">— {t.legal}</span> : null}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {entType && entType !== 'unspecified' && (() => {
-                    const m = getTypeMeta('trust', entType);
-                    return m?.blurb ? (
-                      <div className="text-[11px] text-[var(--t5)] italic">{m.blurb}</div>
-                    ) : null;
-                  })()}
-                </div>
-              )}
+              {/* Type selector — visible for every entity category that has a
+                  catalog of subtypes. Originally trust-only (so QW
+                  `unspecified` placeholders could be promoted), then
+                  extended Feb 26 2026 to cover all categories so a user
+                  who picked "LLC" in QW but actually has a PLLC can
+                  fix it without recreating the tile. The amber
+                  "pick one" hint stays trust-specific because that's
+                  the only category that ships a generic placeholder. */}
+              {(() => {
+                const categoryTypes = (ent?.category && TYPES[ent.category]) || [];
+                if (!categoryTypes.length) return null;
+                const fieldLabel = `${ent.category.charAt(0).toUpperCase()}${ent.category.slice(1)} type`;
+                const placeholder = `Choose a ${ent.category} type`;
+                const showUnspecifiedHint = ent.category === 'trust' && ent.type === 'unspecified';
+                return (
+                  <div className="space-y-2 border-t border-[var(--b2)] pt-4">
+                    <Label className="text-[var(--t4)]">
+                      {fieldLabel}
+                      {showUnspecifiedHint && (
+                        <span className="ml-1.5 text-[11px] font-normal text-amber-400">— pick one to finish setting this trust up</span>
+                      )}
+                    </Label>
+                    <Select value={entType || ent.type || ''} onValueChange={(v) => setEntType(v)}>
+                      <SelectTrigger className="input-field select-themed" data-testid="detail-edit-entity-type">
+                        <SelectValue placeholder={placeholder} />
+                      </SelectTrigger>
+                      <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)] max-h-72">
+                        {categoryTypes.map((t) => (
+                          <SelectItem key={t.id} value={t.id}>
+                            <span className="font-semibold">{t.friendly}</span>
+                            {t.legal && t.legal !== t.friendly ? <span className="text-[var(--t5)] ml-1.5">— {t.legal}</span> : null}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {entType && entType !== 'unspecified' && (() => {
+                      const m = getTypeMeta(ent.category, entType);
+                      return m?.blurb ? (
+                        <div className="text-[11px] text-[var(--t5)] italic">{m.blurb}</div>
+                      ) : null;
+                    })()}
+                  </div>
+                );
+              })()}
               {meta?.state_relevant && (
                 <div className="space-y-2 border-t border-[var(--b2)] pt-4">
                   <Label className="text-[var(--t4)]">Formation state</Label>
