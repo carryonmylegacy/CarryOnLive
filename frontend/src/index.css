@@ -1101,10 +1101,15 @@
                    ├─ <header / icon-row>  ← THIS is what we shift
                    └─ <rest of page>       ← untouched
 
-     `:not(button)` skips the fixed chip (its own padding does
-     nothing visible). `padding-left` longhand wins over Tailwind's
-     `p-4`/`p-8` shorthand at the same selector specificity. */
-  .main-content.with-back-button > [data-overlayscrollbars-contents] > *:not(button) > *:first-child {
+     Use the adjacent-sibling combinator `button + *` so ONLY the page
+     root (the element immediately following the fixed BackButton) gets
+     the shift. Pages that return a React Fragment (e.g. EstateChatPage)
+     render their modals/overlays as later siblings under the scroll
+     container — those must NOT receive the 40 px nudge, otherwise
+     fixed-inset overlays (like the ECT Security Intro tile) end up
+     visually shoved off-center. `padding-left` longhand wins over
+     Tailwind's `p-4`/`p-8` shorthand at the same selector specificity. */
+  .main-content.with-back-button > [data-overlayscrollbars-contents] > button + * > *:first-child {
     padding-left: 40px;
   }
   /* The fixed back chip itself — `left` is responsive so it sits
