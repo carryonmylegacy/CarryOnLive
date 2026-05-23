@@ -618,7 +618,9 @@ const PdfPreviewModal = () => {
             display: inline-flex; align-items: center; gap: 6px;
             padding: 8px 14px; border-radius: 9999px;
             font-size: 13px; font-weight: 700;
-            white-space: nowrap;
+            white-space: nowrap !important;
+            word-break: keep-all;
+            flex: 0 0 auto;
             cursor: pointer;
             -webkit-tap-highlight-color: transparent;
           }
