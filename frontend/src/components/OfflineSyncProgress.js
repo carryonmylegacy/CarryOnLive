@@ -19,15 +19,42 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import { getOfflineMode } from '../offline/featureFlag';
+import {
+  isPlatformOfflineVisible,
+  PLATFORM_OFFLINE_FLAG_EVENT,
+} from '../utils/platformOfflineFlag';
 
 export default function OfflineSyncProgress() {
   const [visible, setVisible] = useState(false);
   const [done, setDone] = useState(0);
   const [total, setTotal] = useState(0);
   const [label, setLabel] = useState('');
+  // Mirror the founder's master Offline-Mode platform switch — when
+  // OFF, this whole pill must NEVER render, even if a warm-up event
+  // somehow fires (Feb 27 2026 founder report: pill was visible with
+  // Offline globally disabled in Admin). Re-reads live on every
+  // flag-change broadcast so toggling in the Admin sidebar makes the
+  // pill vanish without a page reload.
+  const [platformOfflineVisible, setPlatformOfflineVisible] = useState(() => isPlatformOfflineVisible());
   const hideTimerRef = useRef(null);
 
   useEffect(() => {
+    const onPlatformChange = () => setPlatformOfflineVisible(isPlatformOfflineVisible());
+    window.addEventListener(PLATFORM_OFFLINE_FLAG_EVENT, onPlatformChange);
+    return () => window.removeEventListener(PLATFORM_OFFLINE_FLAG_EVENT, onPlatformChange);
+  }, []);
+
+  // If the platform switch flips OFF mid-sync, force-hide immediately
+  // and clear any pending auto-dismiss timer.
+  useEffect(() => {
+    if (!platformOfflineVisible) {
+      setVisible(false);
+      if (hideTimerRef.current) { clearTimeout(hideTimerRef.current); hideTimerRef.current = null; }
+    }
+  }, [platformOfflineVisible]);
+
+  useEffect(() => {
+    if (!platformOfflineVisible) return;
     if (getOfflineMode() !== 'on') return;
     const onStart = (e) => {
       setDone(0);
@@ -55,8 +82,12 @@ export default function OfflineSyncProgress() {
       window.removeEventListener('carryon:sync:finish', onFinish);
       if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
     };
-  }, []);
+  }, [platformOfflineVisible]);
 
+  // Belt-and-braces render gate: even if an event somehow slipped
+  // through before the effect re-evaluated, the founder's master
+  // switch wins.
+  if (!platformOfflineVisible) return null;
   if (!visible || total === 0) return null;
   const pct = Math.round((done / total) * 100);
 
