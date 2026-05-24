@@ -391,6 +391,13 @@ async def update_beneficiary(
         "avatar_color": data.avatar_color,
         "initials": initials,
         "is_stub": False,
+        # Once the user manually edits a QW-seeded beneficiary, drop
+        # the `quickstart_seed` flag — that promotes the row from
+        # "QW-only stub" to "user-touched" so it counts toward the GS
+        # checklist's `add_beneficiary` step (Feb 26 2026 founder
+        # direction). Visiting the page alone (mark-visited) is also
+        # honored separately in the onboarding auto-detect.
+        "quickstart_seed": False,
         "mm_access": data.mm_access,
         "ega_access": data.ega_access,
         "sdv_access": data.sdv_access,

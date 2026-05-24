@@ -113,17 +113,25 @@ async def get_onboarding_progress(current_user: dict = Depends(get_current_user)
     # genuinely added beneficiaries). Auto-detection is now the single
     # source of truth for steps that *have* live counters.
     if estate_id:
-        # At least one beneficiary added
-        completed["add_beneficiary"] = await db.beneficiaries.count_documents({"estate_id": estate_id}) > 0
-        # Tour-then-complete (Feb 26 2026 founder direction): if the
-        # user seeded *any* beneficiary stub in the QuickStart Wizard
-        # AND has subsequently visited the Beneficiaries page (the
-        # wizard fires `mark-visited/beneficiaries` on click), treat
-        # `add_beneficiary` as complete even when they didn't add
-        # anything net-new on the page itself. They've toured the
-        # section, which is the whole point of step 1. Users who
-        # skipped QW entirely still need a real beneficiary on file
-        # before the step flips.
+        # Step 1 — "Add a Beneficiary". A QW seed alone is NOT enough
+        # (Feb 26 2026 founder direction): the GS tour is supposed to
+        # walk the user through every section, including this one,
+        # even when QW pre-populated stubs. Any beneficiary row still
+        # flagged `quickstart_seed: True` is treated as "not yet
+        # touched by the user". The flag is cleared as soon as the
+        # user opens that tile and saves any edit (see BeneficiariesPage
+        # PATCH handler — added in this same commit).
+        non_seed_ben_count = await db.beneficiaries.count_documents(
+            {
+                "estate_id": estate_id,
+                "quickstart_seed": {"$ne": True},
+            }
+        )
+        completed["add_beneficiary"] = non_seed_ben_count > 0
+        # Tour-then-complete path: if QW seeds exist AND the user has
+        # toured the Beneficiaries page (mark-visited fires on step 1
+        # click in the wizard), step 1 also flips ✓. Users who skipped
+        # QW entirely still need a real beneficiary on file.
         if not completed["add_beneficiary"]:
             qw_doc = await db.quickstart_progress.find_one(
                 {"user_id": current_user["id"]},
