@@ -1,6 +1,30 @@
 # CarryOn — Changelog
 
 
+## Feb 27, 2026 — Unified skip flow + clickable all-steps disclosure (V2026.02.27-b)
+
+**Why**: Founder follow-up after skipping through the Setup Guide on production:
+1. The "No Problem!" interstitial pane between optional skips was inconsistent and intrusive.
+2. Clicking "I'll do this on my own later" should NOT auto-launch the next step's overlay — it should drop the user back on the dashboard so they see the next step surface naturally below the progress bar.
+3. Every row in the collapsible "View all steps" list should be a hot link straight to that step's page.
+
+**Changes:**
+- **Unified skip flow** (`DashboardPage.js`):
+  - Removed `OPTIONAL_SKIP_INFO` data block + the "No Problem!" JSX pane entirely. Optional and required skips now share one path.
+  - `dismissOverlay`: POST `/api/onboarding/complete-step/{key}` → fetch fresh `/onboarding/progress` → broadcast `carryon:onboarding-progress-refreshed` window event with the new payload → close the overlay. No more chaining the user into the next step's full-screen overlay.
+  - `handleOptionalSkip` is now a thin alias to `dismissOverlay` so the JSX skip-button onClick stays readable.
+  - Removed dead `showOptionalSkipInfo` / `confirmOptionalSkip` state and handler.
+- **Live progress sync** (`OnboardingWizard.js`): added a `carryon:onboarding-progress-refreshed` window listener that updates the wizard's local `progress` from the event detail (or re-fetches if the detail is missing). Result: the Setup Guide tile's progress bar, "X of 9" count, active next-step CTA, and collapsible row state all update immediately when the overlay marks a step complete — no page reload, no stale UI.
+- **Clickable all-steps disclosure** (`OnboardingWizard.js`):
+  - Each row in the expanded list is now a `<button>` that calls `handleStepClick(step)` — same handler the active next-step CTA uses, so the QW-seed visit logic + manual-mark handling (`review_readiness`, `review_settings`) all run from the disclosure too.
+  - Added focus-ring + hover background + accent-colored right chevron per row. Completed rows show a muted gray chevron and keep the strikethrough label; incomplete rows show the step's signature accent color.
+
+**Quality gates:**
+- `bash /app/housekeeping.sh --strict` → 0 WARN / 0 FAIL.
+- ESLint clean on `OnboardingWizard.js`, `DashboardPage.js`.
+
+
+
 ## Feb 27, 2026 — Setup Guide rename + accurate step counter + advance-on-skip + all-steps disclosure (V2026.02.27-a)
 
 **Why**: Founder report: (1) "Setup Checklist" should be "Setup Guide" (last rename pass went the wrong direction); (2) tile and full-screen overlay still showed "Step 1 of 7" even though the backend has 9 steps; (3) "I'll do this on my own later" on a non-optional step left the dashboard tile stuck on step 1 forever because the dismiss only closed the overlay; (4) need a collapsible view of every step's status (✓ / ○) directly inside the Setup Guide tile.

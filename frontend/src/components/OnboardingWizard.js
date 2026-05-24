@@ -96,6 +96,25 @@ const OnboardingWizard = ({ onAllComplete, onContentChange }) => {
     return () => window.removeEventListener('carryon:welcome-tile-visibility-changed', onWelcomeVis);
   }, []);
 
+  // Re-render when the full-screen guided overlay marks a step
+  // complete via "I'll do this on my own later" (Feb 27 2026). The
+  // overlay broadcasts the refreshed `/onboarding/progress` payload
+  // so the Setup Guide tile's active next-step CTA + progress bar +
+  // collapsible all-steps list all reflect the new state without a
+  // page reload.
+  useEffect(() => {
+    const onRefreshed = (e) => {
+      const next = e && e.detail;
+      if (next && typeof next === 'object') {
+        setProgress(next);
+      } else {
+        fetchProgress();
+      }
+    };
+    window.addEventListener('carryon:onboarding-progress-refreshed', onRefreshed);
+    return () => window.removeEventListener('carryon:onboarding-progress-refreshed', onRefreshed);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Compute "would the wizard render?" + how many discrete inner
   // artifacts it would render (welcome tile + offline coach + the
   // active step nudge OR the full step list when showAll). Both fire
@@ -555,33 +574,42 @@ const OnboardingWizard = ({ onAllComplete, onContentChange }) => {
                 {allSteps.map((s, i) => {
                   const cfg = STEP_CONFIG[s.key];
                   const stepLabel = cfg?.label || s.label || s.key;
+                  const accentColor = cfg?.color || 'var(--gold)';
                   return (
-                    <li
-                      key={s.key}
-                      data-testid={`setup-guide-step-row-${s.key}`}
-                      className="flex items-center gap-2 text-xs lg:text-sm"
-                    >
-                      {s.completed ? (
-                        <Check
-                          className="w-4 h-4 flex-shrink-0"
-                          style={{ color: '#22C993' }}
-                          strokeWidth={3}
-                          data-testid={`setup-guide-step-icon-${s.key}-done`}
-                        />
-                      ) : (
-                        <Circle
-                          className="w-4 h-4 flex-shrink-0 text-[var(--t5)]"
-                          strokeWidth={2}
-                          data-testid={`setup-guide-step-icon-${s.key}-open`}
-                        />
-                      )}
-                      <span className={s.completed ? 'text-[var(--t5)] line-through' : 'text-[var(--t)]'}>
-                        <span className="text-[var(--t5)] font-medium mr-1">{i + 1}.</span>
-                        {stepLabel}
-                        {s.optional && !s.completed && (
-                          <span className="text-[var(--t5)] ml-1">(optional)</span>
+                    <li key={s.key}>
+                      <button
+                        type="button"
+                        onClick={() => handleStepClick(s)}
+                        data-testid={`setup-guide-step-row-${s.key}`}
+                        className="w-full flex items-center gap-2 text-left text-xs lg:text-sm px-2 py-1.5 rounded-md transition-colors hover:bg-[var(--s)] focus:outline-none focus:ring-2 focus:ring-[var(--gold)] focus:ring-offset-1 focus:ring-offset-transparent"
+                      >
+                        {s.completed ? (
+                          <Check
+                            className="w-4 h-4 flex-shrink-0"
+                            style={{ color: '#22C993' }}
+                            strokeWidth={3}
+                            data-testid={`setup-guide-step-icon-${s.key}-done`}
+                          />
+                        ) : (
+                          <Circle
+                            className="w-4 h-4 flex-shrink-0 text-[var(--t5)]"
+                            strokeWidth={2}
+                            data-testid={`setup-guide-step-icon-${s.key}-open`}
+                          />
                         )}
-                      </span>
+                        <span className={`flex-1 ${s.completed ? 'text-[var(--t5)] line-through' : 'text-[var(--t)]'}`}>
+                          <span className="text-[var(--t5)] font-medium mr-1">{i + 1}.</span>
+                          {stepLabel}
+                          {s.optional && !s.completed && (
+                            <span className="text-[var(--t5)] ml-1">(optional)</span>
+                          )}
+                        </span>
+                        <ChevronRight
+                          className="w-4 h-4 flex-shrink-0"
+                          style={{ color: s.completed ? 'var(--t5)' : accentColor }}
+                          strokeWidth={2.5}
+                        />
+                      </button>
                     </li>
                   );
                 })}

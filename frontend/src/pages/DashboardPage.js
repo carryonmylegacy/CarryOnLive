@@ -81,7 +81,9 @@ const DashboardPage = () => {
   const [showGuidedFlow, setShowGuidedFlow] = useState(false);
   const [guidedStep, setGuidedStep] = useState(null);
   const [showWelcomeStep, setShowWelcomeStep] = useState(false);
-  const [showOptionalSkipInfo, setShowOptionalSkipInfo] = useState(false);
+  // (Feb 27 2026) Removed `showOptionalSkipInfo` state — the "No
+  // Problem!" interstitial pane was retired. Optional and required
+  // skip buttons now share the same `dismissOverlay` flow.
   const [dashboardReady, setDashboardReady] = useState(false);
   const [egaRunning, setEgaRunning] = useState(false);
   // Latest onboarding progress snapshot — used to render the
@@ -828,20 +830,6 @@ const DashboardPage = () => {
       review_settings: { title: 'Review Your Settings', desc: 'Open Settings and Security Settings to personalize your portal — appearance, notifications, address, and access controls.' },
       build_financial_picture: { title: 'Build Your Financial Picture', desc: 'Add bills, debts, accounts, or property to your CarryOn Financial Picture so the people you trust have the full picture when they need it.' },
     };
-    const OPTIONAL_SKIP_INFO = {
-      designate_primary: {
-        title: 'No Problem!',
-        desc: 'You can set your succession order anytime from the Beneficiaries page. Just drag the beneficiary tiles up or down to change their relative hierarchy and succession order.',
-        route: '/beneficiaries',
-        routeLabel: 'Go to Beneficiaries',
-      },
-      add_credential: {
-        title: 'No Problem!',
-        desc: 'You can store digital account credentials anytime from the Digital Access Vault. Just tap "Add Credential" to securely save a login and password for your beneficiaries.',
-        route: '/digital-wallet',
-        routeLabel: 'Go to Digital Vault',
-      },
-    };
     const stepInfo = STEP_LABELS[guidedStep.key] || STEP_LABELS.add_beneficiary;
     const route = STEP_ROUTES[guidedStep.key];
     const StepIcon = STEP_ICONS[guidedStep.key] || Sparkles;
@@ -872,15 +860,15 @@ const DashboardPage = () => {
     }
 
     const dismissOverlay = async () => {
-      // "I'll do this on my own later" — for NON-optional steps. The
-      // founder's directive (Feb 26 2026): clicking later must advance
-      // the Setup Guide tile on the dashboard past this step, not
-      // leave it stuck on step 1. We mark the current step complete
-      // server-side (the backend's sticky-completion rule preserves
-      // it across live-data re-reads), then advance the overlay to the
-      // next incomplete step. If every step is now done, drop out of
-      // the overlay entirely and let the celebration / dashboard tiles
-      // take over.
+      // "I'll do this on my own later" / "Skip — I'll do this later".
+      // Founder's directive (Feb 27 2026): clicking later must (a) mark
+      // the current step complete server-side so the dashboard's Setup
+      // Guide progress bar moves forward and the tile's active CTA
+      // surfaces the *next* incomplete step, and (b) return the user
+      // to the dashboard — NOT auto-advance into another full-screen
+      // overlay (felt like the wizard was hijacking the session).
+      // Optional and non-optional skips behave identically; there is
+      // no longer an interstitial "No Problem!" pane.
       if (showWelcomeStep) {
         localStorage.setItem('carryon_welcome_guided_shown', 'true');
         setShowWelcomeStep(false);
@@ -890,61 +878,39 @@ const DashboardPage = () => {
       if (currentKey) {
         try {
           await apiClient.post(`${API_URL}/onboarding/complete-step/${currentKey}`, {}, getAuthHeaders());
-        } catch { /* non-fatal — user can re-skip on next dashboard load */ }
+        } catch { /* non-fatal — sticky-completion will retry on the next dashboard fetch */ }
       }
-      // Refresh local progress + advance to next incomplete step.
+      // Refresh local progress so the dashboard tile reflects the new
+      // count immediately. Broadcast the refreshed payload so the
+      // OnboardingWizard component re-renders with the new "next step"
+      // active CTA without a full reload.
+      let refreshed = null;
       try {
         const progressRes = await apiClient.get(`${API_URL}/onboarding/progress`, getAuthHeaders());
-        setOnboardingProgress(progressRes.data);
-        const steps = progressRes.data?.steps || [];
-        const nextIncomplete = steps.find(s => !s.completed);
-        if (nextIncomplete && !progressRes.data?.all_complete) {
-          setGuidedStep({ ...nextIncomplete, beneficiary_names: progressRes.data?.beneficiary_names || [] });
-          return;
-        }
-        if (progressRes.data?.all_complete && !progressRes.data?.celebration_shown) {
-          guidedDismissedRef.current = true;
-          setShowGuidedFlow(false);
-          try { apiClient.post(`${API_URL}/onboarding/celebration-shown`, {}, getAuthHeaders()); } catch {}
-          setTimeout(() => setShowCelebration(true), 600);
-          return;
-        }
-      } catch { /* fall through to plain dismiss */ }
-      guidedDismissedRef.current = true;
-      setShowGuidedFlow(false);
-    };
-
-    // Handle optional step skip — show info pane then mark complete
-    const handleOptionalSkip = async () => {
-      setShowOptionalSkipInfo(true);
-    };
-
-    const confirmOptionalSkip = async () => {
-      try {
-        await apiClient.post(`${API_URL}/onboarding/complete-step/${guidedStep.key}`, {}, getAuthHeaders());
-      } catch {}
-      setShowOptionalSkipInfo(false);
-      // Advance to the next step instead of dismissing entirely
-      if (estate?.id) {
+        refreshed = progressRes.data;
+        setOnboardingProgress(refreshed);
         try {
-          const progressRes = await apiClient.get(`${API_URL}/onboarding/progress`, getAuthHeaders());
-          const steps = progressRes.data?.steps || [];
-          const nextIncomplete = steps.find(s => !s.completed);
-          if (nextIncomplete && !progressRes.data?.all_complete) {
-            setGuidedStep({ ...nextIncomplete, beneficiary_names: progressRes.data?.beneficiary_names || [] });
-            return; // Stay in guided flow with the next step
-          } else if (progressRes.data?.all_complete && !progressRes.data?.celebration_shown) {
-            guidedDismissedRef.current = true;
-            setShowGuidedFlow(false);
-            try { apiClient.post(`${API_URL}/onboarding/celebration-shown`, {}, getAuthHeaders()); } catch {}
-            setTimeout(() => setShowCelebration(true), 600);
-            return;
-          }
-        } catch {}
+          window.dispatchEvent(new CustomEvent('carryon:onboarding-progress-refreshed', { detail: refreshed }));
+        } catch { /* ignore */ }
+      } catch { /* fall through */ }
+      // If every step is now done, fire the celebration. Otherwise
+      // just close the overlay — the user is back on the dashboard.
+      if (refreshed?.all_complete && !refreshed?.celebration_shown) {
+        guidedDismissedRef.current = true;
+        setShowGuidedFlow(false);
+        try { apiClient.post(`${API_URL}/onboarding/celebration-shown`, {}, getAuthHeaders()); } catch {}
+        setTimeout(() => setShowCelebration(true), 600);
+        return;
       }
       guidedDismissedRef.current = true;
       setShowGuidedFlow(false);
     };
+
+    // Optional skip now behaves exactly like the regular skip — no
+    // interstitial "No Problem!" pane (founder Feb 27 2026: that
+    // panel was inconsistent and intrusive). Kept as a thin alias so
+    // the JSX skip-button onClick stays readable.
+    const handleOptionalSkip = dismissOverlay;
 
     return (
       <div className="fixed inset-0 z-[150] flex items-center justify-center overflow-y-auto" data-testid="guided-overlay"
@@ -1024,33 +990,6 @@ const DashboardPage = () => {
         <div className="relative max-w-md w-full mx-6 text-center"
           style={{ animation: 'bubbleIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both' }}>
 
-          {/* Optional skip explanation pane */}
-          {showOptionalSkipInfo && OPTIONAL_SKIP_INFO[guidedStep.key] ? (
-            <>
-              <div className="w-28 h-28 rounded-full flex items-center justify-center mx-auto mb-6"
-                style={{
-                  background: `radial-gradient(circle, ${stepColor}20 0%, ${stepColor}08 70%)`,
-                  border: `2px solid ${stepColor}35`,
-                }}>
-                <CheckCircle2 className="w-14 h-14" style={{ color: stepColor }} />
-              </div>
-              <h1 className="text-2xl lg:text-3xl font-bold mb-3"
-                style={{ fontFamily: 'var(--sans)', color: 'var(--guided-title, #ffffff)' }}>
-                {OPTIONAL_SKIP_INFO[guidedStep.key].title}
-              </h1>
-              <p className="text-sm lg:text-base mb-8 max-w-sm mx-auto leading-relaxed"
-                style={{ color: 'var(--guided-desc, #94a3b8)' }}>
-                {OPTIONAL_SKIP_INFO[guidedStep.key].desc}
-              </p>
-              <button onClick={confirmOptionalSkip}
-                className="w-full max-w-xs mx-auto py-4 rounded-2xl text-base font-bold flex items-center justify-center gap-2 transition-transform active:scale-[0.97]"
-                style={{ background: `linear-gradient(135deg, ${stepColor}, ${stepColor}cc)`, color: 'var(--bg)', boxShadow: `0 8px 32px ${stepColor}30` }}
-                data-testid="guided-optional-confirm-btn">
-                Got It <ChevronRight className="w-5 h-5" />
-              </button>
-            </>
-          ) : (
-          <>
           {/* Step counter */}
           <p className="text-xl lg:text-2xl font-bold uppercase tracking-[0.2em] mb-6"
             style={{ color: stepColor }}>
@@ -1085,15 +1024,16 @@ const DashboardPage = () => {
             Show Me How <ChevronRight className="w-5 h-5" />
           </button>
 
-          {/* Skip link — different behavior for optional steps */}
+          {/* Skip link — unified behavior for optional & required steps:
+              mark complete server-side, refresh dashboard progress,
+              return to the dashboard (no "No Problem!" interstitial,
+              no auto-advance into the next overlay). */}
           <button onClick={isOptional ? handleOptionalSkip : dismissOverlay}
             className="mt-8 px-5 py-2 rounded-full text-xs transition-colors"
             style={{ color: 'var(--guided-skip, #64748b)', background: 'var(--guided-skip-bg, rgba(255,255,255,0.04))', border: '1px solid var(--guided-skip-border, rgba(255,255,255,0.06))' }}
             data-testid="guided-skip-btn">
             {isOptional ? 'Skip — I\'ll do this later' : 'I\'ll do this on my own later'}
           </button>
-          </>
-          )}
         </div>
         )}
       </div>
