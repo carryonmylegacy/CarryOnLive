@@ -6,7 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 import {
   Users, FileUp, MessageSquare, CheckSquare,
   ChevronRight, X, Sparkles, Check, KeyRound, ArrowLeftRight,
-  AlertTriangle, Settings, WifiOff, ListChecks
+  AlertTriangle, Settings, WifiOff, ListChecks, DollarSign
 } from 'lucide-react';
 import { Progress } from '../components/ui/progress';
 import { API_URL } from '../config';
@@ -24,6 +24,7 @@ const STEP_CONFIG = {
   customize_checklist: { icon: CheckSquare, color: '#f59e0b', bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.2)', route: '/checklist', label: 'Review Your Checklist', desc: 'See the steps your loved ones will follow' },
   designate_primary: { icon: ArrowLeftRight, color: '#06b6d4', bg: 'rgba(6,182,212,0.08)', border: 'rgba(6,182,212,0.2)', route: '/beneficiaries', label: 'Set Succession Order', desc: 'Arrange your beneficiary order (optional)' },
   add_credential: { icon: KeyRound, color: '#ec4899', bg: 'rgba(236,72,153,0.08)', border: 'rgba(236,72,153,0.2)', route: '/digital-wallet', label: 'Save a Digital Login', desc: 'Store an account login for your loved ones (optional)' },
+  build_financial_picture: { icon: DollarSign, color: '#10b981', bg: 'rgba(16,185,129,0.08)', border: 'rgba(16,185,129,0.2)', route: '/financial', label: 'Build Your Financial Picture', desc: 'Bills, debts, accounts, and property — get started' },
   review_settings: { icon: Settings, color: '#64748b', bg: 'rgba(100,116,139,0.08)', border: 'rgba(100,116,139,0.2)', route: '/settings', label: 'Review Your Settings', desc: 'Open Settings and Security Settings to customize your portal' },
 };
 

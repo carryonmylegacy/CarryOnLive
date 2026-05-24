@@ -62,6 +62,12 @@ ONBOARDING_STEPS = [
         "description": "Open Settings and Security Settings to customize your portal",
         "optional": False,
     },
+    {
+        "key": "build_financial_picture",
+        "label": "Build Your Financial Picture",
+        "description": "Add bills, debts, accounts, or property to your CFP",
+        "optional": False,
+    },
 ]
 
 
@@ -116,6 +122,19 @@ async def get_onboarding_progress(current_user: dict = Depends(get_current_user)
         )
         # DAV credential stored
         completed["add_credential"] = await db.digital_wallet.count_documents({"estate_id": estate_id}) > 0
+        # Build Your Financial Picture — completed once the user has
+        # ANY entry across bills/debts/accounts/property on the CFP.
+        # Mirrors the dashboard's empty-CFP visibility gate exactly so
+        # this checklist step flips green the moment the standalone
+        # tile would have hidden itself.
+        cfp_any = (
+            await db.bills.count_documents({"estate_id": estate_id, "deleted_at": None}) > 0
+            or await db.debts.count_documents({"estate_id": estate_id, "deleted_at": None}) > 0
+            or await db.financial_accounts.count_documents({"estate_id": estate_id, "deleted_at": None}) > 0
+            or await db.property_assets.count_documents({"estate_id": estate_id, "deleted_at": None}) > 0
+        )
+        completed["build_financial_picture"] = cfp_any
+
     # review_readiness is manual — preserve from stored progress
     if not replay_mode and progress.get("completed_steps", {}).get("review_readiness"):
         completed["review_readiness"] = True
