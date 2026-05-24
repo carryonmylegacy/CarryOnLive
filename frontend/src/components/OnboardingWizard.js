@@ -194,17 +194,27 @@ const OnboardingWizard = ({ onAllComplete, onContentChange }) => {
       catch (err) { console.error(err); }
     }
     // If the user already seeded beneficiary stubs in the QuickStart
-    // Wizard, send them straight into the first incomplete one rather
-    // than dropping them on the empty "Add a beneficiary" view. The
-    // BeneficiariesPage handles the `?seed_id=...` query param to
-    // auto-open that beneficiary's tile.
+    // Wizard, (1) record the visit so step 1 auto-completes once the
+    // user returns to the dashboard (Feb 26 2026 founder direction —
+    // "tour-then-complete"), and (2) send them straight into the
+    // first incomplete seeded stub rather than dropping them on the
+    // empty list. Users who skipped QW entirely fall through to the
+    // standard navigation and still need a real beneficiary on file
+    // before step 1 will flip ✓.
     if (step.key === 'add_beneficiary' && !step.completed) {
       try {
         const qs = await apiClient.get(`${API_URL}/quickstart/progress`, getAuthHeaders());
         const seededBens = qs?.data?.data?.beneficiaries?.beneficiaries || [];
-        if (seededBens.length > 0 && seededBens[0]?.beneficiary_id) {
-          navigate(`/beneficiaries?seed_id=${encodeURIComponent(seededBens[0].beneficiary_id)}`);
-          return;
+        if (seededBens.length > 0) {
+          apiClient.post(
+            `${API_URL}/onboarding/mark-visited/beneficiaries`,
+            {},
+            getAuthHeaders(),
+          ).catch(() => { /* non-fatal — auto-detect on next dashboard fetch */ });
+          if (seededBens[0]?.beneficiary_id) {
+            navigate(`/beneficiaries?seed_id=${encodeURIComponent(seededBens[0].beneficiary_id)}`);
+            return;
+          }
         }
       } catch { /* non-fatal — fall through to normal route */ }
     }

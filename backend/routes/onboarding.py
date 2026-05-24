@@ -115,6 +115,23 @@ async def get_onboarding_progress(current_user: dict = Depends(get_current_user)
     if estate_id:
         # At least one beneficiary added
         completed["add_beneficiary"] = await db.beneficiaries.count_documents({"estate_id": estate_id}) > 0
+        # Tour-then-complete (Feb 26 2026 founder direction): if the
+        # user seeded *any* beneficiary stub in the QuickStart Wizard
+        # AND has subsequently visited the Beneficiaries page (the
+        # wizard fires `mark-visited/beneficiaries` on click), treat
+        # `add_beneficiary` as complete even when they didn't add
+        # anything net-new on the page itself. They've toured the
+        # section, which is the whole point of step 1. Users who
+        # skipped QW entirely still need a real beneficiary on file
+        # before the step flips.
+        if not completed["add_beneficiary"]:
+            qw_doc = await db.quickstart_progress.find_one(
+                {"user_id": current_user["id"]},
+                {"_id": 0, "data.beneficiaries": 1},
+            )
+            qw_seeded = bool((((qw_doc or {}).get("data") or {}).get("beneficiaries") or {}).get("beneficiaries"))
+            if qw_seeded and stored.get("visited_beneficiaries"):
+                completed["add_beneficiary"] = True
         completed["upload_document"] = await db.documents.count_documents({"estate_id": estate_id}) > 0
         completed["create_message"] = await db.messages.count_documents({"estate_id": estate_id}) > 0
         # Primary beneficiary designated
@@ -261,6 +278,36 @@ async def complete_onboarding_step(step_key: str, current_user: dict = Depends(g
         upsert=True,
     )
     return {"success": True, "step": step_key}
+
+
+@router.post("/onboarding/mark-visited/{section}")
+async def mark_section_visited(section: str, current_user: dict = Depends(get_current_user)):
+    """Soft "tour" marker — records that the user has clicked through
+    to a given section from the Getting Started wizard.
+
+    Used by the tour-then-complete pattern (Feb 26 2026 founder
+    direction): when QW seeded data for a section that needs at-least
+    one entry to be considered "real" (e.g. beneficiaries), the
+    wizard click navigates the user there AND fires this endpoint so
+    the GET-progress auto-detect can treat the visit itself as
+    sufficient completion. Users who skipped QW still need real data
+    on file — this only flips the gate for users who had a QW seed.
+    """
+    valid_sections = {"beneficiaries"}
+    if section not in valid_sections:
+        raise HTTPException(status_code=400, detail=f"Invalid section: {section}")
+    await db.onboarding_progress.update_one(
+        {"user_id": current_user["id"]},
+        {
+            "$set": {
+                f"completed_steps.visited_{section}": True,
+                "user_id": current_user["id"],
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+            }
+        },
+        upsert=True,
+    )
+    return {"success": True, "section": section, "visited": True}
 
 
 class DismissOnboardingBody(BaseModel):
