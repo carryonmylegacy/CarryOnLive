@@ -568,7 +568,8 @@ const OnboardingWizard = ({ onAllComplete, onContentChange }) => {
               aria-expanded={allStepsExpanded}
               aria-controls="setup-guide-all-steps-list"
               data-testid="setup-guide-toggle-all-steps"
-              className="w-full flex items-center justify-between gap-2 text-xs lg:text-sm font-semibold text-[var(--t4)] hover:text-[var(--t)] transition-colors"
+              className="w-full flex items-center justify-between gap-2 text-xs lg:text-sm font-semibold text-[var(--t4)] lg:hover:text-[var(--t)] active:text-[var(--t)] transition-colors cursor-pointer"
+              style={{ WebkitTapHighlightColor: 'transparent' }}
             >
               <span>{allStepsExpanded ? 'Hide all steps' : 'View all steps'}</span>
               <ChevronDown
@@ -599,7 +600,8 @@ const OnboardingWizard = ({ onAllComplete, onContentChange }) => {
                           onClick={() => handleStepClick(s)}
                           data-testid={`setup-guide-step-row-${s.key}`}
                           data-state={isDone ? 'done' : isSkip ? 'skipped' : 'open'}
-                          className="w-full flex items-center gap-2 text-left text-xs lg:text-sm px-2 py-1.5 rounded-md transition-colors hover:bg-[var(--s)] focus:outline-none focus:ring-2 focus:ring-[var(--gold)] focus:ring-offset-1 focus:ring-offset-transparent"
+                          className="w-full flex items-center gap-2 text-left text-xs lg:text-sm px-2 py-1.5 rounded-md transition-colors lg:hover:bg-[var(--s)] active:bg-[var(--s)] focus:outline-none focus:ring-2 focus:ring-[var(--gold)] focus:ring-offset-1 focus:ring-offset-transparent cursor-pointer"
+                          style={{ WebkitTapHighlightColor: 'transparent' }}
                         >
                           {/* Done column */}
                           <span className="w-5 flex-shrink-0 flex items-center justify-center" aria-label={isDone ? 'Completed' : 'Not completed'}>
