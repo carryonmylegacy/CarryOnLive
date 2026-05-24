@@ -179,6 +179,21 @@ async def get_onboarding_progress(current_user: dict = Depends(get_current_user)
         if step.get("optional") and stored_completed.get(step["key"]):
             completed[step["key"]] = True
 
+    # Sticky stored-complete: an explicit POST /complete-step/<key>
+    # (the "I'll do this on my own later" button, the auto-firing
+    # complete on tile-click for the manual steps, etc.) flips ✓ for
+    # ALL steps — even non-optional ones — and that decision MUST
+    # survive subsequent live-counter re-reads. Without this loop the
+    # live count below would silently re-overwrite a user-acknowledged
+    # step back to False every dashboard load (Feb 26 2026 founder
+    # report: "I keep selecting 'I'll do this on my own later' but
+    # the dashboard still shows step 1"). Once any step is ✓ from
+    # live data OR a manual mark, it stays ✓.
+    for step in ONBOARDING_STEPS:
+        key = step["key"]
+        if stored_completed.get(key) and not completed.get(key):
+            completed[key] = True
+
     # Persist updated completion
     await db.onboarding_progress.update_one(
         {"user_id": current_user["id"]},
