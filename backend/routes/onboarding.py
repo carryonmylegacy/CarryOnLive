@@ -104,6 +104,17 @@ async def get_onboarding_progress(current_user: dict = Depends(get_current_user)
     # of replay mode — these are the only steps that *require* an
     # explicit `complete-step` POST (review_readiness, review_settings).
     stored = progress.get("completed_steps", {}) or {}
+    # `skipped` is a parallel map (Feb 27 2026) — entries are set by
+    # POST /onboarding/skip-step when the user clicks "I'll do this
+    # on my own later" or "Skip — I'll do this later" in the guided
+    # overlay. Skipped is mutually exclusive with completed: the skip
+    # endpoint clears the matching completed_steps key, and the
+    # complete-step endpoint clears the matching skipped_steps key.
+    # A skipped step counts toward the progress bar's "done" total
+    # but renders in its own column in the all-steps disclosure so
+    # the user can tell genuine completion apart from "acknowledged
+    # but not done".
+    skipped_map = progress.get("skipped_steps", {}) or {}
     # Auto-detect from live data in ALL modes (Feb 26 2026 fix).
     # Previously replay mode skipped this path entirely, which left
     # users stuck at "step 1 of N" forever when feature-gated steps
@@ -135,7 +146,7 @@ async def get_onboarding_progress(current_user: dict = Depends(get_current_user)
         if not completed["add_beneficiary"]:
             qw_doc = await db.quickstart_progress.find_one(
                 {"user_id": current_user["id"]},
-                {"_id": 0, "data.beneficiaries": 1},
+                {"_id": 0, "id": 1, "data.beneficiaries": 1},
             )
             qw_seeded = bool((((qw_doc or {}).get("data") or {}).get("beneficiaries") or {}).get("beneficiaries"))
             if qw_seeded and stored.get("visited_beneficiaries"):
@@ -180,19 +191,30 @@ async def get_onboarding_progress(current_user: dict = Depends(get_current_user)
             completed[step["key"]] = True
 
     # Sticky stored-complete: an explicit POST /complete-step/<key>
-    # (the "I'll do this on my own later" button, the auto-firing
-    # complete on tile-click for the manual steps, etc.) flips ✓ for
-    # ALL steps — even non-optional ones — and that decision MUST
-    # survive subsequent live-counter re-reads. Without this loop the
-    # live count below would silently re-overwrite a user-acknowledged
-    # step back to False every dashboard load (Feb 26 2026 founder
-    # report: "I keep selecting 'I'll do this on my own later' but
-    # the dashboard still shows step 1"). Once any step is ✓ from
-    # live data OR a manual mark, it stays ✓.
+    # (the auto-firing complete on tile-click for the manual steps,
+    # etc.) flips ✓ for ALL steps — even non-optional ones — and that
+    # decision MUST survive subsequent live-counter re-reads. Without
+    # this loop the live count below would silently re-overwrite a
+    # user-acknowledged step back to False every dashboard load. Once
+    # any step is ✓ from live data OR a manual mark, it stays ✓.
     for step in ONBOARDING_STEPS:
         key = step["key"]
         if stored_completed.get(key) and not completed.get(key):
             completed[key] = True
+
+    # Skipped overrides completed in the response (Feb 27 2026 founder
+    # mandate): if the user clicked "Skip" / "I'll do this later", the
+    # complete column must NOT fill in — even if live data would
+    # otherwise auto-detect completion. The two states are surfaced as
+    # separate columns in the dashboard tile's all-steps disclosure so
+    # the user can tell genuine completion apart from acknowledged-
+    # but-not-done.
+    skipped_state = {}
+    for step in ONBOARDING_STEPS:
+        key = step["key"]
+        if skipped_map.get(key):
+            skipped_state[key] = True
+            completed[key] = False
 
     # Persist updated completion
     await db.onboarding_progress.update_one(
@@ -207,12 +229,16 @@ async def get_onboarding_progress(current_user: dict = Depends(get_current_user)
             {
                 **step,
                 "completed": completed.get(step["key"], False),
+                "skipped": skipped_state.get(step["key"], False),
                 "optional": step.get("optional", False),
             }
         )
 
     total = len(ONBOARDING_STEPS)
-    done = sum(1 for s in steps_with_status if s["completed"])
+    # "Done" = either genuinely completed OR explicitly skipped. Skipped
+    # counts toward progress so the bar moves forward when the user
+    # acknowledges a step they don't want to do in the guide.
+    done = sum(1 for s in steps_with_status if s["completed"] or s["skipped"])
     all_complete = done == total
 
     # Auto-clear legacy replay_mode flags on read — kept as a no-op
@@ -284,7 +310,14 @@ async def get_onboarding_progress(current_user: dict = Depends(get_current_user)
 
 @router.post("/onboarding/complete-step/{step_key}")
 async def complete_onboarding_step(step_key: str, current_user: dict = Depends(get_current_user)):
-    """Mark an onboarding step as complete."""
+    """Mark an onboarding step as complete.
+
+    Mutually exclusive with `skip-step` — completing a step clears any
+    prior skip flag so the user can swap a "I'll do this later" answer
+    back to "Done" by genuinely doing the work (or by re-clicking the
+    tile and triggering the manual-mark path for review_readiness /
+    review_settings).
+    """
     valid_keys = [s["key"] for s in ONBOARDING_STEPS]
     if step_key not in valid_keys:
         raise HTTPException(status_code=400, detail=f"Invalid step: {step_key}")
@@ -296,11 +329,51 @@ async def complete_onboarding_step(step_key: str, current_user: dict = Depends(g
                 f"completed_steps.{step_key}": True,
                 "user_id": current_user["id"],
                 "updated_at": datetime.now(timezone.utc).isoformat(),
-            }
+            },
+            "$unset": {
+                f"skipped_steps.{step_key}": "",
+            },
         },
         upsert=True,
     )
     return {"success": True, "step": step_key}
+
+
+@router.post("/onboarding/skip-step/{step_key}")
+async def skip_onboarding_step(step_key: str, current_user: dict = Depends(get_current_user)):
+    """Mark an onboarding step as skipped (Feb 27 2026).
+
+    Skipped is a *separate* state from completed:
+      • Skipped steps count toward the progress bar's "done" total so
+        the bar advances when the user acknowledges a step they don't
+        want to do in the guide.
+      • The dashboard's Setup Guide tile renders skipped in its OWN
+        column in the all-steps disclosure — the "complete" column
+        stays empty even if live data would otherwise auto-detect
+        completion.
+      • Skipping clears any prior completed_steps mark for this key
+        (mutually exclusive), and completing un-skips. The two endpoints
+        always converge on one canonical state per step.
+    """
+    valid_keys = [s["key"] for s in ONBOARDING_STEPS]
+    if step_key not in valid_keys:
+        raise HTTPException(status_code=400, detail=f"Invalid step: {step_key}")
+
+    await db.onboarding_progress.update_one(
+        {"user_id": current_user["id"]},
+        {
+            "$set": {
+                f"skipped_steps.{step_key}": True,
+                "user_id": current_user["id"],
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+            },
+            "$unset": {
+                f"completed_steps.{step_key}": "",
+            },
+        },
+        upsert=True,
+    )
+    return {"success": True, "step": step_key, "skipped": True}
 
 
 @router.post("/onboarding/mark-visited/{section}")
@@ -425,6 +498,7 @@ async def reset_onboarding(current_user: dict = Depends(get_current_user)):
                 "resume_banner_hidden": False,
                 "celebration_shown": False,
                 "completed_steps": {},
+                "skipped_steps": {},
                 "replay_mode": True,
                 "replay_started_at": datetime.now(timezone.utc).isoformat(),
                 "user_id": current_user["id"],

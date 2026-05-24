@@ -459,7 +459,7 @@ async def save_step(
             existing_user = (
                 await db.users.find_one(
                     {"id": user_id},
-                    {"_id": 0, "address_street": 1},
+                    {"_id": 0, "id": 1, "address_street": 1},
                 )
                 or {}
             )

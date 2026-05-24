@@ -130,7 +130,7 @@ const OnboardingWizard = ({ onAllComplete, onContentChange }) => {
       const cfg = STEP_CONFIG[s.key];
       return !cfg || isFeatureEnabled(cfg.route, enabledFeatures);
     });
-    const incomplete = visibleSteps.filter(s => !s.completed);
+    const incomplete = visibleSteps.filter(s => !s.completed && !s.skipped);
     const allDone = incomplete.length === 0 && visibleSteps.length > 0;
     if (allDone && progress.celebration_shown) return { ok: false, count: 0 };
     if (allDone) return { ok: false, count: 0 };
@@ -264,7 +264,16 @@ const OnboardingWizard = ({ onAllComplete, onContentChange }) => {
     const config = STEP_CONFIG[s.key];
     return !config || isFeatureEnabled(config.route, enabledFeatures);
   });
-  const incompleteSteps = allSteps.filter(s => !s.completed || popping[s.key]);
+  // Active-CTA candidates: a step is eligible to be the "next step"
+  // button only when it is NEITHER completed NOR skipped (Feb 27 2026).
+  // Skipped steps count toward progress but never re-surface as the
+  // active CTA — the user explicitly told us not to walk them
+  // through it.
+  const incompleteSteps = allSteps.filter(s => (!s.completed && !s.skipped) || popping[s.key]);
+  // "All done" for celebration purposes still means every step is in
+  // some terminal state (completed OR skipped). The progress bar uses
+  // `progress.completed_count` from the backend, which already counts
+  // both.
   const allComplete = incompleteSteps.length === 0 && allSteps.length > 0;
 
   // Always show ONE step at a time until all are complete
@@ -543,12 +552,14 @@ const OnboardingWizard = ({ onAllComplete, onContentChange }) => {
         })}
 
         {/* ─────────── All-steps disclosure ───────────
-            Collapsible list showing every step in the Setup Guide with
-            a ✓ (complete) or ○ (incomplete) so the user can see what's
-            still ahead at a glance. Lives directly beneath the active
-            next-step CTA inside the same tile (founder Feb 26 2026
-            mandate). Hidden when `showAll` already renders the full
-            list above. */}
+            Collapsible list showing every step in the Setup Guide.
+            TWO indicator columns (Feb 27 2026 founder mandate):
+              • Left  — ✓ complete  / ○ not complete
+              • Right — ⊘ skipped   / ○ not skipped
+            The two states are mutually exclusive on the backend (skip
+            clears complete and vice versa) so the user can tell
+            genuine completion apart from "I'll do this later".
+            Skipped steps still count toward the progress bar. */}
         {!showAll && allSteps.length > 0 && (
           <div className="mt-3 pt-3" style={{ borderTop: '1px solid var(--b)' }}>
             <button
@@ -566,54 +577,82 @@ const OnboardingWizard = ({ onAllComplete, onContentChange }) => {
               />
             </button>
             {allStepsExpanded && (
-              <ul
-                id="setup-guide-all-steps-list"
-                data-testid="setup-guide-all-steps-list"
-                className="mt-2 space-y-1"
-              >
-                {allSteps.map((s, i) => {
-                  const cfg = STEP_CONFIG[s.key];
-                  const stepLabel = cfg?.label || s.label || s.key;
-                  const accentColor = cfg?.color || 'var(--gold)';
-                  return (
-                    <li key={s.key}>
-                      <button
-                        type="button"
-                        onClick={() => handleStepClick(s)}
-                        data-testid={`setup-guide-step-row-${s.key}`}
-                        className="w-full flex items-center gap-2 text-left text-xs lg:text-sm px-2 py-1.5 rounded-md transition-colors hover:bg-[var(--s)] focus:outline-none focus:ring-2 focus:ring-[var(--gold)] focus:ring-offset-1 focus:ring-offset-transparent"
-                      >
-                        {s.completed ? (
-                          <Check
+              <div data-testid="setup-guide-all-steps-list" id="setup-guide-all-steps-list" className="mt-2">
+                {/* Column headers — tiny uppercase labels so the user
+                    knows which column is which without hovering. */}
+                <div className="flex items-center gap-2 px-2 pb-1 text-[11px] lg:text-xs uppercase tracking-wider text-[var(--t5)] font-bold">
+                  <span className="w-5 flex-shrink-0 text-center" aria-hidden="true">Done</span>
+                  <span className="w-5 flex-shrink-0 text-center" aria-hidden="true">Skip</span>
+                  <span className="flex-1">Step</span>
+                </div>
+                <ul className="space-y-1">
+                  {allSteps.map((s, i) => {
+                    const cfg = STEP_CONFIG[s.key];
+                    const stepLabel = cfg?.label || s.label || s.key;
+                    const accentColor = cfg?.color || 'var(--gold)';
+                    const isDone = !!s.completed;
+                    const isSkip = !!s.skipped;
+                    return (
+                      <li key={s.key}>
+                        <button
+                          type="button"
+                          onClick={() => handleStepClick(s)}
+                          data-testid={`setup-guide-step-row-${s.key}`}
+                          data-state={isDone ? 'done' : isSkip ? 'skipped' : 'open'}
+                          className="w-full flex items-center gap-2 text-left text-xs lg:text-sm px-2 py-1.5 rounded-md transition-colors hover:bg-[var(--s)] focus:outline-none focus:ring-2 focus:ring-[var(--gold)] focus:ring-offset-1 focus:ring-offset-transparent"
+                        >
+                          {/* Done column */}
+                          <span className="w-5 flex-shrink-0 flex items-center justify-center" aria-label={isDone ? 'Completed' : 'Not completed'}>
+                            {isDone ? (
+                              <Check
+                                className="w-4 h-4"
+                                style={{ color: '#22C993' }}
+                                strokeWidth={3}
+                                data-testid={`setup-guide-step-icon-${s.key}-done`}
+                              />
+                            ) : (
+                              <Circle
+                                className="w-4 h-4 text-[var(--t5)]"
+                                strokeWidth={2}
+                                data-testid={`setup-guide-step-icon-${s.key}-open`}
+                              />
+                            )}
+                          </span>
+                          {/* Skip column */}
+                          <span className="w-5 flex-shrink-0 flex items-center justify-center" aria-label={isSkip ? 'Skipped' : 'Not skipped'}>
+                            {isSkip ? (
+                              <Check
+                                className="w-4 h-4"
+                                style={{ color: '#F59E0B' }}
+                                strokeWidth={3}
+                                data-testid={`setup-guide-step-icon-${s.key}-skipped`}
+                              />
+                            ) : (
+                              <Circle
+                                className="w-4 h-4 text-[var(--t5)]"
+                                strokeWidth={2}
+                                data-testid={`setup-guide-step-icon-${s.key}-skip-open`}
+                              />
+                            )}
+                          </span>
+                          <span className={`flex-1 ${isDone ? 'text-[var(--t5)] line-through' : isSkip ? 'text-[var(--t4)] italic' : 'text-[var(--t)]'}`}>
+                            <span className="text-[var(--t5)] font-medium mr-1">{i + 1}.</span>
+                            {stepLabel}
+                            {s.optional && !isDone && !isSkip && (
+                              <span className="text-[var(--t5)] ml-1">(optional)</span>
+                            )}
+                          </span>
+                          <ChevronRight
                             className="w-4 h-4 flex-shrink-0"
-                            style={{ color: '#22C993' }}
-                            strokeWidth={3}
-                            data-testid={`setup-guide-step-icon-${s.key}-done`}
+                            style={{ color: isDone || isSkip ? 'var(--t5)' : accentColor }}
+                            strokeWidth={2.5}
                           />
-                        ) : (
-                          <Circle
-                            className="w-4 h-4 flex-shrink-0 text-[var(--t5)]"
-                            strokeWidth={2}
-                            data-testid={`setup-guide-step-icon-${s.key}-open`}
-                          />
-                        )}
-                        <span className={`flex-1 ${s.completed ? 'text-[var(--t5)] line-through' : 'text-[var(--t)]'}`}>
-                          <span className="text-[var(--t5)] font-medium mr-1">{i + 1}.</span>
-                          {stepLabel}
-                          {s.optional && !s.completed && (
-                            <span className="text-[var(--t5)] ml-1">(optional)</span>
-                          )}
-                        </span>
-                        <ChevronRight
-                          className="w-4 h-4 flex-shrink-0"
-                          style={{ color: s.completed ? 'var(--t5)' : accentColor }}
-                          strokeWidth={2.5}
-                        />
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
             )}
           </div>
         )}

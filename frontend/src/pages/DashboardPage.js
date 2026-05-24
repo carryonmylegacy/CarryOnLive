@@ -877,8 +877,14 @@ const DashboardPage = () => {
       const currentKey = guidedStep?.key;
       if (currentKey) {
         try {
-          await apiClient.post(`${API_URL}/onboarding/complete-step/${currentKey}`, {}, getAuthHeaders());
-        } catch { /* non-fatal — sticky-completion will retry on the next dashboard fetch */ }
+          // Mark this step SKIPPED (not completed) — Feb 27 2026. The
+          // backend tracks complete vs skipped in two separate maps so
+          // the dashboard tile can render them in two columns and the
+          // user can tell genuine completion apart from "acknowledged
+          // but not done". Skipped still counts toward progress so the
+          // bar moves forward.
+          await apiClient.post(`${API_URL}/onboarding/skip-step/${currentKey}`, {}, getAuthHeaders());
+        } catch { /* non-fatal — user can re-skip on next dashboard load */ }
       }
       // Refresh local progress so the dashboard tile reflects the new
       // count immediately. Broadcast the refreshed payload so the

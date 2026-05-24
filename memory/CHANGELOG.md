@@ -1,6 +1,44 @@
 # CarryOn — Changelog
 
 
+## Feb 27, 2026 — Skipped ≠ Completed: dual-state Setup Guide (V2026.02.27-c)
+
+**Why**: Founder report after live test: tapping a completed step's row and then pressing "Skip" in the auto-opened overlay was flipping whichever step happened to be the next incomplete one to ✓ — because skip was wired to `/complete-step`. Founder also wanted to *see* that a step was skipped (not done) at a glance: two columns in the all-steps list — Done vs Skip — with the rule that a skipped-but-not-done step cannot be marked complete by the overlay's skip button.
+
+**Changes:**
+
+### Backend (`backend/routes/onboarding.py`)
+- New field `skipped_steps` on `onboarding_progress` document, parallel to `completed_steps`.
+- New endpoint **`POST /api/onboarding/skip-step/{step_key}`** — sets `skipped_steps.{key}=True` AND `$unset`s `completed_steps.{key}` (mutually exclusive).
+- Existing **`POST /api/onboarding/complete-step/{step_key}`** now also `$unset`s the matching `skipped_steps.{key}` so completing un-skips.
+- `GET /api/onboarding/progress`:
+  - Returns `skipped` boolean alongside `completed` on every step.
+  - `skipped` overrides live auto-detected completion (founder rule: "if it is skipped and not complete then you can't mark complete").
+  - `completed_count` (and progress %) counts both completed AND skipped — the bar still moves when the user acknowledges a step.
+- `POST /api/onboarding/reset` clears `skipped_steps` along with `completed_steps`.
+
+### Frontend overlay (`pages/DashboardPage.js`)
+- `dismissOverlay` now POSTs to `/onboarding/skip-step/{key}` (not `/complete-step`). Skipping no longer pretends the step was done.
+
+### Frontend tile (`components/OnboardingWizard.js`)
+- "Next step" candidate set excludes skipped: `incompleteSteps = allSteps.filter(s => !s.completed && !s.skipped)`. The active CTA + the `wouldRender` outer wrapper check both honor this so a skipped step never re-surfaces as the active prompt.
+- All-steps disclosure now has **two indicator columns** (with tiny uppercase headers): left column is the green-check Done state, right column is the amber-check Skip state. A row with neither shows two open circles. Done rows render with strikethrough + muted color; skipped rows render italic + slightly muted. Row click still navigates to the step's page (the user can revisit a skipped or completed step for reference at any time).
+- Headers use `text-[11px] lg:text-xs font-bold` to stay above the 11 px iOS accessibility floor.
+
+### Housekeeping cleanup (drive-by)
+- Fixed two pre-existing A1.2 Mongo projection WARNs (`onboarding.py:149`, `quickstart.py:462`) by adding `"id": 1` to the inclusion projections. Both queries were always safe in practice — the WARN was a static-analyzer false-positive driven by missing `id` in the projection literal — but housekeeping is law and `--strict` must return 0/0.
+
+**End-to-end verification (production preview via curl):**
+- `/skip-step/designate_primary` → `{success, step, skipped:true}`; subsequent `/progress` shows `completed=false, skipped=true`, count went +1.
+- `/complete-step/designate_primary` → cleared skip flag; `completed=true, skipped=false`.
+- Re-skip → cleared completed; `completed=false, skipped=true`. Mutex enforced.
+
+**Quality gates:**
+- `bash /app/housekeeping.sh --strict` → **0 WARN / 0 FAIL**.
+- ESLint clean on `OnboardingWizard.js`, `DashboardPage.js`. Ruff clean on `onboarding.py`, `quickstart.py`.
+
+
+
 ## Feb 27, 2026 — Unified skip flow + clickable all-steps disclosure (V2026.02.27-b)
 
 **Why**: Founder follow-up after skipping through the Setup Guide on production:
