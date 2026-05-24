@@ -157,6 +157,21 @@ def _human_state_summary(data: dict[str, Any]) -> str:
         parts.append(f"State of residence: {state}.")
     if residence.get("address"):
         parts.append(f"Personal residence: {residence.get('address')}.")
+    # Tenure (own / rent / other) — Feb 26 2026. Critical for the AI
+    # to avoid statements like "your home will pass through probate"
+    # when the user rents. Renters skip homestead-exemption guidance
+    # and we steer property guidance to assets they actually OWN.
+    tenure = (residence.get("tenure") or "").lower()
+    if tenure == "own":
+        parts.append("Residence tenure: user OWNS their personal residence.")
+    elif tenure == "rent":
+        parts.append(
+            "Residence tenure: user RENTS their personal residence — DO NOT include guidance about homestead exemptions, deed transfer, or probate of the home itself; that home is NOT part of their estate."
+        )
+    elif tenure == "other":
+        parts.append(
+            "Residence tenure: OTHER (e.g. living with family, corporate housing, residence held in trust by another party) — treat the residence as NOT a personal-name asset for guidance purposes."
+        )
 
     # Household — unchanged.
     hh = data.get("household") or {}

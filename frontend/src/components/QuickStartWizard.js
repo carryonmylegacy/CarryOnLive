@@ -331,6 +331,7 @@ const QuickStartWizard = ({ forceOpen = false, onClose = () => {} }) => {
             setData={setStepData}
             user={user}
             brand={brand}
+            allData={progress?.data || {}}
             onGateChoice={(choice) => handleGateChoice(choice)}
           />
           {error && (
@@ -483,7 +484,7 @@ const _ENTITY_TYPES = [
   ['nonprofit','Nonprofit / 501(c)'],['holding_company','Holding Company'],
 ];
 
-export const QuickStartStep = ({ stepKey, data, setData, user, brand, onGateChoice }) => {
+export const QuickStartStep = ({ stepKey, data, setData, user, brand, allData, onGateChoice }) => {
   const set = (k, v) => setData({ ...data, [k]: v });
   const firstName = (user?.first_name || user?.name || '').split(' ')[0] || 'there';
 
@@ -642,6 +643,39 @@ export const QuickStartStep = ({ stepKey, data, setData, user, brand, onGateChoi
             />
           </div>
         </div>
+        {/* Tenure pills (Feb 26 2026 founder direction). The Quickstart
+            used to silently assume the residence was an owned asset,
+            then the next step asked about "OTHER" properties — which
+            misleads renters into thinking step 5 means "in addition
+            to my home". Asking own/rent/other here lets us reword
+            step 5 + tell Grok the truth so the guide is accurate. */}
+        <div className="pt-1">
+          <Label>Do you own or rent this home?</Label>
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              ['own', 'I own it'],
+              ['rent', 'I rent'],
+              ['other', 'Other'],
+            ].map(([k, label]) => (
+              <button
+                key={k}
+                type="button"
+                onClick={() => set('tenure', k)}
+                data-testid={`qs-residence-tenure-${k}`}
+                className="rounded-xl px-2 py-2.5 text-sm font-bold transition-all active:scale-[0.97]"
+                style={pillButtonStyle(data?.tenure === k)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          {data?.tenure === 'other' && (
+            <p className="text-xs mt-1.5" style={mutedStyle}>
+              No problem — pick &quot;Other&quot; for situations like living with family,
+              corporate housing, or a residence held in trust.
+            </p>
+          )}
+        </div>
       </div>
     );
   }
@@ -767,19 +801,24 @@ export const QuickStartStep = ({ stepKey, data, setData, user, brand, onGateChoi
   // ── 5. Properties (multi-add with Google Places + per-property state) ──
   if (stepKey === 'properties') {
     const list = Array.isArray(data?.list) ? data.list : [];
+    // Read the residence tenure picked one step back so we can phrase
+    // this step correctly (Feb 26 2026 founder direction): renters and
+    // "other" arrangements never had a "first" owned property, so the
+    // word "Other" up top is misleading for them.
+    const tenure = (allData?.residence?.tenure || 'own');
+    const headline = tenure === 'own'
+      ? 'Other properties you own'
+      : 'Properties you own';
+    const blurb = tenure === 'own'
+      ? `Add any properties beyond your personal residence — rentals, vacation homes, land, anything that's in your name. State matters (out-of-state property drives ancillary probate). The full street/city/ZIP is optional — adding it lets your guide reference each property by name. Leave this blank if there are none.`
+      : `You told us you don't own where you live — that's fine. List any real estate you DO own in your name: a rental, vacation home, land, etc. State matters (out-of-state property drives ancillary probate). The full street/city/ZIP is optional — adding it lets your guide reference each property by name. Leave this blank if you own no real estate.`;
     const addRow = () => setData({ ...data, list: [...list, { street: '', line2: '', city: '', state: '', zip: '', address: '', kind: 'other' }] });
     const updateRow = (idx, patch) => setData({ ...data, list: list.map((p, i) => i === idx ? { ...p, ...patch } : p) });
     const removeRow = (idx) => setData({ ...data, list: list.filter((_, i) => i !== idx) });
     return (
       <div className="space-y-3" data-testid="qs-step-properties">
-        <h3 className="text-lg lg:text-xl font-bold" style={headingStyle}>Other properties you own</h3>
-        <p className="text-sm" style={mutedStyle}>
-          Add any properties beyond your personal residence — rentals, vacation homes,
-          land, anything that&apos;s in your name. State matters (out-of-state property
-          drives ancillary probate). The full street/city/ZIP is optional — adding it
-          lets your guide reference each property by name. Leave this blank if there
-          are none.
-        </p>
+        <h3 className="text-lg lg:text-xl font-bold" style={headingStyle}>{headline}</h3>
+        <p className="text-sm" style={mutedStyle}>{blurb}</p>
         <div className="space-y-3">
           {list.map((p, idx) => (
             <div key={idx} className="space-y-2 rounded-xl p-3" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)' }}>

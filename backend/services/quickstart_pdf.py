@@ -152,9 +152,19 @@ def _format_residence(data: dict[str, Any]) -> str:
     res = data.get("residence") or {}
     addr = res.get("address") or ""
     state = res.get("state") or ""
+    # Append tenure suffix when known so the printed guide is accurate
+    # for renters and other-arrangement users (Feb 26 2026 founder
+    # direction). "Owned" suffix is implied by default — only call it
+    # out for non-ownership.
+    tenure = (res.get("tenure") or "").lower()
+    suffix = ""
+    if tenure == "rent":
+        suffix = " — rented"
+    elif tenure == "other":
+        suffix = " — other arrangement"
     if addr and state:
-        return f"{addr} ({state})"
-    return addr or state or ""
+        return f"{addr} ({state}){suffix}"
+    return (addr or state or "") + suffix
 
 
 def _format_business(data: dict[str, Any]) -> str:
