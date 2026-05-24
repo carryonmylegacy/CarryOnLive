@@ -255,6 +255,13 @@ const OfflineModeToggle = ({ collapsed }) => {
     try {
       localStorage.setItem('carryon_offline_v1', next ? 'on' : 'off');
     } catch {}
+    // Mirror the platform-visibility flag locally so every other
+    // component (Settings cards, onboarding tile) re-renders without
+    // waiting for the next /public/site-content boot fetch.
+    try {
+      const { setPlatformOfflineFlag } = await import('../../utils/platformOfflineFlag');
+      setPlatformOfflineFlag(next ? 'on' : 'off');
+    } catch {}
     // Broadcast so any listening components update without a reload.
     try { window.dispatchEvent(new CustomEvent('carryon:offline-flag-changed', { detail: { mode: next ? 'on' : 'off' } })); } catch {}
     // Reload so repos, service worker, and crypto session key reinitialize cleanly.

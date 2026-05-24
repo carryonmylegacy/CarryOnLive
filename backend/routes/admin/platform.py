@@ -23,6 +23,14 @@ async def get_public_site_content():
         "footer_address_line1": settings.get("footer_address_line1", "1550 Wilson Boulevard 7th Floor"),
         "footer_address_line2": settings.get("footer_address_line2", "Arlington, VA 22209 U.S.A."),
         "footer_phone": settings.get("footer_phone", "(703) 884-1527"),
+        # Public, non-sensitive feature flag (Feb 26 2026). When the
+        # founder's Admin sidebar toggle is OFF, the user-facing
+        # Offline section in Settings and the Offline Mode onboarding
+        # tile must disappear too — otherwise users see a toggle for a
+        # feature that's been disabled platform-wide. Returned as the
+        # raw mode string ('on' | 'off') so the frontend can treat any
+        # non-'on' value as "hide it".
+        "offline_mode": settings.get("offline_mode", "off"),
     }
 
 

@@ -30,6 +30,10 @@ import DockCustomizer from '../components/DockCustomizer';
 import ReferralCard from '../components/ReferralCard';
 import ChatAutoscrollCard from '../components/settings/ChatAutoscrollCard';
 import TrusteeAccessCard from '../components/settings/TrusteeAccessCard';
+import {
+  isPlatformOfflineVisible,
+  PLATFORM_OFFLINE_FLAG_EVENT,
+} from '../utils/platformOfflineFlag';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL + '/api';
 
@@ -40,6 +44,17 @@ const SettingsPage = () => {
   const [settingsReady, setSettingsReady] = useState(false);
   const [guideHidden, setGuideHidden] = useState(true);
   const [betaBugIconHidden, setBetaBugIconHidden] = useLocalStorageBoolean('hide_beta_bug_icon');
+  // Founder's master Offline-Mode platform switch (see
+  // `/utils/platformOfflineFlag.js`). When OFF, the entire Offline
+  // section in Settings is hidden — Feb 26 2026 founder direction
+  // ("offline mode isn't fully baked yet, but I want my master
+  // switch to govern user-visible affordances platform-wide").
+  const [offlineVisible, setOfflineVisible] = useState(() => isPlatformOfflineVisible());
+  useEffect(() => {
+    const onChange = () => setOfflineVisible(isPlatformOfflineVisible());
+    window.addEventListener(PLATFORM_OFFLINE_FLAG_EVENT, onChange);
+    return () => window.removeEventListener(PLATFORM_OFFLINE_FLAG_EVENT, onChange);
+  }, []);
 
   const isStaff = user?.role === 'admin' || user?.role === 'operator';
   const fromOnboarding = searchParams.get('from') === 'onboarding';
@@ -154,23 +169,30 @@ const SettingsPage = () => {
       {/* Referral program — benefactors only (staff don't refer) */}
       {!isStaff && <ReferralCard />}
 
-      {/* ── Section: Offline ── */}
-      <SectionHeader title="Offline" hint="Control how CarryOn behaves when you lose signal." />
-      {/* Plain-English list of what works offline vs what needs the
-          internet. Sets user expectations explicitly so nothing is
-          surprising on a flight or in a basement. */}
-      <OfflineCapabilitiesCard />
-      <OfflineBehaviorCard />
-      {/* PWA-only opt-in: cache an encrypted credential on this device so
-          the user can sign back in even with no internet. Renders nothing
-          in a regular browser tab (the use case requires the home-screen
-          install). */}
-      <OfflineAccessCard />
-      {/* Permanent in-app diagnostics for the offline sync queue.
-          Renders nothing when the queue is empty and no error has
-          ever been recorded, so the page stays uncluttered for users
-          who don't hit offline scenarios. */}
-      <SyncStatusCard />
+      {/* ── Section: Offline ── (hidden when the founder's master
+          Offline Mode switch in the Admin sidebar is OFF — gating
+          done via /utils/platformOfflineFlag.js so users never see
+          a toggle for a feature that's been disabled platform-wide.) */}
+      {offlineVisible && (
+        <>
+          <SectionHeader title="Offline" hint="Control how CarryOn behaves when you lose signal." />
+          {/* Plain-English list of what works offline vs what needs the
+              internet. Sets user expectations explicitly so nothing is
+              surprising on a flight or in a basement. */}
+          <OfflineCapabilitiesCard />
+          <OfflineBehaviorCard />
+          {/* PWA-only opt-in: cache an encrypted credential on this device so
+              the user can sign back in even with no internet. Renders nothing
+              in a regular browser tab (the use case requires the home-screen
+              install). */}
+          <OfflineAccessCard />
+          {/* Permanent in-app diagnostics for the offline sync queue.
+              Renders nothing when the queue is empty and no error has
+              ever been recorded, so the page stays uncluttered for users
+              who don't hit offline scenarios. */}
+          <SyncStatusCard />
+        </>
+      )}
 
       {/* ── Section: Security ── */}
       <SectionHeader title="Security" hint="2FA, passkeys, auto-logout, vault locks." />

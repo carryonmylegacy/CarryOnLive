@@ -845,6 +845,16 @@ function App() {
       .then(({ runQuotaGuard }) => runQuotaGuard())
       .catch(() => { /* offline module load failed — non-fatal */ });
 
+    // Mirror the founder's master Offline-Mode switch
+    // (`platform_settings.offline_mode`) into a public localStorage
+    // flag so the Settings cards and onboarding tile can gate
+    // themselves off when the founder has disabled the feature
+    // platform-wide. Safe-to-fail — caches synchronously after this
+    // single network round-trip; subsequent renders are flicker-free.
+    import('./utils/platformOfflineFlag')
+      .then(({ refreshPlatformOfflineFlag }) => refreshPlatformOfflineFlag())
+      .catch(() => { /* non-fatal — defaults to hidden */ });
+
     // Check for platform updates (web only — safe, silent, no crashes)
     if (!isNative) {
       const timer = setTimeout(() => checkForUpdates(), 5000);

@@ -11,6 +11,10 @@ import {
 import { Progress } from '../components/ui/progress';
 import { API_URL } from '../config';
 import { isFeatureEnabled } from '../utils/featureGates';
+import {
+  isPlatformOfflineVisible,
+  PLATFORM_OFFLINE_FLAG_EVENT,
+} from '../utils/platformOfflineFlag';
 
 const STEP_CONFIG = {
   add_beneficiary: { icon: Users, color: '#3b82f6', bg: 'rgba(59,130,246,0.08)', border: 'rgba(59,130,246,0.2)', route: '/beneficiaries', label: 'Add Someone You Love', desc: 'Just a name and relationship to get started' },
@@ -39,6 +43,18 @@ const OnboardingWizard = ({ onAllComplete, onContentChange }) => {
   const [offlineCoachDismissed, setOfflineCoachDismissed] = useState(() => {
     return localStorage.getItem('carryon_offline_coach_dismissed') === 'true';
   });
+  // Mirror the founder's master Offline-Mode platform switch — when
+  // OFF, this whole tile is never rendered (Feb 26 2026 founder
+  // direction). Re-reads live on every flag-change broadcast so
+  // toggling in the Admin sidebar makes the tile vanish without a
+  // page reload.
+  const [offlinePlatformVisible, setOfflinePlatformVisible] = useState(() => isPlatformOfflineVisible());
+  useEffect(() => {
+    const onChange = () => setOfflinePlatformVisible(isPlatformOfflineVisible());
+    window.addEventListener(PLATFORM_OFFLINE_FLAG_EVENT, onChange);
+    return () => window.removeEventListener(PLATFORM_OFFLINE_FLAG_EVENT, onChange);
+  }, []);
+
   const [showAll, setShowAll] = useState(false);
   const [popping, setPopping] = useState({});
   const [dismissPhase, setDismissPhase] = useState('idle'); // 'idle' | 'confirm' | 'info'
@@ -83,7 +99,7 @@ const OnboardingWizard = ({ onAllComplete, onContentChange }) => {
     if (allDone && progress.celebration_shown) return { ok: false, count: 0 };
     if (allDone) return { ok: false, count: 0 };
     const hasWelcome = user?.is_also_benefactor && !welcomeDismissed;
-    const hasOffline = !offlineCoachDismissed;
+    const hasOffline = !offlineCoachDismissed && offlinePlatformVisible;
     // Step display mirrors the render path below: showAll → every
     // step; otherwise → 1 next step (or 0 if there are none).
     const stepRenderCount = showAll ? visibleSteps.length : (incomplete.length > 0 ? 1 : 0);
@@ -520,8 +536,14 @@ const OnboardingWizard = ({ onAllComplete, onContentChange }) => {
       )}
 
       {/* ─────────── Offline Mode tile ───────────
-          Same shell, cyan left border. */}
-      {!offlineCoachDismissed && (
+          Same shell, cyan left border. Hidden when the founder's
+          master Offline switch is OFF (see /utils/platformOfflineFlag.js)
+          so users don't see a coaching tile for a feature that's been
+          disabled platform-wide. The user's per-device dismiss
+          preference is still honored — when the founder turns the
+          flag back ON, the tile only re-appears for users who never
+          dismissed it. */}
+      {!offlineCoachDismissed && offlinePlatformVisible && (
         <div className="glass-card relative w-full p-4 lg:p-5 border-l-4 border-l-[#0EA5E9]" data-testid="onboarding-offline-coach">
           <button
             onClick={() => { localStorage.setItem('carryon_offline_coach_dismissed', 'true'); setOfflineCoachDismissed(true); }}

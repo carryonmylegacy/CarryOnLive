@@ -72,6 +72,12 @@ const MobileOfflineToggle = () => {
     try {
       localStorage.setItem('carryon_offline_v1', next ? 'on' : 'off');
     } catch {}
+    // Mirror the public platform-visibility flag so other components
+    // (Settings cards, onboarding tile) re-render before the reload.
+    try {
+      const { setPlatformOfflineFlag } = await import('../../utils/platformOfflineFlag');
+      setPlatformOfflineFlag(next ? 'on' : 'off');
+    } catch {}
     try {
       window.dispatchEvent(new CustomEvent('carryon:offline-flag-changed', {
         detail: { mode: next ? 'on' : 'off' },
