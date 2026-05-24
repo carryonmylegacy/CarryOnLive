@@ -100,14 +100,19 @@ async def get_onboarding_progress(current_user: dict = Depends(get_current_user)
     replay_mode = bool(progress.get("replay_mode", False))
 
     completed = {}
-    if replay_mode:
-        # Pull completion strictly from the stored map (gradually
-        # populated by the user re-walking through the wizard).
-        stored = progress.get("completed_steps", {})
-        for step in ONBOARDING_STEPS:
-            if stored.get(step["key"]):
-                completed[step["key"]] = True
-    elif estate_id:
+    # Always pull manually-marked steps from the stored map regardless
+    # of replay mode — these are the only steps that *require* an
+    # explicit `complete-step` POST (review_readiness, review_settings).
+    stored = progress.get("completed_steps", {}) or {}
+    # Auto-detect from live data in ALL modes (Feb 26 2026 fix).
+    # Previously replay mode skipped this path entirely, which left
+    # users stuck at "step 1 of N" forever when feature-gated steps
+    # made the visible-vs-tracked counts disagree (the backend's
+    # `all_complete` could never go true so replay_mode never cleared,
+    # and add_beneficiary stayed un-marked even after the user
+    # genuinely added beneficiaries). Auto-detection is now the single
+    # source of truth for steps that *have* live counters.
+    if estate_id:
         # At least one beneficiary added
         completed["add_beneficiary"] = await db.beneficiaries.count_documents({"estate_id": estate_id}) > 0
         completed["upload_document"] = await db.documents.count_documents({"estate_id": estate_id}) > 0
@@ -135,18 +140,19 @@ async def get_onboarding_progress(current_user: dict = Depends(get_current_user)
         )
         completed["build_financial_picture"] = cfp_any
 
-    # review_readiness is manual — preserve from stored progress
-    if not replay_mode and progress.get("completed_steps", {}).get("review_readiness"):
+    # review_readiness is manual — preserve from stored progress.
+    # (Always honored regardless of replay mode now — the explicit
+    # `complete-step` POST is the only way this step ever flips ✓.)
+    if stored.get("review_readiness"):
         completed["review_readiness"] = True
-    # review_settings is manual — preserve from stored progress
-    if not replay_mode and progress.get("completed_steps", {}).get("review_settings"):
+    # review_settings is manual — preserve from stored progress.
+    if stored.get("review_settings"):
         completed["review_settings"] = True
     # Optional steps that were skipped are marked complete
-    stored_completed = progress.get("completed_steps", {})
-    if not replay_mode:
-        for step in ONBOARDING_STEPS:
-            if step.get("optional") and stored_completed.get(step["key"]):
-                completed[step["key"]] = True
+    stored_completed = stored
+    for step in ONBOARDING_STEPS:
+        if step.get("optional") and stored_completed.get(step["key"]):
+            completed[step["key"]] = True
 
     # Persist updated completion
     await db.onboarding_progress.update_one(
@@ -169,10 +175,11 @@ async def get_onboarding_progress(current_user: dict = Depends(get_current_user)
     done = sum(1 for s in steps_with_status if s["completed"])
     all_complete = done == total
 
-    # Auto-clear replay mode the moment all 7 steps have been re-
-    # completed during this replay session so subsequent fetches go
-    # back to the normal auto-detect path.
-    if replay_mode and all_complete:
+    # Auto-clear legacy replay_mode flags on read — kept as a no-op
+    # for back-compat with any docs still carrying the field. The
+    # replay UX is now handled entirely client-side (the wizard's
+    # `showAll` mode + the Settings toggle that re-opens the guide).
+    if replay_mode:
         await db.onboarding_progress.update_one(
             {"user_id": current_user["id"]},
             {"$set": {"replay_mode": False}},

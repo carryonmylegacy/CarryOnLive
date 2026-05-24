@@ -759,7 +759,8 @@ const ChecklistPage = () => {
         }}
         data-testid={`iac-item-${item.id}`}
       >
-        <div className="flex items-start gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-3">
+          <div className="flex items-start gap-3 min-w-0 flex-1">
           <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"
             style={{ background: catInfo.color + '15' }}>
             {item.ai_suggested ? (
@@ -792,10 +793,16 @@ const ChecklistPage = () => {
               </div>
             )}
           </div>
+          </div>
 
-          <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
-            {/* Action buttons row */}
-            <div className="flex items-center gap-1.5">
+          <div className="flex flex-row sm:flex-col items-center sm:items-end gap-1.5 flex-shrink-0 flex-wrap justify-end sm:justify-start w-full sm:w-auto pl-12 sm:pl-0">
+            {/* Action buttons row. On mobile the whole group sits BELOW
+                the title (parent flex switches to column at <sm) so the
+                Accept/Edit/Remove pills can't crash into long task
+                titles. The `pl-12` on mobile keeps this row visually
+                aligned under the title (matches the 36px icon column +
+                12px gap). */}
+            <div className="flex items-center gap-1.5 flex-wrap">
             {item.ai_suggested && item.ai_accepted === null && (
               <>
                 <div className="flex items-center gap-0.5">
