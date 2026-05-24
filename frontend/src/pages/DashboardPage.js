@@ -208,7 +208,7 @@ const DashboardPage = () => {
     try { localStorage.setItem('carryon_onboarding_hidden_until', midnight.toISOString()); } catch { /* ignore */ }
     setOnboardingHiddenForToday(true);
     try { window.dispatchEvent(new CustomEvent('carryon:onboarding-hidden-changed', { detail: { hidden: true, until: midnight.toISOString() } })); } catch { /* ignore */ }
-    toast.success('Onboarding prompts hidden — they\'ll reappear tomorrow.');
+    toast.success('Onboarding action items hidden — they\'ll reappear tomorrow.');
   };
 
   const guidedDismissedRef = useRef(false);
@@ -1201,7 +1201,7 @@ const DashboardPage = () => {
             <span data-testid="onboarding-prompts-group-label">Onboarding</span>
             {totalCount > 0 && (
               <span className="text-[var(--t4)] normal-case tracking-normal font-medium">
-                — {totalCount} {totalCount === 1 ? 'prompt' : 'prompts'}
+                — {totalCount} {totalCount === 1 ? 'action item' : 'action items'}
               </span>
             )}
             <ChevronDown
@@ -1215,7 +1215,7 @@ const DashboardPage = () => {
             <button
               type="button"
               data-testid="onboarding-hide-all-today-mini"
-              aria-label="Hide all onboarding prompts for today"
+              aria-label="Hide all onboarding action items for today"
               title="Hide all for today"
               onClick={hideAllOnboardingForToday}
               className="w-7 h-7 rounded-full flex items-center justify-center transition-all active:scale-90 lg:hover:scale-110"
