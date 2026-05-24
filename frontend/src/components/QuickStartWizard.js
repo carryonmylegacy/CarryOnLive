@@ -1019,10 +1019,14 @@ export const QuickStartStep = ({ stepKey, data, setData, user, brand, allData, o
                     disabled={stepperDisabled || curCount <= 1}
                     data-testid={`qs-biz-count-${k}-dec`}
                     aria-label={`Decrease ${label}`}
-                    className="px-2 flex items-center justify-center active:scale-[0.92] disabled:opacity-40"
-                    style={{ borderRight: '1px solid rgba(255,255,255,0.10)' }}
+                    className="px-3 flex items-center justify-center active:scale-[0.92] disabled:opacity-40"
+                    style={{
+                      borderRight: '1px solid rgba(255,255,255,0.15)',
+                      background: 'rgba(212,175,55,0.18)',
+                      color: '#FCD34D',
+                    }}
                   >
-                    <Minus className="w-4 h-4" />
+                    <Minus className="w-5 h-5" strokeWidth={3} />
                   </button>
                   <input
                     type="number" min="1" max="50"
@@ -1042,10 +1046,14 @@ export const QuickStartStep = ({ stepKey, data, setData, user, brand, allData, o
                     disabled={stepperDisabled || curCount >= 50}
                     data-testid={`qs-biz-count-${k}-inc`}
                     aria-label={`Increase ${label}`}
-                    className="px-2 flex items-center justify-center active:scale-[0.92] disabled:opacity-40"
-                    style={{ borderLeft: '1px solid rgba(255,255,255,0.10)' }}
+                    className="px-3 flex items-center justify-center active:scale-[0.92] disabled:opacity-40"
+                    style={{
+                      borderLeft: '1px solid rgba(255,255,255,0.15)',
+                      background: 'rgba(212,175,55,0.18)',
+                      color: '#FCD34D',
+                    }}
                   >
-                    <Plus className="w-4 h-4" />
+                    <Plus className="w-5 h-5" strokeWidth={3} />
                   </button>
                 </div>
               </div>
@@ -1096,10 +1104,14 @@ export const QuickStartStep = ({ stepKey, data, setData, user, brand, allData, o
                     disabled={curCount <= 0}
                     data-testid={`qs-doc-count-${k}-dec`}
                     aria-label={`Decrease ${label}`}
-                    className="px-2 flex items-center justify-center active:scale-[0.92] disabled:opacity-40"
-                    style={{ borderRight: '1px solid rgba(255,255,255,0.10)' }}
+                    className="px-3 flex items-center justify-center active:scale-[0.92] disabled:opacity-40"
+                    style={{
+                      borderRight: '1px solid rgba(255,255,255,0.15)',
+                      background: 'rgba(212,175,55,0.18)',
+                      color: '#FCD34D',
+                    }}
                   >
-                    <Minus className="w-4 h-4" />
+                    <Minus className="w-5 h-5" strokeWidth={3} />
                   </button>
                   <input
                     type="number" min="0" max="20"
@@ -1118,10 +1130,14 @@ export const QuickStartStep = ({ stepKey, data, setData, user, brand, allData, o
                     disabled={curCount >= 20}
                     data-testid={`qs-doc-count-${k}-inc`}
                     aria-label={`Increase ${label}`}
-                    className="px-2 flex items-center justify-center active:scale-[0.92] disabled:opacity-40"
-                    style={{ borderLeft: '1px solid rgba(255,255,255,0.10)' }}
+                    className="px-3 flex items-center justify-center active:scale-[0.92] disabled:opacity-40"
+                    style={{
+                      borderLeft: '1px solid rgba(255,255,255,0.15)',
+                      background: 'rgba(212,175,55,0.18)',
+                      color: '#FCD34D',
+                    }}
                   >
-                    <Plus className="w-4 h-4" />
+                    <Plus className="w-5 h-5" strokeWidth={3} />
                   </button>
                 </div>
               </div>
