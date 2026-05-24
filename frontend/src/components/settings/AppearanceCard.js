@@ -139,8 +139,8 @@ const AppearanceCard = ({ isStaff }) => {
             </div>
             <div className="flex items-center justify-between">
               <div>
-                <h4 className="text-[var(--t)] font-medium">Setup Checklist</h4>
-                <p className="text-[var(--t5)] text-sm">Show the 8-step setup wizard on your dashboard</p>
+                <h4 className="text-[var(--t)] font-medium">Setup Guide</h4>
+                <p className="text-[var(--t5)] text-sm">Show the 9-step setup wizard on your dashboard</p>
               </div>
               <Switch
                 checked={onboardingVisible}
@@ -155,7 +155,7 @@ const AppearanceCard = ({ isStaff }) => {
                     localStorage.setItem('carryon_welcome_guided_shown', 'true');
                     try { await apiClient.post(`${API_URL}/onboarding/dismiss`, { hide_resume_banner: true }, getAuthHeaders()); } catch (e) { /* ignore */ }
                   }
-                  toast.success(checked ? 'Setup Checklist turned on — saved.' : 'Setup Checklist hidden — saved.');
+                  toast.success(checked ? 'Setup Guide turned on — saved.' : 'Setup Guide hidden — saved.');
                 }}
                 data-testid="settings-onboarding-toggle"
               />

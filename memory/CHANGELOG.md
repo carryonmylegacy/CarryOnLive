@@ -1,6 +1,31 @@
 # CarryOn — Changelog
 
 
+## Feb 27, 2026 — Setup Guide rename + accurate step counter + advance-on-skip + all-steps disclosure (V2026.02.27-a)
+
+**Why**: Founder report: (1) "Setup Checklist" should be "Setup Guide" (last rename pass went the wrong direction); (2) tile and full-screen overlay still showed "Step 1 of 7" even though the backend has 9 steps; (3) "I'll do this on my own later" on a non-optional step left the dashboard tile stuck on step 1 forever because the dismiss only closed the overlay; (4) need a collapsible view of every step's status (✓ / ○) directly inside the Setup Guide tile.
+
+**Changes:**
+- **Rename** "Setup Checklist" → "Setup Guide" universally:
+  - `OnboardingWizard.js`: tile H3, aria-label, comments, test-id `setup-checklist-tile` → `setup-guide-tile`.
+  - `DashboardPage.js`: "Resume Setup Checklist" → "Resume Setup Guide" (Pick Up Where You Left Off tile).
+  - `settings/AppearanceCard.js`: toggle title + toast strings + copy "8-step" → "9-step".
+- **Accurate step counter** in the full-screen guided overlay (`DashboardPage.js`):
+  - `totalSteps` now reads from `onboardingProgress.total_steps` (falls back to live `steps.length` or 9).
+  - `stepNumber` now computed from the step's index in the live `progress.steps` array, not from a hardcoded `STEP_LABELS[key].step` literal.
+  - Added STEP_ROUTES/ICONS/COLORS/LABELS entries for `review_settings` (Settings icon, slate) and `build_financial_picture` (DollarSign icon, emerald) so the overlay can render them when they're the next incomplete step.
+- **"I'll do this on my own later" now advances**: `dismissOverlay()` POSTs `/api/onboarding/complete-step/{key}` (backend sticky-completion rule preserves it across re-reads), re-fetches progress, then jumps the overlay to the next incomplete step. If everything is now done, it fires the celebration and exits. Result: the dashboard Setup Guide tile counter moves forward immediately instead of pointing back at step 1.
+- **Collapsible "View all steps"** disclosure beneath the active next-step CTA inside the Setup Guide tile (`OnboardingWizard.js`):
+  - New `allStepsExpanded` state persisted to `localStorage.carryon_setup_guide_all_expanded` (default collapsed).
+  - Renders every step as a row with a green ✓ (complete) or open ○ (incomplete), numbered, with optional/line-through styling, all wrapped in `[data-testid="setup-guide-all-steps-list"]`.
+  - Toggle button `[data-testid="setup-guide-toggle-all-steps"]` swaps between "View all steps" / "Hide all steps" with a rotating chevron.
+
+**Quality gates:**
+- `bash /app/housekeeping.sh --strict` → 0 WARN / 0 FAIL.
+- ESLint clean on `OnboardingWizard.js`, `DashboardPage.js`, `AppearanceCard.js`.
+
+
+
 ## Feb 26, 2026 — Universal back-chip reshaped + SlidePanel redundancy fix (V2026.02.26-k)
 
 **Why**: Founder review showed (a) the universal back button sitting "awkwardly to the upper-left" as a small 32×32 circle, disconnected from the page's icon-chip header; and (b) a visible redundancy on `/beneficiaries` (and similar pages) when a `<SlidePanel>` opened — the panel's own back chevron + the universal chip + the slide-out close button all stacked together.

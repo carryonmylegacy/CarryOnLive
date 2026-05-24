@@ -29,6 +29,7 @@ import {
   TrendingUp,
   ShieldAlert,
   Landmark, Lock, Heart,
+  Settings,
 } from 'lucide-react';
 import TrialBanner from '../components/TrialBanner';
 import BillingStatusBanner from '../components/BillingStatusBanner';
@@ -786,6 +787,8 @@ const DashboardPage = () => {
       customize_checklist: '/checklist',
       designate_primary: '/beneficiaries',
       add_credential: '/digital-wallet',
+      review_settings: '/settings',
+      build_financial_picture: '/financial',
     };
 
     // Skip guided step if the feature is gated for the user's tier
@@ -800,6 +803,8 @@ const DashboardPage = () => {
       customize_checklist: CheckSquare,
       designate_primary: ArrowLeftRight,
       add_credential: KeyRound,
+      review_settings: Settings,
+      build_financial_picture: DollarSign,
     };
     const STEP_COLORS = {
       add_beneficiary: '#3b82f6',
@@ -809,15 +814,19 @@ const DashboardPage = () => {
       customize_checklist: '#f59e0b',
       designate_primary: '#06b6d4',
       add_credential: '#ec4899',
+      review_settings: '#64748b',
+      build_financial_picture: '#10b981',
     };
     const STEP_LABELS = {
-      add_beneficiary: { title: 'Add Someone You Love', desc: "Let's start by adding a family member or loved one. You just need their first name and your relationship — that's it! You can add details later.", step: 1 },
-      create_message: { title: 'Leave a Milestone Message', desc: "We'll open the Milestone Messages tool so you can record a real milestone-triggered message for your loved ones — pick the moment it should be delivered, who receives it, and add text or video.", step: 2 },
-      upload_document: { title: 'Upload an Important Document', desc: "Pick a document from your device — like a will, insurance policy, or any important paper. Just select the file and give it a name.", step: 3 },
-      review_readiness: { title: 'Check Your Readiness Score', desc: "Let our AI assistant look over your progress and give you a simple readiness score. Tip: Set your address in Settings first for the best results.", step: 4 },
-      customize_checklist: { title: 'Review Your Action Checklist', desc: 'Take a look at the step-by-step checklist your loved ones will follow. You can customize it to fit your family.', step: 5 },
-      designate_primary: { title: 'Set Your Succession Order', desc: 'Arrange the order your beneficiaries inherit responsibilities. This is optional — you can always do it later.', step: 6, optional: true },
-      add_credential: { title: 'Save a Digital Account Login', desc: 'Store one account login (like email or banking) so your beneficiaries can access it when needed. This is optional.', step: 7, optional: true },
+      add_beneficiary: { title: 'Add Someone You Love', desc: "Let's start by adding a family member or loved one. You just need their first name and your relationship — that's it! You can add details later." },
+      create_message: { title: 'Leave a Milestone Message', desc: "We'll open the Milestone Messages tool so you can record a real milestone-triggered message for your loved ones — pick the moment it should be delivered, who receives it, and add text or video." },
+      upload_document: { title: 'Upload an Important Document', desc: "Pick a document from your device — like a will, insurance policy, or any important paper. Just select the file and give it a name." },
+      review_readiness: { title: 'Check Your Readiness Score', desc: "Let our AI assistant look over your progress and give you a simple readiness score. Tip: Set your address in Settings first for the best results." },
+      customize_checklist: { title: 'Review Your Action Checklist', desc: 'Take a look at the step-by-step checklist your loved ones will follow. You can customize it to fit your family.' },
+      designate_primary: { title: 'Set Your Succession Order', desc: 'Arrange the order your beneficiaries inherit responsibilities. This is optional — you can always do it later.', optional: true },
+      add_credential: { title: 'Save a Digital Account Login', desc: 'Store one account login (like email or banking) so your beneficiaries can access it when needed. This is optional.', optional: true },
+      review_settings: { title: 'Review Your Settings', desc: 'Open Settings and Security Settings to personalize your portal — appearance, notifications, address, and access controls.' },
+      build_financial_picture: { title: 'Build Your Financial Picture', desc: 'Add bills, debts, accounts, or property to your CarryOn Financial Picture so the people you trust have the full picture when they need it.' },
     };
     const OPTIONAL_SKIP_INFO = {
       designate_primary: {
@@ -837,7 +846,16 @@ const DashboardPage = () => {
     const route = STEP_ROUTES[guidedStep.key];
     const StepIcon = STEP_ICONS[guidedStep.key] || Sparkles;
     const stepColor = STEP_COLORS[guidedStep.key] || '#d4af37';
-    const totalSteps = 7;
+    // Derive step number + total dynamically from the live progress
+    // payload so the counter always matches reality — previously
+    // hardcoded to "of 7" which silently went stale when the backend
+    // grew to 9 steps (Feb 26 2026 — Settings + Build Your Financial
+    // Picture were added). Falls back to a 1/9 best-guess if the
+    // server hasn't responded yet.
+    const allBackendSteps = onboardingProgress?.steps || [];
+    const totalSteps = onboardingProgress?.total_steps || allBackendSteps.length || 9;
+    const stepIdx = allBackendSteps.findIndex(s => s.key === guidedStep.key);
+    const stepNumber = stepIdx >= 0 ? stepIdx + 1 : 1;
     const isOptional = guidedStep.optional || stepInfo.optional;
 
     // Personalize beneficiary step with beneficiary names
@@ -853,12 +871,45 @@ const DashboardPage = () => {
       }
     }
 
-    const dismissOverlay = () => {
-      // Session-only dismiss — guide will return on next login
+    const dismissOverlay = async () => {
+      // "I'll do this on my own later" — for NON-optional steps. The
+      // founder's directive (Feb 26 2026): clicking later must advance
+      // the Setup Guide tile on the dashboard past this step, not
+      // leave it stuck on step 1. We mark the current step complete
+      // server-side (the backend's sticky-completion rule preserves
+      // it across live-data re-reads), then advance the overlay to the
+      // next incomplete step. If every step is now done, drop out of
+      // the overlay entirely and let the celebration / dashboard tiles
+      // take over.
       if (showWelcomeStep) {
         localStorage.setItem('carryon_welcome_guided_shown', 'true');
         setShowWelcomeStep(false);
+        return;
       }
+      const currentKey = guidedStep?.key;
+      if (currentKey) {
+        try {
+          await apiClient.post(`${API_URL}/onboarding/complete-step/${currentKey}`, {}, getAuthHeaders());
+        } catch { /* non-fatal — user can re-skip on next dashboard load */ }
+      }
+      // Refresh local progress + advance to next incomplete step.
+      try {
+        const progressRes = await apiClient.get(`${API_URL}/onboarding/progress`, getAuthHeaders());
+        setOnboardingProgress(progressRes.data);
+        const steps = progressRes.data?.steps || [];
+        const nextIncomplete = steps.find(s => !s.completed);
+        if (nextIncomplete && !progressRes.data?.all_complete) {
+          setGuidedStep({ ...nextIncomplete, beneficiary_names: progressRes.data?.beneficiary_names || [] });
+          return;
+        }
+        if (progressRes.data?.all_complete && !progressRes.data?.celebration_shown) {
+          guidedDismissedRef.current = true;
+          setShowGuidedFlow(false);
+          try { apiClient.post(`${API_URL}/onboarding/celebration-shown`, {}, getAuthHeaders()); } catch {}
+          setTimeout(() => setShowCelebration(true), 600);
+          return;
+        }
+      } catch { /* fall through to plain dismiss */ }
       guidedDismissedRef.current = true;
       setShowGuidedFlow(false);
     };
@@ -1003,7 +1054,7 @@ const DashboardPage = () => {
           {/* Step counter */}
           <p className="text-xl lg:text-2xl font-bold uppercase tracking-[0.2em] mb-6"
             style={{ color: stepColor }}>
-            Step {stepInfo.step} of {totalSteps}{isOptional ? ' (Optional)' : ''}
+            Step {stepNumber} of {totalSteps}{isOptional ? ' (Optional)' : ''}
           </p>
 
           {/* Large icon bubble */}
@@ -1460,7 +1511,7 @@ const DashboardPage = () => {
               </div>
               <div className="min-w-0">
                 <h3 className="text-base lg:text-lg font-semibold text-[var(--t)] truncate">
-                  Resume Setup Checklist
+                  Resume Setup Guide
                 </h3>
                 <p className="text-xs lg:text-sm text-[var(--t4)] truncate">
                   {(() => {

@@ -5,7 +5,7 @@ import apiClient from '../utils/apiClient';
 import { useAuth } from '../contexts/AuthContext';
 import {
   Users, FileUp, MessageSquare, CheckSquare,
-  ChevronRight, X, Sparkles, Check, KeyRound, ArrowLeftRight,
+  ChevronRight, ChevronDown, X, Sparkles, Check, Circle, KeyRound, ArrowLeftRight,
   AlertTriangle, Settings, WifiOff, ListChecks, DollarSign
 } from 'lucide-react';
 import { Progress } from '../components/ui/progress';
@@ -57,6 +57,22 @@ const OnboardingWizard = ({ onAllComplete, onContentChange }) => {
   }, []);
 
   const [showAll, setShowAll] = useState(false);
+  // Collapsible "all steps" disclosure beneath the active next-step
+  // CTA — lets the user see every step's ✓ / ○ status at a glance
+  // without leaving the dashboard (founder Feb 26 2026 mandate).
+  // Persists across reloads via localStorage. Default: collapsed.
+  const [allStepsExpanded, setAllStepsExpanded] = useState(() => {
+    try { return localStorage.getItem('carryon_setup_guide_all_expanded') === '1'; }
+    catch { return false; }
+  });
+  const toggleAllSteps = () => {
+    setAllStepsExpanded((v) => {
+      const next = !v;
+      try { localStorage.setItem('carryon_setup_guide_all_expanded', next ? '1' : '0'); }
+      catch { /* ignore */ }
+      return next;
+    });
+  };
   const [popping, setPopping] = useState({});
   const [dismissPhase, setDismissPhase] = useState('idle'); // 'idle' | 'confirm' | 'info'
   const prevCompleted = useRef({});
@@ -405,16 +421,16 @@ const OnboardingWizard = ({ onAllComplete, onContentChange }) => {
         .tile-pop { animation: waterBalloonPop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1), ripplePulse 1s ease-out; }
       `}</style>
 
-      {/* ─────────── Setup Checklist tile (was "Get Started with CarryOn") ───────────
+      {/* ─────────── Setup Guide tile (was "Get Started with CarryOn") ───────────
           Single glass-card shell with a blue left border, matching the
           QuickStart Wizard tile in DashboardPage. Header + progress +
           the active next-step CTA are all *inside* this one tile so the
           eye never has to jump back and forth to figure out what to do
           next. Per Feb 26 founder mandate: visual cohesion + "Setup
-          Checklist" is the new name (replaces "Get Started with
-          CarryOn" / "Getting Started Guide" — too close to QuickStart
-          Wizard). */}
-      <div className="glass-card relative w-full p-4 lg:p-5 border-l-4 border-l-[#60A5FA]" data-testid="setup-checklist-tile">
+          Guide" is the new name (replaces "Get Started with
+          CarryOn" / "Getting Started Guide" / "Setup Checklist" — the
+          user wants "Setup Guide" universally). */}
+      <div className="glass-card relative w-full p-4 lg:p-5 border-l-4 border-l-[#60A5FA]" data-testid="setup-guide-tile">
         <button
           onClick={() => setDismissPhase('confirm')}
           className="absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-90 lg:hover:scale-110 z-10"
@@ -425,7 +441,7 @@ const OnboardingWizard = ({ onAllComplete, onContentChange }) => {
             boxShadow: '0 2px 10px rgba(0,0,0,0.30)',
           }}
           data-testid="onboarding-dismiss"
-          aria-label="Hide Setup Checklist"
+          aria-label="Hide Setup Guide"
         >
           <X className="w-5 h-5" strokeWidth={2.5} />
         </button>
@@ -441,7 +457,7 @@ const OnboardingWizard = ({ onAllComplete, onContentChange }) => {
             <ListChecks className="w-5 h-5" style={{ color: '#60A5FA' }} />
           </div>
           <div className="min-w-0 flex-1">
-            <h3 className="text-base lg:text-lg font-semibold text-[var(--t)]">Setup Checklist</h3>
+            <h3 className="text-base lg:text-lg font-semibold text-[var(--t)]">Setup Guide</h3>
             <p className="text-xs lg:text-sm text-[var(--t4)]">{progress.completed_count} of {progress.total_steps} done</p>
           </div>
         </div>
@@ -506,6 +522,73 @@ const OnboardingWizard = ({ onAllComplete, onContentChange }) => {
             </div>
           );
         })}
+
+        {/* ─────────── All-steps disclosure ───────────
+            Collapsible list showing every step in the Setup Guide with
+            a ✓ (complete) or ○ (incomplete) so the user can see what's
+            still ahead at a glance. Lives directly beneath the active
+            next-step CTA inside the same tile (founder Feb 26 2026
+            mandate). Hidden when `showAll` already renders the full
+            list above. */}
+        {!showAll && allSteps.length > 0 && (
+          <div className="mt-3 pt-3" style={{ borderTop: '1px solid var(--b)' }}>
+            <button
+              type="button"
+              onClick={toggleAllSteps}
+              aria-expanded={allStepsExpanded}
+              aria-controls="setup-guide-all-steps-list"
+              data-testid="setup-guide-toggle-all-steps"
+              className="w-full flex items-center justify-between gap-2 text-xs lg:text-sm font-semibold text-[var(--t4)] hover:text-[var(--t)] transition-colors"
+            >
+              <span>{allStepsExpanded ? 'Hide all steps' : 'View all steps'}</span>
+              <ChevronDown
+                className={`w-4 h-4 transition-transform duration-200 ${allStepsExpanded ? 'rotate-180' : ''}`}
+                strokeWidth={2.5}
+              />
+            </button>
+            {allStepsExpanded && (
+              <ul
+                id="setup-guide-all-steps-list"
+                data-testid="setup-guide-all-steps-list"
+                className="mt-2 space-y-1"
+              >
+                {allSteps.map((s, i) => {
+                  const cfg = STEP_CONFIG[s.key];
+                  const stepLabel = cfg?.label || s.label || s.key;
+                  return (
+                    <li
+                      key={s.key}
+                      data-testid={`setup-guide-step-row-${s.key}`}
+                      className="flex items-center gap-2 text-xs lg:text-sm"
+                    >
+                      {s.completed ? (
+                        <Check
+                          className="w-4 h-4 flex-shrink-0"
+                          style={{ color: '#22C993' }}
+                          strokeWidth={3}
+                          data-testid={`setup-guide-step-icon-${s.key}-done`}
+                        />
+                      ) : (
+                        <Circle
+                          className="w-4 h-4 flex-shrink-0 text-[var(--t5)]"
+                          strokeWidth={2}
+                          data-testid={`setup-guide-step-icon-${s.key}-open`}
+                        />
+                      )}
+                      <span className={s.completed ? 'text-[var(--t5)] line-through' : 'text-[var(--t)]'}>
+                        <span className="text-[var(--t5)] font-medium mr-1">{i + 1}.</span>
+                        {stepLabel}
+                        {s.optional && !s.completed && (
+                          <span className="text-[var(--t5)] ml-1">(optional)</span>
+                        )}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+        )}
       </div>
 
       {/* ─────────── Welcome — Two Views tile (dual-role users only) ───────────
