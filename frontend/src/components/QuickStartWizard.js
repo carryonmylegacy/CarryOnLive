@@ -23,7 +23,7 @@
  */
 import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ArrowLeft, ArrowRight, ChevronDown, ChevronRight, Loader2, ShieldCheck, Sparkles, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ChevronDown, ChevronRight, Loader2, Minus, Plus, ShieldCheck, Sparkles, X } from 'lucide-react';
 import apiClient from '../utils/apiClient';
 import { API_URL } from '../config';
 import { useAuth, useBrand } from '../contexts/AuthContext';
@@ -969,13 +969,18 @@ export const QuickStartStep = ({ stepKey, data, setData, user, brand, allData, o
       const v = raw === '' ? '' : Math.max(1, Math.min(50, Number(raw) || 1));
       setData({ ...data, counts: { ...counts, [k]: v } });
     };
+    const bumpCount = (k, delta) => {
+      const cur = Number(counts[k] ?? 1) || 1;
+      const next = Math.max(1, Math.min(50, cur + delta));
+      setData({ ...data, counts: { ...counts, [k]: next } });
+    };
     const toggleNone = () => setData({ none: !isNone, types: [], counts: {} });
     return (
       <div className="space-y-3" data-testid="qs-step-business">
         <h3 className="text-lg lg:text-xl font-bold" style={headingStyle}>Business ownership</h3>
         <p className="text-sm" style={mutedStyle}>
-          Select every entity type you own all or part of. If you have more than one of
-          a given type (e.g. two LLCs), enter the count on the right.
+          Select every entity type you own all or part of. Use the −/+ steppers on the right to set how
+          many you have of each (e.g. two LLCs).
         </p>
         <button
           type="button" onClick={toggleNone} data-testid="qs-biz-none"
@@ -985,26 +990,64 @@ export const QuickStartStep = ({ stepKey, data, setData, user, brand, allData, o
         <div className="grid grid-cols-1 gap-2">
           {_ENTITY_TYPES.map(([k, label]) => {
             const selected = types.includes(k);
+            const stepperDisabled = isNone || !selected;
+            const curCount = selected ? Number(counts[k] ?? 1) : '';
             return (
-              <div key={k} className="grid grid-cols-[1fr_72px] gap-2 items-stretch">
+              <div key={k} className="grid grid-cols-[1fr_124px] gap-2 items-stretch">
                 <button
                   type="button" onClick={() => toggle(k)} data-testid={`qs-biz-${k}`}
                   disabled={isNone}
                   className="rounded-xl px-3 py-3 text-sm font-bold transition-all active:scale-[0.97] text-left disabled:opacity-40"
                   style={pillButtonStyle(selected)}
                 >{label}</button>
-                <input
-                  type="number" min="1" max="50"
-                  value={selected ? (counts[k] ?? 1) : ''}
-                  onChange={(e) => setCount(k, e.target.value)}
-                  disabled={isNone || !selected}
-                  placeholder="#"
-                  inputMode="numeric"
-                  aria-label={`How many ${label}`}
-                  data-testid={`qs-biz-count-${k}`}
-                  className="rounded-xl px-2 py-3 text-sm text-center font-bold focus:outline-none focus:ring-2 focus:ring-[#d4af37] disabled:opacity-40"
-                  style={{ ...inputStyle, fontSize: '16px' }}
-                />
+                {/* Stepper widget (Feb 26 2026): tap −/+ to nudge the
+                    count without needing to pop the keyboard. The
+                    middle slot is still a numeric input for power
+                    users who'd rather type. Disabled state mirrors
+                    the pill column. */}
+                <div
+                  className="flex items-stretch rounded-xl overflow-hidden"
+                  style={{
+                    ...inputStyle,
+                    padding: 0,
+                    opacity: stepperDisabled ? 0.4 : 1,
+                  }}
+                >
+                  <button
+                    type="button"
+                    onClick={() => bumpCount(k, -1)}
+                    disabled={stepperDisabled || curCount <= 1}
+                    data-testid={`qs-biz-count-${k}-dec`}
+                    aria-label={`Decrease ${label}`}
+                    className="px-2 flex items-center justify-center active:scale-[0.92] disabled:opacity-40"
+                    style={{ borderRight: '1px solid rgba(255,255,255,0.10)' }}
+                  >
+                    <Minus className="w-4 h-4" />
+                  </button>
+                  <input
+                    type="number" min="1" max="50"
+                    value={selected ? (counts[k] ?? 1) : ''}
+                    onChange={(e) => setCount(k, e.target.value)}
+                    disabled={stepperDisabled}
+                    placeholder="#"
+                    inputMode="numeric"
+                    aria-label={`How many ${label}`}
+                    data-testid={`qs-biz-count-${k}`}
+                    className="flex-1 min-w-0 text-center font-bold focus:outline-none bg-transparent"
+                    style={{ fontSize: '16px', color: 'inherit' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => bumpCount(k, +1)}
+                    disabled={stepperDisabled || curCount >= 50}
+                    data-testid={`qs-biz-count-${k}-inc`}
+                    aria-label={`Increase ${label}`}
+                    className="px-2 flex items-center justify-center active:scale-[0.92] disabled:opacity-40"
+                    style={{ borderLeft: '1px solid rgba(255,255,255,0.10)' }}
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             );
           })}
