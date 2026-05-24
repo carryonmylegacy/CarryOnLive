@@ -1104,7 +1104,17 @@ const DashboardPage = () => {
           && !onboardingProgress?.all_complete
           && !resumeGsTileDismissed
           && (onboardingProgress?.steps || []).some(s => !s.completed);
-        return qwIncompleteVisible || qwCompleteVisible || gsResumeVisible || onboardingWizardHasContent;
+        // CFP "Build Your Financial Picture" coaching tile — lives
+        // INSIDE the onboarding wrapper too (Feb 26 2026 founder
+        // direction: every onboarding-flavored coach belongs in the
+        // same collapsible group, not a one-off card below it).
+        const cfpGuideVisible = isFeatureKeyEnabled('cfp', enabledFeatures)
+          && !!financialSummary
+          && (financialSummary.bills_count === 0
+              && financialSummary.debts_count === 0
+              && financialSummary.accounts_count === 0
+              && (financialSummary.property_count || 0) === 0);
+        return qwIncompleteVisible || qwCompleteVisible || gsResumeVisible || onboardingWizardHasContent || cfpGuideVisible;
       })() && (() => {
         // Total artifact count drives the auto-collapse default.
         const eligible = user?.role === 'benefactor' || user?.is_also_benefactor;
@@ -1116,9 +1126,16 @@ const DashboardPage = () => {
           && !onboardingProgress?.all_complete
           && !resumeGsTileDismissed
           && (onboardingProgress?.steps || []).some(s => !s.completed);
+        const cfpGuideVisible = isFeatureKeyEnabled('cfp', enabledFeatures)
+          && !!financialSummary
+          && (financialSummary.bills_count === 0
+              && financialSummary.debts_count === 0
+              && financialSummary.accounts_count === 0
+              && (financialSummary.property_count || 0) === 0);
         const totalCount = (qwIncompleteVisible ? 1 : 0)
           + (qwCompleteVisible ? 1 : 0)
           + (gsResumeVisible ? 1 : 0)
+          + (cfpGuideVisible ? 1 : 0)
           + onboardingWizardTileCount;
         // Collapse decision: user preference wins; otherwise auto-collapse
         // when 3+ tiles are stacked (per founder Feb 26 mandate — less
@@ -1483,6 +1500,30 @@ const DashboardPage = () => {
           />
         </TileErrorBoundary>
 
+        {/* CarryOn Financial Picture — Guide Tile. Lives INSIDE the
+            onboarding wrapper so the "Hide all for today" gold pill
+            covers it too. Only renders when CFP is feature-enabled
+            AND the user has zero entries across bills/debts/accounts/
+            property. */}
+        {isFeatureKeyEnabled('cfp', enabledFeatures) && financialSummary && (financialSummary.bills_count === 0 && financialSummary.debts_count === 0 && financialSummary.accounts_count === 0 && (financialSummary.property_count || 0) === 0) && (
+        <div
+          className="glass-card p-4 lg:p-5 border-l-4 border-l-[#10b981] transition-transform duration-150 cursor-pointer active:scale-[0.98] lg:hover:scale-[1.01] lg:hover:shadow-[0_12px_36px_-6px_rgba(16,185,129,0.2)]"
+          data-testid="cfp-guide-tile"
+          onClick={() => navigate('/financial')}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <DollarSign className="w-5 h-5 text-[#10b981]" />
+              <div>
+                <h3 className="text-base lg:text-lg font-semibold text-[var(--t)]">Build Your Financial Picture</h3>
+                <p className="text-xs text-[var(--t4)]">Bills, debts, accounts, and property — get started now</p>
+              </div>
+            </div>
+            <ChevronRight className="w-5 h-5 text-[var(--t5)]" />
+          </div>
+        </div>
+        )}
+
         {/* Gold pill — hides the whole group until next local midnight. */}
         <div className="flex justify-center pt-2">
           <button
@@ -1509,25 +1550,10 @@ const DashboardPage = () => {
 
       {/* (Onboarding Wizard is rendered INSIDE the wrapper above — see "Getting Started Prompts Group") */}
 
-      {/* CarryOn Financial Picture — Guide Tile (above gauge, only when empty & feature enabled) */}
-      {isFeatureKeyEnabled('cfp', enabledFeatures) && financialSummary && (financialSummary.bills_count === 0 && financialSummary.debts_count === 0 && financialSummary.accounts_count === 0 && (financialSummary.property_count || 0) === 0) && (
-      <div
-        className="glass-card p-4 lg:p-6 mb-4 border-l-4 border-l-[#10b981] transition-transform duration-150 cursor-pointer active:scale-[0.98] lg:hover:scale-[1.01] lg:hover:shadow-[0_12px_36px_-6px_rgba(16,185,129,0.2)]"
-        data-testid="cfp-guide-tile"
-        onClick={() => navigate('/financial')}
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <DollarSign className="w-5 h-5 text-[#10b981]" />
-            <div>
-              <h3 className="text-base lg:text-lg font-semibold text-[var(--t)]">Build Your Financial Picture</h3>
-              <p className="text-xs text-[var(--t4)]">Bills, debts, accounts, and property — get started now</p>
-            </div>
-          </div>
-          <ChevronRight className="w-5 h-5 text-[var(--t5)]" />
-        </div>
-      </div>
-      )}
+      {/* CFP "Build Your Financial Picture" guide tile was relocated
+          INSIDE the onboarding wrapper on Feb 26 2026 (founder
+          direction) so the master "Hide all for today" gold pill
+          governs it too. See the wrapper IIFE above. */}
 
       {/* ════════════════════════════════════════════════════════════
           Readiness + Stat Tiles surface
