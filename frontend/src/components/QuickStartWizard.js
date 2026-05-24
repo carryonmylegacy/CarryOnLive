@@ -591,7 +591,13 @@ export const QuickStartStep = ({ stepKey, data, setData, user, brand, allData, o
             here propagates 1:1 onto the user profile without a second
             entry pass in Settings. */}
         <AddressAutocomplete
-          value={data?.street || ((data?.address && data.address !== '[object Object]') ? data.address : '')}
+          /* Display rule (Feb 26 2026 bug fix): once `data.street`
+             has been touched at all, it becomes the single source of
+             truth — including the empty string. The previous `||`
+             fallback to `data.address` made backspace impossible
+             because clearing the street to '' fell through to the
+             legacy combined-address blob. */
+          value={data && 'street' in data ? (data.street || '') : (((data?.address && data.address !== '[object Object]') ? data.address : ''))}
           onChange={(e) => set('street', typeof e === 'string' ? e : (e?.target?.value ?? ''))}
           onSelect={onAddressSelect}
           placeholder="Street address"
@@ -844,7 +850,10 @@ export const QuickStartStep = ({ stepKey, data, setData, user, brand, allData, o
                   Optional; if filled the guide PDF prints each property
                   with its full street address for greater fidelity. */}
               <AddressAutocomplete
-                value={p.street || ((p.address && p.address !== '[object Object]') ? p.address : '')}
+                /* Same backspace-trap fix as the residence step:
+                   once `p.street` has been touched, it's the single
+                   source of truth — empty included. */
+                value={p && 'street' in p ? (p.street || '') : (((p.address && p.address !== '[object Object]') ? p.address : ''))}
                 onChange={(e) => updateRow(idx, { street: typeof e === 'string' ? e : (e?.target?.value ?? '') })}
                 onSelect={({ street, city, state, zip }) => updateRow(idx, {
                   street: street || '',
