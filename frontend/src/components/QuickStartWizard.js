@@ -1060,6 +1060,11 @@ export const QuickStartStep = ({ stepKey, data, setData, user, brand, allData, o
   if (stepKey === 'existing_documents') {
     const counts = data?.counts || {};
     const setCount = (k, v) => setData({ ...data, counts: { ...counts, [k]: v } });
+    const bumpDocCount = (k, delta) => {
+      const cur = Number(counts[k] ?? 0) || 0;
+      const next = Math.max(0, Math.min(20, cur + delta));
+      setData({ ...data, counts: { ...counts, [k]: next } });
+    };
     const flags = Array.isArray(data?.flags) ? data.flags : [];
     const toggleFlag = (k) => setData({
       ...data, flags: flags.includes(k) ? flags.filter((f) => f !== k) : [...flags, k]
@@ -1068,22 +1073,60 @@ export const QuickStartStep = ({ stepKey, data, setData, user, brand, allData, o
       <div className="space-y-3" data-testid="qs-step-existing_documents">
         <h3 className="text-lg lg:text-xl font-bold" style={headingStyle}>What do you already have?</h3>
         <p className="text-sm" style={mutedStyle}>
-          Most people have multiple of these — be exact where you can. Leave any at 0 if you don&apos;t have one.
+          Most people have multiple of these — be exact where you can. Use the −/+
+          steppers to nudge the count without popping the keyboard. Leave any at 0 if
+          you don&apos;t have one.
         </p>
         <div className="space-y-2">
-          {[['wills','Wills'],['trusts','Trusts (revocable, irrevocable, charitable…)'],['policies_business','Buy-sell / business succession agreements']].map(([k, label]) => (
-            <div key={k} className="grid grid-cols-[1fr_90px] gap-3 items-center">
-              <span className="text-sm" style={bodyStyle}>{label}</span>
-              <input
-                type="number" min="0" max="20"
-                value={counts[k] ?? ''}
-                onChange={(e) => setCount(k, e.target.value === '' ? null : Number(e.target.value))}
-                data-testid={`qs-doc-count-${k}`}
-                className="rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#d4af37]"
-                style={{ ...inputStyle, fontSize: '16px' }}
-              />
-            </div>
-          ))}
+          {[['wills','Wills'],['trusts','Trusts (revocable, irrevocable, charitable…)'],['policies_business','Buy-sell / business succession agreements']].map(([k, label]) => {
+            const curCount = Number(counts[k] ?? 0) || 0;
+            return (
+              <div key={k} className="grid grid-cols-[1fr_124px] gap-3 items-center">
+                <span className="text-sm" style={bodyStyle}>{label}</span>
+                {/* Stepper widget matches the business-step pattern.
+                    Floor is 0 (vs 1 in business) because "I have zero
+                    wills" is a legitimate answer here. */}
+                <div
+                  className="flex items-stretch rounded-xl overflow-hidden h-[44px]"
+                  style={{ ...inputStyle, padding: 0 }}
+                >
+                  <button
+                    type="button"
+                    onClick={() => bumpDocCount(k, -1)}
+                    disabled={curCount <= 0}
+                    data-testid={`qs-doc-count-${k}-dec`}
+                    aria-label={`Decrease ${label}`}
+                    className="px-2 flex items-center justify-center active:scale-[0.92] disabled:opacity-40"
+                    style={{ borderRight: '1px solid rgba(255,255,255,0.10)' }}
+                  >
+                    <Minus className="w-4 h-4" />
+                  </button>
+                  <input
+                    type="number" min="0" max="20"
+                    value={counts[k] ?? ''}
+                    onChange={(e) => setCount(k, e.target.value === '' ? null : Number(e.target.value))}
+                    placeholder="0"
+                    inputMode="numeric"
+                    aria-label={`How many ${label}`}
+                    data-testid={`qs-doc-count-${k}`}
+                    className="flex-1 min-w-0 text-center font-bold focus:outline-none bg-transparent"
+                    style={{ fontSize: '16px', color: 'inherit' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => bumpDocCount(k, +1)}
+                    disabled={curCount >= 20}
+                    data-testid={`qs-doc-count-${k}-inc`}
+                    aria-label={`Increase ${label}`}
+                    className="px-2 flex items-center justify-center active:scale-[0.92] disabled:opacity-40"
+                    style={{ borderLeft: '1px solid rgba(255,255,255,0.10)' }}
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            );
+          })}
         </div>
         <p className="text-xs pt-1" style={mutedStyle}>Check anything else you already have in place:</p>
         <div className="grid grid-cols-1 gap-2">
