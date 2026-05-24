@@ -538,7 +538,17 @@ const DashboardPage = () => {
       if (progressRes?.data) setOnboardingProgress(progressRes.data);
 
       // Show guided flow overlay if there are incomplete steps and user hasn't dismissed this visit
-      if (!guidedDismissedRef.current && progressRes?.data) {
+      // Session-suppression (Feb 27 2026): once the user presses
+      // "I'll do this on my own later" anywhere in this browser
+      // session, the overlay must NOT re-appear on subsequent
+      // dashboard returns (navigating away to a feature page and
+      // back used to re-trigger it because guidedDismissedRef lives
+      // only in component state). The flag clears naturally when the
+      // tab is closed.
+      let sessionSkipped = false;
+      try { sessionSkipped = sessionStorage.getItem('carryon_setup_guide_skipped_session') === '1'; }
+      catch { /* ignore */ }
+      if (!guidedDismissedRef.current && !sessionSkipped && progressRes?.data) {
         // If user already graduated (celebration shown before), skip all guided flow
         if (progressRes.data?.already_graduated) {
           guidedDismissedRef.current = true;
@@ -548,10 +558,15 @@ const DashboardPage = () => {
         } else {
           const steps = progressRes.data?.steps || [];
           const triggerStepKey = searchParams.get('triggerStep');
+          // Skipped steps must NOT re-surface as the overlay's next
+          // step — the user explicitly told us they'll do it later
+          // (Feb 27 2026). Live data still drives "completed", so a
+          // step they actually finished closes naturally.
+          const incompleteCandidate = (s) => !s.completed && !s.skipped;
           // If returning from Settings address flow, force-show the triggered step
           const nextIncomplete = triggerStepKey
-            ? steps.find(s => s.key === triggerStepKey) || steps.find(s => !s.completed)
-            : steps.find(s => !s.completed);
+            ? steps.find(s => s.key === triggerStepKey) || steps.find(incompleteCandidate)
+            : steps.find(incompleteCandidate);
           if (triggerStepKey) setSearchParams({}, { replace: true });
           if (nextIncomplete && !progressRes.data?.all_complete) {
             setGuidedStep({ ...nextIncomplete, beneficiary_names: progressRes.data?.beneficiary_names || [] });
@@ -859,14 +874,36 @@ const DashboardPage = () => {
       }
     }
 
+    // X button — just close the overlay for the remainder of this
+    // session, no server-side state change. Distinct from
+    // `dismissOverlay` which actively marks the current step as
+    // skipped. Both set the session-suppression flag so navigating
+    // away and back doesn't re-pop the overlay.
+    const closeOverlayWithoutSkipping = () => {
+      if (showWelcomeStep) {
+        localStorage.setItem('carryon_welcome_guided_shown', 'true');
+        setShowWelcomeStep(false);
+        return;
+      }
+      try { sessionStorage.setItem('carryon_setup_guide_skipped_session', '1'); }
+      catch { /* ignore */ }
+      guidedDismissedRef.current = true;
+      setShowGuidedFlow(false);
+    };
+
     const dismissOverlay = async () => {
       // "I'll do this on my own later" / "Skip — I'll do this later".
-      // Founder's directive (Feb 27 2026): clicking later must (a) mark
-      // the current step complete server-side so the dashboard's Setup
-      // Guide progress bar moves forward and the tile's active CTA
-      // surfaces the *next* incomplete step, and (b) return the user
-      // to the dashboard — NOT auto-advance into another full-screen
-      // overlay (felt like the wizard was hijacking the session).
+      // Founder's directive (Feb 27 2026):
+      //   (a) Mark THIS step as skipped (separate state from
+      //       completed) so the dashboard tile's progress bar advances
+      //       without lying that the work is done.
+      //   (b) Return the user to the dashboard — no auto-advance into
+      //       the next step's overlay.
+      //   (c) Inhibit the full-screen overlay for the rest of this
+      //       browser session. Once the user has said "later" once,
+      //       coming back to the dashboard from any feature page must
+      //       NOT re-open the overlay (`sessionStorage` flag cleared
+      //       on tab close).
       // Optional and non-optional skips behave identically; there is
       // no longer an interstitial "No Problem!" pane.
       if (showWelcomeStep) {
@@ -874,6 +911,8 @@ const DashboardPage = () => {
         setShowWelcomeStep(false);
         return;
       }
+      try { sessionStorage.setItem('carryon_setup_guide_skipped_session', '1'); }
+      catch { /* ignore */ }
       const currentKey = guidedStep?.key;
       if (currentKey) {
         try {
@@ -945,8 +984,10 @@ const DashboardPage = () => {
           background: 'var(--guided-overlay-bg, rgba(8,14,26,0.75))',
         }} />
 
-        {/* Close X button — upper right (session-only dismiss) */}
-        <button onClick={dismissOverlay}
+        {/* Close X button — upper right. Closes the overlay for the
+            rest of the session WITHOUT marking the current step as
+            skipped. Use the Skip button below to mark + close. */}
+        <button onClick={closeOverlayWithoutSkipping}
           className="absolute top-5 right-5 z-10 w-10 h-10 rounded-full flex items-center justify-center transition-all"
           style={{ color: 'var(--guided-muted, rgba(255,255,255,0.4))' }}
           data-testid="guided-close-btn">

@@ -1,6 +1,24 @@
 # CarryOn — Changelog
 
 
+## Feb 27, 2026 — Session-suppress the guided overlay after a skip (V2026.02.27-d)
+
+**Why**: Founder follow-up: after pressing "I'll do this on my own later" once, navigating to a feature page and back to the dashboard was re-opening the guided overlay. The skip should inhibit the overlay for the rest of the browser session, not just the in-memory tick.
+
+**Changes (`pages/DashboardPage.js`):**
+- Added `sessionStorage.carryon_setup_guide_skipped_session` flag. Set by:
+  - `dismissOverlay` (Skip button — also marks step skipped server-side).
+  - `closeOverlayWithoutSkipping` (the new dedicated handler for the X button — closes only, does NOT mark anything).
+- Dashboard's first-paint overlay trigger now bails out early when this flag is present, so back/forward navigation across feature pages no longer re-pops the wizard.
+- Same trigger also now filters out `s.skipped` (in addition to `s.completed`) when computing the next-step candidate — a step the user explicitly skipped will never reopen the overlay automatically.
+- Split the X-button onClick off `dismissOverlay` so closing with X (visual contract: "close, not skip") no longer accidentally marks the current step as skipped on the server.
+
+Re-opening is still one tap away via the existing **Resume Setup Guide** / **Pick Up Where You Left Off** dashboard tile, so suppression is not a one-way door. The flag clears naturally when the tab/PWA is closed.
+
+**Quality gates:** `housekeeping.sh --strict` → 0 WARN / 0 FAIL. ESLint clean.
+
+
+
 ## Feb 27, 2026 — Skipped ≠ Completed: dual-state Setup Guide (V2026.02.27-c)
 
 **Why**: Founder report after live test: tapping a completed step's row and then pressing "Skip" in the auto-opened overlay was flipping whichever step happened to be the next incomplete one to ✓ — because skip was wired to `/complete-step`. Founder also wanted to *see* that a step was skipped (not done) at a glance: two columns in the all-steps list — Done vs Skip — with the rule that a skipped-but-not-done step cannot be marked complete by the overlay's skip button.
