@@ -16,7 +16,7 @@
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Printer, Download, AlertTriangle, Loader2, Share2, RefreshCw, EyeOff, Eye, ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronLeft, Printer, Download, AlertTriangle, Loader2, Share2, RefreshCw, Check, ChevronDown, ChevronUp } from 'lucide-react';
 import { isIOS } from '../utils/downloadFile';
 import ShareBinderModal from './ShareBinderModal';
 import { API_URL } from '../config';
@@ -833,6 +833,43 @@ const PdfPreviewModal = () => {
           .pdf-preview-modal .pdf-preview-manifest .manifest-row .manifest-include-again {
             margin-left: auto;
           }
+          /* ── Per-section include-in-binder checkbox (May 24, 2026
+             user mandate). Sits left-most in every manifest row.
+             Checked = section is in the binder (TOC + PDF).
+             Unchecked = section is hidden. Loading state shows a
+             spinner in place of the box. */
+          .pdf-preview-modal .pdf-preview-manifest .manifest-include-toggle {
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 22px;
+            height: 22px;
+            border-radius: 5px;
+            border: 1.5px solid rgba(100, 116, 139, 0.55);
+            background: #ffffff;
+            color: #0f172a;
+            cursor: pointer;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+            transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+          }
+          .pdf-preview-modal .pdf-preview-manifest .manifest-include-toggle:hover {
+            border-color: rgba(212, 175, 55, 0.65);
+          }
+          .pdf-preview-modal .pdf-preview-manifest .manifest-include-toggle[aria-checked="true"] {
+            background: #d4af37;
+            border-color: #b8962e;
+            color: #0f172a;
+          }
+          .pdf-preview-modal .pdf-preview-manifest .manifest-include-toggle:disabled {
+            opacity: 0.55;
+            cursor: progress;
+          }
+          .pdf-preview-modal .pdf-preview-manifest .manifest-include-toggle:focus-visible {
+            outline: 2px solid rgba(212, 175, 55, 0.55);
+            outline-offset: 2px;
+          }
           .pdf-preview-modal .pdf-preview-canvas-wrap {
             flex: 1 1 auto;
             min-height: 0;
@@ -988,6 +1025,21 @@ const PdfPreviewModal = () => {
                       className="manifest-row"
                       data-testid={`pdf-preview-manifest-row-${s.pdf_type}`}
                     >
+                      <button
+                        type="button"
+                        role="checkbox"
+                        aria-checked="true"
+                        aria-label={`Hide ${s.display_title} from this binder (keeps the cached PDF — include again anytime)`}
+                        className="manifest-include-toggle"
+                        onClick={() => handleSectionSkipToggle(s, true)}
+                        disabled={busy}
+                        title={`Hide ${s.display_title} from this binder (keeps the cached PDF — include it again anytime)`}
+                        data-testid={`pdf-preview-manifest-toggle-${s.pdf_type}`}
+                      >
+                        {isSkipping
+                          ? <Loader2 size={12} className="animate-spin" />
+                          : <Check size={14} strokeWidth={3} />}
+                      </button>
                       <span className="manifest-title">{s.display_title}</span>
                       {ago && <span className="manifest-ago">· {ago}</span>}
                       <button
@@ -1005,24 +1057,12 @@ const PdfPreviewModal = () => {
                           : <RefreshCw size={11} />}
                         {isRefreshing ? 'Refreshing…' : 'Refresh'}
                       </button>
-                      <button
-                        type="button"
-                        className="manifest-skip"
-                        onClick={() => handleSectionSkipToggle(s, true)}
-                        disabled={busy}
-                        title={`Hide ${s.display_title} from this binder (keeps the cached PDF — include it again anytime)`}
-                        data-testid={`pdf-preview-manifest-skip-${s.pdf_type}`}
-                      >
-                        {isSkipping
-                          ? <Loader2 size={11} className="animate-spin" />
-                          : <EyeOff size={11} />}
-                        {isSkipping ? 'Skipping…' : 'Skip'}
-                      </button>
                     </div>
                   );
                 })}
                 {(entry.missingSections || []).map((s) => {
                   const isRefreshing = refreshingType === s.pdf_type;
+                  const isSkipping = skippingType === s.pdf_type;
                   const busy = !!refreshingType || !!skippingType;
                   const supportsServerRefresh = !!SERVER_REFRESH_ENDPOINTS[s.pdf_type];
                   return (
@@ -1031,6 +1071,21 @@ const PdfPreviewModal = () => {
                       className="manifest-row manifest-row-missing"
                       data-testid={`pdf-preview-manifest-row-${s.pdf_type}`}
                     >
+                      <button
+                        type="button"
+                        role="checkbox"
+                        aria-checked="true"
+                        aria-label={`Hide ${s.display_title} from this binder`}
+                        className="manifest-include-toggle"
+                        onClick={() => handleSectionSkipToggle(s, true)}
+                        disabled={busy}
+                        title={`Hide ${s.display_title} from this binder`}
+                        data-testid={`pdf-preview-manifest-toggle-${s.pdf_type}`}
+                      >
+                        {isSkipping
+                          ? <Loader2 size={12} className="animate-spin" />
+                          : <Check size={14} strokeWidth={3} />}
+                      </button>
                       <span className="manifest-title manifest-title-missing">{s.display_title}</span>
                       <span className="manifest-ago manifest-ago-missing">· not yet generated</span>
                       <button
@@ -1060,21 +1115,21 @@ const PdfPreviewModal = () => {
                       className="manifest-row manifest-row-skipped"
                       data-testid={`pdf-preview-manifest-row-${s.pdf_type}`}
                     >
-                      <span className="manifest-title manifest-title-skipped">{s.display_title}</span>
-                      <span className="manifest-ago manifest-ago-skipped">· hidden from binder</span>
                       <button
                         type="button"
-                        className="manifest-refresh manifest-include-again"
+                        role="checkbox"
+                        aria-checked="false"
+                        aria-label={`Include ${s.display_title} in this binder again`}
+                        className="manifest-include-toggle"
                         onClick={() => handleSectionSkipToggle(s, false)}
                         disabled={busy}
                         title={`Include ${s.display_title} in this binder again`}
-                        data-testid={`pdf-preview-manifest-include-${s.pdf_type}`}
+                        data-testid={`pdf-preview-manifest-toggle-${s.pdf_type}`}
                       >
-                        {isSkipping
-                          ? <Loader2 size={11} className="animate-spin" />
-                          : <Eye size={11} />}
-                        {isSkipping ? 'Including…' : 'Include'}
+                        {isSkipping && <Loader2 size={12} className="animate-spin" />}
                       </button>
+                      <span className="manifest-title manifest-title-skipped">{s.display_title}</span>
+                      <span className="manifest-ago manifest-ago-skipped">· hidden from binder</span>
                     </div>
                   );
                 })}
