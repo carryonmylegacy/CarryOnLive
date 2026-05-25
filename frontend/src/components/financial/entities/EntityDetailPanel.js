@@ -212,6 +212,35 @@ export default function EntityDetailPanel({
         entityId: ent.id,
         authHeaders: getAuthHeaders(),
       });
+      // If the user filled in the "Add a connection" form but never
+      // pressed the separate "Add" pill (UX confusion — they thought
+      // the entity Save button would commit everything in this
+      // panel), commit the in-flight connection now so the new line
+      // actually appears on the chart. Silent-fail on the connection
+      // POST so a bad connection payload doesn't roll back the entity
+      // save the user explicitly asked for.
+      if (addingConn && newSourceKey) {
+        try {
+          const [src_type, src_id] = newSourceKey.split(':');
+          const showPct = isEquityRole(newRole);
+          await apiClient.post(`${API_URL}/financial/entity-relationships`, {
+            estate_id: ent.estate_id,
+            source_id: src_id,
+            source_type: src_type,
+            target_id: ent.id,
+            target_type: 'entity',
+            role: newRole,
+            ownership_pct: showPct && newPct !== '' ? Number(newPct) : null,
+          }, getAuthHeaders());
+          setAddingConn(false);
+          setNewSourceKey(''); setNewRole('owner'); setNewPct('');
+        } catch (err) {
+          // Surface the connection failure (without unwinding the
+          // entity save) — the user typed something here and
+          // deserves to know it didn't go through.
+          toast.error(`Saved entity, but the new connection failed: ${err.response?.data?.detail || err.message || 'unknown error'}`);
+        }
+      }
       toast.success('Saved.');
       setEditing(false);
       onChanged?.();
