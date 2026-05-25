@@ -111,6 +111,13 @@ const QuickStartWizard = ({ forceOpen = false, onClose = () => {} }) => {
     else setLoading(false);
   }, [eligible]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ── "Use what I already have" loading state ──────────────────────
+  // MUST be declared before the early `if (!shouldRender) return null`
+  // below so React's Hook order stays consistent across renders.
+  // (eslint rules-of-hooks blocks the push if this is below the
+  // early-return.)
+  const [useExistingLoading, setUseExistingLoading] = useState(false);
+
   // Decide whether to render at all.
   const shouldRender = eligible
     && !loading
@@ -124,11 +131,192 @@ const QuickStartWizard = ({ forceOpen = false, onClose = () => {} }) => {
   const currentIdx = Math.max(0, STEPS.indexOf(currentStep));
   const totalSteps = STEPS.length;
 
-  const skip = () => {
+  // ── Skip behavior ────────────────────────────────────────────────
+  // Founder mandate (Feb 27 2026): the footer "Skip" should advance
+  // to the NEXT wizard step, not eject the user back to the
+  // dashboard. The wizard exit is the X in the top-right (which still
+  // calls `exitWizard`). Only on the terminal `generate` step does
+  // skipping mean "leave without generating" — the wizard has no
+  // further step to advance to.
+  const exitWizard = () => {
     try { sessionStorage.setItem(SESSION_SKIP_KEY, '1'); } catch { /* ignore */ }
     setDismissedThisSession(true);
     onClose();
   };
+  // Skip the current step without writing any data for it. Advances
+  // to the next step. On the last step, falls back to `exitWizard`.
+  const skipStep = async () => {
+    if (currentStep === 'generate') { exitWizard(); return; }
+    const idx = STEPS.indexOf(currentStep);
+    const nextKey = STEPS[Math.min(STEPS.length - 1, idx + 1)];
+    if (nextKey === currentStep) { exitWizard(); return; }
+    setSaving(true);
+    setError('');
+    try {
+      // Persist an empty data blob for this step + advance. Server
+      // dedupes — empty data for an already-saved step is a no-op.
+      const res = await apiClient.put(
+        `${API_URL}/quickstart/step/${currentStep}`,
+        { data: {}, next_step: nextKey },
+        getAuthHeaders(),
+      );
+      setProgress(res.data);
+      const savedForNext = res.data?.data?.[nextKey] || {};
+      setStepData(savedForNext);
+    } catch (e) {
+      setError(e?.response?.data?.detail || 'Could not skip this step.');
+    }
+    setSaving(false);
+  };
+
+  // ── "Use what I already have" — pre-fill the current step from
+  // existing platform records (beneficiaries page, settings, etc.)
+  // so the wizard never creates a duplicate tile when the user has
+  // already entered the same data manually. Each handler:
+  //   1. Fetches the right platform endpoint.
+  //   2. Reshapes the response into the wizard's stepData schema.
+  //   3. Calls setStepData — the user then reviews and presses Next.
+  // Steps without a matching platform source omit the button.
+  // (The `useExistingLoading` state lives above the early-return so
+  // Hook order is stable; only the handler closure lives here.)
+  const useExistingData = async () => {
+    if (useExistingLoading) return;
+    setUseExistingLoading(true);
+    setError('');
+    try {
+      if (currentStep === 'beneficiaries') {
+        const res = await apiClient.get(`${API_URL}/beneficiaries`, getAuthHeaders());
+        const list = Array.isArray(res.data) ? res.data : (res.data?.beneficiaries || []);
+        const mapped = list
+          .filter((b) => (b.name || b.first_name))
+          .map((b) => ({
+            beneficiary_id: b.id,
+            name: b.name || [b.first_name, b.last_name].filter(Boolean).join(' ') || b.first_name || 'Beneficiary',
+            relationship: b.relation || b.relationship || '',
+          }));
+        if (mapped.length === 0) {
+          setError('No existing beneficiaries found in your platform yet — add a few below.');
+          return;
+        }
+        setStepData({ ...stepData, beneficiaries: mapped });
+      } else if (currentStep === 'household') {
+        // Pull state of residence + marital status from /auth/me.
+        const res = await apiClient.get(`${API_URL}/auth/me`, getAuthHeaders());
+        const u = res.data || {};
+        const next = { ...stepData };
+        if (u.address_state) next.state_of_residence = u.address_state;
+        if (u.marital_status) next.marital_status = u.marital_status;
+        if (!u.address_state && !u.marital_status) {
+          setError('No household details on file yet — fill them in below.');
+          return;
+        }
+        setStepData(next);
+      } else if (currentStep === 'residence') {
+        const res = await apiClient.get(`${API_URL}/auth/me`, getAuthHeaders());
+        const u = res.data || {};
+        const next = {
+          ...stepData,
+          street: u.address_street || '',
+          line2: u.address_line2 || '',
+          city: u.address_city || '',
+          state: u.address_state || '',
+          zip: u.address_zip || '',
+        };
+        if (!u.address_street || !u.address_state) {
+          setError('No saved address on file yet — enter it below.');
+          return;
+        }
+        setStepData(next);
+      } else if (currentStep === 'business') {
+        // Pull existing CES entities so the wizard reflects the user's
+        // actual org chart (founder May 25 2026: CES is where most
+        // users will actually input their entities, so QW should
+        // mirror CES — not the other way around).
+        const estatesRes = await apiClient.get(`${API_URL}/estates`, getAuthHeaders());
+        const estate = Array.isArray(estatesRes.data) ? estatesRes.data[0] : estatesRes.data;
+        if (!estate?.id) { setError('No estate found.'); return; }
+        const r = await apiClient.get(`${API_URL}/financial/entities/${estate.id}`, getAuthHeaders());
+        const allEnts = r.data?.entities || [];
+        // Map every CES entity type → QW business-step bucket.
+        // The QW step only knows 8 broad buckets; CES has ~20 types,
+        // so several CES types collapse into one QW bucket (e.g. all
+        // partnership variants → `limited_partnership` if any of LP /
+        // FLP / LLP / LLLP, else `partnership`).
+        const CES_TO_QW = {
+          sole_prop: 'sole_prop',
+          gen_partnership: 'partnership',
+          lp: 'limited_partnership',
+          flp: 'limited_partnership',
+          llp: 'limited_partnership',
+          lllp: 'limited_partnership',
+          llc: 'llc',
+          pllc: 'llc',
+          l3c: 'llc',
+          c_corp: 'c_corp',
+          s_corp: 's_corp',
+          pc: 'c_corp',
+          b_corp: 'c_corp',
+          close_corp: 'c_corp',
+          cooperative: 'c_corp',
+        };
+        const counts = {};
+        allEnts.forEach((e) => {
+          // category: businesses + specialized (holding co's, captive
+          // insurance, family office, SPV — all map to holding_company
+          // QW bucket) + charity (nonprofit). Trusts + properties are
+          // their own QW concerns and have separate steps; we don't
+          // mix them into the business counts.
+          if (e.category === 'business') {
+            const bucket = CES_TO_QW[e.type] || 'llc';
+            counts[bucket] = (counts[bucket] || 0) + 1;
+          } else if (e.category === 'specialized') {
+            counts['holding_company'] = (counts['holding_company'] || 0) + 1;
+          } else if (e.category === 'charity') {
+            counts['nonprofit'] = (counts['nonprofit'] || 0) + 1;
+          }
+        });
+        if (Object.keys(counts).length === 0) {
+          setError('No businesses on file in your Entity Structure yet — add them below.');
+          return;
+        }
+        setStepData({ ...stepData, counts, types: Object.keys(counts), none: false });
+      } else if (currentStep === 'properties') {
+        // Pull every CES tile flagged as a property and create one QW
+        // property row per tile. The CES doesn't capture a full street
+        // address on its property tiles (just `name` + `formation_state`)
+        // so we map name → address-label and formation_state → state.
+        // The user can fill the rest in if they want extra fidelity.
+        const estatesRes = await apiClient.get(`${API_URL}/estates`, getAuthHeaders());
+        const estate = Array.isArray(estatesRes.data) ? estatesRes.data[0] : estatesRes.data;
+        if (!estate?.id) { setError('No estate found.'); return; }
+        const r = await apiClient.get(`${API_URL}/financial/entities/${estate.id}`, getAuthHeaders());
+        const props = (r.data?.entities || []).filter((e) => e.category === 'property');
+        if (props.length === 0) {
+          setError('No property tiles in your Entity Structure yet — add them below.');
+          return;
+        }
+        const list = props.map((p) => ({
+          kind: 'other',
+          street: '',
+          line2: '',
+          city: '',
+          state: p.formation_state || '',
+          zip: '',
+          address: p.name || '',
+        }));
+        setStepData({ ...stepData, list });
+      }
+    } catch (e) {
+      setError(e?.response?.data?.detail || 'Could not pull your existing data.');
+    } finally {
+      setUseExistingLoading(false);
+    }
+  };
+  // Which steps offer the "Use what I already have" shortcut.
+  const stepsWithExistingFetch = new Set(['residence', 'household', 'beneficiaries', 'properties', 'business']);
+  const showUseExistingButton = stepsWithExistingFetch.has(currentStep);
+
+  const skip = exitWizard; // legacy alias used by the top-right X handler
 
   // Handles the gate Yes/No buttons. Persists the choice server-side
   // and, when the user picks "I'm familiar," immediately closes the
@@ -325,6 +513,27 @@ const QuickStartWizard = ({ forceOpen = false, onClose = () => {} }) => {
 
         {/* Scrollable body */}
         <div className="flex-1 overflow-y-auto px-5 py-5" style={{ color: '#F8FAFC' }}>
+          {showUseExistingButton && (
+            <div className="mb-3 flex justify-end">
+              <button
+                type="button"
+                onClick={useExistingData}
+                disabled={useExistingLoading || saving || generating}
+                data-testid="quickstart-use-existing-btn"
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-[11px] lg:text-xs font-bold transition-all active:scale-[0.97] disabled:opacity-50"
+                style={{
+                  background: 'rgba(34,201,147,0.14)',
+                  border: '1px solid rgba(34,201,147,0.55)',
+                  color: '#86efac',
+                }}
+                title="Pre-fill this step from data you've already entered elsewhere in CarryOn"
+              >
+                {useExistingLoading
+                  ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Pulling…</>
+                  : <><Sparkles className="w-3.5 h-3.5" /> Use what I already have</>}
+              </button>
+            </div>
+          )}
           <QuickStartStep
             stepKey={currentStep}
             data={stepData}
@@ -346,12 +555,14 @@ const QuickStartWizard = ({ forceOpen = false, onClose = () => {} }) => {
         >
           <button
             type="button"
-            onClick={skip}
+            onClick={skipStep}
+            disabled={saving || generating}
             data-testid="quickstart-skip-btn"
-            className="text-xs lg:text-sm font-bold transition-colors"
+            className="text-xs lg:text-sm font-bold transition-colors disabled:opacity-50"
             style={{ color: '#CBD5E1' }}
+            title="Skip this step and go to the next one"
           >
-            Skip for now
+            {currentStep === 'generate' ? 'Skip for now' : 'Skip this step'}
           </button>
           <div className="flex items-center gap-2">
             {currentIdx > 0 && (

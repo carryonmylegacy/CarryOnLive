@@ -409,6 +409,17 @@ async def save_step(
             ben_id = entry.get("beneficiary_id") or existing_seeds.get(name) or str(uuid.uuid4())
             if estate_id:
                 now = datetime.now(timezone.utc).isoformat()
+                # `quickstart_seed` is stamped ONLY on insert. Updates
+                # to an existing row (e.g. the user re-ran QW after
+                # manually creating a beneficiary, then clicked "Use
+                # my existing beneficiaries" to pre-fill the step)
+                # MUST NOT flip a real, user-owned tile into a seed
+                # tile — that would re-trigger the Setup Guide
+                # "visit beneficiaries page" gate and otherwise
+                # confuse downstream logic that treats seeds as
+                # placeholders. The upsert dedupes on `id` so passing
+                # the existing beneficiary_id just refreshes the
+                # name/relationship cleanly.
                 await db.beneficiaries.update_one(
                     {"id": ben_id, "estate_id": estate_id},
                     {
@@ -417,10 +428,13 @@ async def save_step(
                             "estate_id": estate_id,
                             "name": name,
                             "relationship": relationship,
-                            "quickstart_seed": True,
                             "updated_at": now,
                         },
-                        "$setOnInsert": {"created_at": now, "created_by": user_id},
+                        "$setOnInsert": {
+                            "quickstart_seed": True,
+                            "created_at": now,
+                            "created_by": user_id,
+                        },
                     },
                     upsert=True,
                 )
