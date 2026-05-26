@@ -300,7 +300,7 @@ export default function SocialShareSheet({
             <label
               htmlFor="share-sheet-quote"
               className="block text-[11px] uppercase tracking-wider mb-2"
-              style={{ color: 'rgba(255,255,255,0.55)' }}
+              style={{ color: 'var(--t4)' }}
             >
               Your quote on the card
               <span className="normal-case tracking-normal ml-1" style={{ color: accentColor }}>
@@ -334,7 +334,7 @@ export default function SocialShareSheet({
               style={{
                 background: 'var(--s)',
                 border: `1px solid ${accentColor}55`,
-                color: draftQuote ? '#fff' : 'rgba(255,255,255,0.4)',
+                color: draftQuote ? 'var(--t)' : 'var(--t5)',
                 outline: 'none',
                 fontSize: '16px',
                 lineHeight: '1.5',
@@ -354,7 +354,7 @@ export default function SocialShareSheet({
               style={{
                 background: 'var(--s)',
                 border: `1px solid ${accentColor}33`,
-                color: '#fff',
+                color: 'var(--t)',
                 opacity: regenerating ? 0.55 : 1,
               }}
               data-testid="share-sheet-quote-random"
@@ -365,7 +365,7 @@ export default function SocialShareSheet({
               {regenerating ? 'Finding a quote…' : 'Surprise me — pick a quote for me'}
             </button>
 
-            <p className="text-[11px] mt-2" style={{ color: 'rgba(255,255,255,0.4)' }}>
+            <p className="text-[11px] mt-2" style={{ color: 'var(--t5)' }}>
               {(draftQuote || '').trim()
                 ? `${draftQuote.length}/110 · your words on the card.`
                 : 'Leave blank and we\'ll use an inspiring quote — yours can still replace it anytime.'}
@@ -392,9 +392,9 @@ export default function SocialShareSheet({
                 style={{ accentColor: accentColor }}
                 data-testid="share-sheet-consent-checkbox"
               />
-              <span className="text-[11px] leading-snug" style={{ color: 'rgba(255,255,255,0.72)' }}>
+              <span className="text-[11px] leading-snug" style={{ color: 'var(--t4)' }}>
                 Let CarryOn use this quote publicly (website, marketing, social).
-                <span className="block" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                <span className="block" style={{ color: 'var(--t5)' }}>
                   We&apos;ll credit just your first name. Uncheck to keep it private to your card.
                 </span>
               </span>
