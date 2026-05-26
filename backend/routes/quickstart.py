@@ -357,6 +357,191 @@ async def _user_active_estate_id(user_id: str) -> str | None:
     return e.get("id") if e else None
 
 
+# ── CES → QW business-type collapse table (mirrors the frontend's
+# `CES_TO_QW` map in QuickStartWizard.js so the server-side fallback
+# and the client-side "Use what I already have" button produce
+# identical counts for the same CES contents).
+_CES_TO_QW_BUSINESS = {
+    "sole_prop": "sole_prop",
+    "gen_partnership": "partnership",
+    "lp": "limited_partnership",
+    "flp": "limited_partnership",
+    "llp": "limited_partnership",
+    "lllp": "limited_partnership",
+    "llc": "llc",
+    "pllc": "llc",
+    "l3c": "llc",
+    "c_corp": "c_corp",
+    "s_corp": "s_corp",
+    "pc": "c_corp",
+    "b_corp": "c_corp",
+    "close_corp": "c_corp",
+    "cooperative": "c_corp",
+}
+
+
+async def _augment_qw_data_with_platform_fallbacks(
+    *,
+    data: dict[str, Any],
+    user_id: str,
+    estate_id: str | None,
+    current_user: dict[str, Any],
+) -> dict[str, Any]:
+    """Fill QW data slots from the platform's source-of-truth
+    collections whenever the wizard's own slot is empty.
+
+    The user can skip any step in the wizard (footer "Skip this
+    step"). When they do, we still want the generated guide to
+    reflect what they have on file elsewhere — beneficiaries page,
+    CES, settings address, documents, etc. The rule per slot:
+      • If wizard data is genuinely empty, populate from platform.
+      • If wizard data is non-empty, the user's typed answer wins.
+    """
+    # ─ Beneficiaries ─
+    bens_slot = (data.get("beneficiaries") or {}).get("beneficiaries") or []
+    if not bens_slot and estate_id:
+        platform_bens = await db.beneficiaries.find(
+            {"estate_id": estate_id, "deleted_at": {"$in": [None, False]}},
+            {"_id": 0, "id": 1, "name": 1, "first_name": 1, "last_name": 1, "relation": 1, "relationship": 1},
+        ).to_list(200)
+        if platform_bens:
+            mapped: list[dict[str, Any]] = []
+            for b in platform_bens:
+                name = b.get("name") or " ".join(filter(None, [b.get("first_name"), b.get("last_name")])).strip()
+                if not name:
+                    continue
+                rel = b.get("relation") or b.get("relationship") or ""
+                mapped.append({"name": name, "relationship": rel, "beneficiary_id": b.get("id")})
+            if mapped:
+                data["beneficiaries"] = {"beneficiaries": mapped}
+
+    # ─ Properties (CES category=property) ─
+    props_slot = (data.get("properties") or {}).get("list") or []
+    if not props_slot and estate_id:
+        ces_props = await db.cfp_entities.find(
+            {"estate_id": estate_id, "category": "property", "deleted_at": None},
+            {"_id": 0, "name": 1, "formation_state": 1},
+        ).to_list(200)
+        if ces_props:
+            data["properties"] = {
+                "list": [
+                    {
+                        "kind": "other",
+                        "street": "",
+                        "line2": "",
+                        "city": "",
+                        "state": p.get("formation_state") or "",
+                        "zip": "",
+                        "address": p.get("name") or "",
+                    }
+                    for p in ces_props
+                ]
+            }
+
+    # ─ Business (CES business + specialized + charity) ─
+    biz_slot = data.get("business") or {}
+    if not biz_slot.get("none") and not (biz_slot.get("types") or []) and estate_id:
+        ces_ents = await db.cfp_entities.find(
+            {
+                "estate_id": estate_id,
+                "category": {"$in": ["business", "specialized", "charity"]},
+                "deleted_at": None,
+            },
+            {"_id": 0, "category": 1, "type": 1},
+        ).to_list(500)
+        counts: dict[str, int] = {}
+        for e in ces_ents:
+            cat = e.get("category")
+            if cat == "business":
+                bucket = _CES_TO_QW_BUSINESS.get(e.get("type") or "", "llc")
+            elif cat == "specialized":
+                bucket = "holding_company"
+            elif cat == "charity":
+                bucket = "nonprofit"
+            else:
+                continue
+            counts[bucket] = counts.get(bucket, 0) + 1
+        if counts:
+            data["business"] = {"types": list(counts.keys()), "counts": counts, "none": False}
+
+    # ─ Residence (full address from user profile if QW skipped) ─
+    res_slot = data.get("residence") or {}
+    needs_residence = not (res_slot.get("street") or res_slot.get("address") or res_slot.get("state"))
+    if needs_residence:
+        u = (
+            await db.users.find_one(
+                {"id": user_id},
+                {
+                    "_id": 0,
+                    "id": 1,
+                    "address_street": 1,
+                    "address_line2": 1,
+                    "address_city": 1,
+                    "address_state": 1,
+                    "address_zip": 1,
+                    "state_of_residence": 1,
+                },
+            )
+            or {}
+        )
+        street = (u.get("address_street") or "").strip()
+        city = (u.get("address_city") or "").strip()
+        state = (u.get("address_state") or u.get("state_of_residence") or "").strip().upper()
+        zipc = (u.get("address_zip") or "").strip()
+        if street or state:
+            addr_str = ", ".join(filter(None, [street, city]))
+            data["residence"] = {
+                **(res_slot or {}),
+                "street": street,
+                "line2": (u.get("address_line2") or "").strip(),
+                "city": city,
+                "state": state,
+                "zip": zipc,
+                "address": addr_str,
+            }
+
+    # ─ Household (marital + dependents from user profile if QW skipped) ─
+    hh_slot = data.get("household") or {}
+    if not (hh_slot.get("marital_status") or hh_slot.get("children_dependent")):
+        u = (
+            await db.users.find_one(
+                {"id": user_id},
+                {"_id": 0, "id": 1, "marital_status": 1, "state_of_residence": 1},
+            )
+            or {}
+        )
+        if u.get("marital_status") or u.get("state_of_residence"):
+            data["household"] = {
+                **(hh_slot or {}),
+                "marital_status": (u.get("marital_status") or hh_slot.get("marital_status") or ""),
+                "state_of_residence": (u.get("state_of_residence") or hh_slot.get("state_of_residence") or ""),
+            }
+
+    # ─ Existing documents (counts from /documents) ─
+    edocs_slot = data.get("existing_documents") or {}
+    have_doc_data = bool((edocs_slot.get("counts") or {})) or bool(edocs_slot.get("flags"))
+    if not have_doc_data and estate_id:
+        platform_docs = await db.documents.find(
+            {"estate_id": estate_id, "deleted_at": None},
+            {"_id": 0, "category": 1, "type": 1, "name": 1},
+        ).to_list(500)
+        counts = {"wills": 0, "trusts": 0, "policies_business": 0}
+        for d in platform_docs:
+            label = " ".join(
+                filter(None, [str(d.get("category") or ""), str(d.get("type") or ""), str(d.get("name") or "")])
+            ).lower()
+            if "will" in label:
+                counts["wills"] += 1
+            if "trust" in label:
+                counts["trusts"] += 1
+            if "buy-sell" in label or "succession" in label or "operating agreement" in label:
+                counts["policies_business"] += 1
+        if any(counts.values()):
+            data["existing_documents"] = {"counts": {k: v for k, v in counts.items() if v}}
+
+    return data
+
+
 @router.get("/quickstart/progress")
 async def get_progress(current_user: dict = Depends(get_current_user)):
     """Return the user's current QW state. The frontend uses this on
@@ -609,6 +794,25 @@ async def generate_guide(current_user: dict = Depends(get_current_user)):
     estate_id = await _user_active_estate_id(user_id)
     prog = await _get_or_create_progress(user_id, estate_id)
     data = prog.get("data", {})
+
+    # ── Platform-fallback augmentation (May 26 2026 founder direction) ──
+    # If the user skipped a step (footer "Skip this step") OR never
+    # populated it, the AI + PDF generator should *not* render
+    # "None added yet". Instead pull live data straight from the
+    # platform's source-of-truth collections so the generated guide
+    # reflects what the user actually has on file. CES is the
+    # canonical store for entities / properties; the standalone
+    # `beneficiaries` collection is the canonical store for people;
+    # `users` is the canonical store for address + household; the
+    # `documents` collection is the canonical store for the existing-
+    # documents counts. We only override when the corresponding
+    # wizard slot is genuinely empty — anything the user typed wins.
+    data = await _augment_qw_data_with_platform_fallbacks(
+        data=dict(data),  # shallow-copy so we don't mutate the persisted dict
+        user_id=user_id,
+        estate_id=estate_id,
+        current_user=current_user,
+    )
 
     # Build a friendly user-name string for the PDF header.
     first = current_user.get("first_name") or ""
