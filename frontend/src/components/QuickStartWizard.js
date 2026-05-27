@@ -31,7 +31,7 @@ import { openPdfPreview } from '../utils/openPdfPreview';
 import AddressAutocomplete from './AddressAutocomplete';
 
 const STEPS = [
-  'gate', 'welcome', 'residence', 'household', 'beneficiaries',
+  'gate', 'welcome', 'residence', 'household',
   'properties', 'life_insurance', 'business', 'existing_documents',
   'generate',
 ];
@@ -184,30 +184,29 @@ const QuickStartWizard = ({ forceOpen = false, onClose = () => {} }) => {
     setUseExistingLoading(true);
     setError('');
     try {
-      if (currentStep === 'beneficiaries') {
-        const res = await apiClient.get(`${API_URL}/beneficiaries`, getAuthHeaders());
-        const list = Array.isArray(res.data) ? res.data : (res.data?.beneficiaries || []);
+      if (currentStep === 'household') {
+        // Merged household + beneficiaries page (May 26 2026). Pull
+        // marital status from /auth/me AND existing beneficiaries
+        // from /api/beneficiaries — populate both into one step blob.
+        const [meRes, bensRes] = await Promise.all([
+          apiClient.get(`${API_URL}/auth/me`, getAuthHeaders()),
+          apiClient.get(`${API_URL}/beneficiaries`, getAuthHeaders()),
+        ]);
+        const u = meRes.data || {};
+        const list = Array.isArray(bensRes.data) ? bensRes.data : (bensRes.data?.beneficiaries || []);
+        const next = { ...stepData };
+        if (u.marital_status) next.marital_status = u.marital_status;
         const mapped = list
           .filter((b) => (b.name || b.first_name))
           .map((b) => ({
             beneficiary_id: b.id,
             name: b.name || [b.first_name, b.last_name].filter(Boolean).join(' ') || b.first_name || 'Beneficiary',
             relationship: b.relation || b.relationship || '',
+            age: typeof b.age === 'number' ? b.age : (b.age || ''),
           }));
-        if (mapped.length === 0) {
-          setError('No existing beneficiaries found in your platform yet — add a few below.');
-          return;
-        }
-        setStepData({ ...stepData, beneficiaries: mapped });
-      } else if (currentStep === 'household') {
-        // Pull state of residence + marital status from /auth/me.
-        const res = await apiClient.get(`${API_URL}/auth/me`, getAuthHeaders());
-        const u = res.data || {};
-        const next = { ...stepData };
-        if (u.address_state) next.state_of_residence = u.address_state;
-        if (u.marital_status) next.marital_status = u.marital_status;
-        if (!u.address_state && !u.marital_status) {
-          setError('No household details on file yet — fill them in below.');
+        if (mapped.length > 0) next.beneficiaries = mapped;
+        if (!u.marital_status && mapped.length === 0) {
+          setError('No household details or beneficiaries on file yet — fill them in below.');
           return;
         }
         setStepData(next);
@@ -313,7 +312,7 @@ const QuickStartWizard = ({ forceOpen = false, onClose = () => {} }) => {
     }
   };
   // Which steps offer the "Use what I already have" shortcut.
-  const stepsWithExistingFetch = new Set(['residence', 'household', 'beneficiaries', 'properties', 'business']);
+  const stepsWithExistingFetch = new Set(['residence', 'household', 'properties', 'business']);
   const showUseExistingButton = stepsWithExistingFetch.has(currentStep);
 
   const skip = exitWizard; // legacy alias used by the top-right X handler
@@ -638,9 +637,12 @@ export function isStepValid(stepKey, data) {
       // bare state pick is enough to drive jurisdictional tailoring.
       return Boolean(data?.state) && data.state.length === 2;
     case 'household':
-      return Boolean(data?.marital_status);
-    case 'beneficiaries':
-      return Array.isArray(data?.beneficiaries) && data.beneficiaries.length > 0
+      // Merged household + beneficiaries page (May 26 2026). Require
+      // marital status AND at least one named beneficiary with a
+      // relationship picked. Age is optional.
+      return Boolean(data?.marital_status)
+        && Array.isArray(data?.beneficiaries)
+        && data.beneficiaries.length > 0
         && data.beneficiaries.every((b) => b?.name && b?.relationship);
     case 'properties':
       return true; // optional — many users rent or own nothing
@@ -899,6 +901,17 @@ export const QuickStartStep = ({ stepKey, data, setData, user, brand, allData, o
 
   // ── 3. Household ───────────────────────────────────────────────────
   if (stepKey === 'household') {
+    // Merged household + beneficiaries page (May 26 2026 founder
+    // direction): marital status at the top, then the named-people
+    // list with an optional age field. Minor/adult is DERIVED from
+    // age — the AI summary counts age<18 as a minor and age>=18
+    // (or blank, default to adult) as an adult, eliminating the
+    // double-counting bug that surfaced when the wizard asked for
+    // "X dependent children + X adult children" separately.
+    const beneficiaries = Array.isArray(data?.beneficiaries) ? data.beneficiaries : [];
+    const addRow = () => setData({ ...data, beneficiaries: [...beneficiaries, { name: '', relationship: '', age: '' }] });
+    const updateRow = (idx, field, value) => setData({ ...data, beneficiaries: beneficiaries.map((b, i) => i === idx ? { ...b, [field]: value } : b) });
+    const removeRow = (idx) => setData({ ...data, beneficiaries: beneficiaries.filter((_, i) => i !== idx) });
     return (
       <div className="space-y-4" data-testid="qs-step-household">
         <h3 className="text-lg lg:text-xl font-bold" style={headingStyle}>About your household</h3>
@@ -917,31 +930,59 @@ export const QuickStartStep = ({ stepKey, data, setData, user, brand, allData, o
             ))}
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <Label>Dependent children</Label>
-            <input
-              type="number" min="0" max="20"
-              value={data?.children_dependent ?? ''}
-              onChange={(e) => set('children_dependent', e.target.value === '' ? null : Number(e.target.value))}
-              data-testid="qs-children-dep"
-              className="w-full rounded-xl px-3 py-3 focus:outline-none focus:ring-2 focus:ring-[#d4af37]"
-              style={{ ...inputStyle, fontSize: '16px' }}
-            />
-          </div>
-          <div>
-            <Label>Adult children</Label>
-            <input
-              type="number" min="0" max="20"
-              value={data?.children_adult ?? ''}
-              onChange={(e) => set('children_adult', e.target.value === '' ? null : Number(e.target.value))}
-              data-testid="qs-children-adult"
-              className="w-full rounded-xl px-3 py-3 focus:outline-none focus:ring-2 focus:ring-[#d4af37]"
-              style={{ ...inputStyle, fontSize: '16px' }}
-            />
-          </div>
+        <div className="space-y-2">
+          <Label>Beneficiaries — name, relationship, and age</Label>
+          <p className="text-xs" style={mutedStyle}>
+            Just a name, a relationship, and the person&apos;s age. Age lets us
+            tell which children are minors vs. adults without double-counting.
+            We&apos;ll create a tile for each person so you can fill the rest
+            in later from Getting Started.
+          </p>
+          {beneficiaries.length === 0 && (
+            <p className="text-xs italic pt-1" style={mutedStyle}>No one added yet. Add at least one to continue.</p>
+          )}
+          {beneficiaries.map((b, idx) => (
+            <div key={idx} className="grid grid-cols-1 sm:grid-cols-[1fr_140px_80px_auto] gap-2 sm:items-center">
+              <input
+                type="text" value={b.name || ''} onChange={(e) => updateRow(idx, 'name', e.target.value)}
+                placeholder="Full name" data-testid={`qs-ben-name-${idx}`}
+                className="rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#d4af37] min-w-0"
+                style={{ ...inputStyle, fontSize: '16px' }}
+              />
+              <select
+                value={b.relationship || ''} onChange={(e) => updateRow(idx, 'relationship', e.target.value)}
+                data-testid={`qs-ben-rel-${idx}`}
+                className="rounded-xl px-2 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#d4af37] min-w-0"
+                style={{ ...inputStyle, fontSize: '16px' }}
+              >
+                <option value="" style={{ color: '#0F172A' }}>Relationship…</option>
+                {_RELS.map((r) => <option key={r} value={r} style={{ color: '#0F172A' }}>{r}</option>)}
+              </select>
+              <input
+                type="number" min="0" max="120" inputMode="numeric"
+                value={b.age ?? ''}
+                onChange={(e) => updateRow(idx, 'age', e.target.value === '' ? '' : Number(e.target.value))}
+                placeholder="Age"
+                data-testid={`qs-ben-age-${idx}`}
+                className="rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#d4af37] min-w-0"
+                style={{ ...inputStyle, fontSize: '16px' }}
+                aria-label="Age (optional)"
+              />
+              <button
+                type="button" onClick={() => removeRow(idx)} data-testid={`qs-ben-remove-${idx}`}
+                aria-label="Remove"
+                className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 justify-self-end sm:justify-self-auto"
+                style={{ background: 'rgba(255,255,255,0.08)', color: '#FCA5A5', border: '1px solid rgba(255,255,255,0.15)' }}
+              ><X className="w-4 h-4" /></button>
+            </div>
+          ))}
         </div>
-        <label className="flex items-center gap-3 text-sm cursor-pointer" style={bodyStyle}>
+        <button
+          type="button" onClick={addRow} data-testid="qs-ben-add"
+          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all active:scale-[0.97]"
+          style={{ background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.45)', color: '#FCD34D' }}
+        ><ChevronRight className="w-3.5 h-3.5" /> Add a beneficiary</button>
+        <label className="flex items-center gap-3 text-sm cursor-pointer pt-2" style={bodyStyle}>
           <input
             type="checkbox"
             checked={Boolean(data?.special_needs_dependent)}
@@ -955,65 +996,9 @@ export const QuickStartStep = ({ stepKey, data, setData, user, brand, allData, o
     );
   }
 
-  // ── 4. Beneficiaries (name + relationship only) ───────────────────
-  if (stepKey === 'beneficiaries') {
-    const beneficiaries = Array.isArray(data?.beneficiaries) ? data.beneficiaries : [];
-    const addRow = () => setData({ ...data, beneficiaries: [...beneficiaries, { name: '', relationship: '' }] });
-    const updateRow = (idx, field, value) => setData({ ...data, beneficiaries: beneficiaries.map((b, i) => i === idx ? { ...b, [field]: value } : b) });
-    const removeRow = (idx) => setData({ ...data, beneficiaries: beneficiaries.filter((_, i) => i !== idx) });
-    return (
-      <div className="space-y-3" data-testid="qs-step-beneficiaries">
-        <h3 className="text-lg lg:text-xl font-bold" style={headingStyle}>Who are your beneficiaries?</h3>
-        <p className="text-sm" style={mutedStyle}>
-          Just a name and a relationship is enough. We&apos;ll create a tile for each person
-          so you can fill in the rest later from Getting Started.
-        </p>
-        <div className="space-y-2">
-          {beneficiaries.length === 0 && (
-            <p className="text-xs italic" style={mutedStyle}>No one added yet. Add at least one to continue.</p>
-          )}
-          {beneficiaries.map((b, idx) => (
-            <div key={idx} className="grid grid-cols-1 sm:grid-cols-[1fr_160px_auto] gap-2 sm:items-center">
-              <input
-                type="text" value={b.name || ''} onChange={(e) => updateRow(idx, 'name', e.target.value)}
-                placeholder="Full name" data-testid={`qs-ben-name-${idx}`}
-                className="rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#d4af37] min-w-0"
-                style={{ ...inputStyle, fontSize: '16px' }}
-              />
-              <div className="flex items-center gap-2 min-w-0">
-                <select
-                  value={b.relationship || ''} onChange={(e) => updateRow(idx, 'relationship', e.target.value)}
-                  data-testid={`qs-ben-rel-${idx}`}
-                  className="flex-1 sm:flex-none sm:w-[160px] min-w-0 rounded-xl px-2 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#d4af37]"
-                  style={{ ...inputStyle, fontSize: '16px' }}
-                >
-                  <option value="" style={{ color: '#0F172A' }}>Relationship…</option>
-                  {_RELS.map((r) => <option key={r} value={r} style={{ color: '#0F172A' }}>{r}</option>)}
-                </select>
-                <button
-                  type="button" onClick={() => removeRow(idx)} data-testid={`qs-ben-remove-${idx}`}
-                  aria-label="Remove"
-                  className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 sm:hidden"
-                  style={{ background: 'rgba(255,255,255,0.08)', color: '#FCA5A5', border: '1px solid rgba(255,255,255,0.15)' }}
-                ><X className="w-4 h-4" /></button>
-              </div>
-              <button
-                type="button" onClick={() => removeRow(idx)}
-                aria-label="Remove"
-                className="hidden sm:flex w-9 h-9 rounded-lg items-center justify-center flex-shrink-0"
-                style={{ background: 'rgba(255,255,255,0.08)', color: '#FCA5A5', border: '1px solid rgba(255,255,255,0.15)' }}
-              ><X className="w-4 h-4" /></button>
-            </div>
-          ))}
-        </div>
-        <button
-          type="button" onClick={addRow} data-testid="qs-ben-add"
-          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all active:scale-[0.97]"
-          style={{ background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.45)', color: '#FCD34D' }}
-        ><ChevronRight className="w-3.5 h-3.5" /> Add a beneficiary</button>
-      </div>
-    );
-  }
+  // (Standalone "beneficiaries" step retired May 26 2026 — folded into
+  // the merged Household page above so age-derived minor/adult counts
+  // never get double-counted alongside named children.)
 
   // ── 5. Properties (multi-add with Google Places + per-property state) ──
   if (stepKey === 'properties') {

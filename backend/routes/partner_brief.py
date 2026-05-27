@@ -831,7 +831,13 @@ async def try_quickstart(
     )
     if not state or len(state) != 2:
         raise HTTPException(status_code=400, detail="Please choose your state of residence.")
-    bens = (payload.data.get("beneficiaries") or {}).get("beneficiaries") or []
+    # Resolve beneficiaries from BOTH the merged household.beneficiaries
+    # slot (May 26 2026 schema) AND the legacy beneficiaries.beneficiaries
+    # slot, so partner-brief callers built against either shape still
+    # validate correctly. _qw_beneficiaries lives in quickstart_ai.
+    from services.quickstart_ai import _qw_beneficiaries  # noqa: PLC0415 — local import keeps module load deferred for the unauthenticated trial path
+
+    bens = _qw_beneficiaries(payload.data or {})
     if not isinstance(bens, list) or len(bens) == 0:
         raise HTTPException(
             status_code=400,

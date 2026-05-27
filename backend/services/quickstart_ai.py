@@ -140,6 +140,25 @@ match this exact shape:
 """
 
 
+def _qw_beneficiaries(data: dict[str, Any]) -> list[dict[str, Any]]:
+    """Resolve the named-beneficiaries list from a QW progress payload.
+
+    The wizard merged the standalone "beneficiaries" step into the
+    "household" step on May 26 2026 — the beneficiary rows now live at
+    `data.household.beneficiaries` and each row carries an optional
+    numeric `age` field used to derive minor/adult status. Older
+    in-flight payloads still keep them at `data.beneficiaries.
+    beneficiaries`. This helper checks both so every downstream
+    consumer (AI prompt, PDF, augmenter, partner_brief, etc.) keeps
+    working without per-call branching.
+    """
+    hh = data.get("household") or {}
+    if isinstance(hh.get("beneficiaries"), list) and hh.get("beneficiaries"):
+        return [b for b in hh["beneficiaries"] if isinstance(b, dict)]
+    legacy = (data.get("beneficiaries") or {}).get("beneficiaries") or []
+    return [b for b in legacy if isinstance(b, dict)]
+
+
 def _human_state_summary(data: dict[str, Any]) -> str:
     """Compact natural-language summary of what the user told us. Kept
     purely declarative — let Grok decide how to apply state law.
@@ -178,7 +197,7 @@ def _human_state_summary(data: dict[str, Any]) -> str:
     # 2026: AI was inventing an extra minor child on top of named
     # Son/Daughter beneficiaries).
     hh = data.get("household") or {}
-    bens = (data.get("beneficiaries") or {}).get("beneficiaries") or []
+    bens = _qw_beneficiaries(data)
     if hh or bens:
         marital = (hh.get("marital_status") or "").strip() or None
         if marital:
@@ -204,26 +223,58 @@ def _human_state_summary(data: dict[str, Any]) -> str:
         ]
         named_child_count = len(named_children)
 
-        if total_children or named_child_count:
-            # Reconciled, explicit phrasing so the AI does NOT add
-            # phantom additional minors on top of the named list.
-            extra_unnamed = max(0, total_children - named_child_count)
-            child_bits: list[str] = []
-            if dep_count or adult_count:
-                child_bits.append(f"{total_children} total children ({dep_count} dependent/minor, {adult_count} adult)")
-            else:
-                child_bits.append(f"{total_children} total children")
-            if named_children:
-                names = ", ".join(f"{b.get('name')} ({b.get('relationship')})" for b in named_children)
-                child_bits.append(f"named: {names}")
-            if extra_unnamed:
-                child_bits.append(f"{extra_unnamed} unnamed additional child{'ren' if extra_unnamed != 1 else ''}")
-            else:
-                # Critical guardrail — keeps Grok from inventing extras.
-                child_bits.append(
-                    "no additional unnamed children — the named beneficiaries above ARE the user's entire roster of children, including any dependent minors. Do NOT mention 'a dependent child still at home' or any extra minor in addition to the named children."
-                )
+        if named_child_count:
+            # Derive minor / adult split from per-row age. Missing
+            # age → treat as adult (QW users are typically adults
+            # building plans, so an unspecified age more often means
+            # a sibling/friend/parent than a child).
+            minors: list[dict[str, Any]] = []
+            adults: list[dict[str, Any]] = []
+            unknowns: list[dict[str, Any]] = []
+            for b in named_children:
+                age_raw = b.get("age")
+                try:
+                    age = int(age_raw) if age_raw not in ("", None) else None
+                except (TypeError, ValueError):
+                    age = None
+                if age is None:
+                    unknowns.append(b)
+                elif age < 18:
+                    minors.append(b)
+                else:
+                    adults.append(b)
+
+            def _fmt(b: dict[str, Any]) -> str:
+                age_raw = b.get("age")
+                try:
+                    age = int(age_raw) if age_raw not in ("", None) else None
+                except (TypeError, ValueError):
+                    age = None
+                label = f"{b.get('name')} ({b.get('relationship')}"
+                if age is not None:
+                    label += f", age {age}"
+                label += ")"
+                return label
+
+            child_bits: list[str] = [f"{named_child_count} total named children"]
+            if minors:
+                child_bits.append("minors (under 18): " + ", ".join(_fmt(b) for b in minors))
+            if adults:
+                child_bits.append("adults (18+): " + ", ".join(_fmt(b) for b in adults))
+            if unknowns:
+                child_bits.append("age unspecified — treat as adult: " + ", ".join(_fmt(b) for b in unknowns))
+            child_bits.append(
+                "the named children above ARE the user's entire roster of children, "
+                "including any dependent minors. Do NOT mention 'a dependent child still at home' "
+                "or any extra minor in addition to the named children."
+            )
             parts.append("Children: " + "; ".join(child_bits) + ".")
+        elif total_children:
+            # Legacy fallback: user reported counts but never named
+            # anyone. Emit the bare totals so the AI still has signal.
+            parts.append(
+                f"Children: {total_children} total ({dep_count} dependent/minor, {adult_count} adult); none individually named."
+            )
 
         if hh.get("special_needs_dependent"):
             parts.append("Has dependents with special needs.")

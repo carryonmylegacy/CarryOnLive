@@ -24,6 +24,8 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
+from services.quickstart_ai import _qw_beneficiaries
+
 from fpdf import FPDF
 
 _GOLD = (212, 175, 55)
@@ -209,7 +211,7 @@ def _format_accounts(data: dict[str, Any]) -> str:
 
 
 def _format_beneficiaries(data: dict[str, Any]) -> str:
-    bens = (data.get("beneficiaries") or {}).get("beneficiaries") or []
+    bens = _qw_beneficiaries(data)
     if not bens:
         return "None added yet"
     return ", ".join(f"{b.get('name')} ({b.get('relationship')})" for b in bens if b.get("name"))

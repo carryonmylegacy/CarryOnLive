@@ -42,7 +42,7 @@ from config import XAI_MODEL, XAI_MODEL_LIGHT, db, logger, xai_client
 from models import Document
 from services.audit import audit_log
 from services.encryption import encrypt_aes256, get_estate_salt
-from services.quickstart_ai import build_quickstart_prompt, parse_quickstart_response
+from services.quickstart_ai import _qw_beneficiaries, build_quickstart_prompt, parse_quickstart_response
 from services.quickstart_pdf import build_quickstart_pdf
 from services.storage import storage
 from utils import get_current_user, update_estate_readiness
@@ -398,7 +398,7 @@ async def _augment_qw_data_with_platform_fallbacks(
       • If wizard data is non-empty, the user's typed answer wins.
     """
     # ─ Beneficiaries ─
-    bens_slot = (data.get("beneficiaries") or {}).get("beneficiaries") or []
+    bens_slot = _qw_beneficiaries(data)
     if not bens_slot and estate_id:
         platform_bens = await db.beneficiaries.find(
             {"estate_id": estate_id, "deleted_at": {"$in": [None, False]}},
@@ -413,6 +413,11 @@ async def _augment_qw_data_with_platform_fallbacks(
                 rel = b.get("relation") or b.get("relationship") or ""
                 mapped.append({"name": name, "relationship": rel, "beneficiary_id": b.get("id")})
             if mapped:
+                # Write to the new merged slot (household.beneficiaries)
+                # and the legacy slot (beneficiaries.beneficiaries) so
+                # both old and new downstream readers see the data.
+                data.setdefault("household", {})
+                data["household"]["beneficiaries"] = mapped
                 data["beneficiaries"] = {"beneficiaries": mapped}
 
     # ─ Properties (CES category=property) ─
@@ -575,12 +580,15 @@ async def save_step(
     # Materialize beneficiary stubs the moment they are entered. Each
     # entry gets a stable `beneficiary_id` so subsequent saves don't
     # re-create rows on re-visit. Anything missing both `name` and
-    # `relationship` is skipped.
-    if step_key == "beneficiaries":
+    # `relationship` is skipped. Triggered on the household step (May
+    # 26 2026: merged household + beneficiaries into one page) AND
+    # the legacy "beneficiaries" step key so in-flight users with the
+    # old shape don't lose their materialization step.
+    if step_key in ("household", "beneficiaries"):
         bens = payload.data.get("beneficiaries") or []
         existing_seeds = {
             b.get("name"): b.get("beneficiary_id")
-            for b in (prog.get("data", {}).get("beneficiaries") or {}).get("beneficiaries", [])
+            for b in _qw_beneficiaries(prog.get("data") or {})
             if isinstance(b, dict)
         }
         materialized: list[dict] = []
