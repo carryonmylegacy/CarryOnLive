@@ -1,5 +1,26 @@
 # CarryOn — Changelog
 
+## May 27, 2026 — Fork reverification: AI Safety Contract + onboarding dual-state regression sweep
+
+### Caught & fixed (latent bugs from previous fork)
+- **`backend/routes/guardian.py`** — was missing `from services.ai_safety import hardened_system_prompt` import entirely. Ruff F821 flagged it; would have crashed the Estate Guardian module at first import in production. Added import on line 17.
+- **`backend/routes/quickstart.py`** — 3 Mongo inclusion projections (lines 428, 455, 531) missing `"id": 1` — flagged by housekeeping A1.2 Mongo projection safety as strict-mode WARN. All 3 fixed.
+
+### Verified end-to-end via testing agent (iteration_156, 17/17 backend tests pass)
+- 5-Pillar AI Safety Contract preamble wraps all 4 LLM system prompts (Estate Guardian, Beneficiary Concierge, CCP wizard, QuickStart AI) — PILLAR 1/2/4/5 + MANDATORY INLINE SOURCE CITATION clause confirmed in each.
+- `hardened_system_prompt()` idempotency confirmed (no double-wrap on re-call).
+- `/api/onboarding/skip-step/{key}` + `/api/onboarding/complete-step/{key}` mutual exclusion via atomic `$set + $unset` — verified by GET-skip-GET-complete-GET sequence on Pete Mitchell account.
+- `/api/onboarding/progress` returns 9 steps with both `completed` and `skipped` booleans; `completed_count` includes skipped+completed.
+- `/api/onboarding/mark-visited/{section}` auth-gated, 400 on invalid section.
+- `/api/quickstart/progress` returns 200 with `data` dict (auth-gated).
+- All 4 AI POST routes registered and auth-gated.
+- `bash /app/housekeeping.sh --strict` returns **exit 0, 0 WARN / 0 FAIL**.
+
+### New regression fixture
+- `/app/backend/tests/test_iter156_ai_safety_onboarding.py` — ~3s, no LLM cost, covers prompt-wrap integrity + onboarding dual-state + AI route auth gates.
+
+
+
 
 ## Feb 27, 2026 — Session-suppress the guided overlay after a skip (V2026.02.27-d)
 
