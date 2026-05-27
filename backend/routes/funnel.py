@@ -298,7 +298,7 @@ async def funnel_analytics(user=Depends(get_current_user)):
     recent = (
         await db.funnel_sessions.find(
             {},
-            {
+            {  # pre-push-invariants: allow-missing-id (funnel_sessions is keyed by session_id, not id)
                 "_id": 0,
                 "session_id": 1,
                 "utm_source": 1,

@@ -111,6 +111,7 @@ async def launch_war_room(
     try:
         cursor = db.scheduler_locks.find(
             {"expires_at": {"$gt": now}},
+            # pre-push-invariants: allow-missing-id (scheduler_locks keyed by lock name, no id field)
             {"_id": 0, "name": 1, "holder": 1, "acquired_at": 1, "expires_at": 1},
         )
         async for doc in cursor:

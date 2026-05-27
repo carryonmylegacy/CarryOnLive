@@ -333,6 +333,7 @@ async def get_customer_context(
     activity = (
         await db.audit_trail.find(
             {"actor_id": user_id},
+            # pre-push-invariants: allow-missing-id (read-only audit rows; downstream uses only action/category/timestamp)
             {"_id": 0, "action": 1, "category": 1, "timestamp": 1},
         )
         .sort("timestamp", -1)

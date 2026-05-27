@@ -1,5 +1,24 @@
 # CarryOn — Changelog
 
+## May 27, 2026 — Self-enforcing pre-push invariants (AI Safety + Mongo projection)
+
+### New regression fixture: `tests/test_pre_push_invariants.py`
+Auto-discovered static-AST gates that need no manual symbol registration:
+
+1. **AI SAFETY CONTRACT WRAP** — every module-level `*_SYSTEM_PROMPT` constant under `routes/` + `services/` is scanned at test time and must contain the `PLATFORM-WIDE AI SAFETY CONTRACT` preamble. New LLM routes are auto-gated the moment they're created.
+2. **MONGO INCLUSION-PROJECTION `id` GUARD** — every `db.<coll>.find(...).to_list(...)` call under `routes/` that uses an inclusion projection literal must include `"id": 1`, or carry an inline `# pre-push-invariants: allow-missing-id` marker for legitimate non-id collections (scheduler locks, audit trail rows, funnel sessions, etc.).
+
+### Audit + annotations
+- 5 pre-existing multi-line inclusion projections audited and annotated with the allow-marker comment in `funnel.py`, `admin/launch_war_room.py`, `admin/task_management.py`, `subscriptions/founders_circle.py`, `auth/profile.py`. All confirmed safe (downstream code reads only the projected scalar fields, never `doc["id"]`).
+- The AST scan now also catches multi-line projections that the housekeeping shell-grep at section A1.2 cannot see — strictly more rigorous than the existing CI gate.
+
+### Wired into pre-push gate
+- Added to `FAST_SUITE` in `/app/scripts/check_tests_fast.py`. Pre-push hook (`scripts/check.sh` Stage 4/5) now runs **54 tests in ~20s** — blocking any push that regresses either invariant before the LLM route is even imported in production.
+
+### Verified
+- `python3 scripts/check_tests_fast.py --strict` → 54 passed.
+- `bash housekeeping.sh --strict` → 0 WARN / 0 FAIL.
+
 ## May 27, 2026 — Fork reverification: AI Safety Contract + onboarding dual-state regression sweep
 
 ### Caught & fixed (latent bugs from previous fork)

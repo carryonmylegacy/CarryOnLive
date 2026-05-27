@@ -30,6 +30,15 @@ FAST_SUITE = [
     # missing the hardened_system_prompt import — pre-push gate now catches
     # any future regression of either invariant in <5s.
     "tests/test_iter156_ai_safety_onboarding.py",
+    # Static AST gates — auto-discovers every *_SYSTEM_PROMPT constant
+    # under routes/ + services/ and asserts the Safety Contract preamble
+    # is present; auto-discovers every `db.<coll>.find(...).to_list()`
+    # call under routes/ and asserts the inclusion projection includes
+    # "id": 1 (or carries the `# pre-push-invariants: allow-missing-id`
+    # marker for legitimate non-id collections). ~2s, no I/O. Added
+    # May 27 2026 — catches regressions BEFORE any LLM endpoint or
+    # Mongo query is exercised, without per-symbol manual registration.
+    "tests/test_pre_push_invariants.py",
 ]
 
 

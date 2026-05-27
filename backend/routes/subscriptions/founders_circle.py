@@ -335,6 +335,7 @@ async def fc_checkout_status(session_id: str, current_user: dict = Depends(get_c
 async def _grant_beneficiary_free_access(estate_id: str, tier: str):
     """Grant free subscription access to all beneficiaries of an estate."""
     # Find all beneficiaries linked to this estate
+    # pre-push-invariants: allow-missing-id (downstream reads only user_id)
     beneficiaries = await db.beneficiaries.find({"estate_id": estate_id}, {"_id": 0, "user_id": 1}).to_list(500)
 
     ben_user_ids = [b["user_id"] for b in beneficiaries if b.get("user_id")]

@@ -48,7 +48,9 @@ async def get_me(current_user: dict = Depends(get_current_user)):
     owned_cursor = db.estates.find({"owner_id": current_user["id"]}, {"_id": 0, "id": 1})
     async for est in owned_cursor:
         pdm_estate_ids.append(est["id"])
-    ben_links = await db.beneficiaries.find({"user_id": current_user["id"]}, {"_id": 0, "estate_id": 1}).to_list(100)
+    ben_links = await db.beneficiaries.find({"user_id": current_user["id"]}, {"_id": 0, "estate_id": 1}).to_list(
+        100
+    )  # pre-push-invariants: allow-missing-id (downstream reads only estate_id)
     pdm_estate_ids.extend(b["estate_id"] for b in ben_links if b.get("estate_id"))
     if pdm_estate_ids:
         cursor = db.estates.find(
