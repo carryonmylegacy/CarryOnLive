@@ -23,6 +23,13 @@ import sys
 FAST_SUITE = [
     "tests/test_idor_guards.py",
     "tests/test_core_endpoints_smoke.py",
+    # AI Safety Contract + onboarding dual-state mutual-exclusion regression
+    # (~2.5s, no LLM cost, no network — covers prompt-wrap integrity across
+    # all 4 AI routes plus the skip/complete atomic swap on $set + $unset).
+    # Added May 27 2026 after a fork reverification found guardian.py was
+    # missing the hardened_system_prompt import — pre-push gate now catches
+    # any future regression of either invariant in <5s.
+    "tests/test_iter156_ai_safety_onboarding.py",
 ]
 
 
