@@ -173,25 +173,72 @@ def _human_state_summary(data: dict[str, Any]) -> str:
             "Residence tenure: OTHER (e.g. living with family, corporate housing, residence held in trust by another party) — treat the residence as NOT a personal-name asset for guidance purposes."
         )
 
-    # Household — unchanged.
+    # Household — reconciled against named beneficiaries below to
+    # prevent the AI from double-counting children (founder May 26
+    # 2026: AI was inventing an extra minor child on top of named
+    # Son/Daughter beneficiaries).
     hh = data.get("household") or {}
-    if hh:
-        marital = hh.get("marital_status") or "unspecified"
-        parts.append(f"Marital status: {marital}.")
-        dep = hh.get("children_dependent")
-        if dep is not None:
-            parts.append(f"Dependent children: {dep}.")
-        adult = hh.get("children_adult")
-        if adult is not None:
-            parts.append(f"Adult children: {adult}.")
+    bens = (data.get("beneficiaries") or {}).get("beneficiaries") or []
+    if hh or bens:
+        marital = (hh.get("marital_status") or "").strip() or None
+        if marital:
+            parts.append(f"Marital status: {marital}.")
+        try:
+            dep_count = int(hh.get("children_dependent") or 0)
+        except (TypeError, ValueError):
+            dep_count = 0
+        try:
+            adult_count = int(hh.get("children_adult") or 0)
+        except (TypeError, ValueError):
+            adult_count = 0
+        total_children = max(0, dep_count + adult_count)
+
+        # Count beneficiaries that are clearly the user's own children.
+        # `Son` / `Daughter` are direct children; grandchildren are
+        # separate. We treat case-insensitively and trim whitespace.
+        child_rels = {"son", "daughter"}
+        named_children = [
+            b
+            for b in bens
+            if str(b.get("relationship") or "").strip().lower() in child_rels and (b.get("name") or "").strip()
+        ]
+        named_child_count = len(named_children)
+
+        if total_children or named_child_count:
+            # Reconciled, explicit phrasing so the AI does NOT add
+            # phantom additional minors on top of the named list.
+            extra_unnamed = max(0, total_children - named_child_count)
+            child_bits: list[str] = []
+            if dep_count or adult_count:
+                child_bits.append(f"{total_children} total children ({dep_count} dependent/minor, {adult_count} adult)")
+            else:
+                child_bits.append(f"{total_children} total children")
+            if named_children:
+                names = ", ".join(f"{b.get('name')} ({b.get('relationship')})" for b in named_children)
+                child_bits.append(f"named: {names}")
+            if extra_unnamed:
+                child_bits.append(f"{extra_unnamed} unnamed additional child{'ren' if extra_unnamed != 1 else ''}")
+            else:
+                # Critical guardrail — keeps Grok from inventing extras.
+                child_bits.append(
+                    "no additional unnamed children — the named beneficiaries above ARE the user's entire roster of children, including any dependent minors. Do NOT mention 'a dependent child still at home' or any extra minor in addition to the named children."
+                )
+            parts.append("Children: " + "; ".join(child_bits) + ".")
+
         if hh.get("special_needs_dependent"):
             parts.append("Has dependents with special needs.")
 
-    # Beneficiaries — unchanged.
-    bens = (data.get("beneficiaries") or {}).get("beneficiaries") or []
-    if bens:
-        rels = ", ".join(f"{b.get('name')} ({b.get('relationship')})" for b in bens if b.get("name"))
-        parts.append(f"Intended beneficiaries: {rels}.")
+    # Non-child beneficiaries (spouse, siblings, charities, friends, etc.)
+    # listed separately so the AI still references them by name without
+    # confusing them with the children reconciliation above.
+    non_child_bens = [
+        b
+        for b in bens
+        if str(b.get("relationship") or "").strip().lower() not in {"son", "daughter"} and (b.get("name") or "").strip()
+    ]
+    if non_child_bens:
+        rels = ", ".join(f"{b.get('name')} ({b.get('relationship')})" for b in non_child_bens)
+        parts.append(f"Other intended beneficiaries: {rels}.")
 
     # Properties — NEW shape: a multi-add list with address + state per item.
     # Fall back to the legacy `real_estate` block for old in-flight users.
