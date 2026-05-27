@@ -131,14 +131,26 @@ const OnboardingWizard = ({ onAllComplete, onContentChange }) => {
       return !cfg || isFeatureEnabled(cfg.route, enabledFeatures);
     });
     const incomplete = visibleSteps.filter(s => !s.completed && !s.skipped);
-    const allDone = incomplete.length === 0 && visibleSteps.length > 0;
+    // "All truly done" means every step is genuinely COMPLETED — a
+    // skipped step is acknowledged-but-not-done and the user might
+    // still want to revisit it from the all-steps disclosure. So
+    // skipped does NOT count toward this gate (May 26 2026 founder
+    // report: "After QW auto-completed most steps and I skipped the
+    // last one, the entire Onboarding tile vanished. I want to keep
+    // seeing it.")
+    const completedCount = visibleSteps.filter(s => s.completed).length;
+    const allDone = completedCount === visibleSteps.length && visibleSteps.length > 0;
     if (allDone && progress.celebration_shown) return { ok: false, count: 0 };
     if (allDone) return { ok: false, count: 0 };
     const hasWelcome = user?.is_also_benefactor && !welcomeDismissed;
     const hasOffline = !offlineCoachDismissed && offlinePlatformVisible;
     // Step display mirrors the render path below: showAll → every
-    // step; otherwise → 1 next step (or 0 if there are none).
-    const stepRenderCount = showAll ? visibleSteps.length : (incomplete.length > 0 ? 1 : 0);
+    // step; otherwise → 1 next step (or 0 if every incomplete step
+    // is skipped — but the all-steps disclosure still adds 1 tile
+    // so the user can re-engage with the skipped rows).
+    const stepRenderCount = showAll
+      ? visibleSteps.length
+      : (incomplete.length > 0 ? 1 : (visibleSteps.length > 0 ? 1 : 0));
     const count = (hasWelcome ? 1 : 0) + (hasOffline ? 1 : 0) + stepRenderCount;
     return { ok: count > 0, count };
   })();
@@ -270,6 +282,12 @@ const OnboardingWizard = ({ onAllComplete, onContentChange }) => {
   // active CTA — the user explicitly told us not to walk them
   // through it.
   const incompleteSteps = allSteps.filter(s => (!s.completed && !s.skipped) || popping[s.key]);
+  // "All truly done" mirrors the wouldRender gate above — skipped
+  // doesn't count toward completion, so the tile stays visible
+  // when the only remaining items are merely skipped. The user can
+  // still re-engage them from the all-steps disclosure.
+  const completedAllSteps = allSteps.filter(s => s.completed).length;
+  const allTrulyComplete = completedAllSteps === allSteps.length && allSteps.length > 0;
   // "All done" for celebration purposes still means every step is in
   // some terminal state (completed OR skipped). The progress bar uses
   // `progress.completed_count` from the backend, which already counts
@@ -288,17 +306,23 @@ const OnboardingWizard = ({ onAllComplete, onContentChange }) => {
     if (onAllComplete) onAllComplete();
   }
 
-  // After celebration has been shown (persisted on backend), hide the wizard permanently
-  if (allComplete && progress.celebration_shown) {
+  // After celebration has been shown (persisted on backend), hide the
+  // wizard permanently — but ONLY when every step is genuinely
+  // completed. Skipped-but-not-completed steps keep the tile alive
+  // so the user can revisit them from the all-steps disclosure.
+  if (allTrulyComplete && progress.celebration_shown) {
     return null;
   }
 
-  // Also hide if all complete — celebration is handled by DashboardPage
-  if (allComplete) {
+  // Also hide when truly complete — celebration is handled by DashboardPage.
+  if (allTrulyComplete) {
     return null;
   }
 
-  if (stepsToShow.length === 0 && !allComplete) return null;
+  // Tile still renders when only skipped steps remain — the all-steps
+  // disclosure surfaces them. Only bail out when we have neither an
+  // active next step NOR any all-steps content to show.
+  if (stepsToShow.length === 0 && allSteps.length === 0) return null;
 
   // Dismiss confirm — full-screen frosted glass overlay matching guided flow
   if (dismissPhase === 'confirm') {
@@ -565,19 +589,19 @@ const OnboardingWizard = ({ onAllComplete, onContentChange }) => {
             <button
               type="button"
               onClick={toggleAllSteps}
-              aria-expanded={allStepsExpanded}
+              aria-expanded={allStepsExpanded || stepsToShow.length === 0}
               aria-controls="setup-guide-all-steps-list"
               data-testid="setup-guide-toggle-all-steps"
               className="w-full flex items-center justify-between gap-2 text-xs lg:text-sm font-semibold text-[var(--t4)] lg:hover:text-[var(--t)] active:text-[var(--t)] transition-colors cursor-pointer"
               style={{ WebkitTapHighlightColor: 'transparent' }}
             >
-              <span>{allStepsExpanded ? 'Hide all steps' : 'View all steps'}</span>
+              <span>{(allStepsExpanded || stepsToShow.length === 0) ? 'Hide all steps' : 'View all steps'}</span>
               <ChevronDown
-                className={`w-4 h-4 transition-transform duration-200 ${allStepsExpanded ? 'rotate-180' : ''}`}
+                className={`w-4 h-4 transition-transform duration-200 ${(allStepsExpanded || stepsToShow.length === 0) ? 'rotate-180' : ''}`}
                 strokeWidth={2.5}
               />
             </button>
-            {allStepsExpanded && (
+            {(allStepsExpanded || stepsToShow.length === 0) && (
               <div data-testid="setup-guide-all-steps-list" id="setup-guide-all-steps-list" className="mt-2">
                 {/* Column headers — tiny uppercase labels so the user
                     knows which column is which without hovering. */}
