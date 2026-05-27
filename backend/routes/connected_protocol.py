@@ -19,6 +19,7 @@ from pydantic import BaseModel
 from typing import Optional
 
 from config import db, xai_client, XAI_MODEL, XAI_MODEL_LIGHT, logger
+from services.ai_safety import hardened_system_prompt
 from services.estate_auth import is_estate_member as _is_estate_member, is_estate_owner as _is_estate_owner
 from utils import get_current_user
 from services.photo_urls import resolve_photo_url
@@ -227,7 +228,7 @@ async def get_estate_members_endpoint(estate_id: str, current_user: dict = Depen
 # ===================== WIZARD — AI-POWERED PLAN GENERATION =====================
 
 
-_WIZARD_SYSTEM_PROMPT = """You are an emergency preparedness expert creating a family contingency plan for the CarryOn platform. Generate a complete, actionable plan. Be direct and specific. No filler.
+_WIZARD_SYSTEM_PROMPT = hardened_system_prompt("""You are an emergency preparedness expert creating a family contingency plan for the CarryOn platform. Generate a complete, actionable plan. Be direct and specific. No filler.
 
 You MUST return valid JSON with exactly these fields:
 {
@@ -260,7 +261,7 @@ CRITICAL RULES:
      FIGHT: A LAST resort only — only if Run and Hide are impossible. Cite specific defensive items the user listed with their stored locations and what each is realistic for. Make clear that confronting an armed intruder is high-risk and the goal is creating an opening to Run."
    Then number the rest of the steps starting at 1.
 - DEFENSIVE RESOURCES: If the family provided `defensive_resources` (firearms, bats, pepper spray, etc.), add ONE entry to `resource_locations` titled "Self-Defense Items" with `location` summarizing each item and where it's stored, and `notes` reading "Use ONLY in the Fight stage as last resort." Never recommend retrieving a firearm during the Run or Hide stages.
-- Keep all text concise. Actions only."""
+- Keep all text concise. Actions only.""")
 
 
 # Disaster-specific prompt context for richer AI generation

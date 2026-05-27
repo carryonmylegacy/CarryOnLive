@@ -32,7 +32,9 @@ import json
 import re
 from typing import Any
 
-_SYSTEM_PROMPT = """You are the Estate Planning QuickStart Assistant for the CarryOn platform.
+from services.ai_safety import hardened_system_prompt
+
+_SYSTEM_PROMPT = hardened_system_prompt("""You are the Estate Planning QuickStart Assistant for the CarryOn platform.
 
 You write for an adult (often age 40+) who has NEVER thought seriously about
 estate planning. Your job is to take a small set of facts about their
@@ -211,7 +213,7 @@ match this exact shape:
   "next_step": "string (one sentence - what to do RIGHT now)"
 }
 ```
-"""
+""")
 
 
 def _qw_beneficiaries(data: dict[str, Any]) -> list[dict[str, Any]]:

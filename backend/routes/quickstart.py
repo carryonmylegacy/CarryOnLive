@@ -425,7 +425,7 @@ async def _augment_qw_data_with_platform_fallbacks(
     if not props_slot and estate_id:
         ces_props = await db.cfp_entities.find(
             {"estate_id": estate_id, "category": "property", "deleted_at": None},
-            {"_id": 0, "name": 1, "formation_state": 1},
+            {"_id": 0, "id": 1, "name": 1, "formation_state": 1},
         ).to_list(200)
         if ces_props:
             data["properties"] = {
@@ -452,7 +452,7 @@ async def _augment_qw_data_with_platform_fallbacks(
                 "category": {"$in": ["business", "specialized", "charity"]},
                 "deleted_at": None,
             },
-            {"_id": 0, "category": 1, "type": 1},
+            {"_id": 0, "id": 1, "category": 1, "type": 1},
         ).to_list(500)
         counts: dict[str, int] = {}
         for e in ces_ents:
@@ -528,7 +528,7 @@ async def _augment_qw_data_with_platform_fallbacks(
     if not have_doc_data and estate_id:
         platform_docs = await db.documents.find(
             {"estate_id": estate_id, "deleted_at": None},
-            {"_id": 0, "category": 1, "type": 1, "name": 1},
+            {"_id": 0, "id": 1, "category": 1, "type": 1, "name": 1},
         ).to_list(500)
         counts = {"wills": 0, "trusts": 0, "policies_business": 0}
         for d in platform_docs:

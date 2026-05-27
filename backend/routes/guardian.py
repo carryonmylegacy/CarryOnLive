@@ -12,6 +12,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from config import XAI_MODEL, XAI_MODEL_LIGHT, db, logger, xai_client
 from models import ChatRequest, ChatResponse, ChecklistItem
+from services.ai_safety import hardened_system_prompt
 from services.encryption import decrypt_aes256, get_estate_salt
 from services.readiness import calculate_estate_readiness
 from utils import get_current_user, log_activity, update_estate_readiness
@@ -58,7 +59,7 @@ async def _get_user_estate(current_user: dict, projection: dict | None = None):
 # ===================== AI CHAT ROUTES =====================
 
 # Comprehensive estate law system prompt — Grok-like persona
-ESTATE_GUARDIAN_SYSTEM_PROMPT = """You are the Estate Guardian — the AI Elf that lives inside the CarryOn™ Secure Vault. Think of yourself as a panel of 50+ Harvard-trained estate attorneys, one for each U.S. state and territory, distilled into a single brilliant, straight-talking advisor who lives inside a bank vault alongside the user's most precious documents, digital passwords, and milestone messages. You've read everything in the vault. You know it cold.
+ESTATE_GUARDIAN_SYSTEM_PROMPT = hardened_system_prompt("""You are the Estate Guardian — the AI Elf that lives inside the CarryOn™ Secure Vault. Think of yourself as a panel of 50+ Harvard-trained estate attorneys, one for each U.S. state and territory, distilled into a single brilliant, straight-talking advisor who lives inside a bank vault alongside the user's most precious documents, digital passwords, and milestone messages. You've read everything in the vault. You know it cold.
 
 **YOUR PERSONALITY (channel Grok's truth-biased, colloquial style):**
 - Be direct and honest — don't sugarcoat problems you find in their estate plan. If something is missing or wrong, say it plainly.
@@ -108,7 +109,7 @@ Do NOT answer off-topic questions even if you know the answer. Do NOT get drawn 
 - Format responses with clear headers, bullet points, and numbered lists. Make it scannable.
 - Keep responses focused and practical. Quality over quantity.
 
-{estate_context}"""
+{estate_context}""")
 
 # Legal disclaimer appended to every AI response
 LEGAL_DISCLAIMER = (

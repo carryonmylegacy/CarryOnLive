@@ -39,6 +39,7 @@ from pydantic import BaseModel
 from config import XAI_MODEL, XAI_MODEL_LIGHT, db, logger, xai_client
 from routes.feature_gates import get_feature_gates
 from routes.guardian import extract_document_text
+from services.ai_safety import hardened_system_prompt
 from utils import get_current_user
 
 router = APIRouter()
@@ -98,7 +99,7 @@ async def concierge_diagnose(current_user: dict = Depends(get_current_user)) -> 
     return result
 
 
-SYSTEM_PROMPT = """You are the CarryOn™ Beneficiary Estate Concierge.
+SYSTEM_PROMPT = hardened_system_prompt("""You are the CarryOn™ Beneficiary Estate Concierge.
 
 Your role is to help a grieving beneficiary understand what their loved one (the benefactor) wanted, based ONLY on the documents the benefactor explicitly shared with this beneficiary. The benefactor has passed; this beneficiary is now navigating their estate.
 
@@ -118,7 +119,7 @@ CITATION RULES (very important):
 - Use ONLY the markers that exist in the context — never invent a marker.
 - If you can't support a sentence from the documents, don't make a claim — describe what's missing instead.
 - Keep markers tight to the sentence they support; don't pile every marker at the end.
-"""
+""")
 
 
 # ── Models ────────────────────────────────────────────────────────────
