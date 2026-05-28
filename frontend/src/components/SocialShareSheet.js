@@ -139,11 +139,11 @@ export default function SocialShareSheet({
   // Quote composer (optional — if onQuoteChange is supplied, the editor is shown)
   editableQuote = false,
   quote = '',
-  quoteSource = 'random',  // "user" | "random"
+  _quoteSource = 'random',  // "user" | "random"
   onQuoteChange,           // (newQuote: string, consentPublic: boolean) => void
   onRandomize,             // () => void — called when user taps "Surprise me"
   regenerating = false,    // parent sets true while re-fetching the card
-  fetchError = false,      // parent sets true when the card fetch failed
+  _fetchError = false,      // parent sets true when the card fetch failed
 }) {
   const [copied, setCopied] = useState(false);
   const [imageCopied, setImageCopied] = useState(false);

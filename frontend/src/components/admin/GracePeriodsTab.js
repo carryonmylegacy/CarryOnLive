@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
 import apiClient from '../../utils/apiClient';
 import { Shield, Pause, Play, Trash2, Lock, Clock, CheckCircle2, AlertTriangle, Loader2, Mail } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
@@ -98,7 +97,7 @@ export const GracePeriodsTab = ({ getAuthHeaders }) => {
   });
 
   const holdCount = periods.filter(p => p.hold_active).length;
-  const pausedCount = periods.filter(p => p.status === 'paused').length;
+  const _pausedCount = periods.filter(p => p.status === 'paused').length;
   const activeCount = periods.filter(p => p.status === 'active').length;
   const filesPurgedCount = periods.filter(p => p.status === 'files_purged').length;
 

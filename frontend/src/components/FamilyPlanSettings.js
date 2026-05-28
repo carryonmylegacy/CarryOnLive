@@ -5,7 +5,6 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { toast } from '../utils/toast';
-import axios from 'axios';
 import apiClient from '../utils/apiClient';
 import { API_URL } from '../config';
 
@@ -55,7 +54,7 @@ const FamilyPlanSettings = ({ getAuthHeaders }) => {
       if (!statusRes.data.family_plan) {
         fetchSavingsPreview();
       }
-    } catch (err) { /* silent */ }
+    } catch (_err) { /* silent */ }
     // Pull every eligible beneficiary across every estate the user
     // owns. Server-side filters out: members already on the plan,
     // beneficiaries without an email, and anyone currently in
@@ -75,7 +74,7 @@ const FamilyPlanSettings = ({ getAuthHeaders }) => {
     try {
       const res = await apiClient.get(`${API_URL}/family-plan/preview-savings`, { headers });
       setSavingsPreview(res.data);
-    } catch (err) { /* silent */ }
+    } catch (_err) { /* silent */ }
     setLoadingSavings(false);
   };
 
@@ -124,7 +123,7 @@ const FamilyPlanSettings = ({ getAuthHeaders }) => {
       await apiClient.delete(`${API_URL}/family-plan/${fp.id}/member/${userId}`, { headers });
       // toast removed
       fetchStatus();
-    } catch (err) { toast.error('Failed to remove member'); }
+    } catch (_err) { toast.error('Failed to remove member'); }
   };
 
   const handleDissolve = async () => {
@@ -133,7 +132,7 @@ const FamilyPlanSettings = ({ getAuthHeaders }) => {
       await apiClient.delete(`${API_URL}/family-plan/${fp.id}`, { headers });
       // toast removed
       fetchStatus();
-    } catch (err) { toast.error('Failed to dissolve'); }
+    } catch (_err) { toast.error('Failed to dissolve'); }
   };
 
   // No family plan yet — show creation UI with savings preview

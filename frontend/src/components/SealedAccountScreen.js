@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import apiClient from '../utils/apiClient';
 import { Shield, Phone, Mail, MessageSquare, ArrowLeft } from 'lucide-react';
 import { Button } from './ui/button';

@@ -1,6 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import axios from 'axios';
 import apiClient from '../utils/apiClient';
 import { useAuth } from '../contexts/AuthContext';
 import { X, Send, Paperclip, Loader2 } from 'lucide-react';

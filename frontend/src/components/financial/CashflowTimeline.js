@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
 import apiClient from '../../utils/apiClient';
 import { Calendar, TrendingDown, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
@@ -26,7 +25,7 @@ const CashflowTimeline = ({ estateId }) => {
       try {
         const res = await apiClient.get(`${API_URL}/financial/cashflow/${estateId}`, getAuthHeaders());
         if (alive) setData(res.data);
-      } catch (e) {
+      } catch (_e) {
         if (alive) setData(null);
       }
       if (alive) setLoading(false);

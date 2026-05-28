@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
 import apiClient from '../../utils/apiClient';
 import { useNavigate } from 'react-router-dom';
 import { Sparkles, Loader2, ArrowRight } from 'lucide-react';

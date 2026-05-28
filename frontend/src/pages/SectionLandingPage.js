@@ -53,7 +53,7 @@ const FEATURE_DESCRIPTIONS = {
 const SectionLandingPage = () => {
   const { sectionKey } = useParams();
   const navigate = useNavigate();
-  const { user, enabledFeatures } = useAuth();
+  const { user: _user, enabledFeatures } = useAuth();
   const [estate, setEstate] = useState(null);
   const [stats, setStats] = useState({});
 

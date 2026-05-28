@@ -24,7 +24,6 @@
  *   if (r.queued) toast.success('Saved offline — will sync when you reconnect.');
  */
 
-import axios from 'axios';
 import apiClient from './apiClient';
 import { API_URL } from '../config';
 import { enqueue as enqueueOutbox } from '../offline/outbox';

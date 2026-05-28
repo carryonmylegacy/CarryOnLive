@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import apiClient from '../../utils/apiClient';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLabelCleaner } from '../../utils/brandLabel';
 import {
-  CheckSquare, CheckCircle2, ChevronLeft, Lock, Phone, Mail, MapPin,
+  CheckSquare, CheckCircle2, Lock, Phone, Mail, MapPin,
   Users
 } from 'lucide-react';
 import { Progress } from '../../components/ui/progress';
@@ -64,7 +63,7 @@ const BeneficiaryChecklistPage = () => {
         if (estateId) cacheBenSection(estateId, 'checklist', next);
         return next;
       });
-    } catch (err) { toast.error('Failed to update'); }
+    } catch (_err) { toast.error('Failed to update'); }
     finally { setToggling(null); }
   };
 

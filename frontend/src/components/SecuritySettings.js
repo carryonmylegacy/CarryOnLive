@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
-import { Shield, Lock, Unlock, KeyRound, HelpCircle, Eye, EyeOff, CheckCircle2, Loader2, ChevronDown, ChevronUp, Hash, Delete, X } from 'lucide-react';
+import { Shield, Lock, Unlock, KeyRound, HelpCircle, Eye, EyeOff, CheckCircle2, Loader2, ChevronDown, ChevronUp, Hash, Delete } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -11,7 +11,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Separator } from './ui/separator';
 import { toast } from '../utils/toast';
 import { useSectionLock } from './security/SectionLock';
-import axios from 'axios';
 import apiClient from '../utils/apiClient';
 import { API_URL } from '../config';
 
@@ -75,7 +74,7 @@ const SecuritySettings = ({ getAuthHeaders }) => {
       setSettings(settingsRes.data);
       setQuestions(questionsRes.data.questions);
       setHasMasterKey(masterKeyRes.data.has_master_key);
-    } catch (err) {
+    } catch (_err) {
       // silent
     }
     setLoading(false);

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Shield, Users, ChevronRight, Lock as LockIcon, Sparkles, FileCheck, UserCheck, Trash2, ClipboardCheck, MessageSquare, Key, Layers, Smartphone, MapPin, ShieldAlert, ArrowUpDown, SlidersHorizontal, Radio, MessageCircle, DollarSign, BookOpen, Network, Landmark, Heart, Clock } from 'lucide-react';
+import { Shield, Users, ChevronRight, Lock as LockIcon, Sparkles, FileCheck, UserCheck, Trash2, Layers, Smartphone, MapPin, ShieldAlert, ArrowUpDown, SlidersHorizontal, Landmark, Heart, Clock } from 'lucide-react';
 import { RevealSection } from './RevealSection';
 import HomeVoicesStrip from '../HomeVoicesStrip';
 

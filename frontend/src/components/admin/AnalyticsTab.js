@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import apiClient from '../../utils/apiClient';
 import {
   DollarSign, TrendingUp, ArrowUpRight, ArrowDownRight, Clock, CreditCard,
@@ -45,7 +44,7 @@ export const AnalyticsTab = ({ getAuthHeaders }) => {
     try {
       const res = await apiClient.get(`${API_URL}/admin/subscription-stats`, { headers });
       setStats(res.data);
-    } catch (err) { toast.error('Failed to load analytics'); }
+    } catch (_err) { toast.error('Failed to load analytics'); }
     setLoading(false);
   };
 
@@ -209,7 +208,7 @@ export const AnalyticsTab = ({ getAuthHeaders }) => {
             try {
               const res = await apiClient.get(`${API_URL}/admin/analytics-digest/preview`, { headers });
               setDigestPreview(res.data.html);
-            } catch (err) { toast.error('Failed to load preview'); }
+            } catch (_err) { toast.error('Failed to load preview'); }
           }}
         >
           <Eye className="w-3 h-3 mr-1" /> Preview Digest

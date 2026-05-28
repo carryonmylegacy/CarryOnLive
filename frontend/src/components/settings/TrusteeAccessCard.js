@@ -66,7 +66,7 @@ const TrusteeAccessCard = () => {
     try {
       const r = await apiClient.get(`${API_URL}/trustee/grants`, getAuthHeaders());
       setGrants(r.data?.grants || []);
-    } catch (e) {
+    } catch (_e) {
       setGrants([]);
     } finally {
       setLoading(false);

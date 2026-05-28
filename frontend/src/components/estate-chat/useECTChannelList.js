@@ -11,7 +11,7 @@ import { API_URL } from '../../config';
 import { getOfflineMode } from '../../offline/featureFlag';
 import { getLocalChannels, upsertLocalChannels } from '../../offline/repos/chatRepo';
 
-export default function useECTChannelList({ token, navigate, user }) {
+export default function useECTChannelList({ token, navigate, user: _user }) {
   const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
 
   // ── Core channel state ────────────────────────────────────────────────────
@@ -92,7 +92,7 @@ export default function useECTChannelList({ token, navigate, user }) {
     } catch (err) { console.error('fetchChannels error:', err); }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const openChannel = (ch, { fetchMessages, scrollContainerRef, inputRef }) => {
+  const openChannel = (ch, { fetchMessages, scrollContainerRef, inputRef: _inputRef }) => {
     // Blur any focused input to prevent stray cursor on iOS
     if (document.activeElement) document.activeElement.blur();
     setActiveChannel(ch);
@@ -114,7 +114,7 @@ export default function useECTChannelList({ token, navigate, user }) {
     });
   };
 
-  const handleBackOut = ({ fetchMessages, scrollContainerRef, inputRef }) => {
+  const handleBackOut = ({ fetchMessages: _fetchMessages, scrollContainerRef: _scrollContainerRef, inputRef: _inputRef }) => {
     if (activeChannel) {
       if (document.activeElement) document.activeElement.blur();
       setActiveChannel(null);

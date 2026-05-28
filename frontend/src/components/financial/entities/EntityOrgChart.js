@@ -17,34 +17,18 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { RemoveTileModal } from './RemoveTileModal';
 import { notify } from '../../AppNotification';
-import { Settings, Info, Pencil } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
-import { getEntityPalette, getTypeMeta, ROLE_PALETTE, PALETTE, ROLE_OPTIONS } from '../../../config/entityCatalog';
+import { ROLE_PALETTE, PALETTE, ROLE_OPTIONS } from '../../../config/entityCatalog';
 import EntityLegend, { LEGEND_W, LEGEND_H } from './EntityLegend';
 
-import { AvatarCircle } from '../../AvatarCircle';
 import {
   LEGEND_KEY,
-  BUCKET_ICON,
   ENTITY_W,
   ENTITY_H,
   PERSON_W,
   PERSON_H,
   PADDING,
-  ROW_GAP,
-  COL_GAP,
-  STEP_OUT,
   CORNER_R,
-  CLUSTER_AVATAR,
-  CLUSTER_SLOT_W,
-  CLUSTER_SLOT_H,
-  CLUSTER_COLS,
-  CLUSTER_HEADER_H,
-  CLUSTER_PAD_X,
-  CLUSTER_PAD_Y,
-  CLUSTER_HALF_STEP,
-  CLUSTER_W,
-  clusterHeight,
   POS_KEY,
   HIDDEN_KEY,
 } from './entityChartConstants';
@@ -60,11 +44,6 @@ import { buildGraph, computeInitialLayout } from './entityChartGraph';
 // during Monolith Reduction 4/6 (Feb 2026). Re-exported below for backward
 // compatibility with EntitiesPrintPage.js.
 import {
-  anchorOn,
-  stepOut,
-  hSegHitsRect,
-  vSegHitsRect,
-  hash01,
   routeEdge,
   polylineToRoundedPath,
 } from './entityChartGeometry';
@@ -90,7 +69,7 @@ export default function EntityOrgChart({
   estateId, entities, externals, relationships, beneficiaries, blocks,
   onSingleClickNode, onDoubleClickNode, onInfoClickNode, onEditClickNode,
   onDeleteNode, onEditBlockClick, onHiddenChange,
-  cleanUpSignal, locked = false, readOnly = false, fitOnLoad = false,
+  _cleanUpSignal, locked = false, readOnly = false, fitOnLoad = false,
   legendHidden = false, onHideLegend,
   serverOverrides, onSaveLayout,
   focusKey, focusNonce,
@@ -1073,7 +1052,7 @@ export default function EntityOrgChart({
     }
   };
 
-  const onPointerMove = (e) => {
+  const _onPointerMove = (e) => {
     applyDragMove(e.clientX, e.clientY);
   };
 

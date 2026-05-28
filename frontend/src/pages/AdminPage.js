@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import apiClient from '../utils/apiClient';
 import { useAuth } from '../contexts/AuthContext';
 import { API_URL } from '../config';
 import {
   Shield, Loader2, Recycle,
-  FileKey, Headphones, ShieldCheck, Users, CheckSquare, Activity,
+  FileKey, Headphones, Users, CheckSquare, Activity,
   Clock, HeartPulse, MessageSquare, BarChart3, Search, AlertTriangle,
   StickyNote, BookOpen, Calendar, GraduationCap, CreditCard,
 } from 'lucide-react';
@@ -218,7 +217,7 @@ const AdminPage = ({ operatorMode = false }) => {
       } else {
         toast.success('No orphaned records found');
       }
-    } catch (err) { toast.error('Cleanup failed'); }
+    } catch (_err) { toast.error('Cleanup failed'); }
     finally { setCleaning(false); }
   };
 

@@ -4,7 +4,6 @@ import { useAuth } from '../contexts/AuthContext';
 import { ArrowLeft, ArrowRight, ChevronRight, Check, X, Users, Shield, FileText, Heart, Key, UserCheck, Send, Sparkles } from 'lucide-react';
 import { initFirebase, trackEvent, trackPixel } from '../services/firebase';
 import { API_URL } from '../config';
-import axios from 'axios';
 import apiClient from '../utils/apiClient';
 import confetti from 'canvas-confetti';
 
@@ -30,7 +29,7 @@ const FEATURES = [
   { id: 'transition', title: 'Transition Verification', desc: 'Dignified, multi-step verification process to activate estate access.', for: ['protect_family', 'guide_beneficiaries'] },
 ];
 
-const STEP_NAMES = ['interests', 'family', 'plan', 'cta', 'referral'];
+const _STEP_NAMES = ['interests', 'family', 'plan', 'cta', 'referral'];
 
 /* Shared frosted glass panel style */
 const glassPanel = {
@@ -202,7 +201,7 @@ export default function GetStartedPage() {
         name,
         selections,
       });
-    } catch (e) {
+    } catch (_e) {
       console.warn('[Funnel] Step record failed');
     }
   }, [sessionId]);
@@ -254,7 +253,7 @@ export default function GetStartedPage() {
           session_id: sessionId,
           referral_email: refEmail,
         });
-      } catch (e) {
+      } catch (_e) {
         console.warn('[Funnel] Complete failed');
       }
     }

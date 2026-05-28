@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import axios from 'axios';
 import apiClient from '../utils/apiClient';
 import { AlertTriangle, Shield, Volume2 } from 'lucide-react';
 import { Button } from './ui/button';

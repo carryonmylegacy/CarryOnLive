@@ -401,7 +401,7 @@ export const AuthProvider = ({ children }) => {
           headers: { Authorization: `Bearer ${token}` },
         });
       }
-    } catch (e) { /* proceed with client-side logout even if server call fails */ }
+    } catch (_e) { /* proceed with client-side logout even if server call fails */ }
     clearCache();
     // Phase 7: clear the in-memory offline encryption key so the next user
     // on this device derives their own key and cannot decrypt the previous

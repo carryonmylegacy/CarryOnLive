@@ -13,11 +13,10 @@
  */
 
 import React, { useEffect, useState, useRef } from 'react';
-import axios from 'axios';
 import apiClient from '../../utils/apiClient';
 import {
   Briefcase, Plus, Trash2, Copy, Check, Loader2, ExternalLink,
-  Upload, Image as ImageIcon, Power, Mail, Send, Pencil, Users,
+  Upload, Image as ImageIcon, Power, Send, Pencil, Users,
 } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
@@ -211,7 +210,7 @@ export const PartnersTab = ({ getAuthHeaders }) => {
       await apiClient.delete(`${API_URL}/admin/partners/${id}`, { headers: authHeaders() });
       await fetchAll();
       toast.success('Partner deleted');
-    } catch (err) {
+    } catch (_err) {
       toast.error('Failed to delete');
     }
   };

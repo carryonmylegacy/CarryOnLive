@@ -13,10 +13,6 @@ import {
   Plus,
   ChevronRight,
   ChevronLeft,
-  Package,
-  Lock,
-  DollarSign,
-  Mail,
   Flame,
   CheckCircle2,
   XCircle,
@@ -25,8 +21,7 @@ import {
   Send,
   Loader2,
   Edit2,
-  Trash2,
-  Bell
+  Trash2
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';

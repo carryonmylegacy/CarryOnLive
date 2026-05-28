@@ -20,7 +20,7 @@ const PLAN_TYPE_LABELS = {
 const BeneficiaryCCPPage = () => {
   const { getAuthHeaders } = useAuth();
   const brand = useBrand();
-  const cleanLabel = useLabelCleaner();
+  const _cleanLabel = useLabelCleaner();
   const navigate = useNavigate();
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);

@@ -20,7 +20,6 @@
  * and no events are dispatched.
  */
 
-import axios from 'axios';
 import apiClient from '../utils/apiClient';
 import { API_URL } from '../config';
 import { upsertLocalBeneficiaries } from './repos/beneficiariesRepo';

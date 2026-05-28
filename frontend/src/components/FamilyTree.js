@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Camera, Users } from 'lucide-react';
 import { resolvePhotoUrl } from '../utils/photoUrl';
@@ -262,7 +262,7 @@ const FamilyTree = ({ user, beneficiaries, beneficiaryEstates, onSelectBeneficia
 
             {/* Estate nodes — two columns with wide center gap */}
             <div className="relative grid px-1" style={{ gridTemplateColumns: '1fr 1fr', columnGap: '20%', rowGap: 10, justifyItems: 'center', zIndex: 2 }}>
-              {benEstates.map((est, idx) => {
+              {benEstates.map((est, _idx) => {
                 const nameWords = (est.name || 'Estate').split(' ');
                 const labelTop = nameWords.length > 2 ? nameWords.slice(0, -1).join(' ') : nameWords.join(' ');
                 const labelBottom = nameWords.length > 2 ? nameWords.slice(-1)[0] : '';

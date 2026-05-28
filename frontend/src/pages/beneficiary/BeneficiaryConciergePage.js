@@ -761,7 +761,7 @@ function Bubble({ role, content, citations, error, modelUsed, isFallback, onCita
   );
 }
 
-function ConciergeUnavailable({ reason, onBack }) {
+function ConciergeUnavailable({ reason, onBack: _onBack }) {
   const messageMap = {
     no_estate_selected: ['No estate selected', 'Open the Estate Plan Network from the sidebar and pick a benefactor’s estate first.'],
     not_a_beneficiary: ['Not a beneficiary on this estate', 'You’re not listed as a beneficiary on the estate you have selected.'],

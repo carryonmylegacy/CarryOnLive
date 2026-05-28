@@ -35,7 +35,6 @@
  */
 
 import axios from 'axios';
-import apiClient from '../utils/apiClient';
 import { getDB } from './db';
 import { isOfflineEnabled, getOfflineMode } from './featureFlag';
 import { API_URL } from '../config';
@@ -227,7 +226,7 @@ export async function snapshot() {
   try {
     const db = getDB();
     const all = await db.outbox.orderBy('id').toArray();
-    return all.map(({ body, ...rest }) => rest); // hide bodies in logs
+    return all.map(({ body: _body, ...rest }) => rest); // hide bodies in logs
   } catch { return []; }
 }
 
@@ -246,7 +245,7 @@ export async function listPending() {
       .filter((r) => ['pending', 'inflight', 'failed', 'conflict'].includes(r.status))
       .map((r) => {
         if (r.status === 'conflict') return r; // keep body + server_row
-        const { body, ...rest } = r;
+        const { body: _body, ...rest } = r;
         return rest;
       });
   } catch { return []; }

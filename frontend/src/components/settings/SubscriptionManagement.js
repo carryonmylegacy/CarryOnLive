@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { openStripeCheckout } from '../../utils/stripeRedirect';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import apiClient from '../../utils/apiClient';
 import {
   CreditCard, Loader2, Clock, ChevronRight, ChevronDown, Zap, Shield, X, Check,
-  Crown, Star, Heart, Award, ArrowRight, Users, Mail, Sparkles, Sun
+  Crown, Star, Heart, Award, ArrowRight, Users, Mail, Sparkles
 } from 'lucide-react';
 import { isNative } from '../../services/native';
 import { restoreIAPPurchases } from '../../services/iap';
@@ -111,7 +110,7 @@ export const SubscriptionManagement = ({
   subscriptionStatus,
   refreshSubscription,
   getAuthHeaders,
-  onShowPaywall,
+  _onShowPaywall,
 }) => {
   const navigate = useNavigate();
   const [plans, setPlans] = useState([]);
@@ -171,7 +170,7 @@ export const SubscriptionManagement = ({
   // during the Stripe round-trip.
   const pendingIntent = !currentPlanId ? subscriptionStatus?.pending_intent : null;
   const pendingPlanId = pendingIntent?.plan_id || null;
-  const pendingBilling = pendingIntent?.billing_cycle || null;
+  const _pendingBilling = pendingIntent?.billing_cycle || null;
   const isBeta = subscriptionStatus?.beta_mode;
   const lockedTier = subscriptionStatus?.beneficiary_locked_tier;
   const estateTransitioned = subscriptionStatus?.estate_transitioned || false;
@@ -185,13 +184,13 @@ export const SubscriptionManagement = ({
         setBeneficiaryPlans(res.data.beneficiary_plans || []);
         // Keep the tile checklist in sync with admin Feature Gates config.
         if (res.data.tier_features) setTierFeatures(res.data.tier_features);
-      } catch (e) { /* fallback empty */ }
+      } catch (_e) { /* fallback empty */ }
     };
     const fetchVerification = async () => {
       try {
         const res = await apiClient.get(`${API_URL}/verification/status`, getAuthHeaders());
         setVerificationStatus(res.data);
-      } catch (e) { /* ignore */ }
+      } catch (_e) { /* ignore */ }
     };
     fetchPlans();
     fetchVerification();

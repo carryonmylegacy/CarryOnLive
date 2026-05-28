@@ -15,7 +15,6 @@
  * caller's toast — this helper just returns a summary so the caller
  * knows whether to refresh.
  */
-import axios from 'axios';
 import apiClient from '../../../utils/apiClient';
 import { API_URL } from '../../../config';
 

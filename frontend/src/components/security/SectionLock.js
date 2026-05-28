@@ -1,12 +1,11 @@
 import React, { useState, createContext, useContext, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Lock, Unlock, Eye, EyeOff, KeyRound, CheckCircle2, Loader2, HelpCircle, Hash, Delete, X } from 'lucide-react';
+import { Lock, Unlock, Eye, EyeOff, KeyRound, CheckCircle2, Loader2, HelpCircle, Delete, X } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { toast } from '../../utils/toast';
-import axios from 'axios';
 import apiClient from '../../utils/apiClient';
 import { API_URL } from '../../config';
 
@@ -49,7 +48,7 @@ export const SectionLockProvider = ({ children }) => {
         headers: { Authorization: `Bearer ${token}` }
       });
       setSettings(res.data);
-    } catch (err) {
+    } catch (_err) {
       // Not authenticated or no settings yet
     }
     setLoading(false);

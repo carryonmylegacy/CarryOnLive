@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import axios from 'axios';
 import apiClient from '../../utils/apiClient';
 import { Copy, ExternalLink, Mail, Check, FileText, Edit3, Save, RotateCcw, ChevronDown, ChevronRight, Plus, Trash2, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';

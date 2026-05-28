@@ -20,7 +20,6 @@
  * synchronous reads inside `featureFlag.js`; we keep both in sync.
  */
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
 import apiClient from '../../utils/apiClient';
 import { CloudOff } from 'lucide-react';
 import { API_URL } from '../../config';

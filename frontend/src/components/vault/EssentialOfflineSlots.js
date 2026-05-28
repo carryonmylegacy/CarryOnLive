@@ -1,10 +1,8 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import axios from 'axios';
 import apiClient from '../../utils/apiClient';
-import { Heart, FileText, ShieldCheck, Plus, Users, Loader2, AlertCircle } from 'lucide-react';
+import { Heart, FileText, ShieldCheck, Plus, Users, AlertCircle } from 'lucide-react';
 import { Button } from '../ui/button';
 import { API_URL } from '../../config';
-import { toast } from '../../utils/toast';
 
 /**
  * EssentialOfflineSlots — 4 gold-outlined placeholder cards at the top
@@ -49,7 +47,7 @@ const EssentialOfflineSlots = ({
     try {
       const res = await apiClient.get(`${API_URL}/documents/${estateId}/essential-slots`, getAuthHeaders());
       setSlots(Array.isArray(res.data) ? res.data : []);
-    } catch (err) {
+    } catch (_err) {
       // Quiet failure — slots gracefully render empty if the endpoint
       // isn't reachable (offline / pre-deploy). The rest of the SDV
       // still works.

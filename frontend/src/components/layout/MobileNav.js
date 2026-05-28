@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
-import axios from 'axios';
 import apiClient from '../../utils/apiClient';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -50,7 +49,7 @@ import { API_URL } from '../../config';
 import { filterNavByFeatures } from '../../utils/featureGates';
 import { applyUserMenuOrder } from '../../config/menuRegistry';
 import { usePendingSyncCounts } from '../PendingSyncChip';
-import { DOCK_REGISTRY, ADMIN_PORTALS, scopeArr, hasScope } from './navConfig';
+import { DOCK_REGISTRY, ADMIN_PORTALS, scopeArr } from './navConfig';
 import MobileOtpToggle from './MobileOtpToggle';
 import SignupOtpToggle from './SignupOtpToggle';
 import MobileOfflineToggle from './MobileOfflineToggle';
@@ -61,7 +60,7 @@ export { DOCK_REGISTRY }; // re-export so existing consumers don't break
 const BASE_URL = process.env.REACT_APP_BACKEND_URL;
 
 const MobileNav = () => {
-  const { user, logout, refreshUser, enabledFeatures, setUser, partnerBranding } = useAuth();
+  const { user, logout, refreshUser, enabledFeatures, setUser: _setUser, partnerBranding } = useAuth();
   const cleanLabel = useLabelCleaner();
   // Brand for partner-co-branded labels (CFP/CCP/Core Pillars etc.).
   // Legal text, footers, ™ marks and "powered by" lines stay as CarryOn.
@@ -1088,7 +1087,7 @@ const MobileNav = () => {
                     : ADMIN_PORTALS.filter(p => scopes.includes(p.scope) || (p.altScope && scopes.includes(p.altScope)));
                   if (visiblePortals.length < 1) return null;
                   const currentPath = window.location.pathname;
-                  const activeViewScope = scopes;
+                  const _activeViewScope = scopes;
                   return (
                     <div className="mb-2">
                       <div style={{ fontSize: 14, fontWeight: 700, color: theme === 'dark' ? '#8895A7' : '#475569', letterSpacing: '.06em', textTransform: 'uppercase', marginBottom: 8, paddingLeft: 4 }}>
@@ -1343,7 +1342,7 @@ const MobileNav = () => {
                   data-testid={`mobile-nav-${item.label.toLowerCase()}`}
                   aria-label={item.label}
                 >
-                  {({ isActive: routeActive }) => {
+                  {({ isActive: _routeActive }) => {
                     return (
                       <>
                         <div className="relative">

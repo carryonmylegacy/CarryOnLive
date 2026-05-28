@@ -27,8 +27,6 @@ import {
   Siren,
   Droplets,
   Snowflake,
-  Home,
-  Navigation,
   TriangleAlert,
   Edit3,
   Info,

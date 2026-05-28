@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
-import { Loader2, Sparkles, Plus, CheckCircle2, AlertCircle, X } from 'lucide-react';
+import { Loader2, Sparkles, Plus, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Textarea } from '../ui/textarea';
 import { toast } from '../../utils/toast';
-import axios from 'axios';
 import apiClient from '../../utils/apiClient';
 import { API_URL } from '../../config';
 

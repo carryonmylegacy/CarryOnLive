@@ -7,38 +7,17 @@ import NewChatModal from '../components/chat/NewChatModal';
 import {
   MessageCircle, User, Hash, Circle,
   Loader2, Check, CheckCheck,
-  Pin, FileText, Image, Download,
-  Play, Pause, UserPlus, Pencil, Copy,
-  TextSelect, MapPin,
+  Pin, UserPlus, MapPin,
 } from 'lucide-react';
-import { platformDownload } from '../utils/downloadFile';
 import useVoiceRecorder from '../components/estate-chat/useVoiceRecorder';
 import useOverlayScrollbars from '../hooks/useOverlayScrollbars';
 import { OverlayScrollbars } from 'overlayscrollbars';
-
-/**
- * Resolve the actual scrollable element for a ref that may be attached to
- * an OverlayScrollbars host. The HOST element has overflow:hidden; setting
- * scrollTop on it is a no-op. The real scroller is the internal viewport.
- * When OverlayScrollbars isn't attached (or library is absent), fall back
- * to the host element so this helper works in both cases.
- */
-const _scrollEl = (ref) => {
-  const host = ref?.current;
-  if (!host) return null;
-  try {
-    const inst = OverlayScrollbars(host);
-    return inst?.elements?.()?.viewport || host;
-  } catch {
-    return host;
-  }
-};
 import VoiceMessagePlayer from '../components/estate-chat/VoiceMessagePlayer';
 import { AuthImage, AuthVideo, AuthFileLink, prefetchMedia } from '../components/estate-chat/AuthMedia';
 import ECTSecurityIntro from '../components/estate-chat/ECTSecurityIntro';
 import ImagePreviewModal from '../components/estate-chat/ImagePreviewModal';
 import ECTActionMenu from '../components/estate-chat/ECTActionMenu';
-import { getRecentEmojis, addRecentEmoji, displayEmoji, LEGACY_EMOJI_MAP, EmojiPickerGrid, EmojiPickerButton, EmojiPickerButtonSmall } from '../components/estate-chat/EmojiLibrary';
+import { getRecentEmojis, addRecentEmoji, displayEmoji, EmojiPickerGrid, EmojiPickerButtonSmall } from '../components/estate-chat/EmojiLibrary';
 
 // ── Extracted hooks ────────────────────────────────────────────────────────
 import useECTChannelList from '../components/estate-chat/useECTChannelList';
@@ -60,7 +39,25 @@ import {
 } from '../offline/repos/chatRepo';
 import { enqueue as enqueueOutbox } from '../offline/outbox';
 
-const ECT_POLL_INTERVAL = 8000;
+/**
+ * Resolve the actual scrollable element for a ref that may be attached to
+ * an OverlayScrollbars host. The HOST element has overflow:hidden; setting
+ * scrollTop on it is a no-op. The real scroller is the internal viewport.
+ * When OverlayScrollbars isn't attached (or library is absent), fall back
+ * to the host element so this helper works in both cases.
+ */
+const _scrollEl = (ref) => {
+  const host = ref?.current;
+  if (!host) return null;
+  try {
+    const inst = OverlayScrollbars(host);
+    return inst?.elements?.()?.viewport || host;
+  } catch {
+    return host;
+  }
+};
+
+const _ECT_POLL_INTERVAL = 8000;
 
 // Legacy key→display map — kept for backward-compatible rendering of old reactions
 const REACTION_EMOJIS = {
@@ -174,11 +171,11 @@ export default function EstateChatPage() {
   // ── Extracted hooks ───────────────────────────────────────────────────────
   const channelList = useECTChannelList({ token, navigate, user });
   const {
-    channels, setChannels, activeChannel, setActiveChannel,
+    channels, setChannels: _setChannels, activeChannel, setActiveChannel,
     showChannelList, setShowChannelList,
     swipedChannel, setSwipedChannel,
     deleteConfirm, setDeleteConfirm,
-    selectMode, setSelectMode, selectedChannels, setSelectedChannels,
+    selectMode, setSelectMode, selectedChannels, setSelectedChannels: _setSelectedChannels,
     bulkDeleting, bulkDeleteConfirm, setBulkDeleteConfirm, showHeaderMembers, setShowHeaderMembers,
     showListMembersId, setShowListMembersId, listMembersPosRef,
     fetchChannels, openChannel: _openChannel, handleBackOut: _handleBackOut,
@@ -236,7 +233,7 @@ export default function EstateChatPage() {
     showActionEmojiPicker, setShowActionEmojiPicker,
     showInlineEmojiPicker, setShowInlineEmojiPicker,
     replyTo, setReplyTo, editingMsg, setEditingMsg,
-    poppingMsgId, setPoppingMsgId,
+    poppingMsgId, setPoppingMsgId: _setPoppingMsgId,
     readStatus, setReadStatus, pinnedMsgs, setPinnedMsgs,
     showPinned, setShowPinned, typers, setTypers,
     msgLongPressTriggered,
@@ -266,7 +263,7 @@ export default function EstateChatPage() {
   });
   const {
     uploading, pendingFiles, setPendingFiles,
-    voicePreview, setVoicePreview,
+    voicePreview, setVoicePreview: _setVoicePreview,
     uploadMultipleFiles, sendVoiceMessage, stopAndPreview, discardPreview,
   } = media;
 
@@ -759,7 +756,7 @@ export default function EstateChatPage() {
     setSending(true);
     const content = draft.trim();
     const replyToId = replyTo?.id || null;
-    const mode = getOfflineMode();
+    const _mode = getOfflineMode();
 
     // Airplane-mode path (flag-agnostic): stamp the transcript with an
     // optimistic local message, enqueue the POST in the outbox, and
@@ -797,7 +794,7 @@ export default function EstateChatPage() {
         toast.success('Message queued — will send when you reconnect.');
         const doScroll = () => { const sc = _scrollEl(scrollContainerRef); if (sc) sc.scrollTop = sc.scrollHeight; };
         requestAnimationFrame(doScroll);
-      } catch (err) {
+      } catch (_err) {
         toast.error('Could not queue message offline.');
       } finally { setSending(false); }
       return;
@@ -850,7 +847,7 @@ export default function EstateChatPage() {
   };
 
   // ── Member helpers ────────────────────────────────────────────────────────
-  const addMemberToChannel = async (channelId, memberId, estateId) => {
+  const addMemberToChannel = async (channelId, memberId, _estateId) => {
     try {
       const channel = channels.find(c => c.id === channelId);
       if (!channel) return;
@@ -1051,7 +1048,7 @@ export default function EstateChatPage() {
                         {hasReactions && reactingMsgId !== msg.id && (
                           <button className="absolute z-10 flex items-center" style={{ top: '-10px', left: '-4px' }}
                             onClick={(e) => { e.stopPropagation(); setReactionDetailId(reactionDetailId === msg.id ? null : msg.id); }} data-testid={`reaction-stack-${msg.id}`}>
-                            {Object.entries(reactionGroups).map(([emoji, reactors], i) => {
+                            {Object.entries(reactionGroups).map(([emoji, _reactors], i) => {
                               const cfg = REACTION_EMOJIS[emoji];
                               return <span key={emoji} className="text-base" style={{ marginLeft: i > 0 ? '-6px' : '0', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))' }}>{cfg?.display || emoji}</span>;
                             })}

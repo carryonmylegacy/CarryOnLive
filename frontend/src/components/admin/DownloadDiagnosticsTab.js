@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import axios from 'axios';
 import apiClient from '../../utils/apiClient';
 import { Loader2, Download, RefreshCw, Smartphone, Monitor, Tablet, Apple } from 'lucide-react';
 import { Button } from '../ui/button';

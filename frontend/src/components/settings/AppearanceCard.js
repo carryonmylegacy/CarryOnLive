@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import apiClient from '../../utils/apiClient';
 import { toast } from '../../utils/toast';
 import { useAuth } from '../../contexts/AuthContext';
@@ -149,11 +148,11 @@ const AppearanceCard = ({ isStaff }) => {
                   if (checked) {
                     localStorage.removeItem('carryon_onboarding_dismissed');
                     localStorage.removeItem('carryon_welcome_guided_shown');
-                    try { await apiClient.post(`${API_URL}/onboarding/reset`, {}, getAuthHeaders()); } catch (e) { /* ignore */ }
+                    try { await apiClient.post(`${API_URL}/onboarding/reset`, {}, getAuthHeaders()); } catch (_e) { /* ignore */ }
                   } else {
                     localStorage.setItem('carryon_onboarding_dismissed', 'true');
                     localStorage.setItem('carryon_welcome_guided_shown', 'true');
-                    try { await apiClient.post(`${API_URL}/onboarding/dismiss`, { hide_resume_banner: true }, getAuthHeaders()); } catch (e) { /* ignore */ }
+                    try { await apiClient.post(`${API_URL}/onboarding/dismiss`, { hide_resume_banner: true }, getAuthHeaders()); } catch (_e) { /* ignore */ }
                   }
                   toast.success(checked ? 'Setup Guide turned on — saved.' : 'Setup Guide hidden — saved.');
                 }}

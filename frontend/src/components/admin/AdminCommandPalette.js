@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import apiClient from '../../utils/apiClient';
 import {
   Command,
@@ -84,7 +83,7 @@ export function AdminCommandPalette({ tabs = [], operatorMode = false }) {
     return () => debounceRef.current && clearTimeout(debounceRef.current);
   }, [query, open, getAuthHeaders]);
 
-  const navigableTabs = useMemo(
+  const _navigableTabs = useMemo(
     () => tabs.filter(t => !t.sectionLabel && t.path),
     [tabs]
   );

@@ -19,7 +19,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import axios from 'axios';
 import apiClient from '../../utils/apiClient';
 import { Wifi, WifiOff, Loader2 } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';

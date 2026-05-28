@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
 import apiClient from '../../utils/apiClient';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
@@ -13,7 +12,6 @@ import { Input } from '../../components/ui/input';
 import { ScrollArea } from '../../components/ui/scroll-area';
 import { API_URL } from '../../config';
 import { toast } from '../../utils/toast';
-import { downloadFile, platformDownload } from '../../utils/downloadFile';
 import { openPdfPreview } from '../../utils/openPdfPreview';
 import CachedPdfIcon from '../../components/CachedPdfIcon';
 

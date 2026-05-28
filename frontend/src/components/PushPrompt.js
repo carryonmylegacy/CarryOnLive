@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Bell, X } from 'lucide-react';
 import { Button } from './ui/button';
 import { toast } from '../utils/toast';
-import axios from 'axios';
 import apiClient from '../utils/apiClient';
 import { API_URL } from '../config';
 

@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import apiClient from '../../utils/apiClient';
 import {
   Gift, CheckCircle2, XCircle, Clock, Loader2, ChevronRight,

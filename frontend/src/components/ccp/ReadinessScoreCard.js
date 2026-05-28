@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
 import apiClient from '../../utils/apiClient';
 import { ChevronDown, ChevronUp, Check, Circle, ShieldAlert } from 'lucide-react';
 import { API_URL } from '../../config';
@@ -22,7 +21,7 @@ export default function ReadinessScoreCard({ estateId, refreshKey = 0 }) {
         headers: { Authorization: `Bearer ${token}` },
       });
       setData(res.data);
-    } catch (e) {
+    } catch (_e) {
       // silent — surface only when expanded
     }
   }, [estateId]);

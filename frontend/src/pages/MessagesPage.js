@@ -17,17 +17,10 @@ import {
   Loader2,
   Camera,
   StopCircle,
-  Gift,
-  GraduationCap,
-  Heart,
   Star,
   Pencil,
   CalendarDays,
   Calendar,
-  Download,
-  ArrowLeft,
-  ArrowRight,
-  Check,
   Paperclip,
   FileText
 } from 'lucide-react';
@@ -156,7 +149,7 @@ const MessagesPage = () => {
   const [videoRemoved, setVideoRemoved] = useState(false);
   const [voiceRemoved, setVoiceRemoved] = useState(false);
   const [attachmentFile, setAttachmentFile] = useState(null);
-  const [attachmentRemoved, setAttachmentRemoved] = useState(false);
+  const [_attachmentRemoved, setAttachmentRemoved] = useState(false);
   const attachmentInputRef = useRef(null);
   const [cameraReady, setCameraReady] = useState(false);
   const [countdown, setCountdown] = useState(null);

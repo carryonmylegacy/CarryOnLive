@@ -25,13 +25,6 @@ import { initErrorReporter, reportError } from './utils/errorReporter';
 import { checkForUpdates } from './utils/versionCheck';
 import { Loader2 } from 'lucide-react';
 
-const CARRYON_BUILD = '2026-04-28T00:00:00Z-pre-launch-refactor';
-if (typeof window !== 'undefined' && !window.__CARRYON_BUILD_LOGGED) {
-  window.__CARRYON_BUILD = CARRYON_BUILD;
-  window.__CARRYON_BUILD_LOGGED = true;
-  console.log(`%c[CarryOn] Build: ${CARRYON_BUILD}`, 'color: #d4af37; font-weight: bold');
-}
-
 // Eagerly loaded (needed immediately)
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
@@ -45,6 +38,18 @@ import LandingPage from './pages/LandingPage';
 // but the chunk is cached for subsequent visits.
 import DashboardPage from './pages/DashboardPage';
 
+import TransitionGate from './components/TransitionGate';
+
+import UsernameReviewModal from './components/UsernameReviewModal';
+import FeatureGate from './components/FeatureGate';
+
+const CARRYON_BUILD = '2026-04-28T00:00:00Z-pre-launch-refactor';
+if (typeof window !== 'undefined' && !window.__CARRYON_BUILD_LOGGED) {
+  window.__CARRYON_BUILD = CARRYON_BUILD;
+  window.__CARRYON_BUILD_LOGGED = true;
+  console.log(`%c[CarryOn] Build: ${CARRYON_BUILD}`, 'color: #d4af37; font-weight: bold');
+}
+
 // Lazy-loaded pages — only downloaded when navigated to
 const VaultPage = lazy(() => import('./pages/VaultPage'));
 const MessagesPage = lazy(() => import('./pages/MessagesPage'));
@@ -55,7 +60,7 @@ const AcceptInvitationPage = lazy(() => import('./pages/AcceptInvitationPage'));
 const TrusteeClaimPage = lazy(() => import('./pages/TrusteeClaimPage'));
 // EditBeneficiaryPage removed — editing now handled by SlidePanel in BeneficiariesPage
 const EditMilestoneMessagePage = lazy(() => import('./pages/EditMilestoneMessagePage'));
-const GuardianPage = lazy(() => import('./pages/GuardianPage'));
+const _GuardianPage = lazy(() => import('./pages/GuardianPage'));
 const ChecklistPage = lazy(() => import('./pages/ChecklistPage'));
 const OfflineDebugPage = lazy(() => import('./pages/OfflineDebugPage'));
 const TrusteePage = lazy(() => import('./pages/TrusteePage'));
@@ -79,8 +84,6 @@ const FoundersCirclePage = lazy(() => import('./pages/FoundersCirclePage'));
 const OperationsPage = lazy(() => import('./pages/OperationsPage'));
 const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage'));
 const TermsPage = lazy(() => import('./pages/TermsPage'));
-
-import TransitionGate from './components/TransitionGate';
 
 // Beneficiary Pages
 const BeneficiaryDashboardPage = lazy(() => import('./pages/beneficiary/BeneficiaryDashboardPage'));
@@ -128,9 +131,6 @@ const SharedPlanPage = lazy(() => import('./pages/SharedPlanPage'));
 const SpeakWithUsPage = lazy(() => import('./pages/SpeakWithUsPage'));
 const SharePage = lazy(() => import('./pages/SharePage'));
 const SharedBinderPage = lazy(() => import('./pages/SharedBinderPage'));
-
-import UsernameReviewModal from './components/UsernameReviewModal';
-import FeatureGate from './components/FeatureGate';
 
 // Loading fallback — only visible after 180ms to avoid flashing on cache hits.
 // This eliminates the sub-100ms "white-out" that feels JV during navigation.

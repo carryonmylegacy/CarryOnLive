@@ -24,7 +24,7 @@ const AdminSectionLayout = ({
   children,
 }) => {
   const navigate = useNavigate();
-  const location = useLocation();
+  const _location = useLocation();
   const section = ADMIN_SECTIONS.find(s => s.key === sectionKey);
   if (!section) return children || null;
 

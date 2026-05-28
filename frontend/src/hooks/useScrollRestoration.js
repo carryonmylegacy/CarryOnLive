@@ -41,7 +41,6 @@
  */
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import axios from 'axios';
 
 import apiClient from '../utils/apiClient';
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;

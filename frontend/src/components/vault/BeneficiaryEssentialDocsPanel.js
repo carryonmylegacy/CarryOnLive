@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
 import apiClient from '../../utils/apiClient';
-import { Heart, FileText, ShieldCheck, Download, Eye, WifiOff, Loader2, CheckCircle2 } from 'lucide-react';
+import { Heart, FileText, ShieldCheck, Download, WifiOff, Loader2, CheckCircle2 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Switch } from '../ui/switch';
 import { API_URL } from '../../config';
@@ -176,7 +175,7 @@ const BeneficiaryEssentialDocsPanel = ({ estateId, getAuthHeaders }) => {
         responseType: 'blob',
       });
       await iosSafeDownload(res.data, doc.name || 'document', doc.name || 'Document', 'beneficiary_essential_doc');
-    } catch (err) {
+    } catch (_err) {
       toast.error('Download failed.');
     } finally {
       setDownloading(null);

@@ -9,7 +9,7 @@
 import React from 'react';
 import { Settings, Info, Pencil, X } from 'lucide-react';
 import { AvatarCircle } from '../../AvatarCircle';
-import { ROLE_PALETTE, getTypeMeta, getEntityPalette } from '../../../config/entityCatalog';
+import { getTypeMeta, getEntityPalette } from '../../../config/entityCatalog';
 import {
   BUCKET_ICON,
   ENTITY_W,

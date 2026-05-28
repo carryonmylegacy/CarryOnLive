@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { isNative } from '../services/native';
-import axios from 'axios';
 import apiClient from '../utils/apiClient';
 import { toast } from '../utils/toast';
 import { API_URL } from '../config';

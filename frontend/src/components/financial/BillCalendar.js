@@ -11,7 +11,7 @@ const CATEGORY_COLORS = {
 
 const getCatColor = (cat) => CATEGORY_COLORS[cat] || '#d4af37';
 
-const BillCalendar = ({ bills, month, onMonthChange, selectedDay, onDaySelect, categoryLabels }) => {
+const BillCalendar = ({ bills, month, onMonthChange, selectedDay, onDaySelect, categoryLabels: _categoryLabels }) => {
   const year = month.getFullYear();
   const mo = month.getMonth();
   const today = new Date();

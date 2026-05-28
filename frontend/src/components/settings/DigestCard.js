@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
 import apiClient from '../../utils/apiClient';
 import { toast } from '../../utils/toast';
 import { useAuth } from '../../contexts/AuthContext';
@@ -44,7 +43,7 @@ const DigestCard = () => {
       if (updates.frequency) setDigestFrequency(updates.frequency);
       if (updates.sections) setDigestSections(updates.sections);
       await apiClient.put(`${API_URL}/digest/preferences`, payload, getAuthHeaders());
-    } catch (e) { toast.error('Failed to update digest preferences'); }
+    } catch (_e) { toast.error('Failed to update digest preferences'); }
     finally { setDigestSaving(false); }
   }, [getAuthHeaders]);
 
@@ -53,7 +52,7 @@ const DigestCard = () => {
     try {
       await apiClient.put(`${API_URL}/digest/preferences`, { enabled: checked }, getAuthHeaders());
       setWeeklyDigest(checked);
-    } catch (e) { toast.error('Failed to update digest settings'); }
+    } catch (_e) { toast.error('Failed to update digest settings'); }
     finally { setDigestLoading(false); }
   }, [getAuthHeaders]);
 
@@ -234,7 +233,7 @@ const DigestCard = () => {
                   try {
                     await apiClient.post(`${API_URL}/digest/preview-enhanced`, {}, getAuthHeaders());
                     toast.success(`Update sent to ${[user?.email, ...additionalRecipients].filter(Boolean).join(', ')}`);
-                  } catch (e) {
+                  } catch (_e) {
                     toast.error('Could not send update');
                   } finally { setDigestSending(false); }
                 }}

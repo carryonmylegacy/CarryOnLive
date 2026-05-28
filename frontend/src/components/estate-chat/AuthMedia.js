@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Loader2, FileText, Download } from 'lucide-react';
-import { toast } from '../../utils/toast';
 import { platformDownload } from '../../utils/downloadFile';
 import { API_URL } from '../../config';
 

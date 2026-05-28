@@ -167,7 +167,7 @@ function searchEmojis(query) {
   return [...matched];
 }
 
-export function EmojiPickerGrid({ onSelect, onClose, isOwn, searchPosition = 'top' }) {
+export function EmojiPickerGrid({ onSelect, onClose: _onClose, isOwn: _isOwn, searchPosition = 'top' }) {
   const [search, setSearch] = useState('');
   const scrollRef = useRef(null);
   const searchRef = useRef(null);

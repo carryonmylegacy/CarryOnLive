@@ -1,5 +1,4 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import axios from 'axios';
 import apiClient from '../../utils/apiClient';
 import { Card, CardContent } from '../ui/card';
 import { Input } from '../ui/input';
@@ -75,7 +74,7 @@ export function VoicesTab({ getAuthHeaders }) {
         setItems(listRes.data.items || []);
         setTotal(listRes.data.total || 0);
         setPendingCount(pendingRes.data?.pending || 0);
-      } catch (e) {
+      } catch (_e) {
         toast.error('Failed to load Voices');
       } finally {
         setLoading(false);

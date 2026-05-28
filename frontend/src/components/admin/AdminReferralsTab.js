@@ -7,7 +7,6 @@
  */
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import apiClient from '../../utils/apiClient';
 import { Loader2, Trophy, Users, MousePointerClick, Sparkles } from 'lucide-react';
 import { API_URL } from '../../config';
 

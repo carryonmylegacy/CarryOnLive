@@ -6,8 +6,7 @@ import { useAuth, useBrand } from '../contexts/AuthContext';
 import { useLabelCleaner, useBrandedLabelBuilder } from '../utils/brandLabel';
 import { cachedGet } from '../utils/apiCache';
 import {
-  DollarSign, Plus, Loader2, ArrowLeft, Search, Sparkles,
-  ChevronRight, ChevronLeft, Receipt, Landmark, PiggyBank, TrendingUp, Building2, FileDown,
+  DollarSign, Plus, Loader2, Search, Sparkles, Receipt, Landmark, PiggyBank, Building2, FileDown,
   Network,
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
@@ -19,7 +18,7 @@ import CachedPdfIcon from '../components/CachedPdfIcon';
 // STATIC import — dynamic await import() chunks fail to fetch when
 // the user is offline, breaking delete/designation/category mutations.
 import { mutateWithOutbox } from '../utils/offlineMutation';
-import { SectionLockBanner, SectionLockedOverlay } from '../components/security/SectionLock';
+import { SectionLockBanner } from '../components/security/SectionLock';
 import { Skeleton } from '../components/ui/skeleton';
 import SlidePanel from '../components/SlidePanel';
 import SortControl, { makeSorter } from '../components/ui/SortControl';
@@ -81,12 +80,12 @@ const ACCOUNT_CATEGORY_LABELS = {
 };
 
 const FinancialPortalPage = () => {
-  const { user, getAuthHeaders } = useAuth();
+  const { user: _user, getAuthHeaders } = useAuth();
   const brand = useBrand();
-  const cleanLabel = useLabelCleaner();
+  const _cleanLabel = useLabelCleaner();
   const buildBrandedLabel = useBrandedLabelBuilder();
   const navigate = useNavigate();
-  const location = useLocation();
+  const _location = useLocation();
 
   // --- Synchronous cache hydration ------------------------------------------
   // CFP previously always rendered a skeleton placeholder for 2-3 s on every
@@ -286,7 +285,7 @@ const FinancialPortalPage = () => {
   // entity in the org chart (assets/debts roll up into the totals on the
   // backend, so the cards above need to refresh without a full portal
   // reload).
-  const refreshSummary = async () => {
+  const _refreshSummary = async () => {
     if (!estate?.id) return;
     try {
       const headers = (await getAuthHeaders()).headers;
@@ -442,7 +441,7 @@ const FinancialPortalPage = () => {
   // cancel / delete item only / delete item + linked DAV credential.
   const handleDelete = (type, id) => {
     const mod = moduleForType(type);
-    const list = mod && SETTER_BY_MODULE[mod] ? SETTER_BY_MODULE[mod].statePeek?.() : null;
+    const _list = mod && SETTER_BY_MODULE[mod] ? SETTER_BY_MODULE[mod].statePeek?.() : null;
     // Read the most recent in-memory list to find the dav link.
     let item = null;
     if (mod === 'bills') item = bills.find(b => b.id === id);

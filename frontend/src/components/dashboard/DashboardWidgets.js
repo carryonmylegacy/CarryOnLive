@@ -101,7 +101,7 @@ export const SpeedometerGauge = ({ score, id = 'main', labelText, labelColor }) 
  * of label line-count. This is the contract that keeps the 6
  * chiclets visually identical.
  */
-export const StatCard = ({ icon: Icon, value, label, cardClass, onClick, className = '', sectionKey, compact = false }) => (
+export const StatCard = ({ icon: Icon, value, label, cardClass, onClick, className = '', sectionKey: _sectionKey, compact = false }) => (
   <div
     className={`${cardClass} rounded-2xl ${compact ? 'p-3 lg:p-3' : 'p-4 lg:p-5'} cursor-pointer transition-transform duration-150 active:scale-[0.96] lg:hover:scale-[1.03] lg:hover:shadow-xl flex flex-col items-center justify-center w-full h-full overflow-hidden ${className}`}
     onClick={onClick}

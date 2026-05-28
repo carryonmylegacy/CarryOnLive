@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
 import apiClient from '../utils/apiClient';
 import { useAuth } from '../contexts/AuthContext';
 import { Crown, Shield, Check, Star, ChevronRight, ChevronDown, Loader2,
@@ -101,7 +100,7 @@ export default function SubscriptionPaywall({ onDismiss }) {
                   window.history.replaceState({}, '', window.location.pathname);
                   if (refreshSubscription) await refreshSubscription();
                 }
-              } catch (e) { /* ignore retry errors */ }
+              } catch (_e) { /* ignore retry errors */ }
               setConfirmingPayment(false);
             }, 5000);
             return;

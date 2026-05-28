@@ -13,7 +13,6 @@
  * that requires their family to step in temporarily.
  */
 import React, { useState } from 'react';
-import axios from 'axios';
 import apiClient from '../utils/apiClient';
 import { Eye, EyeOff, Loader2, Plane } from 'lucide-react';
 import { Button } from './ui/button';

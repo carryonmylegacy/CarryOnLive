@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import apiClient from '../../utils/apiClient';
 import { useAuth, useBrand } from '../../contexts/AuthContext';
 import { useLabelCleaner, useBrandedLabelBuilder } from '../../utils/brandLabel';
 import {
   DollarSign, Receipt, Landmark, PiggyBank, Search, CheckCircle2,
-  ChevronLeft, ChevronRight, Loader2, TrendingUp, TrendingDown,
+  ChevronLeft, ChevronRight, Loader2,
   XCircle, Phone, ExternalLink, ClipboardList, X, Network,
 } from 'lucide-react';
 import { Card, CardContent } from '../../components/ui/card';
@@ -68,9 +67,9 @@ const fmt = (n) => {
 };
 
 const BeneficiaryFinancialPage = () => {
-  const { user, getAuthHeaders } = useAuth();
+  const { user: _user, getAuthHeaders } = useAuth();
   const brand = useBrand();
-  const cleanLabel = useLabelCleaner();
+  const _cleanLabel = useLabelCleaner();
   const buildBrandedLabel = useBrandedLabelBuilder();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('bills');

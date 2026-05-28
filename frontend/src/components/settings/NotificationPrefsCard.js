@@ -11,7 +11,7 @@ export const NotificationPrefsCard = () => {
   const [loading, setLoading] = useState(true);
   const [prefs, setPrefs] = useState(null);
   const [categories, setCategories] = useState([]);
-  const [saving, setSaving] = useState(false);
+  const [_saving, setSaving] = useState(false);
 
   useEffect(() => {
     (async () => {

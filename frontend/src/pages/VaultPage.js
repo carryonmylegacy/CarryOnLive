@@ -18,7 +18,6 @@ import {
   Search,
   FolderLock,
   Heart,
-  ArrowLeft,
   Sparkles,
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
@@ -31,7 +30,6 @@ import { platformDownload, downloadFile as legacyDownloadFile } from '../utils/d
 import { SectionLockBanner, SectionLockedOverlay } from '../components/security/SectionLock';
 import OfflineStorageWidget from '../components/dashboard/OfflineStorageWidget';
 import { Skeleton } from '../components/ui/skeleton';
-import DocThumbnail from '../components/DocThumbnail';
 import { ReturnPopup } from '../components/GuidedActivation';
 import { API_URL } from '../config';
 import { getLocalVaultItems, upsertLocalVaultItems } from '../offline/repos/vaultRepo';
@@ -45,8 +43,8 @@ import VaultUploadPanel from '../components/vault/VaultUploadPanel';
 import VaultUnlockModal from '../components/vault/VaultUnlockModal';
 import VaultEditPanel from '../components/vault/VaultEditPanel';
 import { VaultSetLockModal, VaultRemoveLockModal, VaultBackupCodeModal } from '../components/vault/VaultLockModals';
-const PDFViewerModal = lazy(() => import('../components/PDFViewerModal'));
 import { useDraftState } from '../hooks/useDraftState';
+const PDFViewerModal = lazy(() => import('../components/PDFViewerModal'));
 
 const categories = [
   { id: 'all', label: 'All', icon: FolderOpen },

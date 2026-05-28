@@ -7,8 +7,7 @@
  * All panels share the same primitives (gold-button, input/textarea
  * surface styles) so they feel like one coherent product.
  */
-import React, { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
+import React, { useState, useEffect } from 'react';
 import apiClient from '../../utils/apiClient';
 import { toast } from '../../utils/toast';
 import { Plus, Trash2, Save, Mail, AlertTriangle, Calendar, Check, Pencil } from 'lucide-react';
@@ -43,7 +42,7 @@ export function HouseholdRosterPanel({ estateId, onDirty }) {
         if (cancelled) return;
         setBenefs(benefRes.data || []);
         setSelectedIds(hhRes.data?.beneficiary_ids || []);
-      } catch (e) {
+      } catch (_e) {
         // silent — empty state below
       } finally {
         if (!cancelled) setLoaded(true);
@@ -66,7 +65,7 @@ export function HouseholdRosterPanel({ estateId, onDirty }) {
       );
       toast.success(`Household set — ${selectedIds.length} member${selectedIds.length === 1 ? '' : 's'}`);
       onDirty?.();
-    } catch (e) {
+    } catch (_e) {
       toast.error('Failed to save household');
     } finally { setSaving(false); }
   };
@@ -213,7 +212,7 @@ export function GoBagPanel({ estateId, onDirty }) {
       setItems(clean);
       onDirty?.();
       return true;
-    } catch (e) {
+    } catch (_e) {
       toast.error('Failed to save go-bag');
       return false;
     } finally { setSaving(false); }
@@ -473,7 +472,7 @@ export function RendezvousPanel({ estateId, onDirty }) {
       await apiClient.put(`${API_URL}/ccp/rendezvous/${estateId}`, data, auth());
       toast.success('Meetup points saved');
       onDirty?.();
-    } catch (e) {
+    } catch (_e) {
       toast.error('Failed to save');
     } finally { setSaving(false); }
   };
@@ -530,7 +529,7 @@ export function OutOfAreaPanel({ estateId, onDirty }) {
       await apiClient.put(`${API_URL}/ccp/out-of-area/${estateId}`, data, auth());
       toast.success('Out-of-area contact saved');
       onDirty?.();
-    } catch (e) {
+    } catch (_e) {
       toast.error('Failed to save');
     } finally { setSaving(false); }
   };
@@ -599,7 +598,7 @@ export function DrillPanel({ estateId, plans, onDone }) {
       const h = await apiClient.get(`${API_URL}/ccp/drill/history/${estateId}`, auth());
       setHistory(h.data || []);
       onDone?.();
-    } catch (e) {
+    } catch (_e) {
       toast.error('Failed to run drill');
     } finally { setSending(false); }
   };
@@ -700,7 +699,7 @@ export function ActivationPanel({ estateId, plans, rendezvous, onDone }) {
       const r = await apiClient.get(`${API_URL}/ccp/activations/${estateId}`, auth());
       setRecent((r.data || []).find(a => !a.ended_at) || null);
       onDone?.();
-    } catch (e) {
+    } catch (_e) {
       toast.error('Failed to activate');
     } finally { setActivating(false); }
   };
@@ -713,7 +712,7 @@ export function ActivationPanel({ estateId, plans, rendezvous, onDone }) {
       toast.success('Activation closed');
       setRecent(null);
       onDone?.();
-    } catch (e) { toast.error('Failed to close'); }
+    } catch (_e) { toast.error('Failed to close'); }
   };
 
   return (

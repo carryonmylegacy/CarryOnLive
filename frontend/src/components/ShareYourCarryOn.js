@@ -6,7 +6,6 @@
  * multi-layer elevation shadow, and a draggable scroll indicator.
  */
 import React, { useState, useCallback, useEffect } from 'react';
-import axios from 'axios';
 import apiClient from '../utils/apiClient';
 import { Share2 } from 'lucide-react';
 import { API_URL, BASE_URL } from '../config';

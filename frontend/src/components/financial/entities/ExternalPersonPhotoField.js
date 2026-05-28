@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from 'react';
-import axios from 'axios';
 import apiClient from '../../../utils/apiClient';
 import { Camera, Loader2, User as UserIcon, Check, X } from 'lucide-react';
 import { API_URL } from '../../../config';

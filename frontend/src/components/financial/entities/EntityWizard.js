@@ -10,10 +10,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import SlidePanel from '../../SlidePanel';
 import {
-  Building2, Shield, Landmark, Home, User as UserIcon, UserCheck, Settings,
-  ChevronLeft, Loader2, HelpCircle, Plus, Trash2,
+  Building2, Shield, Landmark, Home, User as UserIcon, UserCheck, Settings, Loader2, HelpCircle, Plus, Trash2,
 } from 'lucide-react';
-import axios from 'axios';
 import apiClient from '../../../utils/apiClient';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useLabelCleaner } from '../../../utils/brandLabel';
@@ -25,7 +23,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { toast } from '../../../utils/toast';
 import { API_URL } from '../../../config';
 import {
-  BUCKETS, TYPES, ROLE_OPTIONS, rolesForCategory, isEquityRole, FORMATION_STATES, getTypeMeta,
+  BUCKETS, TYPES, rolesForCategory, isEquityRole, FORMATION_STATES, getTypeMeta,
 } from '../../../config/entityCatalog';
 import DocumentLinker from './DocumentLinker';
 import FinancialFields from './FinancialFields';
@@ -308,7 +306,7 @@ export default function EntityWizard({
     } else if (step === 3) handleSave();
   };
 
-  const handleBack = () => {
+  const _handleBack = () => {
     if (step === 1) {
       // Two-stage step 1: if we're in the type-picker sub-step, go
       // back to the bucket-picker; otherwise actually cancel.

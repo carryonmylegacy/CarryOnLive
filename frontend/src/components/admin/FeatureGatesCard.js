@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
 import apiClient from '../../utils/apiClient';
-import { Sliders, Lock, Globe, Loader2, AlertTriangle, Check, Shield } from 'lucide-react';
+import { Sliders, Globe, Loader2, AlertTriangle, Check, Shield } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { Switch } from '../ui/switch';
@@ -49,7 +48,7 @@ export const FeatureGatesCard = ({ getAuthHeaders }) => {
       setGates(JSON.parse(JSON.stringify(res.data.gates || {})));
       setSavedGates(JSON.parse(JSON.stringify(res.data.gates || {})));
       setHasChanges(false);
-    } catch (err) {
+    } catch (_err) {
       toast.error('Failed to load feature gates');
     }
     setLoading(false);

@@ -3,7 +3,6 @@ import { Copy, Trash2, Loader2, Link2, CheckCircle, XCircle, Plus, UserCheck, Us
 import { Card, CardContent } from '../ui/card';
 import { toast } from '../../utils/toast';
 import { API_URL } from '../../config';
-import axios from 'axios';
 
 import apiClient from '../../utils/apiClient';
 export const FounderInvitesTab = ({ onPendingChange }) => {

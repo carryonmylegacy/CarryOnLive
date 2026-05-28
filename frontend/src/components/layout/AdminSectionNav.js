@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ChevronDown } from 'lucide-react';
-import { ADMIN_SECTIONS, sectionRgb, visibleAdminSections } from '../../config/adminSections';
+import { sectionRgb, visibleAdminSections } from '../../config/adminSections';
 import { useTheme } from '../../contexts/ThemeContext';
 
 /**

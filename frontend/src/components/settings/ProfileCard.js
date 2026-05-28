@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import apiClient from '../../utils/apiClient';
 import { toast } from '../../utils/toast';
 import { useAuth } from '../../contexts/AuthContext';
@@ -11,7 +10,6 @@ import { Separator } from '../ui/separator';
 import { PhotoPicker } from '../PhotoPicker';
 import { getLocalProfile, upsertLocalProfile } from '../../offline/repos/profileRepo';
 import { fetchAndStoreImageBlob } from '../../offline/imageBlobsRepo';
-import { getOfflineMode } from '../../offline/featureFlag';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL + '/api';
 

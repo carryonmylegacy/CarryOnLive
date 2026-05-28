@@ -14,7 +14,6 @@
  * over with the same data + Stripe / Apple-IAP rails.
  */
 import React, { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
 import apiClient from '../../utils/apiClient';
 import { Link } from 'react-router-dom';
 import { Check, Loader2, Crown, Star, Shield, Award, Heart, Sparkles, Sun, ChevronDown } from 'lucide-react';

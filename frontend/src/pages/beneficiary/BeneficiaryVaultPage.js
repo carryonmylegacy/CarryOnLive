@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import axios from 'axios';
 import apiClient from '../../utils/apiClient';
 import { useAuth } from '../../contexts/AuthContext';
-import { FolderLock, Lock, FileText, Search, ChevronLeft, Download, Eye, Loader2 } from 'lucide-react';
+import { FolderLock, Lock, FileText, Search, Download, Eye, Loader2 } from 'lucide-react';
 import { Skeleton } from '../../components/ui/skeleton';
 import PDFViewerModal from '../../components/PDFViewerModal';
 import BeneficiaryEssentialDocsPanel from '../../components/vault/BeneficiaryEssentialDocsPanel';
@@ -28,7 +27,7 @@ const BeneficiaryVaultPage = () => {
   const [previewLoading, setPreviewLoading] = useState(false);
   const [downloading, setDownloading] = useState(null);
 
-  const PRE_TRANSITION_CATEGORIES = ['living_will', 'poa'];
+  const _PRE_TRANSITION_CATEGORIES = ['living_will', 'poa'];
 
   useEffect(() => { fetchDocs();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps

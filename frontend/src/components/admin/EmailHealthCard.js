@@ -7,7 +7,6 @@
  * migrations) before users complain that emails aren't arriving.
  */
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
 import apiClient from '../../utils/apiClient';
 import { Loader2, Mail, RefreshCw, CheckCircle2, AlertTriangle, XCircle } from 'lucide-react';
 import { API_URL } from '../../config';

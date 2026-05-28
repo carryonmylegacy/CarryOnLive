@@ -9,12 +9,11 @@
 import { useState, useRef } from 'react';
 import { toast } from '../../utils/toast';
 import { API_URL } from '../../config';
-import { addRecentEmoji } from './EmojiLibrary';
 
 export default function useECTMessageActions({
   token, user, messages, activeChannel,
   fetchMessages, fetchChannels,
-  scrollContainerRef, inputRef,
+  _scrollContainerRef, inputRef: _inputRef,
   previewGuardRef,
 }) {
   const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };

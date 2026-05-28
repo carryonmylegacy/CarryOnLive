@@ -6,7 +6,7 @@ import { useAuth, useBrand } from '../contexts/AuthContext';
 import { useLabelCleaner, useBrandedLabelBuilder, joinBrandSuffix } from '../utils/brandLabel';
 import { cachedGet } from '../utils/apiCache';
 import { isFeatureKeyEnabled, isFeatureEnabled } from '../utils/featureGates';
-import { SpeedometerGauge, StatCard, SectionStatCard } from '../components/dashboard/DashboardWidgets';
+import { SectionStatCard } from '../components/dashboard/DashboardWidgets';
 import { ReadinessDial } from '../components/dashboard/ReadinessDial';
 import { useDashboardPrefs } from '../hooks/useDashboardPrefs';
 import { 
@@ -26,8 +26,6 @@ import {
   Play,
   DollarSign,
   Receipt,
-  TrendingUp,
-  ShieldAlert,
   Landmark, Lock, Heart,
   Settings,
 } from 'lucide-react';

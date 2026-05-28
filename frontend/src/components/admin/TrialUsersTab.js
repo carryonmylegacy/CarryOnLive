@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
 import apiClient from '../../utils/apiClient';
 import { Clock, Loader2, User, Mail, ChevronDown, ChevronUp, Check, RotateCcw } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';

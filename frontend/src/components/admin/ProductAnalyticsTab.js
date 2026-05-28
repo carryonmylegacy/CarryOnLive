@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
 import apiClient from '../../utils/apiClient';
 import {
   Loader2, RefreshCw, TrendingUp, Users as UsersIcon,

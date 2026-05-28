@@ -24,7 +24,7 @@ import EntitiesSection from '../components/financial/entities/EntitiesSection';
  * Created May 22 2026 — Benefactor Portal restructure.
  */
 export default function EntitiesPage() {
-  const { user } = useAuth();
+  const { user: _user } = useAuth();
   const [estate, setEstate] = useState(null);
   const [beneficiaries, setBeneficiaries] = useState([]);
 
@@ -44,7 +44,7 @@ export default function EntitiesPage() {
         setEstate(e);
         try { localStorage.setItem('selected_estate_id', e.id); } catch {}
       }
-    } catch (err) {
+    } catch (_err) {
       // Best effort — empty state will render below if estate is null.
     }
   }, []);

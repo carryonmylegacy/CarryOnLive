@@ -3,7 +3,6 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import apiClient from '../utils/apiClient';
 import {
-  ArrowLeft,
   Calendar,
   CalendarDays,
   Camera,

@@ -4,7 +4,6 @@ import { useAuth, useBrand } from '../contexts/AuthContext';
 import { useLabelCleaner } from '../utils/brandLabel';
 import { API_URL } from '../config';
 import { useDebouncedRefetch } from '../hooks/useDebouncedRefetch';
-import { formatPhoneUS } from '../utils/phoneFormat';
 import { saveList, readList } from '../utils/localListCache';
 import { useDraftState } from '../hooks/useDraftState';
 import CCPPlanEditor from '../components/ccp/CCPPlanEditor';
@@ -29,7 +28,6 @@ import {
   AlertTriangle,
   Plus,
   MapPin,
-  Phone,
   FileText,
   Users,
   Check,
@@ -38,15 +36,12 @@ import {
   ChevronDown,
   Loader2,
   ArrowLeft,
-  ArrowRight,
   Play,
-  Square,
   Clock,
   Radio,
   Navigation,
   Home,
   HelpCircle,
-  UserCheck,
   Zap,
   Edit,
   Trash2,
@@ -58,7 +53,6 @@ import {
   MessageCircle,
   Share2,
   Copy,
-  Link,
   CreditCard,
   Info,
   Briefcase,
@@ -330,7 +324,7 @@ export default function ConnectedProtocolPage() {
   }, [loading, activeEmergency]);
 
   const activatePlan = async (planId, isDrill = false) => {
-    const label = isDrill ? 'drill' : 'EMERGENCY';
+    const _label = isDrill ? 'drill' : 'EMERGENCY';
     if (!isDrill && !window.confirm(`ACTIVATE EMERGENCY PROTOCOL?\n\nAll estate members will be notified immediately.`)) return;
     if (isDrill && !window.confirm(`Start a DRILL for this plan?\n\nMembers will see it marked as a drill.`)) return;
     setSubmitting(true);

@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import apiClient from '../../utils/apiClient';
 import { BookOpen, Plus, Edit2, Trash2, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';

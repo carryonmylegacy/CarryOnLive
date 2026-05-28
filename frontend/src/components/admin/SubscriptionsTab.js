@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import apiClient from '../../utils/apiClient';
-import { ToggleLeft, Users, DollarSign, Loader2, Search, Plus, Trash2, Copy, Check, Briefcase, RotateCcw, Percent, Crown, Pencil, ChevronRight } from 'lucide-react';
+import { ToggleLeft, Users, DollarSign, Loader2, Search, Check, Briefcase, RotateCcw, Percent, Crown, Pencil, ChevronRight } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -11,7 +10,7 @@ import { toast } from '../../utils/toast';
 import { API_URL } from '../../config';
 import { FeatureGatesCard } from './FeatureGatesCard';
 
-export const SubscriptionsTab = ({ getAuthHeaders, users, operatorMode = false }) => {
+export const SubscriptionsTab = ({ getAuthHeaders, users: _users, operatorMode = false }) => {
   const [settings, setSettings] = useState(null);
   const [userSubs, setUserSubs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -22,10 +21,10 @@ export const SubscriptionsTab = ({ getAuthHeaders, users, operatorMode = false }
   const [searchQuery, setSearchQuery] = useState('');
   const [resettingUser, setResettingUser] = useState(null);
   // B2B codes
-  const [b2bCodes, setB2bCodes] = useState([]);
-  const [showNewCode, setShowNewCode] = useState(false);
+  const [_b2bCodes, setB2bCodes] = useState([]);
+  const [_showNewCode, setShowNewCode] = useState(false);
   const [newCodeForm, setNewCodeForm] = useState({ code: '', partner_name: '', discount_percent: 100, max_uses: 0 });
-  const [copiedCode, setCopiedCode] = useState(null);
+  const [_copiedCode, setCopiedCode] = useState(null);
   // Family discounts
   const [editingFamilyDiscount, setEditingFamilyDiscount] = useState(null);
   const [familyDiscountValue, setFamilyDiscountValue] = useState('');
@@ -44,7 +43,7 @@ export const SubscriptionsTab = ({ getAuthHeaders, users, operatorMode = false }
       setSettings(settingsRes.data);
       setUserSubs(usersRes.data);
       setB2bCodes(codesRes.data || []);
-    } catch (err) { toast.error('Failed to load subscription data'); }
+    } catch (_err) { toast.error('Failed to load subscription data'); }
     setLoading(false);
   };
 
@@ -53,7 +52,7 @@ export const SubscriptionsTab = ({ getAuthHeaders, users, operatorMode = false }
       await apiClient.put(`${API_URL}/admin/subscription-settings`, { beta_mode: !settings.beta_mode }, { headers: { ...headers, 'Content-Type': 'application/json' } });
       // toast removed
       fetchData();
-    } catch (err) { toast.error('Failed to update'); }
+    } catch (_err) { toast.error('Failed to update'); }
   };
 
   const updatePrice = async (planId) => {
@@ -71,10 +70,10 @@ export const SubscriptionsTab = ({ getAuthHeaders, users, operatorMode = false }
     try {
       await apiClient.put(`${API_URL}/admin/user-subscription/${userId}`, data, { headers: { ...headers, 'Content-Type': 'application/json' } });
       fetchData();
-    } catch (err) { toast.error('Failed to update'); }
+    } catch (_err) { toast.error('Failed to update'); }
   };
 
-  const createB2bCode = async () => {
+  const _createB2bCode = async () => {
     if (!newCodeForm.code.trim()) { toast.error('Code is required'); return; }
     try {
       await apiClient.post(`${API_URL}/admin/b2b-codes`, newCodeForm, { headers: { ...headers, 'Content-Type': 'application/json' } });
@@ -84,22 +83,22 @@ export const SubscriptionsTab = ({ getAuthHeaders, users, operatorMode = false }
     } catch (err) { toast.error(err.response?.data?.detail || 'Failed to create code'); }
   };
 
-  const toggleB2bCode = async (codeId, active) => {
+  const _toggleB2bCode = async (codeId, active) => {
     try {
       await apiClient.put(`${API_URL}/admin/b2b-codes/${codeId}`, { active }, { headers: { ...headers, 'Content-Type': 'application/json' } });
       fetchData();
-    } catch (err) { toast.error('Failed to update'); }
+    } catch (_err) { toast.error('Failed to update'); }
   };
 
-  const deleteB2bCode = async (codeId) => {
+  const _deleteB2bCode = async (codeId) => {
     if (!window.confirm('Delete this B2B code?')) return;
     try {
       await apiClient.delete(`${API_URL}/admin/b2b-codes/${codeId}`, { headers });
       fetchData();
-    } catch (err) { toast.error('Failed to delete'); }
+    } catch (_err) { toast.error('Failed to delete'); }
   };
 
-  const copyCode = (code) => {
+  const _copyCode = (code) => {
     navigator.clipboard.writeText(code);
     setCopiedCode(code);
     setTimeout(() => setCopiedCode(null), 2000);
@@ -207,7 +206,7 @@ export const SubscriptionsTab = ({ getAuthHeaders, users, operatorMode = false }
                   try {
                     await apiClient.put(`${API_URL}/admin/family-plan-settings`, {}, { headers });
                     fetchData();
-                  } catch (err) { toast.error('Failed to update'); }
+                  } catch (_err) { toast.error('Failed to update'); }
                 }}
                 data-testid="family-plan-toggle"
               />

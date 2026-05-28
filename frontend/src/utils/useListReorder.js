@@ -58,7 +58,7 @@ export const useListReorder = ({ items, onReorder, rowSelector }) => {
     onReorder(next);
   }, [items, onReorder, rowSelector]);
 
-  const endDrag = useCallback((e) => {
+  const endDrag = useCallback((_e) => {
     const state = dragRef.current;
     if (!state) return;
     try {

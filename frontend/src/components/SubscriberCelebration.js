@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
 import apiClient from '../utils/apiClient';
 import { CheckCircle2, Share2, X, FileLock2, MessageSquare, ClipboardCheck } from 'lucide-react';
 import { API_URL, BASE_URL } from '../config';

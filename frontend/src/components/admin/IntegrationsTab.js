@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import apiClient from '../../utils/apiClient';
 import { Lock, ExternalLink, Eye, EyeOff, Shield, Database, CreditCard, Mail, Bot, Cloud,
   MessageSquare, MapPin, Bell, Key, Smartphone, Mic, FileText, Puzzle, Server, Globe,
@@ -40,7 +39,7 @@ const RANK_STYLES = {
   3: { border: '#EAB308', bg: 'rgba(234,179,8,0.04)', label: '3RD LIMITING', labelBg: 'rgba(234,179,8,0.15)', labelColor: '#EAB308' },
 };
 
-const mask = (val) => {
+const _mask = (val) => {
   if (!val || val.length < 12) return '****';
   return val.slice(0, 8) + '...' + val.slice(-4);
 };

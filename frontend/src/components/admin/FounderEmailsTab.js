@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
 import apiClient from '../../utils/apiClient';
 import { toast } from '../../utils/toast';
 import { Mail, Shield, TrendingUp, AlertTriangle, Loader2, Trash2, Send, Eye } from 'lucide-react';

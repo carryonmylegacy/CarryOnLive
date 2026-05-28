@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import axios from 'axios';
 import apiClient from '../../utils/apiClient';
 import { MessageSquare, Send, Hash, User, Loader2, Plus, ArrowLeft } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';

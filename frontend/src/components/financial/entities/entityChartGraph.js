@@ -10,7 +10,6 @@
  * EntityOrgChart and by EntitiesPrintPage for the static print renderer.
  */
 import {
-  LEGEND_KEY,
   ENTITY_W,
   ENTITY_H,
   PERSON_W,
@@ -21,8 +20,7 @@ import {
   CLUSTER_W,
   clusterHeight,
 } from './entityChartConstants';
-import { ROLE_PALETTE, getEntityPalette, getTypeMeta, PALETTE, ROLE_OPTIONS } from '../../../config/entityCatalog';
-import { LEGEND_W, LEGEND_H } from './EntityLegend';
+import { ROLE_OPTIONS } from '../../../config/entityCatalog';
 
 // ---------------------------------------------------------------------------
 // Graph build (same approach as v1 but returns nodes flat for free layout)

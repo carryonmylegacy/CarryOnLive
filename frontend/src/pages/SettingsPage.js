@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import axios from 'axios';
 import apiClient from '../utils/apiClient';
 import { toast } from '../utils/toast';
 import { useAuth } from '../contexts/AuthContext';
@@ -42,7 +41,7 @@ const SettingsPage = () => {
   const { user, token, logout, getAuthHeaders, refreshUser } = useAuth();
   const [searchParams] = useSearchParams();
   const [settingsReady, setSettingsReady] = useState(false);
-  const [guideHidden, setGuideHidden] = useState(true);
+  const [_guideHidden, setGuideHidden] = useState(true);
   const [betaBugIconHidden, setBetaBugIconHidden] = useLocalStorageBoolean('hide_beta_bug_icon');
   // Founder's master Offline-Mode platform switch (see
   // `/utils/platformOfflineFlag.js`). When OFF, the entire Offline

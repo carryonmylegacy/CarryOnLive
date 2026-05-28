@@ -13,7 +13,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { toast } from '../utils/toast';
 import AddressAutocomplete from '../components/AddressAutocomplete';
 import DateMaskInput from '../components/DateMaskInput';
-import axios from 'axios';
 import apiClient from '../utils/apiClient';
 import { API_URL } from '../config';
 

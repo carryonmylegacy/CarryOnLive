@@ -1,5 +1,4 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import axios from 'axios';
 import apiClient from '../../utils/apiClient';
 import { useNavigate } from 'react-router-dom';
 import { HardDrive, PinOff, Loader2, ArrowRight } from 'lucide-react';

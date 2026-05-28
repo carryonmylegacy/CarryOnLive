@@ -7,10 +7,8 @@
 import React, { useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import SlidePanel from '../../SlidePanel';
-import {
-  ChevronLeft, Loader2, Trash2, Plus, Edit2, Users, X,
+import { Loader2, Trash2, Plus, Edit2, Users,
 } from 'lucide-react';
-import axios from 'axios';
 import apiClient from '../../../utils/apiClient';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useLabelCleaner } from '../../../utils/brandLabel';

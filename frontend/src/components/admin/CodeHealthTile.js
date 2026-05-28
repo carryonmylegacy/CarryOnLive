@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import apiClient from '../../utils/apiClient';
 import {
   Activity, Database, Zap, Shield, Clock, AlertTriangle,
-  CheckCircle2, RefreshCw, Loader2, TrendingUp
+  CheckCircle2, RefreshCw, TrendingUp
 } from 'lucide-react';
 import { toast } from '../../utils/toast';
 import { API_URL } from '../../config';

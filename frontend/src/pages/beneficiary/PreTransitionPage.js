@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import apiClient from '../../utils/apiClient';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLabelCleaner } from '../../utils/brandLabel';
-import { Lock, Shield, FileText, Upload, ChevronLeft, MessageCircle, FolderOpen, AlertTriangle } from 'lucide-react';
-import { Button } from '../../components/ui/button';
+import { Lock, Shield, FileText, Upload, MessageCircle, FolderOpen, AlertTriangle } from 'lucide-react';
 import { Card, CardContent } from '../../components/ui/card';
 import { Skeleton } from '../../components/ui/skeleton';
 import { API_URL } from '../../config';

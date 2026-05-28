@@ -8,8 +8,8 @@ import { ReturnPopup } from '../components/GuidedActivation';
 import {
   CheckSquare, Plus, Trash2, Edit2, Phone, Mail, MapPin, FileText,
   Briefcase, Users, Heart, Shield, Building, Stethoscope,
-  Sparkles, Save, X, Printer,
-  Check, XCircle, Loader2, HelpCircle, ChevronDown, ChevronRight, ArrowLeft
+  Sparkles, Save, Printer,
+  Check, XCircle, Loader2, HelpCircle, ChevronDown, ChevronRight
 } from 'lucide-react';
 import { toast } from '../utils/toast';
 import { SectionLockBanner, SectionLockedOverlay } from '../components/security/SectionLock';
@@ -23,6 +23,9 @@ import { openPdfPreview } from '../utils/openPdfPreview';
 import CachedPdfIcon from '../components/CachedPdfIcon';
 import SlidePanel from '../components/SlidePanel';
 import useIacTaskStream from '../hooks/useIacTaskStream';
+
+import { formatPhoneUS } from '../utils/phoneFormat';
+import { useDraftState } from '../hooks/useDraftState';
 
 const CATEGORIES = [
   { value: 'legal', label: 'Legal', icon: FileText, color: '#3b82f6' },
@@ -64,9 +67,6 @@ const EMPTY_FORM = {
   action_type: 'custom', contact_name: '', contact_phone: '', contact_email: '',
   contact_address: '', notes: '', due_timeframe: 'first_week',
 };
-
-import { formatPhoneUS } from '../utils/phoneFormat';
-import { useDraftState } from '../hooks/useDraftState';
 
 const ChecklistPage = () => {
   const { getAuthHeaders } = useAuth();
@@ -360,7 +360,7 @@ const ChecklistPage = () => {
       await apiClient.delete(`${API_URL}/checklists/${itemId}`, getAuthHeaders());
       setChecklists(prev => prev.filter(c => c.id !== itemId));
       // toast removed
-    } catch (err) {
+    } catch (_err) {
       toast.error('Failed to delete');
     } finally {
       setDeleting(null);

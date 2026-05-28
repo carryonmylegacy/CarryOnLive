@@ -2,7 +2,6 @@ import React from 'react';
 import { Loader2, Plus, Link2, Sparkles } from 'lucide-react';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
-import { Textarea } from '../ui/textarea';
 import { Button } from '../ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Switch } from '../ui/switch';
@@ -10,7 +9,7 @@ import { useFinancialForm } from '../../hooks/useFinancialForm';
 import { PassdownNotes } from './PassdownNotes';
 import { VisibilityTimingPills } from './VisibilityTimingPills';
 
-const DebtForm = ({ estateId, debt, categories, categoryLabels, davEntries, beneficiaries, onSaved, onAddCategory, getAuthHeaders }) => {
+const DebtForm = ({ estateId, debt, categories, categoryLabels, davEntries, beneficiaries: _beneficiaries, onSaved, onAddCategory, getAuthHeaders }) => {
   const {
     form, update, saving, smartLoading, smartCategorize,
     handleSubmit, showNewCat, setShowNewCat, newCatName, setNewCatName,

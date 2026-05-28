@@ -8,7 +8,6 @@
  *   recordFunnelEvent({ event: 'feature_view', meta: { feature: 'cfp' } })
  */
 
-import axios from 'axios';
 import apiClient from './apiClient';
 import { API_URL } from '../config';
 

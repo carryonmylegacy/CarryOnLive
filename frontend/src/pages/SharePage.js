@@ -5,11 +5,10 @@
  */
 import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import apiClient from '../utils/apiClient';
 import {
   ArrowLeft, Share2, Copy, Download, Check, Loader2, Shuffle,
-  Twitter, Linkedin, Facebook, Mail, MessageSquare, Send,
+  Twitter, Linkedin, Facebook, Mail, MessageSquare,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { API_URL, BASE_URL } from '../config';

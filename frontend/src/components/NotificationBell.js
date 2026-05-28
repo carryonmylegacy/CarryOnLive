@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
 import apiClient from '../utils/apiClient';
 import { Bell, CheckCheck, X } from 'lucide-react';
 import { API_URL } from '../config';

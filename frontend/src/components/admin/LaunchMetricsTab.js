@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import apiClient from '../../utils/apiClient';
 import { Users, UserPlus, ArrowRight, Clock, CreditCard, Loader2, RefreshCw } from 'lucide-react';
 import { API_URL } from '../../config';

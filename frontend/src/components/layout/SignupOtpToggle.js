@@ -10,7 +10,6 @@
  * Mirrors the shape of MobileOtpToggle.js for visual consistency.
  */
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import apiClient from '../../utils/apiClient';
 import { UserPlus, Loader2 } from 'lucide-react';
 import { API_URL } from '../../config';

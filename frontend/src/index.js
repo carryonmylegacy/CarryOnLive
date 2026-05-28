@@ -1,7 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import axios from "axios";
-import apiClient from './utils/apiClient';
 import "./index.css";
 import App from "./App";
 import installHistoryRateLimit from "./utils/historyRateLimit";

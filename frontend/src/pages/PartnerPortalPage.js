@@ -15,7 +15,6 @@
 
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import axios from 'axios';
 import apiClient from '../utils/apiClient';
 import { Mail, Lock, Eye, EyeOff, Loader2, Shield, ChevronRight, Sparkles, AlertCircle } from 'lucide-react';
 import { Button } from '../components/ui/button';

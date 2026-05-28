@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import apiClient from '../../utils/apiClient';
 import { MessageCircle, Headphones, UserCircle, Loader2, Send, Search, Trash2, KeyRound, Unlock, RotateCcw } from 'lucide-react';
 import { Button } from '../ui/button';
@@ -63,7 +62,7 @@ export const SupportTab = ({ getAuthHeaders }) => {
       setConvMessages(prev => [...prev, res.data]);
       setNewMessage('');
       fetchConversations();
-    } catch (err) {
+    } catch (_err) {
       toast.error('Failed to send message');
     } finally {
       setSendingMessage(false);

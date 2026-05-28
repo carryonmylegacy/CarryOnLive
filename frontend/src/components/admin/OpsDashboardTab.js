@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import apiClient from '../../utils/apiClient';
 import {
   CheckCircle2, AlertTriangle,
@@ -46,7 +45,7 @@ export const OpsDashboardTab = ({ getAuthHeaders }) => {
     try {
       const res = await apiClient.get(`${API_URL}/ops/dashboard`, getAuthHeaders());
       setData(res.data);
-    } catch (err) {
+    } catch (_err) {
       toast.error('Failed to load dashboard');
     }
     finally { setLoading(false); }

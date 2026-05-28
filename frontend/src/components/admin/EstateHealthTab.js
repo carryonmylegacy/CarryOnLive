@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import apiClient from '../../utils/apiClient';
 import {
   Users, Shield, Link2, FileCheck, UserCheck, AlertTriangle,
@@ -408,7 +407,7 @@ export const EstateHealthTab = ({ getAuthHeaders }) => {
     try {
       const res = await apiClient.get(`${API_URL}/admin/estate-health`, getAuthHeaders());
       setData(res.data);
-    } catch (err) {
+    } catch (_err) {
       toast.error('Failed to load estate health data');
     }
     setLoading(false);

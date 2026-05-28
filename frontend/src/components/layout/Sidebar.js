@@ -5,7 +5,6 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useLabelCleaner, joinBrandSuffix } from '../../utils/brandLabel';
 import { haptics } from '../../utils/haptics';
 import { clearCache } from '../../utils/apiCache';
-import axios from 'axios';
 import apiClient from '../../utils/apiClient';
 import {
   LayoutDashboard,
@@ -298,7 +297,7 @@ const OfflineModeToggle = ({ collapsed }) => {
 
 // Normalize admin_scope to an array regardless of input format
 const scopeArr = (raw) => Array.isArray(raw) ? raw : (raw ? [raw] : []);
-const hasScope = (raw, target) => scopeArr(raw).includes(target);
+const _hasScope = (raw, target) => scopeArr(raw).includes(target);
 
 const ADMIN_PORTALS = [
   { scope: 'founder', label: 'Founder Portal', color: '#d4af37' },
@@ -310,7 +309,7 @@ const ADMIN_PORTALS = [
 ];
 
 const Sidebar = () => {
-  const { user, logout, refreshUser, enabledFeatures, setUser, partnerBranding } = useAuth();
+  const { user, logout, refreshUser, enabledFeatures, setUser: _setUser, partnerBranding } = useAuth();
   const cleanLabel = useLabelCleaner();
   // Brand for partner-co-branded labels (CFP/CCP/Core Pillars etc.).
   // Legal text, footers, ™ marks and "powered by" lines stay as CarryOn.
@@ -1088,7 +1087,7 @@ const Sidebar = () => {
             : ADMIN_PORTALS.filter(p => scopes.includes(p.scope) || (p.altScope && scopes.includes(p.altScope)));
           if (visiblePortals.length < 1) return null;
           const currentPath = window.location.pathname;
-          const activeViewScope = scopes;
+          const _activeViewScope = scopes;
           return (
             <>
               {!collapsed && (

@@ -31,7 +31,7 @@ export async function getLocalProfile() {
     // when the row predates encryption.
     const unsealed = await unsealRecord(row);
     if (!unsealed) return null;
-    const { _updatedAt, id, ...rest } = unsealed;
+    const { _updatedAt, id: _id, ...rest } = unsealed;
     return rest.data || null;
   } catch (err) {
     console.warn('[offline] getLocalProfile failed:', err);

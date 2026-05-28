@@ -96,7 +96,7 @@ export default function useIacTaskStream({ enabled, onUpdate, onError }) {
           },
           signal: abort.signal,
         });
-      } catch (err) {
+      } catch (_err) {
         if (cancelled) return;
         // Network or CORS — fall back to polling, retry SSE later.
         startPolling();

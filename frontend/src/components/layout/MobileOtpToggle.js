@@ -3,7 +3,6 @@
  * Extracted from MobileNav.js for clarity.
  */
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import apiClient from '../../utils/apiClient';
 import { ShieldCheck, Loader2 } from 'lucide-react';
 import { API_URL } from '../../config';

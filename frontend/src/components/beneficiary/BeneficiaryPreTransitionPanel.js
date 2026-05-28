@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import apiClient from '../../utils/apiClient';
 import { Lock, Shield, FileText, AlertTriangle, FolderOpen, Upload, MessageCircle, Heart, ShieldCheck, Network } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';

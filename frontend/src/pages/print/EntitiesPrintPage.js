@@ -29,7 +29,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import apiClient from '../../utils/apiClient';
 import { ChevronLeft, Printer, Maximize2, AlignVerticalJustifyCenter, Loader2 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
@@ -52,7 +51,7 @@ import {
 } from '../../config/entityCatalog';
 import { LEGEND_W } from '../../components/financial/entities/EntityLegend';
 
-const { ENTITY_W, ENTITY_H, PERSON_W, PERSON_H, CORNER_R } = PRINT_TILE_DIMENSIONS;
+const { ENTITY_W: _ENTITY_W, ENTITY_H: _ENTITY_H, PERSON_W: _PERSON_W, PERSON_H: _PERSON_H, CORNER_R } = PRINT_TILE_DIMENSIONS;
 
 // Lucide icon path data (24x24 viewBox, stroke-only) for the bucket
 // indicators on entity tiles. Matches the live platform's
@@ -106,7 +105,7 @@ const EQUITY_ROLE_IDS = new Set([
   'owner', 'member', 'shareholder', 'gp', 'lp',
   'joint_tenant', 'tenant_in_common', 'community_property',
 ]);
-const ROLE_LABEL = new Map(ROLE_OPTIONS.map((r) => [r.id, r.label]));
+const _ROLE_LABEL = new Map(ROLE_OPTIONS.map((r) => [r.id, r.label]));
 
 const fmtDate = (d = new Date()) =>
   d.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });

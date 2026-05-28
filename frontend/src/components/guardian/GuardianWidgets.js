@@ -47,7 +47,7 @@ export const PieProgress = ({ size = 18, color = 'currentColor', duration = 8 })
 export const MarkdownText = ({ content }) => {
   const lines = content.split('\n');
   const elements = [];
-  let inList = false;
+  let _inList = false;
   let listItems = [];
 
   const flushList = (key) => {
@@ -60,7 +60,7 @@ export const MarkdownText = ({ content }) => {
         </ul>
       );
       listItems = [];
-      inList = false; // eslint-disable-line no-unused-vars
+      _inList = false; // eslint-disable-line no-unused-vars
     }
   };
 
@@ -95,7 +95,7 @@ export const MarkdownText = ({ content }) => {
         </div>
       );
     } else if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
-      inList = true;
+      _inList = true;
       listItems.push(trimmed.slice(2));
     } else if (trimmed === '') {
       flushList(i);

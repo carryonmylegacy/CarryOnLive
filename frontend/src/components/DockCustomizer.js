@@ -3,7 +3,7 @@ import { DOCK_REGISTRY } from './layout/MobileNav';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { toast } from '../utils/toast';
-import { GripVertical, Check, RotateCcw, ChevronUp, ChevronDown, Lock } from 'lucide-react';
+import { GripVertical, RotateCcw, ChevronUp, ChevronDown, Lock } from 'lucide-react';
 import { useListReorder } from '../utils/useListReorder';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;

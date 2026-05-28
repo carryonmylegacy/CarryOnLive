@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  Lock, Shield, ArrowRight, Check, Users, FileText, Sparkles,
-  MessageCircle, KeyRound, ChevronDown, BookOpen, Network, Landmark,
+  Lock, Shield, ArrowRight, Users, KeyRound, ChevronDown, Landmark,
   Heart, Clock,
 } from 'lucide-react';
 import { recordFunnelEvent } from '../utils/funnelTelemetry';

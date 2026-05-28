@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
 import apiClient from '../../utils/apiClient';
 import { toast } from '../../utils/toast';
 import { useAuth } from '../../contexts/AuthContext';
@@ -11,7 +10,6 @@ import { Separator } from '../ui/separator';
 import AddressAutocomplete from '../AddressAutocomplete';
 import { formatPhoneUS } from '../../utils/phoneFormat';
 import DateMaskInput from '../DateMaskInput';
-import { getOfflineMode } from '../../offline/featureFlag';
 import { getLocalProfile, upsertLocalProfile, updateLocalProfile } from '../../offline/repos/profileRepo';
 import { enqueue as enqueueOutbox } from '../../offline/outbox';
 
@@ -83,7 +81,7 @@ const PersonalInfoCard = ({ initialEditAddress = false }) => {
         });
         toast.success('Profile saved offline — will sync when you reconnect.');
         setProfileEditing(false);
-      } catch (err) {
+      } catch (_err) {
         toast.error('Could not save profile offline.');
       } finally { setProfileSaving(false); }
       return;

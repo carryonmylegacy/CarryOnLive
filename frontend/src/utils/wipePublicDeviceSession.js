@@ -21,8 +21,6 @@
  * which preserves the offline cache for re-login on the family's own
  * device.
  */
-import axios from 'axios';
-import apiClient from './apiClient';
 import Dexie from 'dexie';
 import { API_URL } from '../config';
 import { DB_NAME } from '../offline/db';

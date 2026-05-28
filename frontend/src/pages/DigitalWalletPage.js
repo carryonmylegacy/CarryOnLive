@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { KeyRound, Plus, Trash2, Edit2, Eye, EyeOff, Shield, Loader2, User, Wallet, Globe, Mail, Cloud, CreditCard, Save, ArrowLeft, Network, X } from 'lucide-react';
+import { KeyRound, Plus, Trash2, Edit2, Eye, EyeOff, Shield, Loader2, User, Wallet, Globe, Mail, Cloud, CreditCard, Save, Network, X } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -166,7 +166,7 @@ const DigitalWalletPage = () => {
         return;
       }
       fetchData();
-    } catch (err) {
+    } catch (_err) {
       // Roll back optimistic remove on hard failure.
       setEntries(prevEntries);
       toast.error('Failed to delete');

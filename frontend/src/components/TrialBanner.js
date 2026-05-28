@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import apiClient from '../utils/apiClient';
 import { useAuth } from '../contexts/AuthContext';
 import { Clock, ChevronRight, X } from 'lucide-react';
@@ -22,7 +21,7 @@ export default function TrialBanner({ onUpgrade }) {
         if (data.trial?.trial_active && !data.beta_mode && !data.is_beta_tester && !data.subscription) {
           setTrial(data.trial);
         }
-      } catch (err) { /* silent */ }
+      } catch (_err) { /* silent */ }
     };
     fetchStatus();
   }, [token]);

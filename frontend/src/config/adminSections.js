@@ -17,7 +17,7 @@ import {
   Users, FileKey, Shield, Headphones, CheckSquare, AlertTriangle, Clock,
   TrendingUp, Activity, MessageSquare, BarChart3, Download, Radio,
   BookOpen, Gift, Zap, Puzzle, Mail, Film, Hourglass, Globe, Power, Settings,
-  Calendar, GraduationCap, Bell, Sparkles, MessageSquareQuote, FileText, HeartPulse as _HP,
+  Calendar, GraduationCap, Bell, Sparkles, MessageSquareQuote, FileText,
 } from 'lucide-react';
 
 export const ADMIN_SECTIONS = [

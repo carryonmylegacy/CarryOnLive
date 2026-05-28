@@ -6,7 +6,7 @@ import { useBrand } from '../contexts/AuthContext';
  * Bouncing "Return to Dashboard" popup — appears after completing an activation step.
  * Different copy each time for warmth.
  */
-export const ReturnPopup = ({ step, beneficiaryNames, onReturn, onAlternate, onAddAnother }) => {
+export const ReturnPopup = ({ step, beneficiaryNames: _beneficiaryNames, onReturn, onAlternate, onAddAnother }) => {
   const brand = useBrand();
   const variants = {
     beneficiary: {

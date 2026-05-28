@@ -13,7 +13,6 @@
  * exfiltrate hidden credentials regardless of UI bugs.
  */
 import React, { useEffect, useMemo, useState } from 'react';
-import axios from 'axios';
 import apiClient from '../../utils/apiClient';
 import { useNavigate, useParams } from 'react-router-dom';
 import {

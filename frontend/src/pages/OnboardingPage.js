@@ -21,6 +21,8 @@ import AddressAutocomplete from '../components/AddressAutocomplete';
 import { resolvePhotoUrl } from '../utils/photoUrl';
 import { API_URL } from '../config';
 
+import { formatPhoneUS } from '../utils/phoneFormat';
+
 const relations = ['Spouse', 'Son', 'Daughter', 'Son-in-law', 'Daughter-in-law', 'Mother', 'Father', 'Mother-in-law', 'Father-in-law', 'Brother', 'Sister', 'Aunt', 'Uncle', 'Grandson', 'Granddaughter', 'Grandmother', 'Grandfather', 'Nephew', 'Niece', 'Great-Grandson', 'Great-Granddaughter', 'Great-Grandmother', 'Great-Grandfather', 'Friend', 'Other'];
 const avatarColors = ['#d4af37', '#3b82f6', '#10b981', '#8b5cf6', '#ef4444', '#f59e0b', '#ec4899', '#06b6d4'];
 const usStates = [
@@ -30,8 +32,6 @@ const usStates = [
   'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC',
   'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY', 'DC'
 ];
-
-import { formatPhoneUS } from '../utils/phoneFormat';
 
 const OnboardingPage = () => {
   const navigate = useNavigate();

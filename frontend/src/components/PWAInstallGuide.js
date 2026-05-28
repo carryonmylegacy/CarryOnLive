@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, ChevronDown, Smartphone, MoreHorizontal } from 'lucide-react';
+import { X, ChevronDown, MoreHorizontal } from 'lucide-react';
 
 const isIOSDevice = () => /iPhone|iPad|iPod/.test(navigator.userAgent);
 const isAndroidDevice = () => /Android/.test(navigator.userAgent);

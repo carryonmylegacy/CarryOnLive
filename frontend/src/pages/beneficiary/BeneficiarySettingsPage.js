@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import apiClient from '../../utils/apiClient';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -32,7 +31,7 @@ const BeneficiarySettingsPage = () => {
       const eid = localStorage.getItem('beneficiary_estate_id');
       if (eid) {
         try {
-          const res = await apiClient.get(`${API_URL}/estates/${eid}`, getAuthHeaders());
+          const _res = await apiClient.get(`${API_URL}/estates/${eid}`, getAuthHeaders());
           
         } catch (e) { console.error(e); }
       }

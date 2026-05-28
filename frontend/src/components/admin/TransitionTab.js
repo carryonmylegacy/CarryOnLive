@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import apiClient from '../../utils/apiClient';
 import { FileKey, CheckCircle2, Eye, XCircle, Loader2, AlertTriangle, Search, X, Trash2, EyeOff, RotateCcw } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
@@ -73,7 +72,7 @@ export const TransitionTab = ({ getAuthHeaders, onStatsChange }) => {
       await apiClient.post(`${API_URL}/transition/begin-review/${certId}`, {}, getAuthHeaders());
       // toast removed
       fetchCertificates();
-    } catch (err) { toast.error('Failed to begin review'); }
+    } catch (_err) { toast.error('Failed to begin review'); }
     finally { setActionLoading(null); }
   };
 
@@ -83,7 +82,7 @@ export const TransitionTab = ({ getAuthHeaders, onStatsChange }) => {
       await apiClient.post(`${API_URL}/transition/approve/${certId}`, {}, getAuthHeaders());
       fetchCertificates();
       if (onStatsChange) onStatsChange();
-    } catch (err) { toast.error('Failed to approve'); }
+    } catch (_err) { toast.error('Failed to approve'); }
     finally { setActionLoading(null); }
   };
 
@@ -94,7 +93,7 @@ export const TransitionTab = ({ getAuthHeaders, onStatsChange }) => {
       await apiClient.post(`${API_URL}/transition/reject/${certId}`, {}, getAuthHeaders());
       fetchCertificates();
       if (onStatsChange) onStatsChange();
-    } catch (err) { toast.error('Failed to reject'); }
+    } catch (_err) { toast.error('Failed to reject'); }
     finally { setActionLoading(null); }
   };
 

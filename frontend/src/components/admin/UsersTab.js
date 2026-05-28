@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import apiClient from '../../utils/apiClient';
-import { Search, Users, Trash2, Loader2, ChevronDown, ChevronRight, KeyRound, Unlock, GitBranch, User, AlertTriangle, Zap, ArrowUpDown, ShieldOff, Link2, Clock, Sparkles } from 'lucide-react';
+import { Search, Users, Trash2, Loader2, ChevronDown, ChevronRight, KeyRound, Unlock, GitBranch, User, Zap, ArrowUpDown, ShieldOff, Link2, Clock, Sparkles } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { toast } from '../../utils/toast';
@@ -64,7 +63,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
     setTogglingBeta(null);
   };
 
-  const handleToggleSessionExempt = async (userId, currentExempt) => {
+  const handleToggleSessionExempt = async (userId, _currentExempt) => {
     setTogglingExempt(userId);
     try {
       const res = await apiClient.put(`${API_URL}/admin/users/${userId}/session-exempt`, {}, getAuthHeaders());
@@ -76,7 +75,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
     setTogglingExempt(null);
   };
 
-  const handleToggleAiUnlimited = async (userId, currentVal) => {
+  const handleToggleAiUnlimited = async (userId, _currentVal) => {
     setTogglingAiUnlimited(userId);
     try {
       const res = await apiClient.put(`${API_URL}/admin/users/${userId}/ai-unlimited`, {}, getAuthHeaders());
@@ -221,8 +220,8 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
   // User row component shared between list and tree views
   const UserRow = ({ u, indent = false }) => {
     const rc = roleColors[u.role] || roleColors.benefactor;
-    const hasBens = u.linked_beneficiaries?.length > 0;
-    const isExpanded = expandedUsers.has(u.id);
+    const _hasBens = u.linked_beneficiaries?.length > 0;
+    const _isExpanded = expandedUsers.has(u.id);
 
     // Billing status border colors
     const billingStatus = u.billing_status || 'active';

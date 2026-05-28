@@ -5,7 +5,7 @@ import {
   Mail, Lock, Eye, EyeOff, Loader2, ArrowLeft, ArrowRight,
   AlertCircle, CheckSquare, Shield, ChevronRight, User,
   Briefcase, Sparkles,
-  Users, Check, MapPin, Heart, Award
+  Users, Check, Heart, Award
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -13,9 +13,7 @@ import { Label } from '../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../components/ui/dialog';
 import { toast } from '../utils/toast';
-import AddressAutocomplete from '../components/AddressAutocomplete';
 import DateMaskInput from '../components/DateMaskInput';
-import axios from 'axios';
 import apiClient from '../utils/apiClient';
 import { API_URL } from '../config';
 
@@ -40,7 +38,7 @@ const genderOptions = [
   { value: 'prefer_not_to_say', label: 'Prefer not to say' },
 ];
 
-const maritalOptions = [
+const _maritalOptions = [
   { value: 'not_selected', label: 'Select...' },
   { value: 'single', label: 'Single' },
   { value: 'married', label: 'Married' },
@@ -50,7 +48,7 @@ const maritalOptions = [
   { value: 'separated', label: 'Separated' },
 ];
 
-const usStates = [
+const _usStates = [
   'AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA',
   'KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ',
   'NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VT',
@@ -58,7 +56,7 @@ const usStates = [
 ];
 
 // Steps are computed dynamically based on form state
-const beneficiaryRelations = ['Spouse', 'Son', 'Daughter', 'Son-in-law', 'Daughter-in-law', 'Mother', 'Father', 'Mother-in-law', 'Father-in-law', 'Brother', 'Sister', 'Aunt', 'Uncle', 'Grandson', 'Granddaughter', 'Grandmother', 'Grandfather', 'Nephew', 'Niece', 'Great-Grandson', 'Great-Granddaughter', 'Great-Grandmother', 'Great-Grandfather', 'Friend', 'Other'];
+const _beneficiaryRelations = ['Spouse', 'Son', 'Daughter', 'Son-in-law', 'Daughter-in-law', 'Mother', 'Father', 'Mother-in-law', 'Father-in-law', 'Brother', 'Sister', 'Aunt', 'Uncle', 'Grandson', 'Granddaughter', 'Grandmother', 'Grandfather', 'Nephew', 'Niece', 'Great-Grandson', 'Great-Granddaughter', 'Great-Grandmother', 'Great-Grandfather', 'Friend', 'Other'];
 
 const inputClass = "h-14 px-4 bg-[#0b1322] border border-[#1a2a42] text-white text-base placeholder:text-[#2d3d55] focus:border-[#d4af37] focus:ring-1 focus:ring-inset focus:ring-[#d4af37]/30 focus:outline-none rounded-xl w-full";
 const selectClass = "h-14 bg-[#0b1322] border-[#1a2a42] text-white text-base rounded-xl [&>span]:text-white";
@@ -70,7 +68,7 @@ const SignupPage = () => {
   const [step, setStep] = useState(0);
   const [direction, setDirection] = useState('right');
   const [slidePhase, setSlidePhase] = useState('idle'); // 'idle' | 'exit' | 'enter'
-  const [emailErrors, setEmailErrors] = useState({});
+  const [_emailErrors, setEmailErrors] = useState({});
   const [entered, setEntered] = useState(false);
   const scrollRef = useRef(null);
 
@@ -93,17 +91,17 @@ const SignupPage = () => {
   const [suffix, setSuffix] = useState('none');
   const [gender, setGender] = useState('not_selected');
   const [dateOfBirth, setDateOfBirth] = useState('');
-  const [maritalStatus, setMaritalStatus] = useState('not_selected');
-  const [dependentsOver18, setDependentsOver18] = useState(0);
-  const [dependentsUnder18, setDependentsUnder18] = useState(0);
-  const [addressStreet, setAddressStreet] = useState('');
-  const [addressCity, setAddressCity] = useState('');
-  const [addressState, setAddressState] = useState('');
-  const [addressZip, setAddressZip] = useState('');
-  const [role, setRole] = useState('benefactor'); // Always benefactor — beneficiaries join via invitation
+  const [maritalStatus, _setMaritalStatus] = useState('not_selected');
+  const [dependentsOver18, _setDependentsOver18] = useState(0);
+  const [dependentsUnder18, _setDependentsUnder18] = useState(0);
+  const [addressStreet, _setAddressStreet] = useState('');
+  const [addressCity, _setAddressCity] = useState('');
+  const [addressState, _setAddressState] = useState('');
+  const [addressZip, _setAddressZip] = useState('');
+  const [_role, _setRole] = useState('benefactor'); // Always benefactor — beneficiaries join via invitation
   const [specialStatus, setSpecialStatus] = useState([]);
   const [b2bCodeSignup, setB2bCodeSignup] = useState('');
-  const [addressLine2, setAddressLine2] = useState('');
+  const [addressLine2, _setAddressLine2] = useState('');
   const [beneficiaries, setBeneficiaries] = useState([]); // [{first_name, last_name, email, dob, same_address, address_street, address_city, address_state, address_zip}]
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
@@ -535,7 +533,7 @@ const SignupPage = () => {
   };
 
   // Auto-scroll on input focus so next field below is visible
-  const handleFieldFocus = (e) => {
+  const _handleFieldFocus = (e) => {
     if (!scrollRef.current) return;
     const el = e.target;
     const fieldContainer = el.closest('.space-y-1, .space-y-1\\.5') || el.parentElement;
@@ -548,7 +546,7 @@ const SignupPage = () => {
   };
 
   // Validate beneficiary email: no duplicates across beneficiaries
-  const validateBenEmail = async (emailVal, benIndex) => {
+  const _validateBenEmail = async (emailVal, benIndex) => {
     if (!emailVal || !emailVal.trim()) {
       setEmailErrors(prev => { const n = { ...prev }; delete n[benIndex]; return n; });
       return;

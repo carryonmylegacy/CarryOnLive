@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Bell, AlertTriangle, Clock, X, CheckCircle } from 'lucide-react';
 import AdminHeaderIconButton from './AdminHeaderIconButton';
-import { API_URL, BASE_URL } from '../../config';
+import { BASE_URL } from '../../config';
 import { useAuth } from '../../contexts/AuthContext';
 
 const ALERT_COLORS = {

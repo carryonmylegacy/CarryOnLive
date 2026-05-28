@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import apiClient from '../../utils/apiClient';
 import { useAuth } from '../../contexts/AuthContext';
 import { FileText, Upload, Shield, ChevronLeft, CheckCircle2, AlertTriangle, Loader2, Lock, Clock, Search } from 'lucide-react';

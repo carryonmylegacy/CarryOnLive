@@ -32,7 +32,6 @@
  * The `navigate` parameter is accepted for backwards compatibility
  * with call-sites converted before this refactor — it is now ignored.
  */
-import axios from 'axios';
 import apiClient from './apiClient';
 import { API_URL } from '../config';
 

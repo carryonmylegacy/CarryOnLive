@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import { FileText, File } from 'lucide-react';
-import axios from 'axios';
 import apiClient from '../utils/apiClient';
 import { getCachedBlob, setCachedBlob } from '../utils/blobCache';
 import { API_URL } from '../config';

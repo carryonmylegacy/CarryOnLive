@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import apiClient from '../../utils/apiClient';
 import { GraduationCap, CheckCircle, Circle, Loader2, ChevronDown, ChevronRight, Users, Award } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';

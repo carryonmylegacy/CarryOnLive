@@ -81,7 +81,7 @@ export function cacheBenSection(estateId, section, value) {
   // into a document row before we persist it.
   if (section === 'documents' && Array.isArray(value)) {
     value = value.map(d => {
-      const { file_data, content_b64, blob, ...rest } = d || {}; // eslint-disable-line no-unused-vars
+      const { file_data: _file_data, content_b64: _content_b64, blob: _blob, ...rest } = d || {}; // eslint-disable-line no-unused-vars
       return rest;
     });
   }

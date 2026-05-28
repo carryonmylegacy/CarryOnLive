@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import axios from 'axios';
 import apiClient from '../utils/apiClient';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from './ui/button';

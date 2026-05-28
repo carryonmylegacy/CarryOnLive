@@ -5,7 +5,6 @@ import apiClient from '../utils/apiClient';
 import { useAuth } from '../contexts/AuthContext';
 import { cachedGet } from '../utils/apiCache';
 import { formatPhoneUS } from '../utils/phoneFormat';
-import { getOfflineMode } from '../offline/featureFlag';
 import { getLocalBeneficiaries, upsertLocalBeneficiaries, updateLocalBeneficiary, deleteLocalBeneficiary, insertLocalBeneficiary, generateTempId } from '../offline/repos/beneficiariesRepo';
 import { prefetchPhotosFrom } from '../offline/prefetchPhotos';
 import { enqueue as enqueueOutbox } from '../offline/outbox';
@@ -46,7 +45,6 @@ import {
   UserCheck,
   XCircle,
   GripVertical,
-  ArrowLeft,
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -69,7 +67,6 @@ import { API_URL } from '../config';
 import {
   relations,
   avatarColors,
-  SUCCESSION_LABELS,
   getSuccessionLabel,
   SUCCESSION_COLORS,
   usStates,

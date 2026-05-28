@@ -24,14 +24,12 @@
  * Returns the wired-up hook surface used by each form's JSX.
  */
 import { useCallback, useRef, useState } from 'react';
-import axios from 'axios';
 import apiClient from '../utils/apiClient';
 import { API_URL } from '../config';
 import { mutateWithOutbox } from '../utils/offlineMutation';
 import { toast } from '../utils/toast';
 import { parseMoney, parseInteger, formatPydanticError } from '../utils/financialFormHelpers';
 import { useDraftState } from './useDraftState';
-import { saveList, readList } from '../utils/localListCache';
 
 const PARSERS = { parseMoney, parseInteger };
 

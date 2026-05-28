@@ -2,7 +2,6 @@ import React from 'react';
 import { Loader2, Plus, Link2, Sparkles, Lock } from 'lucide-react';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
-import { Textarea } from '../ui/textarea';
 import { Button } from '../ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Switch } from '../ui/switch';
@@ -12,7 +11,7 @@ import { VisibilityTimingPills } from './VisibilityTimingPills';
 
 const REMINDER_OPTIONS = [10, 7, 5, 3, 1, 0];
 
-const BillForm = ({ estateId, bill, categories, categoryLabels, davEntries, beneficiaries, onSaved, onAddCategory, getAuthHeaders }) => {
+const BillForm = ({ estateId, bill, categories, categoryLabels, davEntries, beneficiaries: _beneficiaries, onSaved, onAddCategory, getAuthHeaders }) => {
   const {
     form, update, saving, smartLoading, smartCategorize,
     handleSubmit, showNewCat, setShowNewCat, newCatName, setNewCatName,

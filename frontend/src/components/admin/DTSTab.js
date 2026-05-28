@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import apiClient from '../../utils/apiClient';
 import {
   Shield, Clock, CheckCircle2, XCircle, Loader2, Package, Lock,
@@ -74,7 +73,7 @@ export const DTSTab = ({ getAuthHeaders }) => {
       setSelectedDts(null);
       setQuoteItems([{ description: '', cost: '' }]);
       fetchTasks();
-    } catch (err) { toast.error('Failed to submit quote'); }
+    } catch (_err) { toast.error('Failed to submit quote'); }
     finally { setActionLoading(null); }
   };
 
@@ -83,7 +82,7 @@ export const DTSTab = ({ getAuthHeaders }) => {
     try {
       await apiClient.post(`${API_URL}/dts/tasks/${taskId}/status?task_status=${status}`, {}, getAuthHeaders());
       fetchTasks();
-    } catch (err) { toast.error('Failed'); }
+    } catch (_err) { toast.error('Failed'); }
     finally { setActionLoading(null); }
   };
 

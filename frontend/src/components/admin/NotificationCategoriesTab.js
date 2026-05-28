@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Bell, Plus, Edit, Trash2, Loader2, X, Check, AlertTriangle } from 'lucide-react';
+import { Bell, Plus, Edit, Trash2, Loader2, X, Check } from 'lucide-react';
 import { Switch } from '../ui/switch';
 import { API_URL } from '../../config';
 

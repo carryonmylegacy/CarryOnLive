@@ -76,7 +76,7 @@ export function useIAPPurchase() {
         toast.success('Purchases restored successfully');
       }
       return { success: true };
-    } catch (err) {
+    } catch (_err) {
       toast.error('Failed to restore purchases');
       return { success: false };
     } finally {

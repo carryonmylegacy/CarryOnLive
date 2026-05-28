@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
 import apiClient from '../utils/apiClient';
 import { Quote, Crown, Sparkles, ChevronRight } from 'lucide-react';
 import { API_URL } from '../config';

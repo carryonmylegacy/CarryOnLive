@@ -21,7 +21,6 @@
  *   'carryon:upload:progress' { detail: { id, bytes_sent, total, pct, filename } }
  */
 
-import axios from 'axios';
 import apiClient from '../utils/apiClient';
 import { API_URL } from '../config';
 

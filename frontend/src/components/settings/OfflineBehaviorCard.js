@@ -96,7 +96,7 @@ export default function OfflineBehaviorCard() {
         toast.success('Upload queued — will retry when you reconnect.');
       }
       await refresh();
-    } catch (err) {
+    } catch (_err) {
       toast.error('Could not retry upload.');
     } finally {
       setRetryingId(null);

@@ -5,8 +5,7 @@
  * the user creates their first entity. Once populated, height/width grows
  * commensurately with the structure's complexity.
  */
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import axios from 'axios';
+import React, { useState, useEffect, useCallback } from 'react';
 import apiClient from '../../../utils/apiClient';
 import { notify } from '../../AppNotification';
 import { useNavigate } from 'react-router-dom';

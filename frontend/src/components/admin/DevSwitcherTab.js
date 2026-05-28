@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import apiClient from '../../utils/apiClient';
 import { Settings, AlertTriangle, Loader2, Eye, UserCog, ToggleLeft, ToggleRight } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';

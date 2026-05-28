@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import apiClient from '../utils/apiClient';
 import { useAuth } from '../contexts/AuthContext';
 import {
@@ -47,7 +46,7 @@ const SupportChatPage = () => {
   const [newThreadFirstMsg, setNewThreadFirstMsg] = useState('');
   const [creating, setCreating] = useState(false);
 
-  const [headerHeight, setHeaderHeight] = useState(56);
+  const [_headerHeight, setHeaderHeight] = useState(56);
   const [emergencySent, setEmergencySent] = useState(false);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);

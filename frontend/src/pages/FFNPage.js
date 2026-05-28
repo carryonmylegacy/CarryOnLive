@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
 import apiClient from '../utils/apiClient';
 import { useAuth } from '../contexts/AuthContext';
 import { useLabelCleaner } from '../utils/brandLabel';
@@ -157,7 +156,7 @@ export default function FFNPage() {
       if (!r.ok) throw r.error || new Error('delete failed');
       setContacts(prev => prev.filter(c => c.id !== id));
       if (r.queued) toast.success('Contact removal queued — will sync when you reconnect.');
-    } catch (err) {
+    } catch (_err) {
       toast.error('Failed to delete contact');
     }
     setDeleting(null);

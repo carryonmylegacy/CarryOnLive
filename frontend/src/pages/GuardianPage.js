@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import apiClient from '../utils/apiClient';
@@ -75,7 +75,7 @@ const GuardianPage = () => {
   const [headerHeight, setHeaderHeight] = useState(48);
   const [mobileHeaderVisible, setMobileHeaderVisible] = useState(true);
   const [isListening, setIsListening] = useState(false);
-  const [showOnboardingReturn, setShowOnboardingReturn] = useState(fromGettingStarted);
+  const [showOnboardingReturn, _setShowOnboardingReturn] = useState(fromGettingStarted);
   const recognitionRef = useRef(null);
   const [guidedFlowDone, setGuidedFlowDone] = useState(true);
   const [hasAddress, setHasAddress] = useState(null); // null = loading, true/false = resolved
@@ -181,7 +181,7 @@ const GuardianPage = () => {
     try {
       const res = await apiClient.get(`${API_URL}/chat/sessions`, getAuthHeaders());
       setSessions(res.data);
-    } catch (err) { /* silent */ }
+    } catch (_err) { /* silent */ }
     finally { setSessionsLoading(false); }
   }, [getAuthHeaders]);
 
@@ -193,7 +193,7 @@ const GuardianPage = () => {
         const estate = res.data.find(e => e.id === savedId) || res.data[0];
         setEstateId(estate.id);
       }
-    } catch (err) { /* silent */ }
+    } catch (_err) { /* silent */ }
   }, [getAuthHeaders]);
 
   useEffect(() => {
@@ -217,12 +217,12 @@ const GuardianPage = () => {
       const saved = localStorage.getItem('ega_active_session');
       if (saved) {
         resumeSession(saved).catch(() => {
-          try { localStorage.removeItem('ega_active_session'); } catch (e) { /* silent */ }
+          try { localStorage.removeItem('ega_active_session'); } catch (_e) { /* silent */ }
           setView('landing');
           setLoading(false);
         });
       }
-    } catch (e) { /* localStorage unavailable — stay on landing */ }
+    } catch (_e) { /* localStorage unavailable — stay on landing */ }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -255,7 +255,7 @@ const GuardianPage = () => {
     setView('chat');
     clearLandingInputDraft();
     setLandingInput('');
-    try { localStorage.setItem('ega_active_session', newId); } catch (e) { /* silent */ }
+    try { localStorage.setItem('ega_active_session', newId); } catch (_e) { /* silent */ }
     if (initialMessage) {
       setTimeout(() => sendMessage(initialMessage, null, newId), 100);
     } else if (action) {
@@ -267,7 +267,7 @@ const GuardianPage = () => {
     setSessionId(sid);
     setView('chat');
     setLoading(true);
-    try { localStorage.setItem('ega_active_session', sid); } catch (e) { /* silent */ }
+    try { localStorage.setItem('ega_active_session', sid); } catch (_e) { /* silent */ }
     try {
       const res = await apiClient.get(`${API_URL}/chat/history/${sid}`, getAuthHeaders());
       const history = res.data.map(m => {
@@ -292,7 +292,7 @@ const GuardianPage = () => {
         role: 'assistant',
         content: `Hello ${user?.name?.split(' ')[0] || 'there'}! Resuming our conversation...`
       }]);
-    } catch (err) {
+    } catch (_err) {
       setMessages([{ role: 'assistant', content: 'Could not load conversation history.' }]);
     }
     finally { setLoading(false); }
@@ -352,7 +352,7 @@ const GuardianPage = () => {
     setMessages([]);
     setShowQuestions(false);
     setShowActions(false);
-    try { localStorage.removeItem('ega_active_session'); } catch (e) { /* silent */ }
+    try { localStorage.removeItem('ega_active_session'); } catch (_e) { /* silent */ }
     fetchSessions();
   };
 
@@ -395,7 +395,7 @@ const GuardianPage = () => {
           return new Blob([res.data], { type: 'application/pdf' });
         },
       });
-    } catch (err) { toast.error('Failed to export transcript'); }
+    } catch (_err) { toast.error('Failed to export transcript'); }
     setExporting(false);
   };
 
@@ -418,7 +418,7 @@ const GuardianPage = () => {
           return new Blob([res.data], { type: 'application/pdf' });
         },
       });
-    } catch (err) { toast.error('Failed to generate Plan of Action'); }
+    } catch (_err) { toast.error('Failed to generate Plan of Action'); }
     setPlanExporting(false);
   };
 
@@ -478,7 +478,7 @@ const GuardianPage = () => {
 
       if (!overrideSessionId) setSessionId(response.data.session_id);
       // Always keep localStorage in sync with the active session
-      try { localStorage.setItem('ega_active_session', response.data.session_id || activeSessionId); } catch (e) { /* silent */ }
+      try { localStorage.setItem('ega_active_session', response.data.session_id || activeSessionId); } catch (_e) { /* silent */ }
       const assistantMsg = { role: 'assistant', content: response.data.response };
 
       if (response.data.action_result) {

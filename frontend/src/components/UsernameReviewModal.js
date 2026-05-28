@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
 import { User, Check, AlertCircle, Loader2, X } from 'lucide-react';
-import axios from 'axios';
 import apiClient from '../utils/apiClient';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from '../utils/toast';

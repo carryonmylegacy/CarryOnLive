@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
 import apiClient from '../../utils/apiClient';
 import { Pin, PinOff, Loader2 } from 'lucide-react';
 import { Button } from '../ui/button';
@@ -74,7 +73,7 @@ const PinForOfflineButton = ({ doc, getAuthHeaders }) => {
           const bytes = await pinDocument(doc, getAuthHeaders()?.headers);
           setIsPinned(true);
           toast.success(`Pinned for offline (${(bytes / 1024).toFixed(0)} KB)`);
-        } catch (blobErr) {
+        } catch (_blobErr) {
           // Server flag is set; blob will be primed by warmup later.
           setIsPinned(true);
           toast.info('Marked for offline. Will download on next sync.');

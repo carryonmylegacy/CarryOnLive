@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import axios from 'axios';
 import apiClient from '../../utils/apiClient';
 import { Shield, Loader2, Check } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';

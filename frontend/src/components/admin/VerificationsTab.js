@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import apiClient from '../../utils/apiClient';
 import { FileKey, Activity, Loader2, X, Search, ToggleLeft, ToggleRight, Bell, Check, Trash2, RotateCcw } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
@@ -31,7 +30,7 @@ export const VerificationsTab = ({ getAuthHeaders }) => {
         : `${API_URL}/admin/verifications`;
       const res = await apiClient.get(url, { headers });
       setVerifications(res.data);
-    } catch (err) { toast.error('Failed to load verifications'); }
+    } catch (_err) { toast.error('Failed to load verifications'); }
     setLoading(false);
   };
 
@@ -61,7 +60,7 @@ export const VerificationsTab = ({ getAuthHeaders }) => {
     try {
       const res = await apiClient.get(`${API_URL}/admin/verifications/${id}/document`, { headers });
       setViewingDoc(res.data);
-    } catch (err) { toast.error('Failed to load document'); }
+    } catch (_err) { toast.error('Failed to load document'); }
   };
 
   const tierLabels = { military: 'Military / First Responder', hospice: 'Hospice' };
