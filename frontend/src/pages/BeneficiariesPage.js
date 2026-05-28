@@ -813,12 +813,12 @@ const BeneficiariesPage = () => {
           entity_id: benId,
           method: 'PUT',
           url: `/beneficiaries/${benId}/toggle-legal`,
-          body: {},
+          body: { is_legal_beneficiary: newVal },
         });
         toast.success(`Classification change queued for ${benName} — will sync when you reconnect.`);
         return;
       }
-      await apiClient.put(`${API_URL}/beneficiaries/${benId}/toggle-legal`, {}, getAuthHeaders());
+      await apiClient.put(`${API_URL}/beneficiaries/${benId}/toggle-legal`, { is_legal_beneficiary: newVal }, getAuthHeaders());
       toast.success(
         newVal
           ? `${benName} marked Primary — included in will/trust drafts`

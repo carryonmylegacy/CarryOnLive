@@ -15,6 +15,14 @@ class ReorderRequest(BaseModel):
     ordered_ids: list[str]
 
 
+class LegalClassRequest(BaseModel):
+    # Explicit target value sent by the client so the server never has to guess
+    # the "current" state (the GET endpoint synthesizes succession_order for
+    # legacy rows, which would otherwise disagree with the raw DB baseline).
+    # None = no explicit value → fall back to flipping the resolved value.
+    is_legal_beneficiary: bool | None = None
+
+
 class ForceLinkRequest(BaseModel):
     beneficiary_id: str
     username_or_email: str
@@ -145,14 +153,20 @@ async def toggle_succession(beneficiary_id: str, current_user: dict = Depends(ge
 
 @router.put("/beneficiaries/{beneficiary_id}/toggle-legal")
 async def toggle_legal_beneficiary(
-    beneficiary_id: str, current_user: dict = Depends(get_current_user)
+    beneficiary_id: str,
+    data: LegalClassRequest = LegalClassRequest(),
+    current_user: dict = Depends(get_current_user),
 ):
-    """Toggle a beneficiary's estate classification between Primary (legal
-    estate beneficiary — named in will/trust/beneficiary-designation drafts)
-    and Secondary (CarryOn-platform recipient only — MM / IAC / FFN).
+    """Set a beneficiary's estate classification: Primary (legal estate
+    beneficiary — named in will/trust/beneficiary-designation drafts) vs
+    Secondary (CarryOn-platform recipient only — MM / IAC / FFN).
 
     Multiple beneficiaries may be Primary and multiple may be Secondary; this
     is a per-person flag, not a single-slot ladder (founder rule, May 28 2026).
+
+    The client sends the explicit target value so the server never disagrees
+    with what the UI displays. If no value is supplied, we flip the resolved
+    current value (legacy fallback: rank-0 / is_primary record = legal).
     """
     require_benefactor_role(current_user, "classify beneficiaries")
 
@@ -174,13 +188,14 @@ async def toggle_legal_beneficiary(
     # IDOR guard — only the estate owner (or admin) can reclassify.
     await require_estate_owner(ben.get("estate_id"), current_user)
 
-    # Resolve the current effective value. Legacy records (flag absent) treat
-    # the rank-0 / is_primary record as legal for backward compatibility.
-    current = ben.get("is_legal_beneficiary")
-    if current is None:
-        current = bool(ben.get("is_primary")) or ben.get("succession_order") == 0
+    if data.is_legal_beneficiary is not None:
+        new_val = bool(data.is_legal_beneficiary)
+    else:
+        current = ben.get("is_legal_beneficiary")
+        if current is None:
+            current = bool(ben.get("is_primary")) or ben.get("succession_order") == 0
+        new_val = not current
 
-    new_val = not current
     await db.beneficiaries.update_one(
         {"id": beneficiary_id},
         {"$set": {"is_legal_beneficiary": new_val}},

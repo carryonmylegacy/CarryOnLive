@@ -1,5 +1,23 @@
 # CarryOn — Changelog
 
+## May 28, 2026 — Multiple Primary / Secondary beneficiaries (per-person classifier replaces single-slot ladder)
+
+Founder caught a logic/architecture contradiction on `/beneficiaries`: the copy said "Primary beneficiar**ies** are your legal estate beneficiaries — the people..." (plural) but the UI was a strict drag-ordered single-file ladder (`succession_order` 0=Primary, 1=Secondary, 2=Tertiary...), so only ONE person could ever be Primary. That conflicts with real estate planning (multiple co-primary heirs) and with the plural copy.
+
+### What changed
+- **New per-person flag `is_legal_beneficiary`** on the `Beneficiary` model. `True` = Primary (legal estate beneficiary, named in will/trust/beneficiary-designation drafts). `False` = Secondary (CarryOn-platform recipient only — MM / IAC / FFN). Multiple people may be Primary and multiple may be Secondary — it is a classification, not an ordinal slot.
+- **New endpoint** `PUT /api/beneficiaries/{id}/toggle-legal` — accepts an explicit `{ is_legal_beneficiary }` target (client sends the desired value so the server never disagrees with the GET-synthesized `succession_order` baseline). IDOR-guarded via `require_estate_owner`.
+- **Frontend (`BeneficiariesPage.js`)**: badge now driven by `is_legal_beneficiary` (green PRIMARY / blue SECONDARY) instead of the ordinal rank; the expanded-tile "Succession Chain" toggle became an **"Estate Classification"** Primary/Secondary toggle (`legal-toggle-{id}`); drag-to-order retained for ordering/contingency precedence; both explainer copy blocks reworded to be truthful ("mark as many people as Primary as you need"). Optimistic update (no refetch flicker).
+- **QuickStart Wizard** mapping now reads the real `is_legal_beneficiary` flag when present (falls back to `succession_order === 0` for legacy rows) — keeps PDF/AI legal-vs-platform split in sync.
+- Backward compat: rows lacking the flag resolve to legal when `is_primary` or `succession_order === 0` (today's single Primary), so existing data renders unchanged.
+
+### Verification
+- Backend curl-tested (set false→false, true→true, persists). Frontend lint clean; `scripts/check.sh` → ALL CLEAR (0 WARN / 0 FAIL), 81 fast tests pass. Frontend e2e via testing agent NOT yet run (founder paused the session).
+
+### Note (not shipped)
+- A separate request to soften the Chrome login error message was implemented then **fully reverted** at founder direction — the client's issue was an isolated Chrome-browser misconfiguration (Safari worked fine), not a CarryOn defect. `LoginPage.js` is byte-for-byte unchanged.
+
+
 ## May 28, 2026 — Primary = legal estate beneficiary; Secondary+ = CarryOn-platform recipient (founder rule lock)
 
 Founder review of QuickStart Guide PDFs (May 27 2026): "estate planners reviewing our generated documents need to see one clean roster of *legal* beneficiaries — not a mixed list with milestone-message recipients sitting alongside heirs." Locked the rule in code so the AI never includes a platform-only recipient in any will / trust / POA / beneficiary-designation language.
