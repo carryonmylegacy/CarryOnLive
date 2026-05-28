@@ -122,6 +122,35 @@ const OnboardingWizard = ({ onAllComplete, onContentChange }) => {
     return () => window.removeEventListener('carryon:onboarding-progress-refreshed', onRefreshed);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Auto-expand the "all steps" disclosure ONCE on first arrival in a
+  // no-active-step state, if the user has never explicitly toggled it.
+  // After they tap the Hide/View button once, their localStorage
+  // preference takes over and we never override it again.
+  //
+  // MUST live above any early `return` in this component (e.g. the
+  // `if (loading || !progress) return null` guard below) so the hook
+  // is called in the same order on every render. Lint enforces this
+  // via `react-hooks/rules-of-hooks` — moving it would re-introduce
+  // the Vercel build failure of Feb 28 2026.
+  useEffect(() => {
+    if (autoExpandedOnce.current) return;
+    if (!progress?.steps) return;
+    const visible = (progress.steps || []).filter(s => {
+      const cfg = STEP_CONFIG[s.key];
+      return !cfg || isFeatureEnabled(cfg.route, enabledFeatures);
+    });
+    if (visible.length === 0) return;
+    const hasActive = visible.some(s => !s.completed && !s.skipped);
+    if (!hasActive) {
+      try {
+        if (localStorage.getItem('carryon_setup_guide_all_expanded') === null) {
+          setAllStepsExpanded(true);
+        }
+      } catch { /* ignore */ }
+      autoExpandedOnce.current = true;
+    }
+  }, [progress, enabledFeatures]);
+
   // Compute "would the wizard render?" + how many discrete inner
   // artifacts it would render (welcome tile + offline coach + the
   // active step nudge OR the full step list when showAll). Both fire
@@ -311,22 +340,6 @@ const OnboardingWizard = ({ onAllComplete, onContentChange }) => {
   // that duplicates the compact list right below and overwhelms the
   // dashboard. Founder direction, Feb 28 2026.
   const stepsToShow = showAll ? allSteps : (nextStep ? [nextStep] : []);
-
-  // Auto-expand the "all steps" disclosure ONCE on first arrival in a
-  // no-active-step state, if the user has never explicitly toggled it.
-  // After they tap the Hide/View button once, their localStorage
-  // preference takes over and we never override it again.
-  useEffect(() => {
-    if (autoExpandedOnce.current) return;
-    if (stepsToShow.length === 0 && allSteps.length > 0) {
-      try {
-        if (localStorage.getItem('carryon_setup_guide_all_expanded') === null) {
-          setAllStepsExpanded(true);
-        }
-      } catch { /* ignore */ }
-      autoExpandedOnce.current = true;
-    }
-  }, [stepsToShow.length, allSteps.length]);
 
   // Personalize with beneficiary names
   const benNames = (progress.beneficiary_names || []).slice(0, 3);
