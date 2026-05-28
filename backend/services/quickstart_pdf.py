@@ -152,6 +152,73 @@ def _kv_row(pdf: FPDF, key: str, value: str) -> None:
     pdf.multi_cell(0, 6, _safe(value), new_x="LMARGIN", new_y="NEXT")
 
 
+class _AuthorityRegister:
+    """Endnote registry for legal authorities cited throughout the guide.
+
+    Citations are deduplicated and numbered in first-seen (reading) order so
+    in-body markers like "[Authority 1]" map 1:1 to a consolidated
+    "Sources & Authorities" endnotes section rendered at the end. Mandate
+    (May 28 2026): every substantive recommendation must be traceable to its
+    governing legal authority to satisfy the NOT-LEGAL-ADVICE disclaimer.
+    """
+
+    def __init__(self) -> None:
+        self._order: list[str] = []
+        self._index: dict[str, int] = {}
+
+    def marker(self, citations: list[str] | None) -> str:
+        """Register the given citations and return the in-text marker string,
+        e.g. " [Authority 1]" or " [Authorities 1, 3]". Empty when none."""
+        if not citations:
+            return ""
+        nums: list[int] = []
+        for c in citations:
+            c = (c or "").strip()
+            if not c:
+                continue
+            if c not in self._index:
+                self._order.append(c)
+                self._index[c] = len(self._order)
+            nums.append(self._index[c])
+        nums = sorted(set(nums))
+        if not nums:
+            return ""
+        if len(nums) == 1:
+            return f" [Authority {nums[0]}]"
+        return " [Authorities " + ", ".join(str(n) for n in nums) + "]"
+
+    def entries(self) -> list[tuple[int, str]]:
+        return list(enumerate(self._order, start=1))
+
+
+def _render_cited_item(
+    pdf: FPDF,
+    *,
+    bullet: str,
+    bullet_color: tuple[int, int, int],
+    text: str,
+    input_basis: str,
+    authority_marker: str,
+) -> None:
+    """Render one checklist item / observation with a hanging-indent bullet,
+    the recommendation text + in-text authority marker, and (below it) the
+    'Based on your input:' provenance line."""
+    pdf.set_x(pdf.l_margin)
+    pdf.set_font("Helvetica", "B", 10.5)
+    pdf.set_text_color(*bullet_color)
+    pdf.cell(7, 6, _safe(bullet), new_x="RIGHT", new_y="TOP")
+    pdf.set_font("Helvetica", "", 10.5)
+    pdf.set_text_color(*_INK)
+    pdf.multi_cell(0, 6, _safe(f"{text}{authority_marker}"), new_x="LMARGIN", new_y="NEXT")
+    if input_basis:
+        pdf.set_x(pdf.l_margin + 7)
+        pdf.set_font("Helvetica", "I", 8.5)
+        pdf.set_text_color(*_MUTED)
+        pdf.multi_cell(0, 4.6, _safe(f"Based on your input: {input_basis}"), new_x="LMARGIN", new_y="NEXT")
+        pdf.set_text_color(*_INK)
+    pdf.ln(0.8)
+
+
 def _state_of(data: dict[str, Any]) -> str:
     """Resolve the user's state of residence from the new
     `residence.state` field, falling back to legacy `state.state_of_residence`."""
@@ -532,6 +599,10 @@ def build_quickstart_pdf(
     pdf.ln(3)
 
     # ── Professional sections ────────────────────────────────────────
+    # Shared endnote registry — accumulates legal authorities cited by the
+    # checklist items, state-law notes, and observations below, then renders
+    # the consolidated "Sources & Authorities" section near the end.
+    authorities = _AuthorityRegister()
     sections = ai_payload.get("professional_sections") or []
     for sec in sections:
         prof = sec.get("professional") or "Professional"
@@ -543,24 +614,34 @@ def build_quickstart_pdf(
             pdf.multi_cell(0, 5.5, _safe(why), new_x="LMARGIN", new_y="NEXT")
             pdf.ln(1)
         items = sec.get("checklist") or []
-        pdf.set_font("Helvetica", "", 10.5)
-        pdf.set_text_color(*_INK)
         for idx, item in enumerate(items, start=1):
-            # Bullet + body using a hanging-indent layout.
-            pdf.set_x(pdf.l_margin)
-            pdf.set_font("Helvetica", "B", 10.5)
-            pdf.cell(7, 6, _safe(f"{idx}."), new_x="RIGHT", new_y="TOP")
-            pdf.set_font("Helvetica", "", 10.5)
-            pdf.multi_cell(0, 6, _safe(item), new_x="LMARGIN", new_y="NEXT")
-            pdf.ln(0.5)
+            # Items are normalized to {text, input_basis, legal_authorities}
+            # by parse_quickstart_response; tolerate a bare string for safety.
+            if isinstance(item, dict):
+                text = item.get("text") or ""
+                input_basis = item.get("input_basis") or ""
+                marker = authorities.marker(item.get("legal_authorities"))
+            else:
+                text, input_basis, marker = str(item), "", ""
+            if not text.strip():
+                continue
+            _render_cited_item(
+                pdf,
+                bullet=f"{idx}.",
+                bullet_color=_INK,
+                text=text,
+                input_basis=input_basis,
+                authority_marker=marker,
+            )
 
     # ── State-law notes ──────────────────────────────────────────────
     state_notes = ai_payload.get("state_notes") or ""
     if state_notes:
         _section_heading(pdf, f"Notes for {state or 'your state'}")
+        notes_marker = authorities.marker(ai_payload.get("state_notes_authorities"))
         pdf.set_font("Helvetica", "", 10.5)
         pdf.set_text_color(*_INK)
-        pdf.multi_cell(0, 6, _safe(state_notes), new_x="LMARGIN", new_y="NEXT")
+        pdf.multi_cell(0, 6, _safe(f"{state_notes}{notes_marker}"), new_x="LMARGIN", new_y="NEXT")
 
     # ── Personalized observations ────────────────────────────────────
     obs = ai_payload.get("personalized_observations") or []
@@ -580,17 +661,23 @@ def build_quickstart_pdf(
             new_y="NEXT",
         )
         pdf.ln(2)
-        pdf.set_font("Helvetica", "", 10.5)
-        pdf.set_text_color(*_INK)
         for o in obs:
-            pdf.set_x(pdf.l_margin)
-            pdf.set_font("Helvetica", "B", 10.5)
-            pdf.set_text_color(*_GOLD)
-            pdf.cell(7, 6, _safe(">"), new_x="RIGHT", new_y="TOP")
-            pdf.set_font("Helvetica", "", 10.5)
-            pdf.set_text_color(*_INK)
-            pdf.multi_cell(0, 6, _safe(o), new_x="LMARGIN", new_y="NEXT")
-            pdf.ln(1)
+            if isinstance(o, dict):
+                text = o.get("text") or ""
+                input_basis = o.get("input_basis") or ""
+                marker = authorities.marker(o.get("legal_authorities"))
+            else:
+                text, input_basis, marker = str(o), "", ""
+            if not text.strip():
+                continue
+            _render_cited_item(
+                pdf,
+                bullet=">",
+                bullet_color=_GOLD,
+                text=text,
+                input_basis=input_basis,
+                authority_marker=marker,
+            )
 
     # ── Key terms glossary ───────────────────────────────────────────
     key_terms = ai_payload.get("key_terms") or []
@@ -638,6 +725,35 @@ def build_quickstart_pdf(
         pdf.set_font("Helvetica", "", 11)
         pdf.set_text_color(*_INK)
         pdf.multi_cell(0, 6.5, _safe(next_step), new_x="LMARGIN", new_y="NEXT")
+
+    # ── Sources & Authorities (endnotes for every [Authority N] marker) ──
+    auth_entries = authorities.entries()
+    if auth_entries:
+        _section_heading(pdf, "Sources & Authorities")
+        pdf.set_font("Helvetica", "I", 9)
+        pdf.set_text_color(*_MUTED)
+        pdf.multi_cell(
+            0,
+            4.8,
+            _safe(
+                "Every recommendation above is tagged with the authority it draws "
+                "from. These are general, chapter-level legal references for "
+                "orientation only - confirm the exact provisions that apply to you "
+                "with a licensed attorney in your state."
+            ),
+            new_x="LMARGIN",
+            new_y="NEXT",
+        )
+        pdf.ln(1.5)
+        for num, citation in auth_entries:
+            pdf.set_x(pdf.l_margin)
+            pdf.set_font("Helvetica", "B", 9.5)
+            pdf.set_text_color(*_INK)
+            pdf.cell(20, 5.5, _safe(f"Authority {num}"), new_x="RIGHT", new_y="TOP")
+            pdf.set_font("Helvetica", "", 9.5)
+            pdf.set_text_color(*_BODY)
+            pdf.multi_cell(0, 5.5, _safe(citation), new_x="LMARGIN", new_y="NEXT")
+            pdf.ln(0.5)
 
     # ── Disclaimer footer ────────────────────────────────────────────
     pdf.ln(6)

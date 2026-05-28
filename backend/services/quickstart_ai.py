@@ -170,18 +170,18 @@ R6. NO PHANTOM CHILDREN OR DEPENDENTS. The reconciled "Children"
     other minor on top of the named list unless the input
     explicitly says "X unnamed additional children".
 
-R7. PRIMARY-ONLY IN ESTATE DOCUMENTS. The input data distinguishes
-    "Other intended beneficiaries" (Primary tier - the user's LEGAL
-    estate beneficiaries) from "CarryOn platform recipients"
-    (Secondary tier - people who only receive Milestone Messages,
-    IAC notifications, or FFN call-outs through the platform). You
-    MUST treat the latter group as platform-relationship-only:
-    NEVER name a Secondary-tier person in a will / trust / POA /
-    health-directive / beneficiary-designation recommendation. If
-    a Secondary-tier person appears to be the only family member
-    in the user's data, phrase your action as "discuss with your
-    attorney whom you wish to name as primary inheritor" - do NOT
-    suggest the Secondary contact as a fallback.
+R7. ONLY LEGAL ESTATE BENEFICIARIES ARE PROVIDED. The beneficiary
+    facts you receive contain EXCLUSIVELY the user's legal estate
+    beneficiaries - the people they intend to name in a will / trust /
+    POA / beneficiary designation. CarryOn-platform-only recipients are
+    NOT given to you and, for your purposes, do not exist. NEVER invent,
+    assume, or reference any beneficiary, heir, trustee, or recipient
+    who is not in the provided list. Every document, observation, and
+    recommendation you produce aids, guides, recommends, or suggests how
+    to tighten the user's ACTUAL legal estate - nothing else. If the
+    provided beneficiary list is empty, do NOT guess - phrase the action
+    as "discuss with your attorney whom you wish to name as your primary
+    inheritor(s)."
 
 Failing any of these rules creates legal-safety risk for the user
 and erodes trust in the platform. Default to humility: say less,
@@ -197,6 +197,36 @@ KEY TERMS GLOSSARY:
     trust; skip "Generation-skipping transfer tax" if the estate is
     obviously sub-threshold).
 
+SOURCE CITATIONS - MANDATORY AND IMMUTABLE. The "NOT LEGAL ADVICE"
+disclaimer at the top of the generated document REQUIRES that every
+substantive recommendation be traceable. You MUST therefore attach two
+kinds of source to EVERY checklist item and EVERY personalized
+observation, and to the state-law notes:
+
+  (1) `input_basis` - the SPECIFIC user-provided facts that make this
+      recommendation apply to THIS user. Draw ONLY from the facts in the
+      provided inputs (rules R1-R4 still bind you). Write it as a short
+      semicolon-separated phrase, e.g. "married; owns an out-of-state
+      rental in TN; has 1 minor child". Never cite a fact not in evidence.
+
+  (2) `legal_authorities` - 1 to 2 governing legal authorities, cited at
+      the STATUTE / CHAPTER / CODE level only. Correct examples:
+        - "Florida Statutes Ch. 732 - Wills & Intestate Succession"
+        - "Florida Statutes Ch. 736 - Florida Trust Code"
+        - "26 U.S.C. Sec. 2010 - Federal Unified Credit (estate/gift tax)"
+        - "26 U.S.C. Sec. 1014 - Step-Up in Basis at Death"
+        - "Uniform Probate Code Art. II - Intestacy, Wills & Donative Transfers"
+      HARD RULE: NEVER fabricate a pinpoint sub-section (do NOT write
+      "Sec. 732.401(2)(b)" or invent precise paragraph numbers). If you
+      are not certain of the governing chapter, cite the broader code or
+      body of law (e.g. "[State] Probate Code"). Use the USER'S state for
+      state-law matters and the federal U.S. Code for tax/federal matters.
+      If a recommendation is purely organizational and has NO statutory
+      basis, set `legal_authorities` to EXACTLY:
+        ["General estate-planning practice - confirm with your attorney"]
+  A wrong or invented citation is FAR worse than a general one. When in
+  doubt, go broader, never more precise.
+
 OUTPUT FORMAT - STRICT. Emit ONLY a JSON object inside a ```json fence.
 Do not add any prose before or after the fence. The JSON object MUST
 match this exact shape:
@@ -209,16 +239,23 @@ match this exact shape:
       "professional": "string (e.g. 'Estate Attorney')",
       "why_them": "string (1 to 2 sentences naming the specific risk)",
       "checklist": [
-        "string (2 to 3 sentences: action + WHY for THIS user)",
-        "string", "string", "string", "string"
+        {
+          "action": "string (2 to 3 sentences: action + WHY for THIS user)",
+          "input_basis": "string (the specific user facts that trigger this; inputs only)",
+          "legal_authorities": ["string (statute/chapter/code level)", "string (optional 2nd)"]
+        }
       ]
     }
   ],
   "personalized_observations": [
-    "string (2 to 3 sentences naming a specific risk or opportunity)",
-    "string", "string"
+    {
+      "text": "string (2 to 3 sentences naming a specific risk or opportunity)",
+      "input_basis": "string (the specific user facts behind it; inputs only)",
+      "legal_authorities": ["string (statute/chapter/code level)"]
+    }
   ],
   "state_notes": "string (4 to 6 sentences, names specific state-law mechanisms)",
+  "state_notes_authorities": ["string (state statute/code chapters supporting the notes)"],
   "key_terms": [
     {"term": "string", "definition": "string (1 to 2 sentences)"},
     {"term": "string", "definition": "string"}
@@ -342,12 +379,13 @@ def _human_state_summary(data: dict[str, Any]) -> str:
     # 2026: AI was inventing an extra minor child on top of named
     # Son/Daughter beneficiaries).
     hh = data.get("household") or {}
-    # FOUNDER RULE (May 28 2026): only PRIMARY (legal estate) beneficiaries
-    # feed the AI's estate-document drafting. Secondary / Tertiary tiers
-    # are CarryOn-platform recipients only (MM / IAC / FFN) and must not
-    # appear inside will/trust/POA recommendations.
+    # FOUNDER RULE (May 28 2026, revised): the AI ONLY ever sees LEGAL estate
+    # beneficiaries. CarryOn Only recipients are deliberately WITHHELD from the
+    # prompt so no AI guidance, observation, or document can be derived from
+    # them — every AI-authored recommendation pertains solely to the user's
+    # actual legal estate. (CarryOn Only recipients still appear in the PDF's
+    # deterministic, clearly-labeled non-estate snapshot/manifest — never here.)
     bens = _qw_legal_beneficiaries(data)
-    platform_only = _qw_platform_recipients(data)
     if hh or bens:
         marital = (hh.get("marital_status") or "").strip() or None
         if marital:
@@ -440,21 +478,6 @@ def _human_state_summary(data: dict[str, Any]) -> str:
     if non_child_bens:
         rels = ", ".join(f"{b.get('name')} ({b.get('relationship')})" for b in non_child_bens)
         parts.append(f"Other intended beneficiaries: {rels}.")
-
-    # Platform-only recipients (Secondary/Tertiary tiers) — surfaced
-    # for context so the AI knows these people exist on the user's
-    # CarryOn account, but they MUST NOT appear in will / trust / POA
-    # drafting language. The AI's prompt makes this rule explicit too.
-    if platform_only:
-        plat_rels = ", ".join(
-            f"{b.get('name')} ({b.get('relationship')})" for b in platform_only if (b.get("name") or "").strip()
-        )
-        if plat_rels:
-            parts.append(
-                "CarryOn platform recipients (Secondary tier - receive Milestone Messages, "
-                "IAC, FFN only; DO NOT name these people as inheritors / beneficiaries / "
-                "trustees in any estate-document recommendation): " + plat_rels + "."
-            )
 
     # Properties — NEW shape: a multi-add list with address + state per item.
     # Fall back to the legacy `real_estate` block for old in-flight users.
@@ -563,6 +586,34 @@ def build_quickstart_prompt(*, user_name: str, data: dict[str, Any]) -> list[dic
 _FENCE_RE = re.compile(r"```json\s*(\{.*?\})\s*```", re.DOTALL)
 
 
+def _coerce_authorities(raw: Any) -> list[str]:
+    """Normalize a legal_authorities value into a clean list of <=2 strings."""
+    if isinstance(raw, str):
+        raw = [raw]
+    if not isinstance(raw, list):
+        return []
+    out: list[str] = []
+    for x in raw:
+        s = str(x).strip()
+        if s:
+            out.append(s[:200])
+    return out[:2]
+
+
+def _coerce_cited(item: Any, text_key: str) -> dict[str, Any]:
+    """Normalize a checklist item / observation into a cited object:
+    {text, input_basis, legal_authorities}. Accepts both the new object
+    shape and a legacy bare string (older in-flight payloads)."""
+    if isinstance(item, dict):
+        text = str(item.get(text_key) or item.get("text") or item.get("action") or "").strip()
+        return {
+            "text": text[:500],
+            "input_basis": str(item.get("input_basis") or "").strip()[:300],
+            "legal_authorities": _coerce_authorities(item.get("legal_authorities") or item.get("legal_basis")),
+        }
+    return {"text": str(item)[:500], "input_basis": "", "legal_authorities": []}
+
+
 def parse_quickstart_response(text: str) -> dict[str, Any]:
     """Extract the JSON fence. If the model dropped the fence, try the
     first top-level `{ ... }` block. Returns a defensive default
@@ -572,6 +623,7 @@ def parse_quickstart_response(text: str) -> dict[str, Any]:
         "professional_sections": [],
         "personalized_observations": [],
         "state_notes": "",
+        "state_notes_authorities": [],
         "key_terms": [],
         "next_step": "Schedule a consult with an estate attorney in your state.",
     }
@@ -607,20 +659,24 @@ def parse_quickstart_response(text: str) -> dict[str, Any]:
         items = s.get("checklist") or []
         if not isinstance(items, list):
             items = []
+        coerced_items = [_coerce_cited(i, "action") for i in items]
+        coerced_items = [c for c in coerced_items if c["text"].strip()]
         cleaned.append(
             {
                 "professional": str(s.get("professional", "Professional"))[:80],
                 "why_them": str(s.get("why_them", ""))[:240],
-                "checklist": [str(i)[:400] for i in items if str(i).strip()],
+                "checklist": coerced_items,
             }
         )
     parsed["professional_sections"] = cleaned
-    # Personalized observations - list of short paragraphs.
+    # Personalized observations - now cited objects.
     obs = parsed.get("personalized_observations") or []
     if not isinstance(obs, list):
         obs = []
-    parsed["personalized_observations"] = [str(o)[:600] for o in obs if str(o).strip()]
+    coerced_obs = [_coerce_cited(o, "text") for o in obs]
+    parsed["personalized_observations"] = [c for c in coerced_obs if c["text"].strip()]
     parsed.setdefault("state_notes", "")
+    parsed["state_notes_authorities"] = _coerce_authorities(parsed.get("state_notes_authorities"))
     # Key-terms glossary - list of {term, definition}.
     kt = parsed.get("key_terms") or []
     if not isinstance(kt, list):

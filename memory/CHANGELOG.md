@@ -1,5 +1,23 @@
 # CarryOn — Changelog
 
+## May 28, 2026 (PM-2) — AI sees only Legal Beneficiaries + mandatory PDF source citations
+
+Founder mandate: (1) the system AI must ONLY ever consider **Legal Beneficiaries**; (2) every generated PDF must carry **source citations** — both input-provenance and chapter-level legal authority — to honor the NOT-LEGAL-ADVICE / Prime Directive disclaimer.
+
+### (1) AI restricted to Legal Beneficiaries
+- `services/quickstart_ai.py`: removed CarryOn-only recipients from the AI prompt entirely (`_human_state_summary` no longer injects platform recipients). Rewrote rule **R7** → "ONLY LEGAL ESTATE BENEFICIARIES ARE PROVIDED." Every AI document now aids/guides/recommends solely on the user's actual legal estate.
+- CarryOn-only people still appear in the PDF's deterministic, clearly-labeled **non-estate** snapshot/manifest (factual record), never in AI analysis.
+
+### (2) Mandatory source citations (footnote/endnote style)
+- **AI schema extended**: checklist items + observations are now cited objects `{action/text, input_basis, legal_authorities[]}`; added `state_notes_authorities[]`. `parse_quickstart_response` preserves the shape (with legacy-string fallback).
+- **Prompt rules added** (chapter/statute level, founder Q1=a): legal_authorities cited at code/chapter level only (e.g., "Florida Statutes Ch. 732", "26 U.S.C. Sec. 2010") — **NEVER fabricate pinpoint sub-sections**; broaden when unsure. Honest fallback (Q2=a) for non-statutory items: "General estate-planning practice - confirm with your attorney."
+- **PDF rendering** (`services/quickstart_pdf.py`): new `_AuthorityRegister` dedupes + numbers authorities in reading order; each recommendation prints an inline `[Authority N]` marker + a "Based on your input: …" provenance line; consolidated **"Sources & Authorities"** endnotes section near the end.
+- Applies to BOTH the QuickStart guide and the Partner Brief PDF (shared functions).
+
+### Verification
+- Unit tests `tests/test_iter159_citations.py` (4) + updated `test_quickstart_legal_filter.py` (flipped the platform-in-prompt assertion) — 14 pass. **Real Grok generation** via `POST /api/quickstart/generate` confirmed: inline `[Authority 1]`/`[Authorities 1, 2]` markers, "Based on your input:" lines (legal beneficiaries only), "Sources & Authorities" endnotes with real chapter-level citations + honest fallback, no hallucinated pinpoint cites. `housekeeping.sh --strict` → ALL CHECKS PASSED (0 WARN/0 FAIL).
+
+
 ## May 28, 2026 (PM) — Beneficiaries: two independent dimensions + gated notifications + unified relationship list
 
 Founder redesign superseding the earlier same-day "multiple Primary/Secondary" note. Two **independent** dimensions per beneficiary, plus benefactor-controlled change notifications.
