@@ -75,7 +75,6 @@ const DashboardPage = () => {
   const [lastEgaAt, setLastEgaAt] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showCelebration, setShowCelebration] = useState(false);
-  const [justCompletedActivation, setJustCompletedActivation] = useState(false);
   const [showGuidedFlow, setShowGuidedFlow] = useState(false);
   const [guidedStep, setGuidedStep] = useState(null);
   const [showWelcomeStep, setShowWelcomeStep] = useState(false);
@@ -213,8 +212,14 @@ const DashboardPage = () => {
   const lastCompletedAtRef = useRef(null);
 
   const handleCelebrationDismiss = () => {
+    // Dismiss-only: just close the celebration overlay and persist
+    // the "first explore" flag. DO NOT flip the dashboard into a
+    // post-completion header variant — the user lands on the
+    // standard "Welcome back, X" dashboard (founder rule, May 28
+    // 2026). Previously this set `justCompletedActivation=true`
+    // which swapped the H1 + subtitle for a "let's continue
+    // exploring" header that confused returning users.
     setShowCelebration(false);
-    setJustCompletedActivation(true);
     setTimeout(() => sessionStorage.setItem('carryon_first_explore', 'done'), 100);
   };
 
@@ -322,26 +327,28 @@ const DashboardPage = () => {
     // always try local first. When fully offline we short-circuit and
     // never attempt the server fetch.
     //
-    // Reveal-timing rule (May 6 2026 user report):
-    //   "CFP, CCP and the readiness meter still update a tick after the
-    //    other 4 tiles on initial load."
-    // Root cause: dashboardReady was flipping true here (right after the
-    // cache paint) and AGAIN in the finally block after the network
-    // fetch. The cache often has stale ccp_plans or no financialSummary
-    // at all, so the reveal shows zeros/old values for those three —
-    // then the network response updates them visibly a moment later.
-    // Fix: hold the reveal until the network fetch completes (or a
-    // 1500 ms safety timeout fires for genuinely-slow networks). Cache
-    // values are still applied to state immediately so the dashboard
-    // is already rendered to its final tiles when reveal fires.
+    // Reveal-timing rule (May 28 2026 — recurring regression fix #11):
+    //   "Tiles + meter gauge update a second after the dashboard
+    //    appears."
+    // Root cause: the cache-paint branch below used to call
+    // `revealDashboard()` as soon as the cached snapshot was found
+    // complete, BEFORE the network fetch returned. The network then
+    // overwrote stats / readiness / financial / freshness ~500-1500ms
+    // later, producing a visible second-render with new numbers and a
+    // re-spinning meter gauge.
     //
-    // Perf rescue (Feb 26 2026 user report — "dashboard takes 4-5 s
-    // every time"): the strict `cacheComplete` gate was punishing
-    // users whose financial summary or freshness stamps are
-    // legitimately `null` — the splash held for the full network
-    // round-trip every visit. The gate now treats nullable fields as
-    // "complete when the key is present" and the safety timer below
-    // caps splash time at 1500 ms regardless of cache shape.
+    // The permanent fix: cache values are STILL applied to state
+    // immediately (so the React tree's initial paint already has the
+    // final-shape data once reveal fires), but reveal is held until
+    // the network fetch completes OR the 1500ms safety cap fires.
+    // Net effect:
+    //   * Online + fast network (<1s, the common case): single
+    //     reveal after network, zero flicker.
+    //   * Online + slow network (>1500ms): reveal at 1500ms with
+    //     cached values. A subsequent state change can still update
+    //     a tile, but the user is no longer staring at the dashboard
+    //     when it happens.
+    //   * Offline: short-circuit revealDashboard() below.
     let revealedFromCache = false;
     let safetyRevealTimer = null;
     const revealDashboard = () => {
@@ -367,28 +374,10 @@ const DashboardPage = () => {
         // useEffect on mount).
         if (tile.lastBinderAt) setLastBinderAt(tile.lastBinderAt);
         if (tile.lastEgaAt) setLastEgaAt(tile.lastEgaAt);
-        // Cache-first reveal (Feb 16, 2026 user-perf report): we used
-        // to hold the splash up until the network call returned so
-        // CFP/CCP values never jumped from 0 → real. The compromise:
-        // reveal IMMEDIATELY when the cached snapshot has been
-        // populated by a prior successful fetch — checked by
-        // confirming the *keys* exist on the tile, not that their
-        // values are truthy. `financialSummary: null` is a legitimate
-        // shape for users with no financial data and used to falsely
-        // gate the reveal off, holding the splash for 4-5 s every
-        // visit (Feb 26 2026 founder report).
-        const cacheComplete = !!(
-          tile.stats
-          && typeof tile.stats.ccp_plans === 'number'
-          && typeof tile.stats.ccp_drilled === 'number'
-          && tile.readiness
-          && 'financialSummary' in tile
-          && 'lastBinderAt' in tile
-          && 'lastEgaAt' in tile
-        );
-        if (cacheComplete) {
-          revealDashboard();
-        }
+        // NOTE: NO `revealDashboard()` call here. The reveal is
+        // deliberately held until the network fetch completes (or
+        // the 1500ms safety cap fires) so the user never sees tiles
+        // jump after the dashboard appears.
       }
     } catch { /* non-fatal */ }
     // Safety net: even if the cache shape is unusual or the user is
@@ -1102,14 +1091,10 @@ const DashboardPage = () => {
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3">
         <div>
           <h1 className="text-2xl lg:text-4xl font-semibold text-[var(--t)] mb-1 tracking-tight" style={{ fontFamily: 'var(--serif)' }}>
-            {justCompletedActivation
-              ? <>{getUserFirstName()}, let's continue exploring {brand}</>
-              : <>Welcome back, <span className="italic text-[var(--gold)]">{getUserFirstName()}</span></>}
+            Welcome back, <span className="italic text-[var(--gold)]">{getUserFirstName()}</span>
           </h1>
           <p className="text-[var(--t4)] text-base lg:text-xl">
-            {justCompletedActivation
-              ? 'Click anywhere and have fun securing your family\'s future!'
-              : 'Your estate plan is taking shape. Here\'s your overview.'}
+            Your estate plan is taking shape. Here&apos;s your overview.
           </p>
         </div>
         <div className="sm:mt-1">
