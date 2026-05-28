@@ -67,8 +67,6 @@ import { API_URL } from '../config';
 import {
   relations,
   avatarColors,
-  getSuccessionLabel,
-  SUCCESSION_COLORS,
   usStates,
 } from './beneficiariesPageConstants';
 import { SortableBeneficiaryCard } from './beneficiaries/SortableBeneficiaryCard';
@@ -780,11 +778,11 @@ const BeneficiariesPage = () => {
     if (oldIdx === -1 || newIdx === -1) return;
     const reordered = arrayMove(beneficiaries, oldIdx, newIdx);
     setBeneficiaries(reordered);
-    // Notify if the primary beneficiary changed
-    const wasPrimary = beneficiaries[0];
-    const nowPrimary = reordered[0];
-    if (wasPrimary?.id !== nowPrimary?.id) {
-      toast.success(`${nowPrimary.name} is now your Primary Beneficiary`);
+    // Notify if the first-in-order beneficiary changed (acts as trustee).
+    const wasFirst = beneficiaries[0];
+    const nowFirst = reordered[0];
+    if (wasFirst?.id !== nowFirst?.id) {
+      toast.success(`${nowFirst.name} is now first in succession order`);
     }
     try {
       const reorderBody = { ordered_ids: reordered.map(b => b.id) };
@@ -803,30 +801,35 @@ const BeneficiariesPage = () => {
     } catch { toast.error('Failed to save order'); }
   }, [beneficiaries, estate?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleToggleSuccession = useCallback(async (benId, benName) => {
+  const handleToggleLegal = useCallback(async (benId, benName, currentlyLegal) => {
+    const newVal = !currentlyLegal;
+    // Optimistic update — flip the flag locally so the badge + toggle react
+    // instantly (no full refetch, which would re-flicker the tiles).
+    setBeneficiaries(prev => prev.map(b => b.id === benId ? { ...b, is_legal_beneficiary: newVal } : b));
     try {
       if (typeof navigator !== 'undefined' && navigator.onLine === false) {
         await enqueueOutbox({
-          entity_type: 'beneficiary_succession',
+          entity_type: 'beneficiary_legal',
           entity_id: benId,
           method: 'PUT',
-          url: `/beneficiaries/${benId}/toggle-succession`,
+          url: `/beneficiaries/${benId}/toggle-legal`,
           body: {},
         });
-        toast.success(`Succession change queued for ${benName} — will sync when you reconnect.`);
+        toast.success(`Classification change queued for ${benName} — will sync when you reconnect.`);
         return;
       }
-      const res = await apiClient.put(`${API_URL}/beneficiaries/${benId}/toggle-succession`, {}, getAuthHeaders());
-      if (res.data.in_succession) {
-        toast.success(`${benName} added to succession hierarchy`);
-      } else {
-        toast.success(`${benName} removed from succession hierarchy`);
-      }
-      fetchData();
+      await apiClient.put(`${API_URL}/beneficiaries/${benId}/toggle-legal`, {}, getAuthHeaders());
+      toast.success(
+        newVal
+          ? `${benName} marked Primary — included in will/trust drafts`
+          : `${benName} set to Secondary — platform recipient only`
+      );
     } catch {
-      toast.error('Failed to update succession');
+      // Revert on failure
+      setBeneficiaries(prev => prev.map(b => b.id === benId ? { ...b, is_legal_beneficiary: currentlyLegal } : b));
+      toast.error('Failed to update classification');
     }
-  }, [estate?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loading) {
     return (
@@ -904,7 +907,7 @@ const BeneficiariesPage = () => {
               Primary vs. Secondary — what each tier means
             </p>
             <p className="text-xs text-[var(--t3)] leading-relaxed">
-              <span className="font-semibold text-[var(--t)]">Primary</span> beneficiaries are your <span className="font-semibold">legal estate beneficiaries</span> — the people CarryOn&apos;s AI includes in your will, trust, and beneficiary-designation drafts. <span className="font-semibold text-[var(--t)]">Secondary</span> and below are <span className="font-semibold">CarryOn-platform recipients only</span> — they receive Milestone Messages, Immediate Action Checklist hand-offs, and Friends &amp; Family notifications, but are <span className="font-semibold">not named</span> in estate documents. To re-classify, drag the person up to Primary, or down out of the top slot.
+              <span className="font-semibold text-[var(--t)]">Primary</span> beneficiaries are your <span className="font-semibold">legal estate beneficiaries</span> — the people CarryOn&apos;s AI includes in your will, trust, and beneficiary-designation drafts. You can mark <span className="font-semibold">as many people as Primary</span> as you need. <span className="font-semibold text-[var(--t)]">Secondary</span> beneficiaries are <span className="font-semibold">CarryOn-platform recipients only</span> — they receive Milestone Messages, Immediate Action Checklist hand-offs, and Friends &amp; Family notifications, but are <span className="font-semibold">not named</span> in estate documents. To re-classify, open a beneficiary and flip the <span className="font-semibold">Primary</span> toggle. Drag tiles to set the order.
             </p>
           </div>
           <button
@@ -971,7 +974,7 @@ const BeneficiariesPage = () => {
                 <p className="text-sm text-[var(--t)] font-semibold">Succession Hierarchy</p>
                 <p className="text-xs text-[var(--t3)] leading-relaxed mt-0.5">
                   {benSortKey === 'succession'
-                    ? 'Drag to set succession order. Primary = legal estate beneficiary (appears in your will/trust drafts). Secondary & below = CarryOn platform recipients only (Milestone Messages, IAC, FFN) — not named in estate documents.'
+                    ? 'Flip the Primary toggle on anyone who is a legal estate beneficiary (named in your will/trust drafts) — you can mark more than one. Everyone else is a Secondary CarryOn-platform recipient (Milestone Messages, IAC, FFN) — not named in estate documents. Drag tiles to set the order.'
                     : 'List is temporarily sorted. Switch back to "Succession order" to drag and re-rank.'}
                 </p>
               </div>
@@ -992,18 +995,17 @@ const BeneficiariesPage = () => {
             <SortableContext items={displayedBeneficiaries.map(b => b.id)} strategy={rectSortingStrategy}>
             <div className="space-y-3" data-testid="beneficiary-tiles">
               {displayedBeneficiaries.map((ben) => {
-                // Succession rank is ALWAYS computed from the canonical
-                // `beneficiaries` order (top-to-bottom), not the displayed
-                // order — so the "PRIMARY / SECONDARY / TERTIARY" badge
-                // remains correct even when the user re-sorts the view
-                // alphabetically or by date.
-                const canonicalIndex = beneficiaries.findIndex(b => b.id === ben.id);
-                const index = canonicalIndex >= 0 ? canonicalIndex : 0;
-                const isInSuccession = ben.succession_order !== null && ben.succession_order !== undefined;
-                const succRank = isInSuccession ? beneficiaries.filter((b, i) => i < index && b.succession_order !== null && b.succession_order !== undefined).length : null;
-                const succStyle = isInSuccession
-                  ? (SUCCESSION_COLORS[succRank] || { bg: 'rgba(148,163,184,0.12)', color: '#94a3b8', border: '1px solid rgba(148,163,184,0.2)' })
-                  : { bg: 'rgba(100,116,139,0.08)', color: '#64748b', border: '1px solid rgba(100,116,139,0.15)' };
+                // Estate classification (May 28 2026): a beneficiary is a
+                // legal estate beneficiary ("Primary") when `is_legal_beneficiary`
+                // is true. Multiple may be Primary and multiple may be Secondary
+                // — it is a per-person flag, not a single-slot ladder. Legacy
+                // fallback (flag absent): the rank-0 / is_primary record is
+                // treated as legal so existing data renders unchanged.
+                const isLegal = ben.is_legal_beneficiary === true
+                  || (ben.is_legal_beneficiary == null && (ben.is_primary === true || ben.succession_order === 0));
+                const legalStyle = isLegal
+                  ? { bg: 'rgba(34,201,147,0.15)', color: '#22C993', border: '1px solid rgba(34,201,147,0.3)' }
+                  : { bg: 'rgba(59,130,246,0.15)', color: '#3b82f6', border: '1px solid rgba(59,130,246,0.3)' };
                 const isTileExpanded = expandedTiles.has(ben.id);
                 return (
                 <SortableBeneficiaryCard key={ben.id} id={ben.id} disabled={benSortKey !== 'succession'}>
@@ -1024,7 +1026,7 @@ const BeneficiariesPage = () => {
                           : ben.name?.split(' ').map(n => n[0]).join('').toUpperCase())}
                         color={ben.avatar_color}
                         size={44}
-                        isPrimary={index === 0}
+                        isPrimary={isLegal}
                         onUpload={() => {
                           setQuickUploadBenId(ben.id);
                           setTimeout(() => quickFileRef.current?.click(), 50);
@@ -1032,14 +1034,14 @@ const BeneficiariesPage = () => {
                         testId={`ben-avatar-${ben.id}`}
                       />
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-sm sm:text-base truncate" style={{ color: isInSuccession ? succStyle.color : 'var(--t)' }}>{ben.name}</h3>
+                        <h3 className="font-semibold text-sm sm:text-base truncate" style={{ color: isLegal ? legalStyle.color : 'var(--t)' }}>{ben.name}</h3>
                         <p className="text-[var(--gold)] text-xs truncate">{ben.relation}</p>
                         <span
                           className="mt-1 inline-flex items-center gap-1 text-[11px] font-bold whitespace-nowrap px-2 py-0.5 rounded-md"
-                          style={{ background: succStyle.bg, color: succStyle.color, border: succStyle.border }}
+                          style={{ background: legalStyle.bg, color: legalStyle.color, border: legalStyle.border }}
                           data-testid={`succession-badge-${ben.id}`}
                         >
-                          <Shield className="w-3 h-3 flex-shrink-0" /> {isInSuccession ? getSuccessionLabel(succRank).toUpperCase() : 'NOT IN SUCCESSION'}
+                          <Shield className="w-3 h-3 flex-shrink-0" /> {isLegal ? 'PRIMARY' : 'SECONDARY'}
                         </span>
                         {!ben.photo_url && (
                           <p className="text-[11px] text-[var(--t5)] mt-0.5 cursor-pointer hover:text-[var(--t4)] transition-colors"
@@ -1187,16 +1189,20 @@ const BeneficiariesPage = () => {
                         )}
                         
                         <div className="mt-4 pt-3 border-t border-[var(--b)]">
-                          {/* Succession Participation Toggle */}
+                          {/* Estate Classification — Primary (legal) vs Secondary (platform) */}
                           <div className="flex items-center justify-between mb-3">
-                            <div>
-                              <p className="text-[11px] text-[var(--t5)] uppercase tracking-wider font-bold">Succession Chain</p>
-                              <p className="text-[11px] text-[var(--t5)] mt-0.5">{isInSuccession ? `Rank #${succRank + 1} in hierarchy` : 'Not participating'}</p>
+                            <div className="min-w-0 pr-3">
+                              <p className="text-[11px] text-[var(--t5)] uppercase tracking-wider font-bold">Estate Classification</p>
+                              <p className="text-[11px] text-[var(--t5)] mt-0.5">
+                                {isLegal
+                                  ? 'Primary — legal beneficiary (named in will/trust drafts)'
+                                  : 'Secondary — CarryOn-platform recipient only (MM / IAC / FFN)'}
+                              </p>
                             </div>
                             <Switch
-                              checked={isInSuccession}
-                              onCheckedChange={() => handleToggleSuccession(ben.id, ben.name)}
-                              data-testid={`succession-toggle-${ben.id}`}
+                              checked={isLegal}
+                              onCheckedChange={() => handleToggleLegal(ben.id, ben.name, isLegal)}
+                              data-testid={`legal-toggle-${ben.id}`}
                             />
                           </div>
 

@@ -4,7 +4,7 @@ from ._core import router
 from fastapi import Depends, HTTPException
 from pydantic import BaseModel
 from config import db, logger
-from guards import require_benefactor_role
+from guards import require_benefactor_role, require_estate_owner
 from utils import get_current_user
 
 
@@ -141,6 +141,51 @@ async def toggle_succession(beneficiary_id: str, current_user: dict = Depends(ge
             {"$set": {"succession_order": next_order, "is_primary": is_primary}},
         )
         return {"success": True, "in_succession": True, "is_primary": is_primary}
+
+
+@router.put("/beneficiaries/{beneficiary_id}/toggle-legal")
+async def toggle_legal_beneficiary(
+    beneficiary_id: str, current_user: dict = Depends(get_current_user)
+):
+    """Toggle a beneficiary's estate classification between Primary (legal
+    estate beneficiary — named in will/trust/beneficiary-designation drafts)
+    and Secondary (CarryOn-platform recipient only — MM / IAC / FFN).
+
+    Multiple beneficiaries may be Primary and multiple may be Secondary; this
+    is a per-person flag, not a single-slot ladder (founder rule, May 28 2026).
+    """
+    require_benefactor_role(current_user, "classify beneficiaries")
+
+    ben = await db.beneficiaries.find_one(
+        {"id": beneficiary_id, "deleted_at": None},
+        {
+            "_id": 0,
+            "id": 1,
+            "estate_id": 1,
+            "name": 1,
+            "is_legal_beneficiary": 1,
+            "is_primary": 1,
+            "succession_order": 1,
+        },
+    )
+    if not ben:
+        raise HTTPException(status_code=404, detail="Beneficiary not found")
+
+    # IDOR guard — only the estate owner (or admin) can reclassify.
+    await require_estate_owner(ben.get("estate_id"), current_user)
+
+    # Resolve the current effective value. Legacy records (flag absent) treat
+    # the rank-0 / is_primary record as legal for backward compatibility.
+    current = ben.get("is_legal_beneficiary")
+    if current is None:
+        current = bool(ben.get("is_primary")) or ben.get("succession_order") == 0
+
+    new_val = not current
+    await db.beneficiaries.update_one(
+        {"id": beneficiary_id},
+        {"$set": {"is_legal_beneficiary": new_val}},
+    )
+    return {"success": True, "is_legal_beneficiary": new_val}
 
 
 @router.get("/beneficiaries/{estate_id}/succession")

@@ -199,15 +199,19 @@ const QuickStartWizard = ({ forceOpen = false, onClose = () => {} }) => {
         const mapped = list
           .filter((b) => (b.name || b.first_name))
           .map((b) => {
-            // Founder rule (May 28 2026): Primary tier
-            // (`succession_order === 0`) = LEGAL estate beneficiary
-            // → appears in AI's estate-document drafting.
-            // Secondary / Tertiary tiers = CarryOn-platform recipients
-            // only (MM / IAC / FFN) → excluded from estate documents.
+            // Founder rule (May 28 2026): a beneficiary flagged
+            // `is_legal_beneficiary` = TRUE is a Primary / LEGAL estate
+            // beneficiary → appears in the AI's estate-document drafting.
+            // Secondary recipients are CarryOn-platform only (MM / IAC / FFN)
+            // → excluded from estate documents. Multiple people may be Primary
+            // and multiple may be Secondary. Legacy fallback (flag absent):
+            // succession_order === 0 is treated as legal.
             const so = (typeof b.succession_order === 'number')
               ? b.succession_order
               : null;
-            const isLegal = so === null ? true : so === 0;
+            const isLegal = (typeof b.is_legal_beneficiary === 'boolean')
+              ? b.is_legal_beneficiary
+              : (so === null ? true : so === 0);
             return {
               beneficiary_id: b.id,
               name: b.name || [b.first_name, b.last_name].filter(Boolean).join(' ') || b.first_name || 'Beneficiary',

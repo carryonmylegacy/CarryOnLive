@@ -140,9 +140,17 @@ class Beneficiary(BaseModel):
     avatar_color: str = "#d4af37"
     initials: str = ""
     photo_url: Optional[str] = None  # Base64 profile photo or URL
-    # Succession hierarchy — 0 = Primary, 1 = Secondary, 2 = Tertiary, etc.
-    # None means the beneficiary is not part of the succession chain (optional).
+    # Succession hierarchy — used purely for drag ORDER / contingency precedence.
+    # None means the beneficiary has no explicit order yet (sorted last).
     succession_order: Optional[int] = None
+    # Estate classification (May 28 2026 founder rule): True = legal estate
+    # beneficiary ("Primary" — named in will/trust/beneficiary-designation
+    # drafts). False = CarryOn-platform recipient only ("Secondary" — receives
+    # MM / IAC / FFN but is NOT named in estate documents). Multiple people may
+    # be Primary and multiple may be Secondary — it is a per-person flag, not a
+    # single-slot ladder. None = legacy default (resolved at read time: the
+    # rank-0 / is_primary record is treated as legal for backward compatibility).
+    is_legal_beneficiary: Optional[bool] = None
     # Invitation tracking
     is_primary: bool = False  # Primary beneficiary acts as trustee post-transition
     invitation_status: str = "pending"  # pending, sent, accepted
