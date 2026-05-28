@@ -1,5 +1,51 @@
 # CarryOn — Changelog
 
+## Feb 17, 2026 — Our Promise page shipped + Prime Directive codebase audit
+
+The Prime Directive locked yesterday is now (a) **publicly visible** to the lawyers, CPAs, estate planners, and wealth managers a user hands a CarryOn-generated PDF to, and (b) **proven aligned** with the running codebase by a comprehensive audit.
+
+### Our Promise page (public, no auth)
+- New route: `GET /our-promise` (frontend) backed by `GET /api/our-promise` (backend, public).
+- Backend: new `services/prime_directive.py` holds the directive verbatim as the canonical runtime source of truth; new `routes/our_promise.py` exposes it as a structured JSON payload (opening sentence, legacy mandate, inclusivity mandate, the 7 numbered priorities, and the lock date).
+- Frontend: new `OurPromisePage.js` (lazy-loaded, 5.7kb) renders the directive in plain formal typography on a parchment background. No CTAs, no funnel hooks, no analytics — just the contract. Link-shareable. All `data-testid` attributes wired (`our-promise-page`, `our-promise-opening`, `our-promise-priority-1..7`, etc.).
+- API smoke-tested → returns all 13 directive clauses verbatim.
+- Page smoke-tested in preview → renders cleanly with all 7 priorities listed in order.
+
+### 8th pre-push invariant — runtime ↔ spec parity lock
+- New `test_prime_directive_backend_constant_matches_prd` asserts the backend `PRIME_DIRECTIVE_*` constants match `/app/memory/PRD.md` byte-for-byte. Combined with Invariant 6 (PRD lock), this guarantees PRD ↔ runtime endpoint can never drift — the platform cannot pitch one promise internally and another publicly.
+
+### Prime Directive Codebase Alignment Audit (full report at `/app/memory/PRIME_DIRECTIVE_AUDIT.md`)
+Comprehensive audit across all 7 priorities, programmatic scans + spot-checks. Verdict: **broadly aligned, with one inline fix shipped and three categorized improvement opportunities queued (none blocking the pitch).**
+
+**Strong / aligned:**
+- 🟢 P1 (Trust): zero 3rd-party trackers, zero PII in client logs, explicit cancellation language, no cookie-banner anti-pattern (no analytics cookies to begin with)
+- 🟢 P2 (Reliability): 181 backend tests, BACKUP/INCIDENT/MONGODB_ATLAS_BACKUP runbooks, schema snapshot tooling
+- 🟢 P4 (User intent): AI Safety Contract enforced at 5 layers, Trustee Mode middleware with Undo
+- 🟢 P5 (Security): 6 self-enforcing pre-push invariants, HSTS preload, bcrypt, Fernet/AES at rest, no `eval/exec`, rate limiter on brute-force surfaces
+- 🟢 P7 (Dignity & legacy): GDPR Articles 15/17/20 endpoints all implemented, beneficiary self-service modularized, no data egress to third parties, PDF export from 7 different surfaces
+
+**Shipped inline this audit:**
+- ✅ Removed "Limited time offer" pressure phrasing from `SubscriptionPage.js:283` (replaced with non-coercive "available while the Founders Circle remains open") — the only P1 trust violation found in the entire scan.
+
+**Queued action items (post-pitch):**
+- 🟡 P1: ARIA-attribute sweep across the 39 pages currently lacking them (only 26% coverage today). Start with Dashboard / Beneficiaries / Onboarding / QuickStartWizard.
+- 🟡 P1: Tooltip + help-text on SettingsPage / SecuritySettingsPage (currently zero — biggest clarity gap).
+- 🟡 P2: Modal focus traps on Settings / Subscription / Auth / QuickStart.
+- 🟡 P2: Replace 14 generic error strings with specific actionable phrasing.
+- 🟢 P3: i18n scaffolding (Spanish first).
+
+### Verified
+- `python -m pytest tests/test_pre_push_invariants.py -v` → **8/8 green in 3.05s**
+- `python3 scripts/check_tests_fast.py --strict` → **59/59 green in 21.54s**
+- `bash scripts/git-hooks/pre-push` end-to-end → fast suite PASS + housekeeping PASS, exit 0
+- API smoke (`curl /api/our-promise`) → all 13 directive clauses verbatim
+- Frontend smoke (preview) → all 7 priorities render in order
+- Ruff lint clean on new backend modules
+- ESLint clean on new frontend page
+
+The Prime Directive now lives in **four** coordinated, mechanically-locked places: `PRD.md` (spec lock), `AGENT_RULES.md` (fork-agent pointer), `services/prime_directive.py` (runtime source of truth), and `/our-promise` (public-facing contract). Eight pre-push invariants guard the integrity of the chain.
+
+
 ## Feb 17, 2026 — Prime Directive locked verbatim across the platform
 
 The founder mandated a mission statement that **shapes every product decision, AI behaviour, UX trade-off, and line of code added by any future agent — forever**. Locking it required three coordinated changes:

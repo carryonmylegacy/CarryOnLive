@@ -280,7 +280,7 @@ const SubscriptionPage = () => {
           <Crown className="w-8 h-8 text-[var(--gold)] flex-shrink-0" />
           <div>
             <p className="text-sm font-bold text-[var(--gold)]">Founders Circle — Lifetime Access</p>
-            <p className="text-xs text-[var(--t4)]">Lock in lifetime access and give your beneficiaries free access forever. Limited time offer.</p>
+            <p className="text-xs text-[var(--t4)]">Lock in lifetime access and give your beneficiaries free access forever — available while the Founders Circle remains open.</p>
           </div>
           <ChevronRight className="w-5 h-5 text-[var(--gold)] flex-shrink-0 ml-auto" />
         </button>

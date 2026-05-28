@@ -21,6 +21,7 @@ from middleware import (
 from routes.admin import router as admin_router
 from routes.admin_digest import router as admin_digest_router
 from routes.public_status import router as public_status_router
+from routes.our_promise import router as our_promise_router
 from routes.partner_brief import router as partner_brief_router
 from routes.beneficiary_concierge import router as beneficiary_concierge_router
 from routes.auth import router as auth_router
@@ -331,6 +332,7 @@ api_router = APIRouter()
 # Include all route modules
 api_router.include_router(admin_digest_router)
 api_router.include_router(public_status_router)
+api_router.include_router(our_promise_router)
 api_router.include_router(partner_brief_router)
 api_router.include_router(beneficiary_concierge_router)
 api_router.include_router(admin_router)
