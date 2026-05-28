@@ -42,7 +42,9 @@ bookkeeping required.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from io import BytesIO
 
+import qrcode
 from fpdf import FPDF
 from fpdf.enums import XPos, YPos
 
@@ -115,7 +117,54 @@ class ManifestEntry:
 class CarryOnPDF(FPDF):
     """FPDF subclass that auto-stamps the Prime Directive attribution
     on every page and exposes a Verified Inputs Manifest appendix.
-    Drop-in replacement for ``FPDF()`` — no other API differences."""
+    Drop-in replacement for ``FPDF()`` — no other API differences.
+
+    Optional verification QR: call :meth:`set_verification` with the
+    token + public base URL **before adding the first page**. From
+    that point forward, every page's footer carries a small QR code
+    (bottom-right) that deep-links to the public ``/verify/<token>``
+    page. A professional scans any page → lands on a server-rendered
+    verification view confirming the document is authentic.
+    """
+
+    # Verification state — set via set_verification(); consumed by
+    # footer() on every page. Both default to None so PDFs without
+    # the verification wiring render normally.
+    _verify_url: str | None = None
+    _verify_qr_png: bytes | None = None
+
+    def set_verification(self, verify_token: str, public_base_url: str) -> None:
+        """Enable the per-page verification QR code.
+
+        ``verify_token`` is the URL-safe ``<snapshot_id>.<hmac_prefix>``
+        produced by :func:`services.pdf_verification.create_snapshot`.
+        ``public_base_url`` is the FRONTEND origin (e.g.
+        ``https://app.carryon.us``) — the verification page lives at
+        ``{public_base_url}/verify/{verify_token}``.
+
+        Call this BEFORE the first ``add_page()``. After that, every
+        page automatically carries the QR. Passing an empty token is
+        a silent no-op so the PDF still ships if snapshot persistence
+        failed upstream.
+        """
+        if not verify_token or not public_base_url:
+            return
+        verify_url = f"{public_base_url.rstrip('/')}/verify/{verify_token}"
+        # Render the QR ONCE up front so every footer() invocation
+        # writes the same prebuilt PNG. box_size=2 + border=1 yields
+        # a tiny, very dense QR (~85px wide) that prints at ~10mm and
+        # still scans cleanly from a phone camera at arm's length.
+        try:
+            img = qrcode.make(verify_url, box_size=2, border=1)
+            buf = BytesIO()
+            img.save(buf, format="PNG")
+            self._verify_qr_png = buf.getvalue()
+            self._verify_url = verify_url
+        except Exception:
+            # QR generation must NEVER block the PDF from shipping.
+            # Reset to None so footer() takes the no-QR branch.
+            self._verify_qr_png = None
+            self._verify_url = None
 
     def footer(self) -> None:  # noqa: D401 — FPDF convention
         # Save the caller's font/color so the trust stamp never bleeds
@@ -124,15 +173,34 @@ class CarryOnPDF(FPDF):
         save_font_style = self.font_style or ""
         save_font_size = float(self.font_size_pt or 10)
 
-        # Footer is positioned 10mm from the bottom of the page so it
-        # sits cleanly under the FPDF default 15mm bottom margin and
-        # never collides with body content.
+        # Trust line — centered text, 10mm above the page bottom.
         self.set_y(-10)
         self.set_font("Helvetica", "I", 7)
-        # Soft mid-grey so the line reads as a trust attribution, not
-        # as primary content.
         self.set_text_color(120, 120, 120)
         self.cell(0, 4, TRUST_FOOTER_LINE, align="C", new_x=XPos.RIGHT, new_y=YPos.TOP)
+
+        # Verification QR — small, bottom-right corner, only if
+        # set_verification() supplied a token. The QR sits inside the
+        # standard 20mm bottom margin so it never overlaps body
+        # content rendered by the caller.
+        if self._verify_qr_png is not None:
+            qr_size_mm = 10.0
+            x = self.w - self.r_margin - qr_size_mm
+            y = self.h - qr_size_mm - 2.0  # 2mm from the bottom edge
+            try:
+                # fpdf2 accepts a BytesIO-like or bytes payload for
+                # ``name`` when passing ``image_type``.
+                self.image(
+                    BytesIO(self._verify_qr_png),
+                    x=x,
+                    y=y,
+                    w=qr_size_mm,
+                    h=qr_size_mm,
+                )
+            except Exception:
+                # QR write failure must never block the PDF — the
+                # trust line above still carries the contract URL.
+                pass
 
         # Restore caller state.
         self.set_text_color(0, 0, 0)

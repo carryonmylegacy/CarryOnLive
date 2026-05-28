@@ -1,5 +1,61 @@
 # CarryOn — Changelog
 
+## Feb 17, 2026 — Cryptographically-verifiable PDFs: QR code + HMAC tamper detection live
+
+Every QuickStart Wizard PDF now ships with a **deep-linking QR code in the bottom-right of every page** that points at a **public, HMAC-verified server-rendered verification page**. A professional scans any page on a phone → lands on `/verify/<token>` → sees `DOCUMENT VERIFIED BY CARRYON` (or a clear failure message), the document's generation date, every user input the PDF was built on, and the locked Prime Directive in force at that moment.
+
+This moves CarryOn-generated documents from *"trustworthy because it says so"* to *"trustworthy because the reader just verified it cryptographically"*.
+
+### Cryptographic integrity model (verified by the new tests)
+Verification tokens are of the form `<snapshot_id>.<hmac_prefix>`:
+- `snapshot_id` — 16-char hex, Mongo lookup key
+- `hmac_prefix` — first 16 chars of `HMAC-SHA256(JWT_SECRET, canonical_snapshot_JSON)`, recomputed server-side on every read
+
+Three independent tamper guarantees:
+1. **DB-field tampering** — recomputed HMAC no longer matches the URL prefix → verification fails. (Regression test asserts this with a real `manifest_entries.0.value` rewrite.)
+2. **URL fabrication** — no DB row → lookup misses → fails.
+3. **Token forgery** — without `JWT_SECRET`, an attacker cannot compute any valid prefix for any content.
+
+The DB stores the canonical content but NOT the HMAC itself, by design. Recomputation on read IS the integrity check.
+
+### Pieces shipped
+- **`services/pdf_verification.py`** — `create_snapshot()` + `read_snapshot()` with HMAC-SHA256 signing using `JWT_SECRET`. Persistence failures are non-fatal (PDF still ships, just without a usable QR).
+- **`services/pdf_trust_footer.py`** — new `CarryOnPDF.set_verification(token, base_url)` method renders a 10mm QR in the bottom-right of every page footer via FPDF's `footer()` hook. Token-absent → no QR (asserted).
+- **`routes/verification.py`** — public `GET /api/verify/{token}` endpoint. Always returns 200 with `{verified: bool, snapshot?, reason?, prime_directive}` so the reader always lands on a usable page.
+- **`routes/quickstart.py`** — wired to build manifest, persist snapshot, thread token + `FRONTEND_URL` into `build_quickstart_pdf()` before rendering.
+- **`services/quickstart_pdf.py`** — `build_quickstart_pdf()` now accepts optional `verify_token` + `public_base_url`; calls `set_verification()` before the first `add_page()` so the FIRST footer already carries the QR.
+- **`frontend/src/pages/VerifyPage.js`** — public `/verify/:hash` route. Renders SUCCESS/FAILURE badge, document generation date, Verified Inputs manifest (with `data-testid` per entry), and the full Prime Directive verbatim. No auth, no telemetry, no PII beyond what's on the printed page.
+
+### Regression-gated by 7 new tests
+1. `test_snapshot_round_trip` — fresh snapshot reads back with exact manifest entries.
+2. `test_tampered_db_row_fails_verification` — real Mongo `update_one({$set: {manifest_entries.0.value: "California"}})` to forge a plan; recomputed HMAC mismatches; rejected.
+3. `test_wrong_prefix_fails_verification` — fabricated 16-hex prefix on a real snapshot ID; rejected.
+4. `test_nonexistent_snapshot_returns_none` — unknown ID resolves to None.
+5. `test_malformed_token_returns_none` — empty / no-dot / wrong-length / non-hex tokens all fail closed.
+6. `test_pdf_carries_verification_qr_when_token_set` — asserts `/Subtype /Image` appears in PDF bytes when token is set.
+7. `test_pdf_does_not_carry_qr_when_token_absent` — token-absent PDF has zero image XObjects (no QR leak).
+
+Module-scoped `event_loop` fixture so motor (async MongoDB) doesn't crash across tests with "Event loop is closed".
+
+### Verified (all green)
+- 7/7 verification tests pass in 0.77s
+- 71/71 fast suite pass in 22.62s (was 64; +7 verification tests)
+- `bash housekeeping.sh --strict` → 0 WARN / 0 FAIL
+- Ruff + ESLint clean on all 6 modified files
+- **Live API smoke** — `curl /api/verify/<good-token>` returned `verified: True` + decoded snapshot + Prime Directive; `curl /api/verify/<bad-token>` returned `verified: False` with graceful failure message + Prime Directive still rendered.
+- **Live UI smoke** — verify page in preview shows `DOCUMENT VERIFIED BY CARRYON` badge, generation date, Verified Inputs section (Residence/State/Virginia + source step), and full Prime Directive with all 7 priorities. Screenshot saved to `/tmp/verify_page.png`.
+
+### Trust chain — now 8 layers, all mechanically locked
+1. `PRD.md` verbatim spec lock (Invariant 6)
+2. `AGENT_RULES.md` fork-agent pointer (Rule −4)
+3. `services/prime_directive.py` runtime source of truth (Invariant 8)
+4. `/our-promise` public-facing contract
+5. Trust footer on every CarryOn PDF page
+6. Verified Inputs Manifest appendix on every QuickStart PDF
+7. **QR code on every PDF page → `/verify/:hash` page with HMAC-verified snapshot (NEW)**
+8. `PRIME_DIRECTIVE_AUDIT.md` codebase alignment report
+
+
 ## Feb 17, 2026 — Verified Inputs Manifest appendix on every QuickStart PDF
 
 Every QuickStart Wizard PDF the platform produces now ends with a dedicated **"Verified Inputs Manifest"** appendix page that lists, line by line, every user-entered field that backed the body of the document — with the source step + the value the user actually provided.

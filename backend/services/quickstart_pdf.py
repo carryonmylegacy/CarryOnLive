@@ -354,9 +354,24 @@ def build_quickstart_pdf(
     data: dict[str, Any],
     ai_payload: dict[str, Any],
     generated_at: datetime,
+    verify_token: str | None = None,
+    public_base_url: str | None = None,
 ) -> bytes:
-    """Render the QuickStart Guide PDF. Returns raw bytes."""
+    """Render the QuickStart Guide PDF. Returns raw bytes.
+
+    When ``verify_token`` and ``public_base_url`` are both provided
+    (typically by the calling route after persisting a verification
+    snapshot via ``services.pdf_verification.create_snapshot``), every
+    page of the PDF carries a small QR code in the bottom-right
+    corner that deep-links to the public verification page. A
+    professional reviewing the PDF can scan any page to confirm
+    authenticity in <5 seconds.
+    """
     pdf = CarryOnPDF()
+    if verify_token and public_base_url:
+        # MUST be called before the first add_page() so the very first
+        # footer() invocation already has the QR data prepared.
+        pdf.set_verification(verify_token, public_base_url)
     pdf.set_auto_page_break(auto=True, margin=20)
     pdf.add_page()
 

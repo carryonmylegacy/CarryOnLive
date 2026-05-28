@@ -46,6 +46,13 @@ FAST_SUITE = [
     # means a professional reading a user's CarryOn PDF has no path
     # to verify the platform's locked operating contract.
     "tests/test_pdf_trust_footer.py",
+    # PDF verification snapshot + QR pipeline — locks in the HMAC
+    # integrity gate that lets a professional scan the QR on any
+    # CarryOn PDF page and confirm the document is authentic. A
+    # regression here means a tampered-DB row could pass as genuine,
+    # or the QR could silently stop being printed on PDFs. Hits Mongo
+    # (insert + read + update) on a dedicated collection; ~1s.
+    "tests/test_pdf_verification.py",
 ]
 
 

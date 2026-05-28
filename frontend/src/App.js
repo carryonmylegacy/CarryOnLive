@@ -114,6 +114,7 @@ const GetStartedPage = lazy(() => import('./pages/GetStartedPage'));
 const AboutPage = lazy(() => import('./pages/AboutPage'));
 const FounderAboutPage = lazy(() => import('./pages/FounderAboutPage'));
 const OurPromisePage = lazy(() => import('./pages/OurPromisePage'));
+const VerifyPage = lazy(() => import('./pages/VerifyPage'));
 
 const HomePage = lazy(() => import('./pages/HomePage'));
 const VoicesPage = lazy(() => import('./pages/VoicesPage'));
@@ -620,6 +621,7 @@ function AppRoutes() {
       <Route path="/terms" element={<TermsPage />} />
       <Route path="/about" element={<AboutPage />} />
       <Route path="/our-promise" element={<OurPromisePage />} />
+      <Route path="/verify/:hash" element={<VerifyPage />} />
       <Route path="/founder-about" element={<FounderAboutPage />} />
       <Route path="/founder-about/:token" element={<FounderAboutPage />} />
       {/* Short alias — share-friendly URL. Renders the same gate/login. */}

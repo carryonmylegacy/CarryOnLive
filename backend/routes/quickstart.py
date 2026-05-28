@@ -32,6 +32,7 @@ import asyncio
 import io
 import uuid
 from datetime import datetime, timezone
+import os
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -43,7 +44,9 @@ from models import Document
 from services.audit import audit_log
 from services.encryption import encrypt_aes256, get_estate_salt
 from services.quickstart_ai import _qw_beneficiaries, build_quickstart_prompt, parse_quickstart_response
-from services.quickstart_pdf import build_quickstart_pdf
+from services.quickstart_pdf import _build_verified_inputs_manifest, build_quickstart_pdf
+from services.pdf_verification import create_snapshot as create_pdf_verification_snapshot
+from dataclasses import asdict as _dataclass_asdict
 from services.storage import storage
 from utils import get_current_user, update_estate_readiness
 
@@ -859,12 +862,29 @@ async def generate_guide(current_user: dict = Depends(get_current_user)):
     ai_text = completion.choices[0].message.content or ""
     parsed = parse_quickstart_response(ai_text)
 
+    # Build the Verified Inputs Manifest entries first, persist a
+    # signed verification snapshot, then thread the resulting token
+    # into the PDF render so every page carries the deep-link QR.
+    # Persistence failures are non-fatal — the PDF still ships
+    # without a QR (the trust footer URL above is still printed).
+    _manifest_entries = _build_verified_inputs_manifest(data)
+    _generated_at = datetime.now(timezone.utc)
+    _verify_token = await create_pdf_verification_snapshot(
+        user_id=user_id,
+        pdf_kind="quickstart",
+        manifest_entries=[_dataclass_asdict(e) for e in _manifest_entries],
+        generated_at=_generated_at,
+    )
+    _public_base_url = os.environ.get("FRONTEND_URL", "").rstrip("/")
+
     # Render the PDF (server-side, fpdf2, matches Binder cadence).
     pdf_bytes = build_quickstart_pdf(
         user_name=user_name,
         data=data,
         ai_payload=parsed,
-        generated_at=datetime.now(timezone.utc),
+        generated_at=_generated_at,
+        verify_token=_verify_token or None,
+        public_base_url=_public_base_url or None,
     )
 
     # Cache to S3 + Mongo `latest_pdfs` so the Estate Binder picks it
