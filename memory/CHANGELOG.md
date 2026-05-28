@@ -1,5 +1,33 @@
 # CarryOn — Changelog
 
+## May 28, 2026 (PM) — Beneficiaries: two independent dimensions + gated notifications + unified relationship list
+
+Founder redesign superseding the earlier same-day "multiple Primary/Secondary" note. Two **independent** dimensions per beneficiary, plus benefactor-controlled change notifications.
+
+### (1) Estate Classification — two INDEPENDENT toggles (in the expand carrot)
+- **Legal Beneficiary** (`is_legal_beneficiary`) — named in will/trust/beneficiary-designation drafts. **Source of truth for all AI estate-document analysis.**
+- **CarryOn Only Beneficiary** (`is_carryon_beneficiary`) — receives CarryOn products only (Milestone Messages, IAC, FFN).
+- A person can be **one, both, or neither**. Collapsed tile shows LEGAL / CARRYON chips. Nomenclature "Primary/Secondary" removed from this dimension.
+
+### (2) CarryOn Executor Succession — restored ordinal ladder, re-meaned
+- The drag-ordered `succession_order`/`is_primary` ladder (Primary / Secondary / Tertiary … / Not in Succession) now explicitly governs **who controls the benefactor's CarryOn platform access after passing** — independent of estate classification. In/out toggle + drag retained.
+
+### (3) Gated account-change notifications — two toggles per beneficiary
+- `notify_benefactor_changes` / `notify_trustee_changes`. When ON, that beneficiary gets a **generic** notification ("X made a change to the account.") whenever the benefactor (or a trustee, respectively) makes a change logged via `log_activity`.
+- Actor attribution via a request-scoped contextvar (`set_actor_context`/`get_actor_context` in `utils.py`) set in `get_current_user` (trustee = `acting_as` token; else benefactor). `log_activity` fans out fire-and-forget to opted-in beneficiaries with a linked `user_id`.
+
+### (4) Unified relationship list
+- New single source of truth `config/relationships.js` (`RELATIONSHIPS`, 25 entries incl. **Partner, Trustee, Professional Service Provider**), re-exported by `beneficiariesPageConstants.js` (`relations`) and imported by `QuickStartWizard.js` (`_RELS`). CES left untouched (its dropdowns are entity-role links, not familial).
+
+### Backend / API
+- `models.py` Beneficiary: added `is_carryon_beneficiary`, `notify_benefactor_changes`, `notify_trustee_changes`.
+- New endpoint **`PUT /api/beneficiaries/{id}/flags`** (`BeneficiaryFlagsRequest`, IDOR-guarded by `require_estate_owner`) — sets any subset of the four flags via explicit booleans; empty body → 400. Replaces the interim `toggle-legal`.
+- `quickstart_ai.py`: `_qw_platform_recipients` now keys off `is_carryon_beneficiary` (legacy fallback = not-legal). QW mapping sends both flags.
+
+### Verification
+- Backend curl + testing agent: 9/10 pass (1 skipped). Gated fan-out routing then **separately verified PASS** by direct function test (benefactor→benefactor-watcher only; trustee→trustee-watcher only; generic body). Frontend testing agent: 100% on chips, 5 toggles, optimistic flips, 25-item dropdown, two-dimension banner. `housekeeping.sh --strict` → ALL CHECKS PASSED (0 WARN/0 FAIL). Regression test added: `backend/tests/test_iter158_beneficiary_flags_and_gated_notifications.py`.
+
+
 ## May 28, 2026 — Multiple Primary / Secondary beneficiaries (per-person classifier replaces single-slot ladder)
 
 Founder caught a logic/architecture contradiction on `/beneficiaries`: the copy said "Primary beneficiar**ies** are your legal estate beneficiaries — the people..." (plural) but the UI was a strict drag-ordered single-file ladder (`succession_order` 0=Primary, 1=Secondary, 2=Tertiary...), so only ONE person could ever be Primary. That conflicts with real estate planning (multiple co-primary heirs) and with the plural copy.
