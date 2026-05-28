@@ -31,13 +31,13 @@
 ## 🟡 PREVIEW POD ACCOUNTS (preview-only, not production)
 
 ### Preview Benefactor — Pete Mitchell (use this for ALL user-facing testing)
-- URL: `https://trustee-mode-pwa.preview.emergentagent.com`
+- URL: `https://beneficiary-hub-16.preview.emergentagent.com`
 - Email: info@carryon.us
 - Password: Demo1234!
 - Role: **benefactor** (Pete Mitchell) — same role as on production. NOT an admin.
 
 ### Preview Benefactor — Seeded Test Account (testing-agent created May 22 2026)
-- URL: `https://trustee-mode-pwa.preview.emergentagent.com`
+- URL: `https://beneficiary-hub-16.preview.emergentagent.com`
 - Email: `testben1779455414@example.com`
 - Password: `TestPass1234!`
 - Role: benefactor (default tier, no estate data seeded)
@@ -45,7 +45,7 @@
 
 
 ### Preview Admin/Founder (ONLY for admin-portal testing)
-- URL: `https://trustee-mode-pwa.preview.emergentagent.com`
+- URL: `https://beneficiary-hub-16.preview.emergentagent.com`
 - Email: founder@carryon.us
 - Password: CarryOntheWisdom!
 - Role: admin (founder) — `isStaff=true` in the frontend.
@@ -53,7 +53,7 @@
 ---
 
 ### Preview Trustee — `trustee_screenshot` (legacy TMA grant from v1 flow)
-- URL: `https://trustee-mode-pwa.preview.emergentagent.com`
+- URL: `https://beneficiary-hub-16.preview.emergentagent.com`
 - Login (username): `trustee_screenshot`
 - Password: `TPass1234!`
 - Type: **TMA grant** (NOT a CarryOn user). Resolves at login to act on behalf of `info@carryon.us` (Pete Mitchell).
