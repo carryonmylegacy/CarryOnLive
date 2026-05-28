@@ -39,6 +39,13 @@ FAST_SUITE = [
     # May 27 2026 — catches regressions BEFORE any LLM endpoint or
     # Mongo query is exercised, without per-symbol manual registration.
     "tests/test_pre_push_invariants.py",
+    # Prime Directive trust footer regression — asserts every page of
+    # every CarryOn-generated PDF carries the public Our Promise
+    # attribution. ~0.3s, no I/O. Added Feb 17 2026 alongside the
+    # public /our-promise page; a regression that drops the footer
+    # means a professional reading a user's CarryOn PDF has no path
+    # to verify the platform's locked operating contract.
+    "tests/test_pdf_trust_footer.py",
 ]
 
 

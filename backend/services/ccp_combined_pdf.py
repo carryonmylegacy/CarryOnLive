@@ -15,9 +15,10 @@ None and the binder gracefully skips the section.
 
 from datetime import datetime as _dt
 
-from fpdf import FPDF
+from fpdf import FPDF  # noqa: F401 — kept for type-compat; actual instances use CarryOnPDF
 
 from config import db, logger
+from services.pdf_trust_footer import CarryOnPDF
 
 _PLAN_TYPE_LABELS = {
     "natural_disaster": "Natural Disaster",
@@ -196,7 +197,7 @@ async def build_combined_ccp_pdf(estate_id: str) -> bytes | None:
     if not plans:
         return None
 
-    pdf = FPDF()
+    pdf = CarryOnPDF()
     pdf.set_auto_page_break(auto=True, margin=20)
     pdf.add_page()
 

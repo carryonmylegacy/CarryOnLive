@@ -26,7 +26,9 @@ from typing import Any
 
 from services.quickstart_ai import _qw_beneficiaries
 
-from fpdf import FPDF
+from fpdf import FPDF  # noqa: F401 — kept for type-compat; actual instances use CarryOnPDF
+
+from services.pdf_trust_footer import CarryOnPDF
 
 _GOLD = (212, 175, 55)
 _INK = (30, 40, 70)
@@ -239,7 +241,7 @@ def build_quickstart_pdf(
     generated_at: datetime,
 ) -> bytes:
     """Render the QuickStart Guide PDF. Returns raw bytes."""
-    pdf = FPDF()
+    pdf = CarryOnPDF()
     pdf.set_auto_page_break(auto=True, margin=20)
     pdf.add_page()
 

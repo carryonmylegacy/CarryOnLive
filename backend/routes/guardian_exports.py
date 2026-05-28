@@ -54,7 +54,7 @@ async def export_checklist_pdf(
     current_user: dict = Depends(get_current_user),
 ):
     """Generate a printable PDF checklist from the user's estate checklist items."""
-    from fpdf import FPDF
+    from services.pdf_trust_footer import CarryOnPDF
 
     # Get user's estate
     estates = await _get_user_estate(current_user)
@@ -76,7 +76,7 @@ async def export_checklist_pdf(
     readiness = await calculate_estate_readiness(estate_id)
 
     # Build PDF
-    pdf = FPDF()
+    pdf = CarryOnPDF()
     pdf.set_auto_page_break(auto=True, margin=20)
     pdf.add_page()
 
@@ -310,7 +310,7 @@ async def export_todo_pdf(
     current_user: dict = Depends(get_current_user),
 ):
     """Generate a PDF from the AI-generated to-do list text content."""
-    from fpdf import FPDF
+    from services.pdf_trust_footer import CarryOnPDF
 
     # Get user's estate for context
     estates = await _get_user_estate(current_user)
@@ -320,7 +320,7 @@ async def export_todo_pdf(
     benefactor = await db.users.find_one({"id": current_user["id"]}, {"_id": 0, "id": 1, "address_state": 1})
     user_state = (benefactor or {}).get("address_state") or "Not specified"
 
-    pdf = FPDF()
+    pdf = CarryOnPDF()
     pdf.set_auto_page_break(auto=True, margin=20)
     pdf.add_page()
 
@@ -460,7 +460,7 @@ async def export_iac_report_pdf(
     Section 1: Immediate Action Checklist for Beneficiaries (post-death instructions).
     Section 2: Estate Strengthening Recommendations for the Benefactor (to-do now).
     """
-    from fpdf import FPDF
+    from services.pdf_trust_footer import CarryOnPDF
 
     estates = await _get_user_estate(current_user)
     estate_name = estates[0]["name"] if estates else "My Estate"
@@ -473,7 +473,7 @@ async def export_iac_report_pdf(
     user_name = (benefactor or {}).get("name", "Benefactor")
     user_state = (benefactor or {}).get("address_state") or "Not specified"
 
-    pdf = FPDF()
+    pdf = CarryOnPDF()
     pdf.set_auto_page_break(auto=True, margin=20)
     pdf.add_page()
 
@@ -659,7 +659,7 @@ async def export_conversation_pdf(
     current_user: dict = Depends(get_current_user),
 ):
     """Generate a PDF of a complete EGA conversation."""
-    from fpdf import FPDF
+    from services.pdf_trust_footer import CarryOnPDF
 
     session_id = data.get("session_id")
     if not session_id:
@@ -683,7 +683,7 @@ async def export_conversation_pdf(
     estate_id = estates[0]["id"] if estates else None
     user_name = current_user.get("name", "Benefactor")
 
-    pdf = FPDF()
+    pdf = CarryOnPDF()
     pdf.set_auto_page_break(auto=True, margin=20)
     pdf.add_page()
 
@@ -820,7 +820,7 @@ async def export_plan_of_action_pdf(
     current_user: dict = Depends(get_current_user),
 ):
     """AI-summarize a chat session into a structured Plan of Action PDF."""
-    from fpdf import FPDF
+    from services.pdf_trust_footer import CarryOnPDF
 
     session_id = data.get("session_id")
     if not session_id:
@@ -917,7 +917,7 @@ CONVERSATION:
         raise HTTPException(status_code=502, detail="Failed to generate Plan of Action")
 
     # Generate PDF
-    pdf = FPDF()
+    pdf = CarryOnPDF()
     pdf.set_auto_page_break(auto=True, margin=20)
     pdf.add_page()
 
@@ -1036,7 +1036,7 @@ async def beneficiary_export_checklist_pdf(
     Finds the estate where the current user is a listed beneficiary,
     then generates the same formatted checklist PDF.
     """
-    from fpdf import FPDF
+    from services.pdf_trust_footer import CarryOnPDF
 
     # Find estate(s) where this user is a beneficiary
     estate = await db.estates.find_one({"beneficiaries": current_user["id"]}, {"_id": 0})
@@ -1064,7 +1064,7 @@ async def beneficiary_export_checklist_pdf(
     benefactor_name = (benefactor or {}).get("name", "Benefactor")
 
     # Build PDF (same format as benefactor checklist)
-    pdf = FPDF()
+    pdf = CarryOnPDF()
     pdf.set_auto_page_break(auto=True, margin=20)
     pdf.add_page()
 

@@ -3,9 +3,10 @@
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Response
-from fpdf import FPDF
+from fpdf import FPDF  # noqa: F401 — kept for type-compat; actual instances use CarryOnPDF
 
 from config import db
+from services.pdf_trust_footer import CarryOnPDF
 from utils import get_current_user
 
 router = APIRouter()
@@ -59,7 +60,7 @@ async def export_estate_pdf(estate_id: str, current_user: dict = Depends(get_cur
     user = await db.users.find_one({"id": current_user["id"]}, {"_id": 0, "password_hash": 0})
 
     # Build PDF
-    pdf = FPDF()
+    pdf = CarryOnPDF()
     pdf.set_auto_page_break(auto=True, margin=20)
     pdf.add_page()
 

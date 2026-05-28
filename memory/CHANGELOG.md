@@ -1,5 +1,44 @@
 # CarryOn — Changelog
 
+## Feb 17, 2026 — Prime Directive trust attribution on every CarryOn PDF (every page)
+
+Every PDF the platform produces now carries the line **"Built under CarryOn's Prime Directive (locked 2026-02-17). Verify at carryon.us/our-promise"** in a soft mid-grey footer on every page. A lawyer, CPA, estate planner, or wealth manager who opens any CarryOn-generated document — from any page — can verify the platform's locked operating contract in one click.
+
+### Implementation
+- New `services/pdf_trust_footer.py` ships a `CarryOnPDF(FPDF)` subclass that overrides FPDF's standard `footer()` hook. Single hook = stamps every page of every PDF, automatically, with no per-generator bookkeeping.
+- 9 call sites swapped from raw `FPDF()` → `CarryOnPDF()` across 4 files:
+  - `routes/guardian_exports.py` × 6 (Guardian Checklist, IAC Report, Beneficiary Checklist, Conversation, To-Do, Plan-of-Action)
+  - `routes/pdf_export.py` × 1 (Estate Plan Guide)
+  - `services/quickstart_pdf.py` × 1 (QuickStart Wizard PDF)
+  - `services/ccp_combined_pdf.py` × 1 (Connected Protocol — combined multi-plan)
+- Footer pulls its lock date from `PRIME_DIRECTIVE_LOCKED_AT` in `services/prime_directive.py` so the trust attribution can never drift from the canonical directive source.
+- Caller's font/color state is saved + restored around the footer write so no body content is affected by the stamp.
+
+### Regression-gated by 3 new tests (added to fast pre-push suite)
+- `test_trust_footer_present_on_every_page` — builds a 2-page CarryOnPDF, decodes every page stream, asserts the footer's distinctive prefix appears ≥ 2 times. A regression that silently overrides or removes `footer()` fails here.
+- `test_trust_footer_points_at_our_promise_url` — asserts the footer text references the public Our Promise URL.
+- `test_trust_footer_locked_at_date_matches_directive` — asserts the date stamped in the footer equals `PRIME_DIRECTIVE_LOCKED_AT`. Drift means PDF readers and the runtime endpoint would see DIFFERENT lock dates.
+
+Wired into `scripts/check_tests_fast.py` so the pre-push hook now blocks any push that breaks the trust attribution.
+
+### Verified
+- 3/3 trust-footer tests pass in 0.25s
+- 62/62 fast suite pass in 21.21s (was 59; +3 trust-footer tests)
+- `bash scripts/git-hooks/pre-push` end-to-end → exit 0
+- `bash housekeeping.sh --strict` → 0 WARN / 0 FAIL
+- Ruff lint clean on all 5 modified backend files
+- Manual smoke: built a 2-page CarryOnPDF, decoded the streams, footer present on both pages
+
+The trust chain is now complete and mechanically enforced end-to-end:
+- **PRD.md** (verbatim spec lock, Invariant 6)
+- **AGENT_RULES.md** (fork-agent pointer, Rule −4)
+- **services/prime_directive.py** (runtime source of truth, locked to PRD via Invariant 8)
+- **/our-promise** page (public-facing contract, served from the same constant)
+- **Every CarryOn PDF** (per-page footer attribution, gated by 3 new regression tests)
+
+A professional handed a CarryOn-generated document now has two independent verification paths: (1) the page footer, (2) the public `/our-promise` URL. The two paths are mechanically locked to the same source.
+
+
 ## Feb 17, 2026 — Our Promise page shipped + Prime Directive codebase audit
 
 The Prime Directive locked yesterday is now (a) **publicly visible** to the lawyers, CPAs, estate planners, and wealth managers a user hands a CarryOn-generated PDF to, and (b) **proven aligned** with the running codebase by a comprehensive audit.
