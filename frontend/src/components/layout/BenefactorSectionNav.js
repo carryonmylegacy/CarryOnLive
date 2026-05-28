@@ -12,10 +12,10 @@ import { isFeatureKeyEnabled } from '../../utils/featureGates';
  * admin menu.
  *
  * Each section row:
- *   • Tap LABEL → toggles expansion (no page navigation; sections
- *     don't currently have landing pages, only their tab children
- *     do).
- *   • Tap CHEVRON → also toggles expansion.
+ *   • Tap LABEL → navigates to `/section/<key>` landing page (founder
+ *     rule, May 28 2026 — pillar pills are now hot links straight to
+ *     the section landing, not just expand toggles).
+ *   • Tap CHEVRON → toggles inline expansion of the child tabs.
  *
  * Children are tier-gated against `enabledFeatures`. A section whose
  * children are all gated off renders ZERO items (the section pill
@@ -64,6 +64,15 @@ const BenefactorSectionNav = ({
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch {}
   };
 
+  // Section-pill click: navigate to the section's landing page
+  // (`/section/<key>`). The pill is now a hot link; the chevron next
+  // to it still toggles inline expansion so the user can drill into
+  // a feature without leaving the current page.
+  const handleSectionClick = (key) => {
+    if (onNavClick) onNavClick();
+    navigate(`/section/${key}`);
+  };
+
   const handleTabClick = (tabPath) => {
     if (onNavClick) onNavClick();
     navigate(tabPath);
@@ -82,10 +91,11 @@ const BenefactorSectionNav = ({
           return (
             <button
               key={s.key}
-              onClick={() => toggle(s.key)}
+              onClick={() => handleSectionClick(s.key)}
               className={`nav-item ${isActive ? 'active' : ''}`}
               data-testid={`benefactor-section-nav-${s.key}`}
               title={s.label}
+              aria-label={`Open ${s.label} section`}
               style={{ width: '100%', justifyContent: 'center' }}
             >
               <Icon style={{ color: isActive ? s.color : undefined }} />
@@ -124,11 +134,11 @@ const BenefactorSectionNav = ({
                 boxShadow: `0 1px 2px rgba(${rgb}, ${shadowAlpha}), 0 1px 6px rgba(${rgb}, ${shadowAlpha * 0.6})`,
               }}
             >
-              {/* LABEL — toggles expansion */}
+              {/* LABEL — navigates to the section landing page */}
               <button
-                onClick={() => toggle(s.key)}
+                onClick={() => handleSectionClick(s.key)}
                 data-testid={`benefactor-section-nav-${s.key}`}
-                aria-expanded={isOpen}
+                aria-label={`Open ${s.label} section`}
                 className="flex items-center gap-2 flex-1 min-w-0 text-left active:scale-[0.98]"
                 style={{ background: 'transparent', border: 0, color: 'inherit', cursor: 'pointer' }}
               >
