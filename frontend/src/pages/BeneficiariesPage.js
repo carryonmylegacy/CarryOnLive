@@ -1036,14 +1036,17 @@ const BeneficiariesPage = () => {
                 const succStyle = isInSuccession
                   ? (SUCCESSION_COLORS[succRank] || { bg: 'rgba(148,163,184,0.12)', color: '#94a3b8', border: '1px solid rgba(148,163,184,0.2)' })
                   : { bg: 'rgba(100,116,139,0.08)', color: '#64748b', border: '1px solid rgba(100,116,139,0.15)' };
-                // (B) Estate Classification — two independent flags. A person
-                //     may be a Legal Beneficiary, a CarryOn Only Beneficiary,
-                //     both, or neither. Legacy fallback: legal ≈ rank-0;
-                //     carryon ≈ "not legal" so existing data renders unchanged.
+                // (B) Estate Classification — two FULLY INDEPENDENT flags. A
+                //     person may be a Legal Beneficiary, a CarryOn Only
+                //     Beneficiary, both, or neither. Each toggle's legacy
+                //     fallback is derived from STABLE underlying data
+                //     (`legacyLegal`), NOT from the other live toggle — so
+                //     flipping one never moves the other.
+                const legacyLegal = ben.is_primary === true || ben.succession_order === 0;
                 const isLegal = ben.is_legal_beneficiary === true
-                  || (ben.is_legal_beneficiary == null && (ben.is_primary === true || ben.succession_order === 0));
+                  || (ben.is_legal_beneficiary == null && legacyLegal);
                 const isCarryon = ben.is_carryon_beneficiary === true
-                  || (ben.is_carryon_beneficiary == null && !isLegal);
+                  || (ben.is_carryon_beneficiary == null && !legacyLegal);
                 const isTileExpanded = expandedTiles.has(ben.id);
                 return (
                 <SortableBeneficiaryCard key={ben.id} id={ben.id} disabled={benSortKey !== 'succession'}>
