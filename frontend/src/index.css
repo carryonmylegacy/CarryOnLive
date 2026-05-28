@@ -613,6 +613,31 @@
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14' fill='none' stroke='%231E293B' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='3 5 7 1.5 11 5'/><polyline points='3 9 7 12.5 11 9'/></svg>");
 }
 
+/* Strip native browser number-input spinners (up/down arrows inside
+   the number box). The platform's stepper UI uses explicit -/+
+   buttons, so the native chrome is a duplicate control that the
+   user (May 28 2026) asked to be removed. Applies to every
+   <input type="number"> on the platform; if a future field truly
+   needs the native arrows it can opt back in with class
+   `allow-number-spinner`. */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+input[type="number"].allow-number-spinner::-webkit-outer-spin-button,
+input[type="number"].allow-number-spinner::-webkit-inner-spin-button {
+  -webkit-appearance: auto;
+}
+input[type="number"].allow-number-spinner {
+  -moz-appearance: auto;
+  appearance: auto;
+}
+
 
 @layer components {
   /* App Container */
