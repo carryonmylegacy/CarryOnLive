@@ -150,7 +150,7 @@ async def webauthn_register_complete(
     return {"success": True, "message": "Face ID registered successfully"}
 
 
-@router.post("/auth/webauthn/login-options")
+@router.post("/auth/webauthn/login-options")  # pre-push-invariants: allow-public-mutation (pre-login passkey challenge)
 async def webauthn_login_options(data: LoginOptionsRequest):
     """Generate WebAuthn authentication options — no auth required."""
     # Find credentials for this user (by email or username if provided, or allow discoverable)
@@ -194,7 +194,7 @@ async def webauthn_login_options(data: LoginOptionsRequest):
     return json.loads(webauthn.options_to_json(options))
 
 
-@router.post("/auth/webauthn/login")
+@router.post("/auth/webauthn/login")  # pre-push-invariants: allow-public-mutation (passkey signature is the auth gate)
 async def webauthn_login_complete(data: LoginCompleteRequest):
     """Complete WebAuthn authentication — verify passkey and return JWT."""
     from utils import create_token

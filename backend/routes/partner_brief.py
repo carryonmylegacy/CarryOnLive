@@ -800,7 +800,9 @@ def _build_email_html(*, name: str, ai_intro: str, brand_url: str) -> str:
 </div></body></html>"""
 
 
-@router.post("/partner-brief/try-quickstart")
+@router.post(
+    "/partner-brief/try-quickstart"
+)  # pre-push-invariants: allow-public-mutation (public B2B trial CTA, IP rate-limited)
 async def try_quickstart(
     payload: TryQuickStartPayload,
     request: Request,

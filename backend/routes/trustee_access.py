@@ -548,7 +548,9 @@ async def get_claim_preview(token: str):
     }
 
 
-@router.post("/trustee/claim/{token}/start")
+@router.post(
+    "/trustee/claim/{token}/start"
+)  # pre-push-invariants: allow-public-mutation (claim token is the auth gate)
 async def start_claim(token: str, data: TrusteeClaimStart, request: Request):
     """Public — trustee picks username + password. Fires a 6-digit OTP email."""
     grant = await _resolve_claim_or_raise(token)
@@ -608,7 +610,9 @@ async def start_claim(token: str, data: TrusteeClaimStart, request: Request):
     return {"otp_sent": True, "ttl_minutes": OTP_TTL_MINUTES}
 
 
-@router.post("/trustee/claim/{token}/complete")
+@router.post(
+    "/trustee/claim/{token}/complete"
+)  # pre-push-invariants: allow-public-mutation (claim token + OTP are the auth gate)
 async def complete_claim(token: str, data: TrusteeClaimComplete):
     """Public — trustee enters the OTP. Activates the grant on success."""
     grant = await _resolve_claim_or_raise(token)

@@ -21,7 +21,7 @@ from ._core import (
 )
 
 
-@router.post("/auth/register")
+@router.post("/auth/register")  # pre-push-invariants: allow-public-mutation (public signup)
 async def register(data: UserCreate):
     """Register a new benefactor account."""
     if data.username:

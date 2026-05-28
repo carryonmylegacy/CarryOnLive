@@ -24,7 +24,9 @@ class DevSwitchRequest(BaseModel):
     email: str
 
 
-@router.post("/auth/dev-login")
+@router.post(
+    "/auth/dev-login"
+)  # pre-push-invariants: allow-public-mutation (gated by ALLOW_DEV_ENDPOINTS + admin-token check inside)
 async def dev_login(data: UserLogin, request: Request):
     """Admin impersonation — only available when ALLOW_DEV_ENDPOINTS=true."""
     if not os.environ.get("ALLOW_DEV_ENDPOINTS", "").lower() == "true":
@@ -57,7 +59,7 @@ async def dev_login(data: UserLogin, request: Request):
     )
 
 
-@router.post("/auth/dev-switch")
+@router.post("/auth/dev-switch")  # pre-push-invariants: allow-public-mutation (admin/founder token decoded inside)
 async def dev_switch(data: DevSwitchRequest, request: Request):
     """Portal switcher — founder production feature for switching between configured portals.
     Does NOT require ALLOW_DEV_ENDPOINTS (unlike dev-login impersonation).

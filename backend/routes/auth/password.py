@@ -20,7 +20,9 @@ class VerifyPasswordRequest(BaseModel):
     password: str
 
 
-@router.post("/auth/verify-password")
+@router.post(
+    "/auth/verify-password"
+)  # pre-push-invariants: allow-public-mutation (password is the auth gate; used for step-up before settings)
 async def verify_password_endpoint(data: VerifyPasswordRequest):
     """Verify account password without logging in. Used for sensitive settings changes."""
     user = await resolve_user_by_identifier(data.email)
@@ -79,7 +81,9 @@ class ResetPasswordRequest(BaseModel):
     new_password: str
 
 
-@router.post("/auth/forgot-password")
+@router.post(
+    "/auth/forgot-password"
+)  # pre-push-invariants: allow-public-mutation (account recovery; user is locked out by definition)
 async def forgot_password(data: ForgotPasswordRequest):
     """Send a password reset OTP. User can enter their username OR email
     (auto-generated usernames like ``admin_5dfa64`` are easy to forget, so
@@ -104,7 +108,7 @@ async def forgot_password(data: ForgotPasswordRequest):
     return {"message": "If that account exists, a reset code has been sent."}
 
 
-@router.post("/auth/reset-password")
+@router.post("/auth/reset-password")  # pre-push-invariants: allow-public-mutation (reset OTP is the auth gate)
 async def reset_password(data: ResetPasswordRequest):
     """Verify OTP and set new password. Accepts username OR email as the
     identifier so the request matches whatever the user entered in step 1."""
@@ -137,7 +141,9 @@ async def reset_password(data: ResetPasswordRequest):
     return {"message": "Password reset successfully. You can now log in with your new password."}
 
 
-@router.post("/auth/forgot-username")
+@router.post(
+    "/auth/forgot-username"
+)  # pre-push-invariants: allow-public-mutation (username recovery; user is locked out by definition)
 async def forgot_username(data: dict):
     """Send the user their username(s) associated with an email address."""
     email = (data.get("email") or "").lower().strip()

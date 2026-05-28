@@ -186,7 +186,7 @@ class AcceptInvitationRequest(BaseModel):
     username: Optional[str] = None
 
 
-@router.post("/invitations/accept")
+@router.post("/invitations/accept")  # pre-push-invariants: allow-public-mutation (invitation token is the auth gate)
 async def accept_invitation(data: AcceptInvitationRequest):
     """Accept an invitation and create a beneficiary user account"""
     beneficiary = await db.beneficiaries.find_one({"invitation_token": data.token}, {"_id": 0})
@@ -370,7 +370,9 @@ class LinkExistingAccountRequest(BaseModel):
     password: str
 
 
-@router.post("/invitations/accept-existing")
+@router.post(
+    "/invitations/accept-existing"
+)  # pre-push-invariants: allow-public-mutation (invitation token + existing-account login are the auth gate)
 async def accept_invitation_existing(data: LinkExistingAccountRequest):
     """Accept an invitation by linking to an existing CarryOn account via login."""
     beneficiary = await db.beneficiaries.find_one({"invitation_token": data.token}, {"_id": 0})

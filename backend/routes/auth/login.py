@@ -24,7 +24,7 @@ class UsernameCheckRequest(BaseModel):
     username: str
 
 
-@router.post("/auth/check-username")
+@router.post("/auth/check-username")  # pre-push-invariants: allow-public-mutation (pre-signup availability check)
 async def check_username_available(data: UsernameCheckRequest):
     """Check if a username is available. Used during signup for real-time validation."""
     from ._core import validate_username
@@ -37,7 +37,7 @@ async def check_username_available(data: UsernameCheckRequest):
     return {"available": existing is None}
 
 
-@router.post("/auth/check-email")
+@router.post("/auth/check-email")  # pre-push-invariants: allow-public-mutation (pre-signup existence check)
 async def check_email_exists(data: dict):
     """Check if an email is already registered. Kept for backward compatibility."""
     email = (data.get("email") or "").lower().strip()
@@ -45,7 +45,9 @@ async def check_email_exists(data: dict):
     return {"exists": user is not None}
 
 
-@router.post("/auth/login")
+@router.post(
+    "/auth/login"
+)  # pre-push-invariants: allow-public-mutation (login endpoint — credentials are the auth gate)
 async def login(data: UserLogin, request: Request):
     """Login — verifies credentials, then sends OTP unless user has a daily trust token."""
     client_ip = get_client_ip(request)
@@ -392,7 +394,9 @@ class ResendOTPRequest(BaseModel):
     method: str = "email"
 
 
-@router.post("/auth/resend-otp")
+@router.post(
+    "/auth/resend-otp"
+)  # pre-push-invariants: allow-public-mutation (pre-auth OTP resend; rate-limited upstream)
 async def resend_otp(data: ResendOTPRequest):
     """Resend OTP code to the user's email or phone."""
     user = await resolve_user_by_identifier(data.email)
@@ -447,7 +451,9 @@ class OTPVerifyWithTrust(BaseModel):
     trust_today: bool = False
 
 
-@router.post("/auth/verify-otp", response_model=TokenResponse)
+@router.post(
+    "/auth/verify-otp", response_model=TokenResponse
+)  # pre-push-invariants: allow-public-mutation (OTP is the auth gate; issues the JWT)
 async def verify_otp(data: OTPVerifyWithTrust, request: Request):
     """Verify OTP and return access token."""
     user = await resolve_user_by_identifier(data.email)

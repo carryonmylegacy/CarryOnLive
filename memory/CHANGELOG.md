@@ -1,5 +1,26 @@
 # CarryOn — Changelog
 
+## Feb 17, 2026 — Reverification sweep: closed remaining pre-push invariant gap
+
+### Caught & fixed (latent regression from previous fork)
+- The mutation-route auth invariant (`test_every_mutation_route_is_auth_gated`) was failing locally on 19 legitimately-public routes that lacked the explicit opt-out marker. Would have blocked the next `git push` outright.
+- Added `# pre-push-invariants: allow-public-mutation (<reason>)` markers to:
+  - `routes/auth/login.py` × 5 — `/auth/check-username`, `/auth/check-email`, `/auth/login`, `/auth/resend-otp`, `/auth/verify-otp`
+  - `routes/auth/register.py` × 1 — `/auth/register`
+  - `routes/auth/password.py` × 4 — `/auth/verify-password`, `/auth/forgot-password`, `/auth/reset-password`, `/auth/forgot-username`
+  - `routes/auth/dev.py` × 2 — `/auth/dev-login`, `/auth/dev-switch`
+  - `routes/webauthn.py` × 2 — `/auth/webauthn/login-options`, `/auth/webauthn/login`
+  - `routes/trustee_access.py` × 2 — `/trustee/claim/{token}/start`, `/trustee/claim/{token}/complete`
+  - `routes/beneficiaries/invitations.py` × 2 — `/invitations/accept`, `/invitations/accept-existing`
+  - `routes/partner_brief.py` × 1 — `/partner-brief/try-quickstart`
+
+Each marker is annotated inline with the actual auth gate (claim token, invitation token, OTP, credentials, ALLOW_DEV_ENDPOINTS guard, etc.) so the rationale travels with the code.
+
+### Verified
+- `cd backend && python -m pytest tests/test_iter156_ai_safety_onboarding.py tests/test_pre_push_invariants.py -q` → **21/21 green**
+- `bash housekeeping.sh --strict` → **0 WARN / 0 FAIL, exit 0**
+
+
 ## May 27, 2026 — Self-enforcing pre-push invariants (AI Safety + Mongo projection)
 
 ### New regression fixture: `tests/test_pre_push_invariants.py`
