@@ -15,12 +15,14 @@ class ReorderRequest(BaseModel):
     ordered_ids: list[str]
 
 
-class LegalClassRequest(BaseModel):
-    # Explicit target value sent by the client so the server never has to guess
-    # the "current" state (the GET endpoint synthesizes succession_order for
-    # legacy rows, which would otherwise disagree with the raw DB baseline).
-    # None = no explicit value → fall back to flipping the resolved value.
+class BeneficiaryFlagsRequest(BaseModel):
+    # All optional — the client sends only the field(s) it is changing. Used by
+    # the per-beneficiary toggles on /beneficiaries (estate classification +
+    # gated account-change notifications). None = leave unchanged.
     is_legal_beneficiary: bool | None = None
+    is_carryon_beneficiary: bool | None = None
+    notify_benefactor_changes: bool | None = None
+    notify_trustee_changes: bool | None = None
 
 
 class ForceLinkRequest(BaseModel):
@@ -151,56 +153,47 @@ async def toggle_succession(beneficiary_id: str, current_user: dict = Depends(ge
         return {"success": True, "in_succession": True, "is_primary": is_primary}
 
 
-@router.put("/beneficiaries/{beneficiary_id}/toggle-legal")
-async def toggle_legal_beneficiary(
+@router.put("/beneficiaries/{beneficiary_id}/flags")
+async def set_beneficiary_flags(
     beneficiary_id: str,
-    data: LegalClassRequest = LegalClassRequest(),
+    data: BeneficiaryFlagsRequest,
     current_user: dict = Depends(get_current_user),
 ):
-    """Set a beneficiary's estate classification: Primary (legal estate
-    beneficiary — named in will/trust/beneficiary-designation drafts) vs
-    Secondary (CarryOn-platform recipient only — MM / IAC / FFN).
+    """Set per-beneficiary toggle flags. Two independent dimensions:
 
-    Multiple beneficiaries may be Primary and multiple may be Secondary; this
-    is a per-person flag, not a single-slot ladder (founder rule, May 28 2026).
+    Estate classification (source of truth for ALL AI estate-document analysis):
+      • is_legal_beneficiary  — Legal Beneficiary (named in will/trust drafts).
+      • is_carryon_beneficiary — CarryOn Only Beneficiary (platform products).
+      A person may be one, both, or neither.
 
-    The client sends the explicit target value so the server never disagrees
-    with what the UI displays. If no value is supplied, we flip the resolved
-    current value (legacy fallback: rank-0 / is_primary record = legal).
+    Gated account-change notifications (benefactor controls visibility per actor):
+      • notify_benefactor_changes — beneficiary sees changes the benefactor makes.
+      • notify_trustee_changes    — beneficiary sees changes a trustee makes.
+
+    Only the field(s) present in the body are written; omitted fields are left
+    unchanged. The client always sends explicit booleans (no server-side guess).
     """
-    require_benefactor_role(current_user, "classify beneficiaries")
+    require_benefactor_role(current_user, "update beneficiary flags")
 
     ben = await db.beneficiaries.find_one(
         {"id": beneficiary_id, "deleted_at": None},
-        {
-            "_id": 0,
-            "id": 1,
-            "estate_id": 1,
-            "name": 1,
-            "is_legal_beneficiary": 1,
-            "is_primary": 1,
-            "succession_order": 1,
-        },
+        {"_id": 0, "id": 1, "estate_id": 1},
     )
     if not ben:
         raise HTTPException(status_code=404, detail="Beneficiary not found")
 
-    # IDOR guard — only the estate owner (or admin) can reclassify.
+    # IDOR guard — only the estate owner (or admin) can change these flags.
     await require_estate_owner(ben.get("estate_id"), current_user)
 
-    if data.is_legal_beneficiary is not None:
-        new_val = bool(data.is_legal_beneficiary)
-    else:
-        current = ben.get("is_legal_beneficiary")
-        if current is None:
-            current = bool(ben.get("is_primary")) or ben.get("succession_order") == 0
-        new_val = not current
+    update_fields = {k: bool(v) for k, v in data.model_dump(exclude_none=True).items()}
+    if not update_fields:
+        raise HTTPException(status_code=400, detail="No flag fields supplied")
 
     await db.beneficiaries.update_one(
         {"id": beneficiary_id},
-        {"$set": {"is_legal_beneficiary": new_val}},
+        {"$set": update_fields},
     )
-    return {"success": True, "is_legal_beneficiary": new_val}
+    return {"success": True, **update_fields}
 
 
 @router.get("/beneficiaries/{estate_id}/succession")

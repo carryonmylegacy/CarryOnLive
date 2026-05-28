@@ -143,16 +143,28 @@ class Beneficiary(BaseModel):
     # Succession hierarchy — used purely for drag ORDER / contingency precedence.
     # None means the beneficiary has no explicit order yet (sorted last).
     succession_order: Optional[int] = None
-    # Estate classification (May 28 2026 founder rule): True = legal estate
-    # beneficiary ("Primary" — named in will/trust/beneficiary-designation
-    # drafts). False = CarryOn-platform recipient only ("Secondary" — receives
-    # MM / IAC / FFN but is NOT named in estate documents). Multiple people may
-    # be Primary and multiple may be Secondary — it is a per-person flag, not a
-    # single-slot ladder. None = legacy default (resolved at read time: the
-    # rank-0 / is_primary record is treated as legal for backward compatibility).
+    # Estate classification (May 28 2026 founder rule, revised). TWO INDEPENDENT
+    # flags — a person can be one, both, or neither:
+    #   • is_legal_beneficiary  — Legal Beneficiary: named in will / trust /
+    #     beneficiary-designation drafts. This is the source of truth every AI
+    #     surface uses when deciding who belongs in estate-document language.
+    #   • is_carryon_beneficiary — CarryOn Only Beneficiary: receives CarryOn
+    #     platform products (Milestone Messages, IAC hand-offs, FFN, etc.).
+    # None = legacy default, resolved at read time (legal ≈ rank-0/is_primary;
+    # carryon ≈ "not legal") so existing data renders unchanged.
     is_legal_beneficiary: Optional[bool] = None
+    is_carryon_beneficiary: Optional[bool] = None
+    # Gated account-change notifications. When ON, this beneficiary receives a
+    # notification whenever the relevant actor changes the benefactor account.
+    # Independent switches so the benefactor controls visibility per actor.
+    notify_benefactor_changes: bool = False
+    notify_trustee_changes: bool = False
     # Invitation tracking
-    is_primary: bool = False  # Primary beneficiary acts as trustee post-transition
+    # NOTE: `succession_order` / `is_primary` below now drive the CarryOn
+    # EXECUTOR succession ladder (Primary / Secondary / Tertiary … = who controls
+    # the benefactor's CarryOn platform access after passing). This is a SEPARATE
+    # dimension from the estate classification above.
+    is_primary: bool = False  # rank-0 of the CarryOn executor succession ladder
     invitation_status: str = "pending"  # pending, sent, accepted
     invitation_token: Optional[str] = None
     invitation_sent_at: Optional[str] = None

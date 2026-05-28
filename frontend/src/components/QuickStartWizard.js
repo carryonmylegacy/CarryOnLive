@@ -29,6 +29,7 @@ import { API_URL } from '../config';
 import { useAuth, useBrand } from '../contexts/AuthContext';
 import { openPdfPreview } from '../utils/openPdfPreview';
 import AddressAutocomplete from './AddressAutocomplete';
+import { RELATIONSHIPS } from '../config/relationships';
 
 const STEPS = [
   'gate', 'welcome', 'residence', 'household',
@@ -212,6 +213,11 @@ const QuickStartWizard = ({ forceOpen = false, onClose = () => {} }) => {
             const isLegal = (typeof b.is_legal_beneficiary === 'boolean')
               ? b.is_legal_beneficiary
               : (so === null ? true : so === 0);
+            // CarryOn Only recipient is an INDEPENDENT flag; legacy fallback =
+            // "not a legal beneficiary" so older data still maps the same way.
+            const isCarryon = (typeof b.is_carryon_beneficiary === 'boolean')
+              ? b.is_carryon_beneficiary
+              : !isLegal;
             return {
               beneficiary_id: b.id,
               name: b.name || [b.first_name, b.last_name].filter(Boolean).join(' ') || b.first_name || 'Beneficiary',
@@ -219,6 +225,7 @@ const QuickStartWizard = ({ forceOpen = false, onClose = () => {} }) => {
               age: typeof b.age === 'number' ? b.age : (b.age || ''),
               succession_order: so,
               is_legal_beneficiary: isLegal,
+              is_carryon_beneficiary: isCarryon,
             };
           });
         if (mapped.length > 0) next.beneficiaries = mapped;
@@ -702,11 +709,7 @@ const _STATE_LIST = [
   'NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VT',
   'VA','WA','WV','WI','WY','DC',
 ];
-const _RELS = [
-  'Spouse','Partner','Son','Daughter','Mother','Father','Brother','Sister',
-  'Grandson','Granddaughter','Grandmother','Grandfather','Aunt','Uncle',
-  'Niece','Nephew','Friend','Charity','Other',
-];
+const _RELS = RELATIONSHIPS;
 const _ENTITY_TYPES = [
   ['sole_prop','Sole Proprietorship'],['llc','LLC'],
   ['s_corp','S-Corp'],['c_corp','C-Corp'],

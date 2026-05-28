@@ -280,12 +280,28 @@ def _qw_legal_beneficiaries(data: dict[str, Any]) -> list[dict[str, Any]]:
     return [b for b in _qw_beneficiaries(data) if _is_legal_beneficiary(b)]
 
 
+def _is_carryon_recipient(row: dict[str, Any]) -> bool:
+    """True when a QW beneficiary row is a CarryOn Only recipient (receives
+    CarryOn platform products — Milestone Messages, IAC, FFN — but is not, by
+    this flag alone, a named legal beneficiary).
+
+    Founder rule (May 28 2026, revised): `is_carryon_beneficiary` is an
+    INDEPENDENT per-person flag from `is_legal_beneficiary`. When present we
+    honor it directly. Legacy fallback (flag absent): treat anyone who is NOT a
+    legal beneficiary as a platform recipient, preserving prior PDF output.
+    """
+    val = row.get("is_carryon_beneficiary")
+    if val is not None:
+        return bool(val)
+    return not _is_legal_beneficiary(row)
+
+
 def _qw_platform_recipients(data: dict[str, Any]) -> list[dict[str, Any]]:
-    """Subset of `_qw_beneficiaries` containing only CarryOn-platform-only
-    recipients (Secondary tier and below). Surfaced separately in the
-    PDF + manifest so a professional reading the doc never confuses
-    them with named legal beneficiaries."""
-    return [b for b in _qw_beneficiaries(data) if not _is_legal_beneficiary(b)]
+    """Subset of `_qw_beneficiaries` containing CarryOn Only recipients —
+    people who receive CarryOn platform products but are surfaced separately in
+    the PDF + manifest so a professional reading the doc never confuses them
+    with named legal beneficiaries."""
+    return [b for b in _qw_beneficiaries(data) if _is_carryon_recipient(b)]
 
 
 def _human_state_summary(data: dict[str, Any]) -> str:

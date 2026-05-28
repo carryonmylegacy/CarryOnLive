@@ -6,9 +6,10 @@
  * US state codes. No React, no state.
  */
 
-export const relations = [
-  'Spouse', 'Son', 'Daughter', 'Son-in-law', 'Daughter-in-law', 'Mother', 'Father', 'Mother-in-law', 'Father-in-law', 'Brother', 'Sister', 'Aunt', 'Uncle', 'Grandson', 'Granddaughter', 'Grandmother', 'Grandfather', 'Nephew', 'Niece', 'Great-Grandson', 'Great-Granddaughter', 'Great-Grandmother', 'Great-Grandfather', 'Friend', 'Other',
-];
+// Canonical relationship list — single source of truth in config/relationships.
+// Re-exported here as `relations` so existing BeneficiariesPage imports keep
+// working. Do NOT fork this list; edit config/relationships.js.
+export { RELATIONSHIPS as relations } from '../config/relationships';
 
 export const avatarColors = [
   '#d4af37', '#3b82f6', '#10b981', '#8b5cf6', '#ef4444', '#f59e0b', '#ec4899', '#06b6d4',

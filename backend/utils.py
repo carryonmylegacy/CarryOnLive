@@ -35,6 +35,29 @@ from config import (
     security,
 )
 
+# ===================== REQUEST-SCOPED ACTOR CONTEXT =====================
+# Set by get_current_user() so downstream helpers (notably log_activity) can
+# tell WHO is driving a mutation — the benefactor themselves, or a trustee
+# operating via Trustee Mode (TMA). Used to route gated account-change
+# notifications to the right opted-in beneficiaries. Defaults to None for
+# unauthenticated / background / scheduler code paths (no notification fired).
+import contextvars
+
+_actor_ctx: "contextvars.ContextVar[dict | None]" = contextvars.ContextVar("carryon_actor_ctx", default=None)
+
+
+def set_actor_context(actor_type: str, name: str = "") -> None:
+    """actor_type ∈ {"benefactor", "trustee"}."""
+    try:
+        _actor_ctx.set({"type": actor_type, "name": name or ""})
+    except Exception:  # pragma: no cover - contextvar set never realistically fails
+        pass
+
+
+def get_actor_context() -> "dict | None":
+    return _actor_ctx.get()
+
+
 # ===================== ENCRYPTION =====================
 
 
@@ -159,6 +182,7 @@ async def get_current_user(
         benefactor["_trustee_grant_id"] = grant["id"]
         benefactor["_trustee_display_name"] = grant.get("trustee_display_name", "")
         benefactor["_trustee_can_access_beneficiaries"] = bool(grant.get("include_beneficiaries", False))
+        set_actor_context("trustee", grant.get("trustee_display_name") or "Your trustee")
         return benefactor
 
     user = await db.users.find_one({"id": payload["user_id"]}, {"_id": 0})
@@ -198,6 +222,7 @@ async def get_current_user(
                 detail="signed_in_elsewhere",
             )
 
+    set_actor_context("benefactor", user.get("name") or user.get("first_name") or "The benefactor")
     return user
 
 
@@ -327,6 +352,59 @@ async def log_activity(
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
     await db.activity_log.insert_one(activity)
+
+    # Gated account-change notifications — fan out to beneficiaries who the
+    # benefactor has opted into seeing this actor's changes. Best-effort and
+    # fire-and-forget so the audit write is never blocked or broken by it.
+    try:
+        actor = get_actor_context()
+        if actor and estate_id and actor.get("type") in ("benefactor", "trustee"):
+            asyncio.create_task(_fanout_account_change_notifications(estate_id, actor["type"], actor.get("name") or ""))
+    except Exception as exc:  # pragma: no cover - telemetry must never break audit
+        logger.warning(f"gated-notification fan-out skipped: {exc}")
+
+
+async def _fanout_account_change_notifications(estate_id: str, actor_type: str, actor_name: str) -> None:
+    """Notify beneficiaries who opted into seeing this actor's account changes.
+
+    Message is intentionally GENERIC (founder rule): it names the actor but not
+    what changed, so beneficiaries learn that activity happened without leaking
+    the substance of a private estate edit.
+    """
+    field = "notify_benefactor_changes" if actor_type == "benefactor" else "notify_trustee_changes"
+    recipients = await db.beneficiaries.find(
+        {
+            "estate_id": estate_id,
+            "deleted_at": None,
+            field: True,
+            "user_id": {"$ne": None},
+        },
+        {"_id": 0, "user_id": 1},
+    ).to_list(500)
+    if not recipients:
+        return
+
+    from services.notifications import notify
+
+    who = actor_name or ("Your trustee" if actor_type == "trustee" else "The benefactor")
+    title = "Account updated"
+    body = f"{who} made a change to the account."
+    seen: set[str] = set()
+    for r in recipients:
+        uid = r.get("user_id")
+        if not uid or uid in seen:
+            continue
+        seen.add(uid)
+        try:
+            await notify.beneficiary(
+                uid,
+                title,
+                body,
+                url="/beneficiary",
+                metadata={"kind": "account_change", "actor_type": actor_type},
+            )
+        except Exception as exc:  # pragma: no cover
+            logger.warning(f"gated-notification send failed for {uid}: {exc}")
 
 
 # ===================== PUSH NOTIFICATIONS =====================
