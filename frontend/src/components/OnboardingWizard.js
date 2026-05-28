@@ -73,6 +73,13 @@ const OnboardingWizard = ({ onAllComplete, onContentChange }) => {
       return next;
     });
   };
+  // First-time auto-expand: if the dashboard arrives in a state with
+  // no active step left (everything done OR skipped) and the user
+  // has never explicitly toggled the disclosure, default it open so
+  // the tile isn't a near-empty "Setup Guide" card. After the user
+  // toggles once, their preference (`carryon_setup_guide_all_expanded`)
+  // is respected on every subsequent visit.
+  const autoExpandedOnce = useRef(false);
   const [popping, setPopping] = useState({});
   const [dismissPhase, setDismissPhase] = useState('idle'); // 'idle' | 'confirm' | 'info'
   const prevCompleted = useRef({});
@@ -304,6 +311,22 @@ const OnboardingWizard = ({ onAllComplete, onContentChange }) => {
   // that duplicates the compact list right below and overwhelms the
   // dashboard. Founder direction, Feb 28 2026.
   const stepsToShow = showAll ? allSteps : (nextStep ? [nextStep] : []);
+
+  // Auto-expand the "all steps" disclosure ONCE on first arrival in a
+  // no-active-step state, if the user has never explicitly toggled it.
+  // After they tap the Hide/View button once, their localStorage
+  // preference takes over and we never override it again.
+  useEffect(() => {
+    if (autoExpandedOnce.current) return;
+    if (stepsToShow.length === 0 && allSteps.length > 0) {
+      try {
+        if (localStorage.getItem('carryon_setup_guide_all_expanded') === null) {
+          setAllStepsExpanded(true);
+        }
+      } catch { /* ignore */ }
+      autoExpandedOnce.current = true;
+    }
+  }, [stepsToShow.length, allSteps.length]);
 
   // Personalize with beneficiary names
   const benNames = (progress.beneficiary_names || []).slice(0, 3);
@@ -596,19 +619,25 @@ const OnboardingWizard = ({ onAllComplete, onContentChange }) => {
             <button
               type="button"
               onClick={toggleAllSteps}
-              aria-expanded={allStepsExpanded || stepsToShow.length === 0}
+              aria-expanded={allStepsExpanded}
               aria-controls="setup-guide-all-steps-list"
               data-testid="setup-guide-toggle-all-steps"
-              className="w-full flex items-center justify-between gap-2 text-xs lg:text-sm font-semibold text-[var(--t4)] lg:hover:text-[var(--t)] active:text-[var(--t)] transition-colors cursor-pointer"
-              style={{ WebkitTapHighlightColor: 'transparent' }}
+              className="w-full flex items-center justify-between gap-2 text-sm lg:text-base font-bold transition-all cursor-pointer rounded-full px-4 py-2.5 active:scale-[0.98] lg:hover:brightness-110"
+              style={{
+                background: '#2563EB',
+                color: '#FFFFFF',
+                border: '1px solid rgba(255,255,255,0.18)',
+                boxShadow: '0 2px 10px rgba(37, 99, 235, 0.35)',
+                WebkitTapHighlightColor: 'transparent',
+              }}
             >
-              <span>{(allStepsExpanded || stepsToShow.length === 0) ? 'Hide all steps' : 'View all steps'}</span>
+              <span>{allStepsExpanded ? 'Hide all steps' : 'View all steps'}</span>
               <ChevronDown
-                className={`w-4 h-4 transition-transform duration-200 ${(allStepsExpanded || stepsToShow.length === 0) ? 'rotate-180' : ''}`}
+                className={`w-4 h-4 transition-transform duration-200 ${allStepsExpanded ? 'rotate-180' : ''}`}
                 strokeWidth={2.5}
               />
             </button>
-            {(allStepsExpanded || stepsToShow.length === 0) && (
+            {allStepsExpanded && (
               <div data-testid="setup-guide-all-steps-list" id="setup-guide-all-steps-list" className="mt-2">
                 {/* Column headers — tiny uppercase labels so the user
                     knows which column is which without hovering.
