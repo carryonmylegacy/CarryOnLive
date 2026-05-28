@@ -1,5 +1,42 @@
 # CarryOn — Changelog
 
+## May 28, 2026 — Primary = legal estate beneficiary; Secondary+ = CarryOn-platform recipient (founder rule lock)
+
+Founder review of QuickStart Guide PDFs (May 27 2026): "estate planners reviewing our generated documents need to see one clean roster of *legal* beneficiaries — not a mixed list with milestone-message recipients sitting alongside heirs." Locked the rule in code so the AI never includes a platform-only recipient in any will / trust / POA / beneficiary-designation language.
+
+### Founder rule (now mechanically enforced)
+- **Primary tier** (`succession_order === 0`) = **legal estate beneficiary**. Appears in the PDF body's "Beneficiaries" line, in the Verified Inputs Manifest under "Legal estate beneficiaries (Primary tier)", and in the AI prompt's "Other intended beneficiaries" sentence.
+- **Secondary tier and below** (`succession_order >= 1`) = **CarryOn-platform recipient only** (Milestone Messages, IAC, FFN). Renders on a separate "Platform recipients (non-estate)" line in the PDF when present, and ships to the AI prompt with an explicit "DO NOT name these people as inheritors / beneficiaries / trustees in any estate-document recommendation" sentence.
+- Backward compat: in-flight QW payloads lacking both `is_legal_beneficiary` and `succession_order` are treated as legal so older PDFs render unchanged.
+
+### Pieces shipped
+- **`services/quickstart_ai.py`** — new `_is_legal_beneficiary(row)`, `_qw_legal_beneficiaries(data)`, `_qw_platform_recipients(data)` helpers; `_human_state_summary()` now splits legal vs platform contacts; new system-prompt rule **R7 PRIMARY-ONLY IN ESTATE DOCUMENTS** locks the AI's behavior.
+- **`services/quickstart_pdf.py`** — `_format_beneficiaries()` now filters to legal-only; new `_format_platform_recipients()` rendered conditionally as its own snapshot row; `_build_verified_inputs_manifest` labels the two tiers separately; deprecated `pdf.output(dest="S")` upgraded to fpdf2 ≥ 2.2 idiom.
+- **`services/quickstart_pdf.py::_disclaimer_banner()`** — new soft-amber "NOT LEGAL ADVICE" banner on page 1 of every QuickStart Guide: *"This document is for informational and personal-organization purposes only. It is not legal advice and is not a substitute for consultation with a licensed estate-planning attorney in your state. Review every recommendation with a qualified professional before acting on it."*
+- **`frontend/src/components/QuickStartWizard.js`** — QW pre-fill now stamps `succession_order` + `is_legal_beneficiary` on every mapped beneficiary row so the backend can apply the same partition without re-querying `/api/beneficiaries`.
+- **`frontend/src/pages/BeneficiariesPage.js`** — one-time gold educational banner (`data-testid="ben-legal-classifier-banner"`) explaining Primary vs Secondary; dismiss persists via `localStorage.carryon_ben_legal_classifier_seen='1'`. Succession explainer copy updated to "Primary = legal estate beneficiary; Secondary & below = CarryOn platform recipients only."
+- **`tests/test_quickstart_legal_filter.py`** — 10 new regression tests added to the fast pre-push suite (now 81/81 green).
+
+### Regression-gated by 10 new tests
+1. `test_succession_zero_is_legal_others_are_platform` — happy path partition.
+2. `test_explicit_is_legal_beneficiary_flag_wins_over_missing_order` — UI flag overrides absent succession order.
+3. `test_backward_compat_no_flags_treated_as_legal` — in-flight payloads render unchanged.
+4. `test_is_legal_helper_returns_bool_for_all_inputs` — defensive defaults on garbage.
+5. `test_format_beneficiaries_includes_only_primary` — PDF body legal-only.
+6. `test_format_platform_recipients_includes_only_secondary_and_below` — PDF body Secondary-only.
+7. `test_format_platform_recipients_empty_when_no_secondary` — no-row → empty string (row skipped).
+8. `test_human_state_summary_labels_platform_recipients_as_off_limits` — AI prompt explicit "DO NOT name" sentence present.
+9. `test_human_state_summary_omits_platform_recipients_line_when_none` — no row → no platform sentence.
+10. `test_pdf_carries_not_legal_advice_disclaimer` — disclaimer banner text + key phrases verified inside actual generated PDF bytes.
+
+### Verified
+- 10/10 new tests pass in 0.26s.
+- 81/81 fast suite pass in 23.21s (was 71; +10).
+- `bash housekeeping.sh --strict` → 0 WARN / 0 FAIL.
+- ESLint clean on `BeneficiariesPage.js`, `QuickStartWizard.js`. Ruff clean on `quickstart_ai.py`, `quickstart_pdf.py`.
+- **Testing agent v3** (iter 157): backend 100% + frontend 100%. /beneficiaries banner renders, dismiss persists across reload, succession-tier pills + tile layout visually unchanged.
+
+
 ## Feb 17, 2026 — Cryptographically-verifiable PDFs: QR code + HMAC tamper detection live
 
 Every QuickStart Wizard PDF now ships with a **deep-linking QR code in the bottom-right of every page** that points at a **public, HMAC-verified server-rendered verification page**. A professional scans any page on a phone → lands on `/verify/<token>` → sees `DOCUMENT VERIFIED BY CARRYON` (or a clear failure message), the document's generation date, every user input the PDF was built on, and the locked Prime Directive in force at that moment.
