@@ -611,10 +611,13 @@ const OnboardingWizard = ({ onAllComplete, onContentChange }) => {
             {(allStepsExpanded || stepsToShow.length === 0) && (
               <div data-testid="setup-guide-all-steps-list" id="setup-guide-all-steps-list" className="mt-2">
                 {/* Column headers — tiny uppercase labels so the user
-                    knows which column is which without hovering. */}
+                    knows which column is which without hovering.
+                    Width sized so DONE/SKIP fit on one line at the
+                    smallest mobile font; Step column uses flex-1
+                    and absorbs the rest of the row. */}
                 <div className="flex items-center gap-2 px-2 pb-1 text-[11px] lg:text-xs uppercase tracking-wider text-[var(--t5)] font-bold">
-                  <span className="w-5 flex-shrink-0 text-center" aria-hidden="true">Done</span>
-                  <span className="w-5 flex-shrink-0 text-center" aria-hidden="true">Skip</span>
+                  <span className="w-10 flex-shrink-0 text-center" aria-hidden="true">Done</span>
+                  <span className="w-10 flex-shrink-0 text-center" aria-hidden="true">Skip</span>
                   <span className="flex-1">Step</span>
                 </div>
                 <ul className="space-y-1">
@@ -635,7 +638,7 @@ const OnboardingWizard = ({ onAllComplete, onContentChange }) => {
                           style={{ WebkitTapHighlightColor: 'transparent' }}
                         >
                           {/* Done column */}
-                          <span className="w-5 flex-shrink-0 flex items-center justify-center" aria-label={isDone ? 'Completed' : 'Not completed'}>
+                          <span className="w-10 flex-shrink-0 flex items-center justify-center" aria-label={isDone ? 'Completed' : 'Not completed'}>
                             {isDone ? (
                               <Check
                                 className="w-4 h-4"
@@ -652,7 +655,7 @@ const OnboardingWizard = ({ onAllComplete, onContentChange }) => {
                             )}
                           </span>
                           {/* Skip column */}
-                          <span className="w-5 flex-shrink-0 flex items-center justify-center" aria-label={isSkip ? 'Skipped' : 'Not skipped'}>
+                          <span className="w-10 flex-shrink-0 flex items-center justify-center" aria-label={isSkip ? 'Skipped' : 'Not skipped'}>
                             {isSkip ? (
                               <Check
                                 className="w-4 h-4"
