@@ -38,8 +38,15 @@ echo ""
 
 # Run strict mode. Capture exit code (set -e is disabled here intentionally
 # so we can print a friendlier failure message).
+#
+# `HK_FAST_TESTS=1` flips on the fast pytest gate in housekeeping.sh
+# (Section "FAST TEST SUITE" — lines ~1748). Without it, the fast suite
+# (IDOR + core-endpoints smoke + AI-safety + AST pre-push invariants)
+# is SILENTLY SKIPPED and a regression in any of those three invariants
+# would slip through pre-push. Setting it here matches the file's own
+# stated contract: "always runs in scripts/check.sh and the pre-push hook".
 set +e
-bash "$HK" --strict
+HK_FAST_TESTS=1 bash "$HK" --strict
 EXIT=$?
 set -e
 
