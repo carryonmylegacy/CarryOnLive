@@ -126,7 +126,7 @@ class FounderLoginBody(BaseModel):
     password: str
 
 
-@router.post("/founder/requests")
+@router.post("/founder/requests")  # pre-push-invariants: allow-public-mutation (public access request)
 async def submit_access_request(body: SubmitAccessRequest):
     """Public endpoint — submit a request to view the Founder page."""
     name = body.name.strip()
@@ -320,7 +320,7 @@ async def clear_inactive_requests(current_user: dict = Depends(require_admin)):
     return {"status": "cleared", "deleted": result.deleted_count}
 
 
-@router.post("/founder-about/login")
+@router.post("/founder-about/login")  # pre-push-invariants: allow-public-mutation (founder-page password login)
 async def founder_login(body: FounderLoginBody):
     """Public endpoint — verify email + password for Founder page access."""
     email = body.email.strip().lower()

@@ -337,7 +337,7 @@ _NOTIFICATION_HANDLERS = {
 # ── Webhook endpoint ─────────────────────────────────────────────────
 
 
-@router.post("/webhook/apple")
+@router.post("/webhook/apple")  # pre-push-invariants: allow-public-mutation (Apple-signed JWS webhook)
 async def apple_webhook(request: Request):
     """Receive and process Apple App Store Server Notifications v2.
 

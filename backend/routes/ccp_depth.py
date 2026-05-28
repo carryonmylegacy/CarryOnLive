@@ -526,7 +526,7 @@ class ActivationStatusReport(BaseModel):
     note: Optional[str] = None
 
 
-@router.post("/ccp/activation/status")
+@router.post("/ccp/activation/status")  # pre-push-invariants: allow-public-mutation (signed activation link)
 async def report_status(req: ActivationStatusReport):
     """Public endpoint (linked from activation email)."""
     await db.ccp_activations.update_one(

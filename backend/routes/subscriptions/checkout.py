@@ -441,7 +441,7 @@ async def reconcile_pending_subscriptions(current_user: dict = Depends(get_curre
     return {"activated": activated, "current": current}
 
 
-@router.post("/webhook/stripe")
+@router.post("/webhook/stripe")  # pre-push-invariants: allow-public-mutation (Stripe HMAC-signed webhook)
 async def stripe_webhook(request: Request):
     """Handle Stripe webhooks — payment success, failure, and subscription events.
 

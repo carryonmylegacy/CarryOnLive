@@ -25,7 +25,7 @@ class ClientErrorReport(BaseModel):
     severity: str = "error"  # error | warning | fatal
 
 
-@router.post("/errors/report")
+@router.post("/errors/report")  # pre-push-invariants: allow-public-mutation (pre-login crash reports)
 async def report_client_error(report: ClientErrorReport, request: Request):
     """Receive a client-side error report. No auth required so pre-login crashes are captured."""
     forwarded = request.headers.get("x-forwarded-for", "")

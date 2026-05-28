@@ -37,7 +37,7 @@ def get_client_ip(request: Request) -> str:
     return request.client.host if request.client else ""
 
 
-@router.post("/funnel/start")
+@router.post("/funnel/start")  # pre-push-invariants: allow-public-mutation (pre-auth funnel tracking)
 async def funnel_start(request: Request):
     """Create a new funnel session with UTM params and geo data."""
     body = await request.json()
@@ -94,7 +94,7 @@ async def funnel_start(request: Request):
     }
 
 
-@router.post("/funnel/step")
+@router.post("/funnel/step")  # pre-push-invariants: allow-public-mutation (pre-auth funnel tracking)
 async def funnel_step(request: Request):
     """Record a funnel step completion."""
     body = await request.json()
@@ -126,7 +126,7 @@ async def funnel_step(request: Request):
     return {"ok": True}
 
 
-@router.post("/funnel/complete")
+@router.post("/funnel/complete")  # pre-push-invariants: allow-public-mutation (pre-auth funnel tracking)
 async def funnel_complete(request: Request):
     """Mark funnel as completed (user reached signup)."""
     body = await request.json()
@@ -151,7 +151,7 @@ async def funnel_complete(request: Request):
     return {"ok": True}
 
 
-@router.post("/funnel/convert")
+@router.post("/funnel/convert")  # pre-push-invariants: allow-public-mutation (pre-auth funnel tracking)
 async def funnel_convert(request: Request):
     """Link a funnel session to a newly created user (called after signup)."""
     body = await request.json()
