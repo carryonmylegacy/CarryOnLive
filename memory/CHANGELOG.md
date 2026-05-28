@@ -1,5 +1,46 @@
 # CarryOn — Changelog
 
+## Feb 17, 2026 — Verified Inputs Manifest appendix on every QuickStart PDF
+
+Every QuickStart Wizard PDF the platform produces now ends with a dedicated **"Verified Inputs Manifest"** appendix page that lists, line by line, every user-entered field that backed the body of the document — with the source step + the value the user actually provided.
+
+The professional reviewing the PDF (lawyer / CPA / estate planner / wealth manager) now has **two independent verification paths** for every assertion in the document:
+
+1. **Trust footer on every page** (shipped previous turn) — verifies the platform's locked operating contract via `/our-promise`.
+2. **Verified Inputs Manifest on the final page** (shipped this turn) — verifies every body assertion against the user's own structured inputs, with the source step named.
+
+### Scope-honest framing
+My prior finish-summary pitch — a *per-page* sidebar — required cross-cutting changes (FPDF column geometry rewrite + per-page provenance tracking across 9 generators) that aren't safe before the pitch. The **single-appendix-page** version delivers the same trust outcome (a forensic source trail visible to the reviewer) without sweeping refactors. The per-page sidebar remains backlog for post-pitch if real-world feedback warrants it.
+
+### Implementation
+- New `ManifestEntry` dataclass + `add_verified_inputs_manifest()` method on `CarryOnPDF` (reusable across all PDFs).
+- Local `_latin1_safe()` sanitizer inside `pdf_trust_footer.py` so user-entered strings with em-dashes / curly quotes / NBSP / etc. render cleanly without coupling to `quickstart_pdf._safe`.
+- New `_build_verified_inputs_manifest(data)` collector in `quickstart_pdf.py` emits one `ManifestEntry` per QuickStart Wizard step that has data — 8 sections covered: Residence, Household, Real estate, Business interests, Life insurance, Financial accounts, Beneficiaries, Existing estate documents. Empty / unanswered steps are skipped so the manifest reflects the user's actual inputs, not a templated form.
+- Appendix is appended right before `pdf.output()`. `generated_at_label` is stamped at the top of the page so the reviewer sees when the inputs were captured.
+
+### Regression-gated by 2 additional tests (added to fast pre-push suite)
+- `test_manifest_appendix_renders_title_and_entries` — builds a 2-section manifest, decodes the PDF streams, asserts the locked title + every entry's section / field / value / source_step fragment is present. A regression that silently breaks the appendix fails here.
+- `test_manifest_appendix_is_silent_when_no_entries` — asserts empty `entries=[]` is a no-op (no page added, no error). PDFs without per-input provenance (LLM-narrative-only exports) remain unaffected.
+
+### Verified (all green)
+- 5/5 trust-footer tests pass in 0.26s
+- 64/64 fast suite pass in 22.36s (was 62; +2 manifest tests)
+- `bash housekeeping.sh --strict` → 0 WARN / 0 FAIL
+- Ruff lint clean on all 3 modified backend files
+- **End-to-end smoke:** built a real QuickStart PDF with realistic data (Virginia residence, 2 dependents, 2 LLCs, 2 beneficiaries, existing will, POA). Manifest renders with title "Verified Inputs Manifest" and all 8 sections present in the decoded PDF stream — confirmed by direct grep of decompressed page content.
+
+### Trust chain — now 7 layers deep, all mechanically locked
+1. `PRD.md` verbatim spec lock (Invariant 6)
+2. `AGENT_RULES.md` fork-agent pointer (Rule −4)
+3. `services/prime_directive.py` runtime source of truth (Invariant 8)
+4. `/our-promise` public-facing contract
+5. Trust footer on every CarryOn PDF page
+6. **Verified Inputs Manifest appendix on every QuickStart PDF (NEW)**
+7. `PRIME_DIRECTIVE_AUDIT.md` codebase alignment report
+
+Pattern is documented in the `CarryOnPDF` docstring so a future agent can wire `add_verified_inputs_manifest()` into the Guardian exports + estate plan PDFs post-pitch without re-discovering the design — just collect entries and call the method.
+
+
 ## Feb 17, 2026 — Prime Directive trust attribution on every CarryOn PDF (every page)
 
 Every PDF the platform produces now carries the line **"Built under CarryOn's Prime Directive (locked 2026-02-17). Verify at carryon.us/our-promise"** in a soft mid-grey footer on every page. A lawyer, CPA, estate planner, or wealth manager who opens any CarryOn-generated document — from any page — can verify the platform's locked operating contract in one click.

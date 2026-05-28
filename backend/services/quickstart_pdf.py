@@ -28,7 +28,7 @@ from services.quickstart_ai import _qw_beneficiaries
 
 from fpdf import FPDF  # noqa: F401 — kept for type-compat; actual instances use CarryOnPDF
 
-from services.pdf_trust_footer import CarryOnPDF
+from services.pdf_trust_footer import CarryOnPDF, ManifestEntry
 
 _GOLD = (212, 175, 55)
 _INK = (30, 40, 70)
@@ -233,6 +233,121 @@ def _format_documents(data: dict[str, Any]) -> str:
     return ", ".join(bits) or "None reported"
 
 
+def _build_verified_inputs_manifest(data: dict[str, Any]) -> list[ManifestEntry]:
+    """Produce one ``ManifestEntry`` per QuickStart Wizard input that
+    backed the body of the PDF.
+
+    This is the appendix a professional reviewing the QuickStart Guide
+    flips to in order to verify every assertion in the body against
+    the user's own inputs. Sections mirror the QuickStart Wizard step
+    structure so the professional can open the matching step in the
+    user's CarryOn account.
+
+    Entries are emitted only when the user actually provided data —
+    empty / unanswered steps are skipped so the manifest reflects the
+    user's actual inputs, not a templated form.
+    """
+    entries: list[ManifestEntry] = []
+
+    # Residence
+    res_val = _format_residence(data)
+    if res_val:
+        entries.append(
+            ManifestEntry(
+                section="Residence",
+                field="Address & state of residence",
+                value=res_val,
+                source_step="Residence step of the QuickStart Wizard",
+            )
+        )
+
+    # Household
+    hh_val = _format_household(data)
+    if hh_val:
+        entries.append(
+            ManifestEntry(
+                section="Household",
+                field="Marital status & dependents",
+                value=hh_val,
+                source_step="Household step of the QuickStart Wizard",
+            )
+        )
+
+    # Real estate
+    re_val = _format_real_estate(data)
+    if re_val and re_val != "None reported":
+        entries.append(
+            ManifestEntry(
+                section="Real estate",
+                field="Properties on file",
+                value=re_val,
+                source_step="Properties step of the QuickStart Wizard",
+            )
+        )
+
+    # Business / entities
+    biz_val = _format_business(data)
+    if biz_val and biz_val.lower() != "none":
+        entries.append(
+            ManifestEntry(
+                section="Business interests",
+                field="Entity structures",
+                value=biz_val,
+                source_step="Business step of the QuickStart Wizard",
+            )
+        )
+
+    # Life insurance
+    li_val = _format_life_insurance(data)
+    if li_val:
+        entries.append(
+            ManifestEntry(
+                section="Life insurance",
+                field="Policies on file",
+                value=li_val,
+                source_step="Life insurance step of the QuickStart Wizard",
+            )
+        )
+
+    # Financial accounts
+    fa_val = _format_accounts(data)
+    if fa_val and fa_val != "None reported":
+        entries.append(
+            ManifestEntry(
+                section="Financial accounts",
+                field="Account types flagged",
+                value=fa_val,
+                source_step="Financial accounts step of the QuickStart Wizard",
+            )
+        )
+
+    # Beneficiaries
+    ben_val = _format_beneficiaries(data)
+    if ben_val and ben_val != "None added yet":
+        entries.append(
+            ManifestEntry(
+                section="Beneficiaries",
+                field="Named beneficiaries",
+                value=ben_val,
+                source_step="Beneficiaries step of the QuickStart Wizard",
+            )
+        )
+
+    # Existing estate documents
+    doc_val = _format_documents(data)
+    if doc_val and doc_val != "None reported":
+        entries.append(
+            ManifestEntry(
+                section="Existing estate documents",
+                field="Documents reported",
+                value=doc_val,
+                source_step="Existing documents step of the QuickStart Wizard",
+            )
+        )
+
+    return entries
+
+
 def build_quickstart_pdf(
     *,
     user_name: str,
@@ -424,6 +539,19 @@ def build_quickstart_pdf(
         new_x="LMARGIN",
         new_y="NEXT",
         align="C",
+    )
+
+    # ── Verified Inputs Manifest (forensic appendix for professionals) ──
+    # Final dedicated page listing every QuickStart Wizard input that
+    # backed the body of this PDF, with the source step + value. The
+    # lawyer / CPA / estate planner the user hands this guide to can
+    # verify every assertion in the body against the inputs below in
+    # seconds. The trust footer (every page) plus this appendix gives
+    # them two independent verification paths.
+    manifest_entries = _build_verified_inputs_manifest(data)
+    pdf.add_verified_inputs_manifest(
+        manifest_entries,
+        generated_at_label=("Inputs as of " + generated_at.astimezone().strftime("%B %d, %Y at %I:%M %p %Z").strip()),
     )
 
     out = pdf.output(dest="S")
