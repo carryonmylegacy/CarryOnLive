@@ -296,7 +296,14 @@ const OnboardingWizard = ({ onAllComplete, onContentChange }) => {
 
   // Always show ONE step at a time until all are complete
   const nextStep = incompleteSteps[0];
-  const stepsToShow = showAll ? allSteps : allComplete ? allSteps : (nextStep ? [nextStep] : []);
+  // Render exactly the next actionable step as a big tile, or nothing.
+  // The "View all steps / Hide all steps" disclosure below is the
+  // single source of truth for seeing the full list — we deliberately
+  // do NOT mirror it as big tiles when `allComplete` flips true (i.e.
+  // when every step is either done or explicitly skipped) because
+  // that duplicates the compact list right below and overwhelms the
+  // dashboard. Founder direction, Feb 28 2026.
+  const stepsToShow = showAll ? allSteps : (nextStep ? [nextStep] : []);
 
   // Personalize with beneficiary names
   const benNames = (progress.beneficiary_names || []).slice(0, 3);
