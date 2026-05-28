@@ -767,6 +767,7 @@ Be specific. Name documents by their exact vault filename. Quote checklist items
 
     try:
         # Build conversation history from DB for multi-turn context
+        # pre-push-invariants: allow-system-content-bypass — `system_message` is the safety-wrapped `ESTATE_GUARDIAN_SYSTEM_PROMPT` (line 551) after `.format(estate_context=...)`.
         history_messages = [{"role": "system", "content": system_message}]
 
         # Cross-chat knowledge: include key points from recent sessions
@@ -806,6 +807,7 @@ Be specific. Name documents by their exact vault filename. Quote checklist items
                     cross_context_parts.append(summary)
                 cross_context = "\n---\n".join(cross_context_parts)
                 history_messages.append(
+                    # pre-push-invariants: allow-system-content-bypass — secondary context message appended AFTER the primary safety-wrapped system at position 0; carries no model directives.
                     {
                         "role": "system",
                         "content": f"PREVIOUS CONVERSATION CONTEXT (the user may reference these):\n{cross_context}",

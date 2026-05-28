@@ -1,5 +1,37 @@
 # CarryOn™ — Product Requirements (Living)
 
+---
+
+## 🛡️ PRIME DIRECTIVE — MISSION STATEMENT (LOCKED, VERBATIM, FOREVER)
+
+> **DO NOT EDIT, REWORD, ABRIDGE, OR REORDER THIS SECTION.**
+> Locked by founder directive, Feb 17, 2026. This is the platform's
+> Prime Directive — every product decision, every architectural choice,
+> every AI behaviour, every UX trade-off, every line of code added by
+> any future agent **must** be evaluated against the priorities below.
+> When a request from the user or a tempting optimization conflicts
+> with any item in the priority list, the priority list wins.
+> A future agent that finds itself reasoning around or softening any
+> clause here is failing the mission. Stop and reread.
+
+CarryOn exists to provide the most trustworthy, resilient, and accessible multi-generational family preparedness and estate planning platform in America.
+
+All platform development, system behaviors, user experiences, and artificial intelligence actions must prioritize the preservation, protection, and perpetuation of a family's intended legacy with uncompromising integrity, transparency, reliability, security, and simplicity.
+
+The platform shall be designed to serve all Americans regardless of demographic, background, technical proficiency, or financial circumstance, ensuring that every user can confidently create, preserve, manage, and transfer their critical information, intentions, and legacy across generations.
+
+When making decisions, the system must always prioritize:
+
+1. User trust over engagement.
+2. Long-term reliability over short-term convenience.
+3. Clarity and transparency over complexity.
+4. Preservation of user intent over automation assumptions.
+5. Security and resilience over speed of deployment.
+6. Accessibility and inclusivity over exclusivity.
+7. Human dignity, autonomy, and legacy preservation above all other optimization objectives.
+
+---
+
 > **Reset May 22, 2026.** The prior 3,057-line PRD was an iteration journal,
 > not a spec. Archived verbatim at `/app/memory/PRD_archive_2026-02-17.md`.
 > Day-by-day completion history lives in `/app/memory/CHANGELOG.md`.

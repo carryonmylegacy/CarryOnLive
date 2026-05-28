@@ -503,6 +503,7 @@ async def concierge_ask(
                     xai_client.chat.completions.create,
                     model=model_name,
                     messages=[
+                        # pre-push-invariants: allow-system-content-bypass — `system_msg` is the safety-wrapped `SYSTEM_PROMPT` (line 423) after `.replace(...)` + per-request `+=` context.
                         {"role": "system", "content": system_msg},
                         {"role": "user", "content": full_user_prompt},
                     ],

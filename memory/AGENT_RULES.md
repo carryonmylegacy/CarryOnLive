@@ -6,6 +6,20 @@
 
 ---
 
+## 🛡️ RULE −4 — THE PRIME DIRECTIVE OVERRIDES EVERYTHING BELOW.
+
+**Locked by founder directive, Feb 17, 2026.** Before applying any other
+rule in this file, read the Prime Directive at the very top of
+`/app/memory/PRD.md` ("PRIME DIRECTIVE — MISSION STATEMENT"). It is locked
+verbatim and never reworded. Every product decision, architectural choice,
+AI behaviour, UX trade-off, and line of code you add **must** be evaluated
+against its 7-item priority list. When any of the rules in this file (or
+any user request, optimization instinct, or convenience shortcut) conflicts
+with the Prime Directive, **the Prime Directive wins**. If you find
+yourself reasoning around or softening any clause of it, stop and reread.
+
+---
+
 ## 🛑 RULE -3 — CRITICAL PATHWAYS ARE INVIOLATE.
 
 **Added Feb 5, 2026 after an agent silently deleted the Beneficiary Hub

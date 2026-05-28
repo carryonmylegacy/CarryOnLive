@@ -1,5 +1,83 @@
 # CarryOn — Changelog
 
+## Feb 17, 2026 — Prime Directive locked verbatim across the platform
+
+The founder mandated a mission statement that **shapes every product decision, AI behaviour, UX trade-off, and line of code added by any future agent — forever**. Locking it required three coordinated changes:
+
+### 1. PRD.md — Prime Directive section at the very top
+Added a "🛡️ PRIME DIRECTIVE — MISSION STATEMENT (LOCKED, VERBATIM, FOREVER)" block above all other content in `/app/memory/PRD.md`, containing the founder's directive verbatim:
+- Opening sentence: "CarryOn exists to provide the most trustworthy, resilient, and accessible multi-generational family preparedness and estate planning platform in America."
+- Legacy-preservation mandate
+- All-Americans inclusivity mandate
+- The 7 numbered priorities (trust > engagement, reliability > convenience, clarity > complexity, intent > automation, security > speed, accessibility > exclusivity, human dignity above all)
+
+Section header carries an explicit "DO NOT EDIT, REWORD, ABRIDGE, OR REORDER THIS SECTION" notice so future agents reading PRD.md (as instructed in the agent boot sequence) immediately see the lock.
+
+### 2. AGENT_RULES.md — new top-of-file Rule −4
+Added "RULE −4 — THE PRIME DIRECTIVE OVERRIDES EVERYTHING BELOW." pointing future fork agents at the PRD section before they apply any other rule in the file. When the Prime Directive conflicts with any rule (or with a user request, optimization instinct, or convenience shortcut), the Prime Directive wins.
+
+### 3. New pre-push Invariant 6 — `test_prime_directive_locked_verbatim_in_prd`
+Verbatim-text gate. The test ships a tuple of 13 distinctive clauses (opening sentence + legacy-preservation phrase + inclusivity phrase + all 7 numbered priorities + key prepositional anchors) and asserts every one is present byte-for-byte in PRD.md. A silent reword — even a single comma — fails the push and names the missing clause.
+
+This makes "forever locked" mechanically enforceable: no future agent can soften the directive without the push being blocked at the pre-push hook, even if they edit AGENT_RULES.md or remove the notice in PRD.md.
+
+### Verified
+- `python -m pytest tests/test_pre_push_invariants.py -v` → **7/7 green in 3.15s**
+- `python3 scripts/check_tests_fast.py --strict` → **58/58 green in 21.37s**
+- `bash scripts/git-hooks/pre-push` → fast suite PASS + housekeeping PASS, exit 0
+
+The platform now ships with 6 self-enforcing invariants at the pre-push gate:
+1. AI safety preamble wrap on every `*_SYSTEM_PROMPT` constant
+2. Mongo multi-doc inclusion projections include `"id": 1`
+3. Every mutation route is auth-gated
+4. AI safety preamble TEXT is intact (no contract drift)
+5. No LLM call site bypasses `hardened_system_prompt()`
+6. Prime Directive in PRD.md is locked verbatim
+
+
+## Feb 17, 2026 — Professional-grade AI safety: contract integrity gate + bypass guard
+
+The user's pitch: "users will take CarryOn-generated PDFs to lawyers, CPAs, estate planners, wealth managers. The reputation of the platform depends on those professionals being impressed." Two new pre-push invariants close the last remaining loopholes in the AI Safety Contract net so the platform can deliver on that promise.
+
+### New Invariant 4 — `test_ai_safety_preamble_text_is_intact`
+A pure-text integrity gate on `AI_SAFETY_PREAMBLE` itself. The previous Invariant 1 (preamble-wrap check) would still pass even if a refactor quietly deleted an entire pillar body — only the header was being verified. This gate asserts 17 required substrings remain verbatim:
+
+- All 4 numbered pillar headers + titles (PILLAR 1 / 2 / 4 / 5: no-inference, mandatory citation, authoritative sources, humility)
+- Authoritative-source citation patterns (`U.S.C.`, `C.F.R.`, `IRS Publication`)
+- Forbidden-source guardrails (`Nolo`, `Wikipedia`, `experts recommend`, `generally advisable`)
+- No-fabrication fallback language (`I don't have enough information`)
+- Document-content guardrail (`review the existing` — the anti-pattern that caused the original "your will currently does X" hallucination)
+
+If anyone trims the contract in `services/ai_safety.py`, the push blocks with a precise per-fragment failure list.
+
+### New Invariant 5 — `test_no_llm_system_content_bypass`
+Static AST scan of every `{"role": "system", "content": <X>}` dict literal under `routes/` + `services/`. Pass if `<X>` is provably a safety-wrapped `*_SYSTEM_PROMPT` constant (direct Name, `.format/.replace/.strip(...)`, or `+`-concatenation). Otherwise must carry the inline `# pre-push-invariants: allow-system-content-bypass` marker.
+
+Without this gate, a future feature could call the LLM with an inline-literal system prompt and silently bypass the entire safety contract Invariant 1 was designed to enforce.
+
+3 honest bypass markers added to existing legit sites:
+- `routes/beneficiary_concierge.py:511` — `system_msg` derived from `SYSTEM_PROMPT.replace(...)` + `+=` context
+- `routes/guardian.py:774` — `system_message` derived from `ESTATE_GUARDIAN_SYSTEM_PROMPT.format(...)`
+- `routes/guardian.py:818` — secondary context message appended AFTER the primary safety-wrapped system at position 0
+
+### Also caught (real pre-push gating defect)
+The pre-push hook (`scripts/git-hooks/pre-push`) called `housekeeping.sh --strict` directly. But the fast suite section inside housekeeping is gated on `HK_FAST_TESTS=1`, which the hook **was not setting**. Net effect: the entire fast-suite pytest gate (IDOR + core-endpoints smoke + AI safety + AST invariants) **was silently being skipped on every push**. Fixed by inlining `HK_FAST_TESTS=1` into the hook's housekeeping invocation, matching the file's own stated contract ("always runs in scripts/check.sh and the pre-push hook").
+
+### Verified
+- `python -m pytest tests/test_pre_push_invariants.py -v` → **6/6 green in 3.01s**
+- `python3 scripts/check_tests_fast.py --strict` → **57/57 green in 21s**
+- `bash scripts/git-hooks/pre-push` end-to-end → fast suite **PASS** + housekeeping **PASS**, exit 0
+- `HK_FAST_TESTS=1 bash housekeeping.sh --strict` → **0 WARN / 0 FAIL**
+- Ruff lint on all 3 edited route files → clean
+
+The pre-push gate now blocks any of these regressions before they can ship:
+1. New LLM prompt added without the safety preamble wrap (Invariant 1)
+2. Multi-doc Mongo `find()` with inclusion projection missing `"id": 1` (Invariant 2)
+3. New mutation route without auth (Invariant 3)
+4. Safety contract text quietly weakened (Invariant 4 — NEW)
+5. LLM call site with inline-string system prompt bypassing the wrap (Invariant 5 — NEW)
+
+
 ## Feb 17, 2026 — Reverification sweep: closed remaining pre-push invariant gap
 
 ### Caught & fixed (latent regression from previous fork)
