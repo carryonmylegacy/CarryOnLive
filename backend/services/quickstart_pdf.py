@@ -24,7 +24,11 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from services.quickstart_ai import _qw_beneficiaries
+from services.quickstart_ai import (
+    _qw_beneficiaries,
+    _qw_legal_beneficiaries,
+    _qw_platform_recipients,
+)
 
 from fpdf import FPDF  # noqa: F401 — kept for type-compat; actual instances use CarryOnPDF
 
@@ -69,6 +73,60 @@ def _rule(pdf: FPDF, width: float = 60.0, weight: float = 0.5) -> None:
         (pdf.w - width) / 2 + width,
         pdf.get_y(),
     )
+
+
+def _disclaimer_banner(pdf: FPDF) -> None:
+    """Render the platform's "NOT LEGAL ADVICE" disclaimer as a
+    soft amber rounded block. Sits at the top of page 1 of every
+    QuickStart Guide so a reviewer sees it before any AI-authored
+    content. Used by ``build_quickstart_pdf``.
+
+    Locked text — do not edit without founder sign-off. Mirrored in
+    the regression test `test_quickstart_pdf_disclaimer.py`.
+    """
+    title = "NOT LEGAL ADVICE"
+    body = (
+        "This document is for informational and personal-organization purposes only. "
+        "It is not legal advice and is not a substitute for consultation with a licensed "
+        "estate-planning attorney in your state. Review every recommendation with a "
+        "qualified professional before acting on it."
+    )
+    # Layout geometry: full-width band inside the page margins.
+    x0 = pdf.l_margin
+    x1 = pdf.w - pdf.r_margin
+    width = x1 - x0
+    pad_x = 4.0
+    pad_y = 3.0
+    # Save + restore font so the caller's state is untouched.
+    saved_font_family = pdf.font_family or "helvetica"
+    saved_font_style = pdf.font_style or ""
+    saved_font_size = pdf.font_size_pt or 10.0
+    # Body text wraps to ~4 lines at width ~180mm w/ 9.5pt. Pre-allocate
+    # 5 lines of headroom; multi_cell will simply use what it needs.
+    line_h = 5.0
+    title_h = 5.5
+    body_h = 5 * line_h
+    band_h = pad_y + title_h + 1.5 + body_h + pad_y
+    y_start = pdf.get_y()
+    # Soft amber background + 0.4mm gold border.
+    pdf.set_fill_color(254, 248, 230)  # very pale amber
+    pdf.set_draw_color(*_GOLD)
+    pdf.set_line_width(0.4)
+    pdf.rect(x0, y_start, width, band_h, "DF")
+    # Title row.
+    pdf.set_xy(x0 + pad_x, y_start + pad_y)
+    pdf.set_font("Helvetica", "B", 10)
+    pdf.set_text_color(150, 100, 20)  # warm-gold ink
+    pdf.cell(width - 2 * pad_x, title_h, _safe(title), new_x="LMARGIN", new_y="NEXT")
+    # Body block.
+    pdf.set_xy(x0 + pad_x, y_start + pad_y + title_h + 1.0)
+    pdf.set_font("Helvetica", "", 9.5)
+    pdf.set_text_color(80, 65, 30)
+    pdf.multi_cell(width - 2 * pad_x, line_h, _safe(body), new_x="LMARGIN", new_y="NEXT")
+    # Reset cursor to just below the band and restore caller's font.
+    pdf.set_xy(pdf.l_margin, y_start + band_h)
+    pdf.set_font(saved_font_family, saved_font_style, saved_font_size)
+    pdf.set_text_color(*_INK)
 
 
 def _section_heading(pdf: FPDF, label: str) -> None:
@@ -213,10 +271,29 @@ def _format_accounts(data: dict[str, Any]) -> str:
 
 
 def _format_beneficiaries(data: dict[str, Any]) -> str:
-    bens = _qw_beneficiaries(data)
+    """Legal estate beneficiaries (Primary tier) ONLY. Founder rule
+    (May 28 2026): the "Beneficiaries" snapshot line in the PDF body
+    must reflect only the people who would be named in estate
+    documents. Platform-only recipients render on their own line so
+    a professional reading the doc never confuses the two."""
+    bens = _qw_legal_beneficiaries(data)
+    # Backward compat: when no row carries either flag, fall back to
+    # the full list so older in-flight PDFs render the same as before.
+    if not bens and _qw_beneficiaries(data):
+        bens = _qw_beneficiaries(data)
     if not bens:
         return "None added yet"
     return ", ".join(f"{b.get('name')} ({b.get('relationship')})" for b in bens if b.get("name"))
+
+
+def _format_platform_recipients(data: dict[str, Any]) -> str:
+    """Secondary-tier CarryOn-platform recipients (MM / IAC / FFN
+    only). Returns an empty string when the user has none so the row
+    is skipped entirely instead of rendering "None"."""
+    recips = _qw_platform_recipients(data)
+    if not recips:
+        return ""
+    return ", ".join(f"{b.get('name')} ({b.get('relationship')})" for b in recips if b.get("name"))
 
 
 def _format_documents(data: dict[str, Any]) -> str:
@@ -321,14 +398,26 @@ def _build_verified_inputs_manifest(data: dict[str, Any]) -> list[ManifestEntry]
             )
         )
 
-    # Beneficiaries
+    # Beneficiaries (legal estate beneficiaries — Primary tier)
     ben_val = _format_beneficiaries(data)
     if ben_val and ben_val != "None added yet":
         entries.append(
             ManifestEntry(
                 section="Beneficiaries",
-                field="Named beneficiaries",
+                field="Legal estate beneficiaries (Primary tier)",
                 value=ben_val,
+                source_step="Beneficiaries step of the QuickStart Wizard",
+            )
+        )
+
+    # Platform-only recipients (Secondary tier — MM / IAC / FFN)
+    plat_val = _format_platform_recipients(data)
+    if plat_val:
+        entries.append(
+            ManifestEntry(
+                section="Beneficiaries",
+                field="Platform recipients (not named in estate documents)",
+                value=plat_val,
                 source_step="Beneficiaries step of the QuickStart Wizard",
             )
         )
@@ -404,6 +493,15 @@ def build_quickstart_pdf(
 
     pdf.ln(8)
 
+    # ── "NOT LEGAL ADVICE" disclaimer banner ─────────────────────────
+    # Founder rule (May 28 2026): every CarryOn-generated QuickStart
+    # Guide must visibly tell the reader it is informational and not
+    # a substitute for a licensed attorney. The banner sits ABOVE the
+    # intro paragraph so a professional opening to page 1 sees it
+    # before any AI-authored content.
+    _disclaimer_banner(pdf)
+    pdf.ln(4)
+
     # ── Intro paragraph (Grok) ───────────────────────────────────────
     intro = ai_payload.get("intro") or ""
     if intro:
@@ -418,6 +516,9 @@ def build_quickstart_pdf(
     if residence:
         _kv_row(pdf, "Personal residence", residence)
     _kv_row(pdf, "Beneficiaries", _format_beneficiaries(data))
+    plat_recip = _format_platform_recipients(data)
+    if plat_recip:
+        _kv_row(pdf, "Platform recipients (non-estate)", plat_recip)
     _kv_row(pdf, "Household", _format_household(data))
     _kv_row(pdf, "Other properties", _format_real_estate(data))
     li = _format_life_insurance(data)
@@ -569,7 +670,4 @@ def build_quickstart_pdf(
         generated_at_label=("Inputs as of " + generated_at.astimezone().strftime("%B %d, %Y at %I:%M %p %Z").strip()),
     )
 
-    out = pdf.output(dest="S")
-    if isinstance(out, str):
-        return out.encode("latin-1")
-    return bytes(out)
+    return bytes(pdf.output())

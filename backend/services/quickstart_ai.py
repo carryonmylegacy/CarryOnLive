@@ -170,6 +170,19 @@ R6. NO PHANTOM CHILDREN OR DEPENDENTS. The reconciled "Children"
     other minor on top of the named list unless the input
     explicitly says "X unnamed additional children".
 
+R7. PRIMARY-ONLY IN ESTATE DOCUMENTS. The input data distinguishes
+    "Other intended beneficiaries" (Primary tier - the user's LEGAL
+    estate beneficiaries) from "CarryOn platform recipients"
+    (Secondary tier - people who only receive Milestone Messages,
+    IAC notifications, or FFN call-outs through the platform). You
+    MUST treat the latter group as platform-relationship-only:
+    NEVER name a Secondary-tier person in a will / trust / POA /
+    health-directive / beneficiary-designation recommendation. If
+    a Secondary-tier person appears to be the only family member
+    in the user's data, phrase your action as "discuss with your
+    attorney whom you wish to name as primary inheritor" - do NOT
+    suggest the Secondary contact as a fallback.
+
 Failing any of these rules creates legal-safety risk for the user
 and erodes trust in the platform. Default to humility: say less,
 ask more, never invent.
@@ -235,6 +248,46 @@ def _qw_beneficiaries(data: dict[str, Any]) -> list[dict[str, Any]]:
     return [b for b in legacy if isinstance(b, dict)]
 
 
+def _is_legal_beneficiary(row: dict[str, Any]) -> bool:
+    """True when a QW beneficiary row represents a *legal* estate
+    beneficiary (named in a will/trust) rather than a CarryOn-platform-only
+    recipient (Milestone Messages, IAC, FFN, etc.).
+
+    Founder rule (May 28 2026): Primary tier (`succession_order == 0`)
+    is the only tier the AI may include in estate-document drafting.
+    Secondary / Tertiary tiers are platform recipients only.
+
+    Backward compat (DEFAULT TO LEGAL): when a row has neither
+    `is_legal_beneficiary` nor `succession_order`, we treat it as legal
+    so in-flight QW payloads from before this change still generate the
+    same PDF body. Reclassification is a UI workflow on /beneficiaries.
+    """
+    if "is_legal_beneficiary" in row:
+        return bool(row.get("is_legal_beneficiary"))
+    so = row.get("succession_order")
+    if so is None:
+        return True
+    try:
+        return int(so) == 0
+    except (TypeError, ValueError):
+        return True
+
+
+def _qw_legal_beneficiaries(data: dict[str, Any]) -> list[dict[str, Any]]:
+    """Subset of `_qw_beneficiaries` containing only legal estate
+    beneficiaries (Primary tier). Used by the PDF body + the AI prompt
+    when drafting estate documents."""
+    return [b for b in _qw_beneficiaries(data) if _is_legal_beneficiary(b)]
+
+
+def _qw_platform_recipients(data: dict[str, Any]) -> list[dict[str, Any]]:
+    """Subset of `_qw_beneficiaries` containing only CarryOn-platform-only
+    recipients (Secondary tier and below). Surfaced separately in the
+    PDF + manifest so a professional reading the doc never confuses
+    them with named legal beneficiaries."""
+    return [b for b in _qw_beneficiaries(data) if not _is_legal_beneficiary(b)]
+
+
 def _human_state_summary(data: dict[str, Any]) -> str:
     """Compact natural-language summary of what the user told us. Kept
     purely declarative — let Grok decide how to apply state law.
@@ -273,7 +326,12 @@ def _human_state_summary(data: dict[str, Any]) -> str:
     # 2026: AI was inventing an extra minor child on top of named
     # Son/Daughter beneficiaries).
     hh = data.get("household") or {}
-    bens = _qw_beneficiaries(data)
+    # FOUNDER RULE (May 28 2026): only PRIMARY (legal estate) beneficiaries
+    # feed the AI's estate-document drafting. Secondary / Tertiary tiers
+    # are CarryOn-platform recipients only (MM / IAC / FFN) and must not
+    # appear inside will/trust/POA recommendations.
+    bens = _qw_legal_beneficiaries(data)
+    platform_only = _qw_platform_recipients(data)
     if hh or bens:
         marital = (hh.get("marital_status") or "").strip() or None
         if marital:
@@ -366,6 +424,21 @@ def _human_state_summary(data: dict[str, Any]) -> str:
     if non_child_bens:
         rels = ", ".join(f"{b.get('name')} ({b.get('relationship')})" for b in non_child_bens)
         parts.append(f"Other intended beneficiaries: {rels}.")
+
+    # Platform-only recipients (Secondary/Tertiary tiers) — surfaced
+    # for context so the AI knows these people exist on the user's
+    # CarryOn account, but they MUST NOT appear in will / trust / POA
+    # drafting language. The AI's prompt makes this rule explicit too.
+    if platform_only:
+        plat_rels = ", ".join(
+            f"{b.get('name')} ({b.get('relationship')})" for b in platform_only if (b.get("name") or "").strip()
+        )
+        if plat_rels:
+            parts.append(
+                "CarryOn platform recipients (Secondary tier - receive Milestone Messages, "
+                "IAC, FFN only; DO NOT name these people as inheritors / beneficiaries / "
+                "trustees in any estate-document recommendation): " + plat_rels + "."
+            )
 
     # Properties — NEW shape: a multi-add list with address + state per item.
     # Fall back to the legacy `real_estate` block for old in-flight users.

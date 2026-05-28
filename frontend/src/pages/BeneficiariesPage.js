@@ -105,6 +105,20 @@ const BeneficiariesPage = () => {
   const benEstateId = (typeof localStorage !== 'undefined' && localStorage.getItem('selected_estate_id')) || null;
   const benDraftBase = benEstateId ? `ben_form:${benEstateId}` : null;
   const [showAddModal, setShowAddModal, clearShowAddModalDraft] = useDraftState(benDraftBase ? `${benDraftBase}:open` : null, false);
+  // One-time educational banner explaining Primary = legal estate
+  // beneficiary; Secondary+ = CarryOn-platform recipient only. Dismissed
+  // per-account-per-browser. Founder rule (May 28 2026): the same
+  // succession-tier UI now governs which beneficiaries the AI includes
+  // in estate documents, so the distinction must be visible at least
+  // once per user.
+  const [legalClassifierBanner, setLegalClassifierBanner] = useState(() => {
+    if (typeof localStorage === 'undefined') return false;
+    return localStorage.getItem('carryon_ben_legal_classifier_seen') !== '1';
+  });
+  const dismissLegalClassifierBanner = useCallback(() => {
+    setLegalClassifierBanner(false);
+    try { localStorage.setItem('carryon_ben_legal_classifier_seen', '1'); } catch (_e) { /* no-op */ }
+  }, []);
   const [showPrimaryPopup, setShowPrimaryPopup] = useState(false);
   const [showBenAddedPopup, setShowBenAddedPopup] = useState(false);
   const [adding, setAdding] = useState(false);
@@ -874,6 +888,37 @@ const BeneficiariesPage = () => {
       {/* Section Lock */}
       <SectionLockBanner sectionId="beneficiaries" />
 
+      {/* One-time legal-vs-platform classifier banner */}
+      {legalClassifierBanner && (
+        <div
+          className="rounded-xl p-4 flex items-start gap-3 relative"
+          style={{
+            background: 'linear-gradient(135deg, rgba(212,175,55,0.10), rgba(212,175,55,0.04))',
+            border: '1px solid rgba(212,175,55,0.35)',
+          }}
+          data-testid="ben-legal-classifier-banner"
+        >
+          <Shield className="w-5 h-5 text-[var(--gold)] flex-shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0 pr-6">
+            <p className="text-sm font-semibold text-[var(--t)] mb-1">
+              Primary vs. Secondary — what each tier means
+            </p>
+            <p className="text-xs text-[var(--t3)] leading-relaxed">
+              <span className="font-semibold text-[var(--t)]">Primary</span> beneficiaries are your <span className="font-semibold">legal estate beneficiaries</span> — the people CarryOn&apos;s AI includes in your will, trust, and beneficiary-designation drafts. <span className="font-semibold text-[var(--t)]">Secondary</span> and below are <span className="font-semibold">CarryOn-platform recipients only</span> — they receive Milestone Messages, Immediate Action Checklist hand-offs, and Friends &amp; Family notifications, but are <span className="font-semibold">not named</span> in estate documents. To re-classify, drag the person up to Primary, or down out of the top slot.
+            </p>
+          </div>
+          <button
+            type="button"
+            className="absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center hover:bg-white/5 transition-colors"
+            onClick={dismissLegalClassifierBanner}
+            aria-label="Dismiss"
+            data-testid="ben-legal-classifier-dismiss"
+          >
+            <XCircle className="w-4 h-4 text-[var(--t4)]" />
+          </button>
+        </div>
+      )}
+
       <SectionLockedOverlay sectionId="beneficiaries">
 
       {/* Desktop: Tree Left + Tiles Right / Mobile: Tree Top + Tiles Below */}
@@ -926,7 +971,7 @@ const BeneficiariesPage = () => {
                 <p className="text-sm text-[var(--t)] font-semibold">Succession Hierarchy</p>
                 <p className="text-xs text-[var(--t3)] leading-relaxed mt-0.5">
                   {benSortKey === 'succession'
-                    ? 'Drag to set succession order. Top position = Primary Beneficiary (trustee).'
+                    ? 'Drag to set succession order. Primary = legal estate beneficiary (appears in your will/trust drafts). Secondary & below = CarryOn platform recipients only (Milestone Messages, IAC, FFN) — not named in estate documents.'
                     : 'List is temporarily sorted. Switch back to "Succession order" to drag and re-rank.'}
                 </p>
               </div>

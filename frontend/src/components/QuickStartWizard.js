@@ -198,12 +198,25 @@ const QuickStartWizard = ({ forceOpen = false, onClose = () => {} }) => {
         if (u.marital_status) next.marital_status = u.marital_status;
         const mapped = list
           .filter((b) => (b.name || b.first_name))
-          .map((b) => ({
-            beneficiary_id: b.id,
-            name: b.name || [b.first_name, b.last_name].filter(Boolean).join(' ') || b.first_name || 'Beneficiary',
-            relationship: b.relation || b.relationship || '',
-            age: typeof b.age === 'number' ? b.age : (b.age || ''),
-          }));
+          .map((b) => {
+            // Founder rule (May 28 2026): Primary tier
+            // (`succession_order === 0`) = LEGAL estate beneficiary
+            // → appears in AI's estate-document drafting.
+            // Secondary / Tertiary tiers = CarryOn-platform recipients
+            // only (MM / IAC / FFN) → excluded from estate documents.
+            const so = (typeof b.succession_order === 'number')
+              ? b.succession_order
+              : null;
+            const isLegal = so === null ? true : so === 0;
+            return {
+              beneficiary_id: b.id,
+              name: b.name || [b.first_name, b.last_name].filter(Boolean).join(' ') || b.first_name || 'Beneficiary',
+              relationship: b.relation || b.relationship || '',
+              age: typeof b.age === 'number' ? b.age : (b.age || ''),
+              succession_order: so,
+              is_legal_beneficiary: isLegal,
+            };
+          });
         if (mapped.length > 0) next.beneficiaries = mapped;
         if (!u.marital_status && mapped.length === 0) {
           setError('No household details or beneficiaries on file yet — fill them in below.');

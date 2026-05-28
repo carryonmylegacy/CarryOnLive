@@ -53,6 +53,14 @@ FAST_SUITE = [
     # or the QR could silently stop being printed on PDFs. Hits Mongo
     # (insert + read + update) on a dedicated collection; ~1s.
     "tests/test_pdf_verification.py",
+    # QuickStart legal-vs-platform-recipient split + "Not legal advice"
+    # disclaimer banner. Founder rule (May 28 2026): only Primary-tier
+    # beneficiaries appear in AI-drafted estate documents; Secondary+
+    # are platform recipients only. A regression that silently lets
+    # Secondary-tier names slip into the AI prompt or PDF body, OR
+    # that drops the legal-disclaimer banner from page 1, gets caught
+    # here in <0.3s.
+    "tests/test_quickstart_legal_filter.py",
 ]
 
 
