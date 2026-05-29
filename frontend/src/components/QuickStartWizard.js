@@ -218,9 +218,15 @@ const QuickStartWizard = ({ forceOpen = false, onClose = () => {} }) => {
             const so = (typeof b.succession_order === 'number')
               ? b.succession_order
               : null;
+            // Legal determination MUST match the backend (_is_legal_beneficiary):
+            // the explicit flag wins; legacy fallback = is_primary OR rank-0.
+            // A NULL succession_order is NOT legal — it only means "not in the
+            // executor succession ladder" (a separate dimension). The old
+            // `so === null ? true` fallback wrongly marked every opted-out
+            // beneficiary as legal, which is what pulled everyone into the wizard.
             const isLegal = (typeof b.is_legal_beneficiary === 'boolean')
               ? b.is_legal_beneficiary
-              : (so === null ? true : so === 0);
+              : (b.is_primary === true || so === 0);
             const isCarryon = (typeof b.is_carryon_beneficiary === 'boolean')
               ? b.is_carryon_beneficiary
               : !isLegal;
@@ -248,7 +254,7 @@ const QuickStartWizard = ({ forceOpen = false, onClose = () => {} }) => {
           return;
         }
         if (skipped > 0) {
-          toast.info(`Added ${legalOnly.length} legal beneficiar${legalOnly.length === 1 ? 'y' : 'ies'} — skipped ${skipped} CarryOn Only recipient${skipped === 1 ? '' : 's'} (not used in estate documents).`);
+          toast.info(`Added ${legalOnly.length} legal beneficiar${legalOnly.length === 1 ? 'y' : 'ies'} — skipped ${skipped} not designated Legal (not used in estate documents).`);
         }
         setStepData(next);
       } else if (currentStep === 'residence') {
