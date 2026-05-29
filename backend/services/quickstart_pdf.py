@@ -145,8 +145,19 @@ def _kv_row(pdf: FPDF, key: str, value: str) -> None:
     if not value:
         return
     pdf.set_font("Helvetica", "B", 10)
+    key_txt = _safe(key)
+    # `cell` does not wrap; a key wider than the 55mm label column would
+    # overflow and collide with the value. Stack long keys onto their own line.
+    if pdf.get_string_width(key_txt) > 52:
+        pdf.set_text_color(*_BODY)
+        pdf.multi_cell(0, 6, key_txt, new_x="LMARGIN", new_y="NEXT")
+        pdf.set_font("Helvetica", "", 10)
+        pdf.set_text_color(*_INK)
+        pdf.set_x(pdf.l_margin + 5)
+        pdf.multi_cell(0, 6, _safe(value), new_x="LMARGIN", new_y="NEXT")
+        return
     pdf.set_text_color(*_BODY)
-    pdf.cell(55, 6, _safe(key), new_x="RIGHT", new_y="TOP")
+    pdf.cell(55, 6, key_txt, new_x="RIGHT", new_y="TOP")
     pdf.set_font("Helvetica", "", 10)
     pdf.set_text_color(*_INK)
     pdf.multi_cell(0, 6, _safe(value), new_x="LMARGIN", new_y="NEXT")
@@ -471,7 +482,7 @@ def _build_verified_inputs_manifest(data: dict[str, Any]) -> list[ManifestEntry]
         entries.append(
             ManifestEntry(
                 section="Beneficiaries",
-                field="Legal estate beneficiaries (Primary tier)",
+                field="Legal beneficiaries",
                 value=ben_val,
                 source_step="Beneficiaries step of the QuickStart Wizard",
             )
@@ -483,7 +494,7 @@ def _build_verified_inputs_manifest(data: dict[str, Any]) -> list[ManifestEntry]
         entries.append(
             ManifestEntry(
                 section="Beneficiaries",
-                field="Platform recipients (not named in estate documents)",
+                field="CarryOn Only recipients (not in estate documents)",
                 value=plat_val,
                 source_step="Beneficiaries step of the QuickStart Wizard",
             )

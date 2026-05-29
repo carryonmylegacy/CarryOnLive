@@ -281,30 +281,50 @@ class CarryOnPDF(FPDF):
                 self.cell(0, 6, _latin1_safe(entry.section), new_x=XPos.LMARGIN, new_y=YPos.NEXT)
                 last_section = entry.section
 
-            # Field label + value on one logical row (multi-line safe).
+            # Field label + value. Normally side-by-side in a 60mm label
+            # column, but `cell()` does NOT wrap — a label wider than the column
+            # would overflow and collide with the value. So when a label is too
+            # wide, fall back to a STACKED layout (label on its own line, value
+            # and source indented beneath it).
+            label_col = 60.0
+            indent = 6.0
             self.set_font("Helvetica", "B", 10)
-            self.set_text_color(60, 70, 90)
-            self.cell(60, 5.5, _latin1_safe(entry.field), new_x=XPos.RIGHT, new_y=YPos.TOP)
-            self.set_font("Helvetica", "", 10)
-            self.set_text_color(30, 40, 70)
-            self.multi_cell(
-                0,
-                5.5,
-                _latin1_safe(entry.value) or "(not provided)",
-                new_x=XPos.LMARGIN,
-                new_y=YPos.NEXT,
-            )
-            # Source step in muted italic, indented under the value.
-            self.set_font("Helvetica", "I", 8)
-            self.set_text_color(120, 130, 150)
-            self.cell(60, 4, "", new_x=XPos.RIGHT, new_y=YPos.TOP)
-            self.multi_cell(
-                0,
-                4,
-                _latin1_safe(f"Source: {entry.source_step}"),
-                new_x=XPos.LMARGIN,
-                new_y=YPos.NEXT,
-            )
+            field_txt = _latin1_safe(entry.field)
+            stacked = self.get_string_width(field_txt) > (label_col - 3)
+            if stacked:
+                self.set_text_color(60, 70, 90)
+                self.multi_cell(0, 5.5, field_txt, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+                self.set_font("Helvetica", "", 10)
+                self.set_text_color(30, 40, 70)
+                self.set_x(self.l_margin + indent)
+                self.multi_cell(
+                    0, 5.5, _latin1_safe(entry.value) or "(not provided)",
+                    new_x=XPos.LMARGIN, new_y=YPos.NEXT,
+                )
+                self.set_font("Helvetica", "I", 8)
+                self.set_text_color(120, 130, 150)
+                self.set_x(self.l_margin + indent)
+                self.multi_cell(
+                    0, 4, _latin1_safe(f"Source: {entry.source_step}"),
+                    new_x=XPos.LMARGIN, new_y=YPos.NEXT,
+                )
+            else:
+                self.set_text_color(60, 70, 90)
+                self.cell(label_col, 5.5, field_txt, new_x=XPos.RIGHT, new_y=YPos.TOP)
+                self.set_font("Helvetica", "", 10)
+                self.set_text_color(30, 40, 70)
+                self.multi_cell(
+                    0, 5.5, _latin1_safe(entry.value) or "(not provided)",
+                    new_x=XPos.LMARGIN, new_y=YPos.NEXT,
+                )
+                # Source step in muted italic, indented under the value.
+                self.set_font("Helvetica", "I", 8)
+                self.set_text_color(120, 130, 150)
+                self.cell(label_col, 4, "", new_x=XPos.RIGHT, new_y=YPos.TOP)
+                self.multi_cell(
+                    0, 4, _latin1_safe(f"Source: {entry.source_step}"),
+                    new_x=XPos.LMARGIN, new_y=YPos.NEXT,
+                )
 
         # Restore default black for any caller body that may follow.
         self.set_text_color(0, 0, 0)
