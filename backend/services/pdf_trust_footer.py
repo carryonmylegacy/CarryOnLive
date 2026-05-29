@@ -298,15 +298,21 @@ class CarryOnPDF(FPDF):
                 self.set_text_color(30, 40, 70)
                 self.set_x(self.l_margin + indent)
                 self.multi_cell(
-                    0, 5.5, _latin1_safe(entry.value) or "(not provided)",
-                    new_x=XPos.LMARGIN, new_y=YPos.NEXT,
+                    0,
+                    5.5,
+                    _latin1_safe(entry.value) or "(not provided)",
+                    new_x=XPos.LMARGIN,
+                    new_y=YPos.NEXT,
                 )
                 self.set_font("Helvetica", "I", 8)
                 self.set_text_color(120, 130, 150)
                 self.set_x(self.l_margin + indent)
                 self.multi_cell(
-                    0, 4, _latin1_safe(f"Source: {entry.source_step}"),
-                    new_x=XPos.LMARGIN, new_y=YPos.NEXT,
+                    0,
+                    4,
+                    _latin1_safe(f"Source: {entry.source_step}"),
+                    new_x=XPos.LMARGIN,
+                    new_y=YPos.NEXT,
                 )
             else:
                 self.set_text_color(60, 70, 90)
@@ -314,16 +320,22 @@ class CarryOnPDF(FPDF):
                 self.set_font("Helvetica", "", 10)
                 self.set_text_color(30, 40, 70)
                 self.multi_cell(
-                    0, 5.5, _latin1_safe(entry.value) or "(not provided)",
-                    new_x=XPos.LMARGIN, new_y=YPos.NEXT,
+                    0,
+                    5.5,
+                    _latin1_safe(entry.value) or "(not provided)",
+                    new_x=XPos.LMARGIN,
+                    new_y=YPos.NEXT,
                 )
                 # Source step in muted italic, indented under the value.
                 self.set_font("Helvetica", "I", 8)
                 self.set_text_color(120, 130, 150)
                 self.cell(label_col, 4, "", new_x=XPos.RIGHT, new_y=YPos.TOP)
                 self.multi_cell(
-                    0, 4, _latin1_safe(f"Source: {entry.source_step}"),
-                    new_x=XPos.LMARGIN, new_y=YPos.NEXT,
+                    0,
+                    4,
+                    _latin1_safe(f"Source: {entry.source_step}"),
+                    new_x=XPos.LMARGIN,
+                    new_y=YPos.NEXT,
                 )
 
         # Restore default black for any caller body that may follow.
