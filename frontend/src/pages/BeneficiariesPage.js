@@ -105,19 +105,32 @@ const BeneficiariesPage = () => {
   const benEstateId = (typeof localStorage !== 'undefined' && localStorage.getItem('selected_estate_id')) || null;
   const benDraftBase = benEstateId ? `ben_form:${benEstateId}` : null;
   const [showAddModal, setShowAddModal, clearShowAddModalDraft] = useDraftState(benDraftBase ? `${benDraftBase}:open` : null, false);
-  // One-time educational banner explaining Primary = legal estate
-  // beneficiary; Secondary+ = CarryOn-platform recipient only. Dismissed
-  // per-account-per-browser. Founder rule (May 28 2026): the same
-  // succession-tier UI now governs which beneficiaries the AI includes
-  // in estate documents, so the distinction must be visible at least
-  // once per user.
-  const [legalClassifierBanner, setLegalClassifierBanner] = useState(() => {
+  // Educational explainers — ALWAYS present, never dismissed. Each can be
+  // collapsed to a single header line via a caret and re-expanded anytime; the
+  // collapsed/expanded choice is remembered per-browser. (Founder rule
+  // May 28 2026: the legal-vs-CarryOn classification + executor succession
+  // distinctions must stay permanently visible, just minimizable.)
+  const [legalBannerCollapsed, setLegalBannerCollapsed] = useState(() => {
     if (typeof localStorage === 'undefined') return false;
-    return localStorage.getItem('carryon_ben_legal_classifier_seen') !== '1';
+    return localStorage.getItem('carryon_ben_legal_classifier_collapsed') === '1';
   });
-  const dismissLegalClassifierBanner = useCallback(() => {
-    setLegalClassifierBanner(false);
-    try { localStorage.setItem('carryon_ben_legal_classifier_seen', '1'); } catch (_e) { /* no-op */ }
+  const toggleLegalBanner = useCallback(() => {
+    setLegalBannerCollapsed(prev => {
+      const next = !prev;
+      try { localStorage.setItem('carryon_ben_legal_classifier_collapsed', next ? '1' : '0'); } catch (_e) { /* no-op */ }
+      return next;
+    });
+  }, []);
+  const [successionExplainerCollapsed, setSuccessionExplainerCollapsed] = useState(() => {
+    if (typeof localStorage === 'undefined') return false;
+    return localStorage.getItem('carryon_ben_succession_explainer_collapsed') === '1';
+  });
+  const toggleSuccessionExplainer = useCallback(() => {
+    setSuccessionExplainerCollapsed(prev => {
+      const next = !prev;
+      try { localStorage.setItem('carryon_ben_succession_explainer_collapsed', next ? '1' : '0'); } catch (_e) { /* no-op */ }
+      return next;
+    });
   }, []);
   const [showPrimaryPopup, setShowPrimaryPopup] = useState(false);
   const [showBenAddedPopup, setShowBenAddedPopup] = useState(false);
@@ -918,38 +931,40 @@ const BeneficiariesPage = () => {
       {/* Section Lock */}
       <SectionLockBanner sectionId="beneficiaries" />
 
-      {/* One-time legal-vs-platform classifier banner */}
-      {legalClassifierBanner && (
-        <div
-          className="rounded-xl p-4 flex items-start gap-3 relative"
-          style={{
-            background: 'linear-gradient(135deg, rgba(212,175,55,0.10), rgba(212,175,55,0.04))',
-            border: '1px solid rgba(212,175,55,0.35)',
-          }}
-          data-testid="ben-legal-classifier-banner"
+      {/* Legal-vs-CarryOn classifier — always present; caret minimizes it to a single line */}
+      <div
+        className="rounded-xl p-4 relative"
+        style={{
+          background: 'linear-gradient(135deg, rgba(212,175,55,0.10), rgba(212,175,55,0.04))',
+          border: '1px solid rgba(212,175,55,0.35)',
+        }}
+        data-testid="ben-legal-classifier-banner"
+      >
+        <button
+          type="button"
+          className="w-full flex items-center gap-3 text-left"
+          onClick={toggleLegalBanner}
+          aria-expanded={!legalBannerCollapsed}
+          data-testid="ben-legal-classifier-toggle"
         >
-          <Shield className="w-5 h-5 text-[var(--gold)] flex-shrink-0 mt-0.5" />
-          <div className="flex-1 min-w-0 pr-6">
-            <p className="text-sm font-semibold text-[var(--t)] mb-1">
-              How beneficiaries are classified — two separate things
-            </p>
+          <Shield className="w-5 h-5 text-[var(--gold)] flex-shrink-0" />
+          <p className="text-sm font-semibold text-[var(--t)] flex-1">
+            How beneficiaries are classified — two separate things
+          </p>
+          {legalBannerCollapsed
+            ? <ChevronDown className="w-5 h-5 text-[var(--t4)] flex-shrink-0" />
+            : <ChevronUp className="w-5 h-5 text-[var(--t4)] flex-shrink-0" />}
+        </button>
+        {!legalBannerCollapsed && (
+          <div className="pl-8 mt-2">
             <p className="text-xs text-[var(--t3)] leading-relaxed">
               <span className="font-semibold text-[var(--t)]">1. Estate Classification.</span> Open any beneficiary (the down-arrow) and use the two toggles. <span className="font-semibold" style={{ color: '#22C993' }}>Legal Beneficiary</span> = named in your will, trust, and beneficiary-designation drafts (this is the source of truth CarryOn&apos;s AI uses). <span className="font-semibold" style={{ color: '#3b82f6' }}>CarryOn Only Beneficiary</span> = receives CarryOn products such as Milestone Messages, Immediate Action Checklist hand-offs, and Friends &amp; Family notifications, but is <span className="font-semibold">not named</span> in estate documents. A person can be <span className="font-semibold">one, both, or neither</span>.
               <br /><br />
               <span className="font-semibold text-[var(--t)]">2. CarryOn Executor Succession.</span> Separately, drag the tiles to set <span className="font-semibold">Primary, Secondary, Tertiary…</span> — the order of who takes control of your <span className="font-semibold">CarryOn platform access</span> after your passing. Anyone you don&apos;t place in that order is simply <span className="font-semibold">Not in Succession</span>. This only governs CarryOn platform control after you pass — it is independent of the estate classification above.
             </p>
           </div>
-          <button
-            type="button"
-            className="absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center hover:bg-white/5 transition-colors"
-            onClick={dismissLegalClassifierBanner}
-            aria-label="Dismiss"
-            data-testid="ben-legal-classifier-dismiss"
-          >
-            <XCircle className="w-4 h-4 text-[var(--t4)]" />
-          </button>
-        </div>
-      )}
+        )}
+      </div>
 
       <SectionLockedOverlay sectionId="beneficiaries">
 
@@ -1000,12 +1015,25 @@ const BeneficiariesPage = () => {
             <div className="mb-3 p-3 rounded-xl flex items-start gap-2.5" style={{ background: 'rgba(var(--gold-rgb), 0.06)', border: '1px solid rgba(var(--gold-rgb), 0.12)' }} data-testid="succession-explainer">
               <Shield className="w-4 h-4 text-[var(--gold)] flex-shrink-0 mt-0.5" />
               <div className="flex-1 min-w-0">
-                <p className="text-sm text-[var(--t)] font-semibold">CarryOn Executor Succession</p>
-                <p className="text-xs text-[var(--t3)] leading-relaxed mt-0.5">
-                  {benSortKey === 'succession'
-                    ? 'Drag tiles to set Primary, Secondary, Tertiary… — the order of who controls your CarryOn platform access after your passing. Anyone not placed is "Not in Succession." This is separate from the Legal / CarryOn Only classification, which you set with the toggles inside each beneficiary.'
-                    : 'List is temporarily sorted. Switch back to "Succession order" to drag and re-rank.'}
-                </p>
+                <button
+                  type="button"
+                  className="w-full flex items-center gap-1.5 text-left"
+                  onClick={toggleSuccessionExplainer}
+                  aria-expanded={!successionExplainerCollapsed}
+                  data-testid="succession-explainer-toggle"
+                >
+                  <p className="text-sm text-[var(--t)] font-semibold flex-1">CarryOn Executor Succession</p>
+                  {successionExplainerCollapsed
+                    ? <ChevronDown className="w-4 h-4 text-[var(--t4)] flex-shrink-0" />
+                    : <ChevronUp className="w-4 h-4 text-[var(--t4)] flex-shrink-0" />}
+                </button>
+                {!successionExplainerCollapsed && (
+                  <p className="text-xs text-[var(--t3)] leading-relaxed mt-0.5">
+                    {benSortKey === 'succession'
+                      ? 'Drag tiles to set Primary, Secondary, Tertiary… — the order of who controls your CarryOn platform access after your passing. Anyone not placed is "Not in Succession." This is separate from the Legal / CarryOn Only classification, which you set with the toggles inside each beneficiary.'
+                      : 'List is temporarily sorted. Switch back to "Succession order" to drag and re-rank.'}
+                  </p>
+                )}
               </div>
               <SortControl
                 value={benSortKey}
