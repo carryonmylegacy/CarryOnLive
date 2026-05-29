@@ -287,16 +287,20 @@ class CarryOnPDF(FPDF):
             # wide, fall back to a STACKED layout (label on its own line, value
             # and source indented beneath it).
             label_col = 60.0
-            indent = 6.0
             self.set_font("Helvetica", "B", 10)
             field_txt = _latin1_safe(entry.field)
             stacked = self.get_string_width(field_txt) > (label_col - 3)
             if stacked:
+                # Long label (e.g. "CarryOn Only recipients (not in estate
+                # documents)") gets its own full-width line, but the value +
+                # source still land in the SAME right-hand value column as the
+                # side-by-side rows above so the manifest reads as one aligned
+                # outline.
                 self.set_text_color(60, 70, 90)
                 self.multi_cell(0, 5.5, field_txt, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
                 self.set_font("Helvetica", "", 10)
                 self.set_text_color(30, 40, 70)
-                self.set_x(self.l_margin + indent)
+                self.set_x(self.l_margin + label_col)
                 self.multi_cell(
                     0,
                     5.5,
@@ -306,7 +310,7 @@ class CarryOnPDF(FPDF):
                 )
                 self.set_font("Helvetica", "I", 8)
                 self.set_text_color(120, 130, 150)
-                self.set_x(self.l_margin + indent)
+                self.set_x(self.l_margin + label_col)
                 self.multi_cell(
                     0,
                     4,

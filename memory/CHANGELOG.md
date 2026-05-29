@@ -1,5 +1,17 @@
 # CarryOn — Changelog
 
+## May 29, 2026 — CI Backend Lint fix + Verified Inputs Manifest value alignment
+
+### CI Backend Lint failure (push blocker)
+- Root cause: the prior `services/pdf_trust_footer.py` manifest-overflow edit was applied but never run through `ruff format`, so CI's **Backend Lint → `ruff format --check .`** flagged it. That single failure cascaded (Backend Tests skipped, E2E Smoke cancelled).
+- Fix: ran `ruff format` (whitespace-only — `multi_cell(...)` args split one-per-line). `ruff check .` ✅ and `ruff format --check .` ✅ both pass; pre-push gate = ALL CLEAR — SAFE TO PUSH.
+
+### Verified Inputs Manifest — stacked-row value alignment (founder tweak)
+- For long field labels (e.g. "CarryOn Only recipients (not in estate documents)") the renderer stacks the label on its own line. Previously the value list was indented only 6mm from the left.
+- Now the value + source land in the SAME right-hand value column (`l_margin + 60mm`) as the side-by-side rows above, so the members list right-justifies under the "Legal beneficiaries" values. Verified via pdfminer: both start at x0=201.3pt. Subtitle/label stays left.
+- File: `services/pdf_trust_footer.py::add_verified_inputs_manifest` (removed unused `indent` var). `test_pdf_trust_footer.py` 5/5 pass.
+
+
 ## May 28, 2026 (PM-2) — AI sees only Legal Beneficiaries + mandatory PDF source citations
 
 Founder mandate: (1) the system AI must ONLY ever consider **Legal Beneficiaries**; (2) every generated PDF must carry **source citations** — both input-provenance and chapter-level legal authority — to honor the NOT-LEGAL-ADVICE / Prime Directive disclaimer.
