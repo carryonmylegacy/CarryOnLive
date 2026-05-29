@@ -189,12 +189,20 @@ const QuickStartWizard = ({ forceOpen = false, onClose = () => {} }) => {
         // Merged household + beneficiaries page (May 26 2026). Pull
         // marital status from /auth/me AND existing beneficiaries
         // from /api/beneficiaries — populate both into one step blob.
-        const [meRes, bensRes] = await Promise.all([
+        const [meRes, estatesRes] = await Promise.all([
           apiClient.get(`${API_URL}/auth/me`, getAuthHeaders()),
-          apiClient.get(`${API_URL}/beneficiaries`, getAuthHeaders()),
+          apiClient.get(`${API_URL}/estates`, getAuthHeaders()),
         ]);
         const u = meRes.data || {};
-        const list = Array.isArray(bensRes.data) ? bensRes.data : (bensRes.data?.beneficiaries || []);
+        // Beneficiaries are fetched PER-ESTATE: GET /beneficiaries/{estate_id}.
+        // There is no collection-level GET /beneficiaries (only POST exists at
+        // that path), so calling it returned 405 Method Not Allowed.
+        const estate = Array.isArray(estatesRes.data) ? estatesRes.data[0] : estatesRes.data;
+        let list = [];
+        if (estate?.id) {
+          const bensRes = await apiClient.get(`${API_URL}/beneficiaries/${estate.id}`, getAuthHeaders());
+          list = Array.isArray(bensRes.data) ? bensRes.data : (bensRes.data?.beneficiaries || []);
+        }
         const next = { ...stepData };
         if (u.marital_status) next.marital_status = u.marital_status;
         const mapped = list
