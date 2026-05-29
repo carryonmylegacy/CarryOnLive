@@ -1035,6 +1035,9 @@ const BeneficiariesPage = () => {
                   </p>
                 )}
               </div>
+            </div>
+            {/* Sort control — its own pill, just above the first beneficiary tile */}
+            <div className="mb-3 flex justify-end" data-testid="ben-sort-pill">
               <SortControl
                 value={benSortKey}
                 onChange={setBenSortKey}
