@@ -30,6 +30,7 @@ import { useAuth, useBrand } from '../contexts/AuthContext';
 import { openPdfPreview } from '../utils/openPdfPreview';
 import AddressAutocomplete from './AddressAutocomplete';
 import { RELATIONSHIPS } from '../config/relationships';
+import { toast } from '../utils/toast';
 
 const STEPS = [
   'gate', 'welcome', 'residence', 'household',
@@ -209,11 +210,10 @@ const QuickStartWizard = ({ forceOpen = false, onClose = () => {} }) => {
           .filter((b) => (b.name || b.first_name))
           .map((b) => {
             // Founder rule (May 28 2026): a beneficiary flagged
-            // `is_legal_beneficiary` = TRUE is a Primary / LEGAL estate
-            // beneficiary → appears in the AI's estate-document drafting.
-            // Secondary recipients are CarryOn-platform only (MM / IAC / FFN)
-            // → excluded from estate documents. Multiple people may be Primary
-            // and multiple may be Secondary. Legacy fallback (flag absent):
+            // `is_legal_beneficiary` = TRUE is a LEGAL estate beneficiary →
+            // the ONLY kind the AI ever considers for estate-document drafting.
+            // CarryOn Only recipients (platform products: MM / IAC / FFN) are
+            // NOT pulled into this wizard at all. Legacy fallback (flag absent):
             // succession_order === 0 is treated as legal.
             const so = (typeof b.succession_order === 'number')
               ? b.succession_order
@@ -221,8 +221,6 @@ const QuickStartWizard = ({ forceOpen = false, onClose = () => {} }) => {
             const isLegal = (typeof b.is_legal_beneficiary === 'boolean')
               ? b.is_legal_beneficiary
               : (so === null ? true : so === 0);
-            // CarryOn Only recipient is an INDEPENDENT flag; legacy fallback =
-            // "not a legal beneficiary" so older data still maps the same way.
             const isCarryon = (typeof b.is_carryon_beneficiary === 'boolean')
               ? b.is_carryon_beneficiary
               : !isLegal;
@@ -236,10 +234,21 @@ const QuickStartWizard = ({ forceOpen = false, onClose = () => {} }) => {
               is_carryon_beneficiary: isCarryon,
             };
           });
-        if (mapped.length > 0) next.beneficiaries = mapped;
-        if (!u.marital_status && mapped.length === 0) {
-          setError('No household details or beneficiaries on file yet — fill them in below.');
+        // Pull in LEGAL beneficiaries ONLY — CarryOn Only recipients never
+        // enter the estate-document wizard (matches the AI generation rule).
+        const legalOnly = mapped.filter((m) => m.is_legal_beneficiary === true);
+        const skipped = mapped.length - legalOnly.length;
+        if (legalOnly.length > 0) next.beneficiaries = legalOnly;
+        if (!u.marital_status && legalOnly.length === 0) {
+          setError(
+            mapped.length > 0
+              ? 'None of your beneficiaries are marked as Legal Beneficiaries yet — only legal beneficiaries are used here. Mark them on the Beneficiaries page (Legal toggle), or add them below.'
+              : 'No household details or beneficiaries on file yet — fill them in below.'
+          );
           return;
+        }
+        if (skipped > 0) {
+          toast.info(`Added ${legalOnly.length} legal beneficiar${legalOnly.length === 1 ? 'y' : 'ies'} — skipped ${skipped} CarryOn Only recipient${skipped === 1 ? '' : 's'} (not used in estate documents).`);
         }
         setStepData(next);
       } else if (currentStep === 'residence') {
