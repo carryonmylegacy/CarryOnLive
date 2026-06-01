@@ -18,6 +18,17 @@
 
 **Validation:** eslint clean (4 files); `node --check sw-push.js` OK; `housekeeping.sh --strict` = ALL CHECKS PASSED (0 WARN / 0 FAIL); diagnostics overlay render-verified via screenshot. **On-device confirmation REQUIRED** — preview cannot run an iOS PWA Service Worker. Next: founder deploys, runs the diagnostic on device, reports the numbers (chunks cached/expected, PDF worker Yes/No, flag value) so the precise root cause can be fixed.
 
+### Jun 1 (later, part 2) — ROOT CAUSE FOUND via on-device diagnostics: offline profile shows empty
+
+**Founder device data (v52 deployed):** Online diagnostic = SW controlling, chunks **123/123**, 0 missing, PDF worker cached, flag on, encryption On, **Profile "Pete Mitchell"**, 7 pinned, sub cached. After airplane-mode cold boot: everything still ✓ EXCEPT **Profile = "empty"**, and the Settings → Profile / Personal Information pages render "User" + all dashes. So caching/SW/PDF/chunks are all genuinely working now — the lone offline failure is the **encrypted profile mirror**.
+
+**Root cause:** `profileRepo` stores the profile **encrypted** (`sealRecord`/`unsealRecord`), while `subscriptionRepo`/pinned-docs are plaintext (hence they survived). The AES key (`offline/crypto.js _cachedKey`) is **in-memory only, wiped on every page reload**, and primed *fire-and-forget* at boot in `AuthContext` via a slow PBKDF2(210k). On an **offline cold boot** the encrypted profile read runs before priming completes → `unsealRecord` returns `null` → "empty". Online it only worked because the key had been primed earlier in that live session.
+
+**Fix (`offline/crypto.js`):** added `ensureSessionKey()` — lazily + idempotently re-derives the key from the persisted `carryon_token` (deduped so concurrent reads share one PBKDF2 pass). `unsealRecord()` now `await`s it whenever the key is missing, so EVERY encrypted read (profile, dashboard, beneficiaries — anything routed through `unsealRecord`) self-heals on an offline cold boot regardless of timing. Returns `null` safely when no token exists (no false data).
+
+**Validation:** Real-module Node round-trip test PASSED — seal → wipe key (cold-boot sim) → `unsealRecord` self-heals from token → "Pete Mitchell"; no-token → `null`. eslint clean; housekeeping `--strict` clean. On-device retest: founder redeploys → airplane-mode cold boot → diagnostic Profile should read "Pete Mitchell" and Personal Information fields should populate.
+
+
 
 ## Jun 1, 2026 (late pm) — PDF renders offline, faster boot, pill race fix
 

@@ -83,7 +83,35 @@ export async function primeSessionKey(token) {
   }
 }
 
-export function clearSessionKey() { _cachedKey = null; }
+export function clearSessionKey() { _cachedKey = null; _primingPromise = null; }
+
+// Tracks an in-flight lazy key derivation so concurrent encrypted reads on
+// an offline cold boot share ONE PBKDF2 pass instead of each kicking off
+// their own 210k-iteration derivation.
+let _primingPromise = null;
+
+/**
+ * Ensure the AES session key is available, lazily deriving it from the
+ * PERSISTED bearer token when it hasn't been primed yet.
+ *
+ * This is the safety net for OFFLINE COLD BOOTS. The key lives only in
+ * module memory and is wiped on every page reload; AuthContext primes it
+ * fire-and-forget at boot, so an encrypted read that runs first (e.g. the
+ * Profile page or the diagnostics panel after an airplane-mode relaunch)
+ * would otherwise hit a null key and return empty. By re-deriving on demand
+ * from `carryon_token`, every encrypted read self-heals regardless of boot
+ * ordering or which component triggered it. Idempotent + deduped.
+ */
+export async function ensureSessionKey() {
+  if (_cachedKey) return _cachedKey;
+  if (!isEncryptionEnabled()) return null;
+  if (_primingPromise) return _primingPromise;
+  let token = null;
+  try { token = localStorage.getItem('carryon_token'); } catch { /* private mode */ }
+  if (!token) return null;
+  _primingPromise = primeSessionKey(token).finally(() => { _primingPromise = null; });
+  return _primingPromise;
+}
 
 function getKey() { return _cachedKey; }
 
@@ -156,10 +184,19 @@ export async function sealRecord(row, plainKeys = []) {
 export async function unsealRecord(stored) {
   if (!stored || typeof stored !== 'object') return stored;
   if (!stored.__enc) return stored;
-  if (!isEncryptionEnabled() || !getKey()) {
+  if (!isEncryptionEnabled()) {
     // Encryption disabled mid-session — the row is unreadable until the
     // user logs back in and primes the key again.
     return null;
+  }
+  // Self-heal on offline cold boot: the in-memory key was wiped on reload
+  // and the boot-time prime is fire-and-forget, so lazily re-derive it from
+  // the persisted token before decrypting. Without this, the first
+  // encrypted read after an airplane-mode relaunch returns null (the
+  // "profile shows empty offline" bug).
+  if (!getKey()) {
+    await ensureSessionKey();
+    if (!getKey()) return null;
   }
   try {
     const { iv, ct } = stored.__enc;
