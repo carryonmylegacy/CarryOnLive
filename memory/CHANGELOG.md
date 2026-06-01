@@ -1,5 +1,18 @@
 # CarryOn — Changelog
 
+## Jun 1, 2026 (pm) — Pinned documents now actually open OFFLINE (the core promise)
+
+**Founder report (Airplane Mode):** tapping a PINNED document in the SDV showed "You're offline — This document will open once you reconnect" instead of opening it. That defeats the entire purpose of pinning and misleads the user.
+
+**Root cause:** both `handlePreview` (view) and `handleDownload` called `canOpenCloudFile()` (the offline guard) FIRST, which blanket-blocks every cloud file when `navigator.onLine === false` — with zero awareness that a pinned doc has a cached blob in `pinnedDocsRepo` (`getPinnedBlob`). The cached copy was sitting right there, never consulted.
+
+**Fix (`pages/VaultPage.js`):**
+- View/Download now fetch the pinned blob FIRST. Offline + pinned → open the cached copy (previewable types in the floating viewer; others handed to the device). Offline + NOT pinned → the honest "you're offline" notice (now accurate). Online → fetch fresh, and if the network dies mid-request (e.g. Wi-Fi-no-internet) fall back to the pinned copy.
+- The misleading toast now only appears for documents the user genuinely did not pin.
+
+**Validation:** lint clean; `test_idor_guards.py` 17/17; `scripts/check.sh` = ALL CLEAR — SAFE TO PUSH (81 fast tests). On-device confirmation needed (preview can't host pinned docs for the test account).
+
+
 ## Jun 1, 2026 (pm) — "Ready for offline use" confirmation pill
 
 Added a transient confirmation pill that flashes once the Service Worker has finished caching every app chunk, so users know it's safe to go offline.

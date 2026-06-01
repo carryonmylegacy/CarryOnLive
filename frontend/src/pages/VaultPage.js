@@ -662,9 +662,31 @@ const VaultPage = () => {
   };
 
   const handleDownload = async (doc, password = null, backupCode = null) => {
-    // Phase 5/Tier C — block cloud file opens when offline with an honest toast.
-    // The document list itself paints from the offline mirror (Phase 5); this
-    // guard only fires when the user actually tries to OPEN the blob.
+    const isDeviceOffline = (typeof window !== 'undefined' && typeof window.__isDeviceOffline === 'function')
+      ? window.__isDeviceOffline()
+      : (typeof navigator !== 'undefined' && navigator.onLine === false);
+    // Pinned-for-offline: a pinned doc MUST be retrievable without signal —
+    // hand over the locally cached bytes directly. Skipped for optimistic
+    // `local-doc-*` rows (never pinned; no server id yet).
+    let pinnedBlob = null;
+    if (!(typeof doc?.id === 'string' && doc.id.startsWith('local-doc-'))) {
+      try {
+        const { getPinnedBlob } = await import('../offline/pinnedDocsRepo');
+        pinnedBlob = await getPinnedBlob(doc.id);
+      } catch { /* repo unavailable */ }
+    }
+    if (isDeviceOffline && pinnedBlob) {
+      try {
+        const fileName = resolveFileName(doc.name, doc.file_type);
+        await legacyDownloadFile(pinnedBlob, fileName);
+        toast.success('Saved your offline copy');
+      } catch {
+        toast.error('Could not open the offline copy');
+      }
+      return;
+    }
+    // Phase 5/Tier C — block cloud file opens when offline with an honest
+    // toast. Only reached for docs that were NOT pinned for offline use.
     try {
       const { canOpenCloudFile } = await import('../utils/offlineGuard');
       if (!canOpenCloudFile({ kind: 'document' })) return;
@@ -677,9 +699,6 @@ const VaultPage = () => {
     // and surface a misleading "Download failed" toast. Refresh and
     // ask the user to try again instead.
     if (typeof doc?.id === 'string' && doc.id.startsWith('local-doc-')) {
-      const isDeviceOffline = (typeof window !== 'undefined' && typeof window.__isDeviceOffline === 'function')
-        ? window.__isDeviceOffline()
-        : (typeof navigator !== 'undefined' && navigator.onLine === false);
       if (!isDeviceOffline) {
         toast.info('Finishing sync — refreshing your documents…');
         try { await fetchData(); } catch { /* non-fatal */ }
@@ -728,6 +747,15 @@ const VaultPage = () => {
         setShowLockModal(true);
       } else if (msg.includes('Not authenticated') || msg.includes('401')) {
         toast.error('Session expired. Please log in again.');
+      } else if (pinnedBlob) {
+        // Network died mid-request (e.g. Wi-Fi with no internet) but we hold
+        // the pinned copy — serve it rather than failing.
+        try {
+          await legacyDownloadFile(pinnedBlob, resolveFileName(doc.name, doc.file_type));
+          toast.success('Saved your offline copy');
+        } catch {
+          toast.error('Download failed — check your connection and try again');
+        }
       } else {
         toast.error(msg || 'Download failed — check your connection and try again');
       }
@@ -842,14 +870,9 @@ const VaultPage = () => {
 
   // Preview functions — always opens the floating PDF/image viewer
   const handlePreview = async (doc) => {
-    try {
-      const { canOpenCloudFile } = await import('../utils/offlineGuard');
-      if (!canOpenCloudFile({ kind: 'document' })) return;
-    } catch { /* non-fatal */ }
-    // Post-sync race-guard (mirror of handleDownload). Optimistic
-    // `local-doc-*` rows have no server id yet — calling
-    // /documents/{local-doc-…}/preview would 404. Refresh the list
-    // when online so the next tap hits the real synced row.
+    // Post-sync race-guard. Optimistic `local-doc-*` rows have no server
+    // id yet — calling /documents/{local-doc-…}/preview would 404. Refresh
+    // the list when online so the next tap hits the real synced row.
     if (typeof doc?.id === 'string' && doc.id.startsWith('local-doc-')) {
       const isDeviceOffline = (typeof window !== 'undefined' && typeof window.__isDeviceOffline === 'function')
         ? window.__isDeviceOffline()
@@ -862,13 +885,49 @@ const VaultPage = () => {
       }
       return;
     }
+
     const previewable = doc.file_type && (
       doc.file_type.toLowerCase().includes('pdf') ||
       doc.file_type.toLowerCase().includes('image')
     );
 
+    // Open a locally-pinned copy: previewable types in the floating viewer,
+    // everything else handed straight to the device.
+    const openCached = async (blob) => {
+      if (previewable) {
+        setSelectedDoc(doc);
+        setPreviewLoading(true);
+        setShowPreviewModal(true);
+        setPreviewUrl(URL.createObjectURL(blob));
+        setPreviewLoading(false);
+      } else {
+        const fileName = resolveFileName(doc.name, doc.file_type);
+        await legacyDownloadFile(blob, fileName);
+      }
+    };
+
+    const isOffline = (typeof window !== 'undefined' && typeof window.__isDeviceOffline === 'function')
+      ? window.__isDeviceOffline()
+      : (typeof navigator !== 'undefined' && navigator.onLine === false);
+    let cachedBlob = null;
+    try {
+      const { getPinnedBlob } = await import('../offline/pinnedDocsRepo');
+      cachedBlob = await getPinnedBlob(doc.id);
+    } catch { /* repo unavailable — fall through */ }
+
+    // OFFLINE: a pinned doc MUST open from its cached copy — that is the
+    // entire point of pinning. Only show the "you're offline" notice when
+    // the doc genuinely was NOT pinned for offline use.
+    if (isOffline) {
+      if (cachedBlob) { await openCached(cachedBlob); return; }
+      try {
+        const { canOpenCloudFile } = await import('../utils/offlineGuard');
+        canOpenCloudFile({ kind: 'document' });
+      } catch { /* non-fatal */ }
+      return;
+    }
+
     if (!previewable) {
-      // toast removed
       handleDownload(doc);
       return;
     }
@@ -898,6 +957,10 @@ const VaultPage = () => {
       } else if (error.response?.status === 403) {
         toast.error('Vault is locked. Please unlock the Secure Document Vault first.');
         setShowPreviewModal(false);
+      } else if (cachedBlob) {
+        // Network died mid-request (e.g. Wi-Fi with no internet) but we hold
+        // the pinned copy — fall back to it instead of erroring.
+        await openCached(cachedBlob);
       } else {
         toast.error('Failed to load document preview');
         // Keep modal open — shows fallback "Download Instead" button
