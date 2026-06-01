@@ -165,41 +165,53 @@ export const AuthProvider = ({ children }) => {
               // and keep the user on an authenticated shell — at worst
               // they'll see empty dashboards until reconnect.
               try {
-                let cachedProfile = null;
-                // Prime the AES-GCM session key BEFORE reading the encrypted
-                // profile mirror. On a COLD OFFLINE BOOT this branch runs
-                // INSTEAD of the online path (which primes the key further
-                // below at the successful-/me block), so without this the
-                // key is null, unsealRecord() returns null, and
-                // getLocalProfile() yields nothing — stranding the user's
-                // own name, photo, username, and personal info behind a lock
-                // they can't open until they reconnect. (Founder report:
-                // orbit "You" node shows "??", Settings shows "User"/no
-                // photo, Personal Info all dashes while offline; email still
-                // shows because it's read from the JWT, not the cache.)
-                try {
-                  const cryptoMod = await import('../offline/crypto');
-                  if (cryptoMod.isEncryptionEnabled()) {
-                    await cryptoMod.primeSessionKey(token);
-                  }
-                } catch { /* key prime is best-effort — fall through to JWT-only */ }
-                try {
-                  const { getLocalProfile } = await import('../offline/repos/profileRepo');
-                  cachedProfile = await getLocalProfile();
-                } catch { /* offline cache not available — use JWT fields only */ }
+                // STEP 1 — paint an authenticated shell IMMEDIATELY from the
+                // JWT and release the splash. Never block first paint on the
+                // PBKDF2 key derivation or IndexedDB reads below; on a phone
+                // that adds visible lag to the offline dashboard load.
                 setUser({
                   id: jwtPayload.user_id || jwtPayload.sub,
-                  email: jwtPayload.email || cachedProfile?.email,
-                  role: jwtPayload.role || cachedProfile?.role || 'benefactor',
-                  name: cachedProfile?.name || cachedProfile?.first_name || '',
-                  ...(cachedProfile || {}),
+                  email: jwtPayload.email,
+                  role: jwtPayload.role || 'benefactor',
                   _offlineHydrated: true,
                 });
-                try {
-                  const { getLocalSubscription } = await import('../offline/repos/subscriptionRepo');
-                  const localSub = await getLocalSubscription();
-                  if (localSub) setSubscriptionStatus(localSub);
-                } catch {}
+                setLoading(false);
+                if (typeof window !== 'undefined') {
+                  window.dispatchEvent(new Event('carryon:app-ready'));
+                }
+                // STEP 2 — in the BACKGROUND, prime the AES-GCM session key
+                // and merge the decrypted profile (name, photo, username,
+                // personal info) so the UI fills in a beat later. On a cold
+                // OFFLINE BOOT this branch runs INSTEAD of the online path
+                // (which primes the key at the successful-/me block), so
+                // without this the key stays null, unsealRecord() returns
+                // null, and getLocalProfile() yields nothing — stranding the
+                // user's own identity behind a lock until they reconnect.
+                (async () => {
+                  try {
+                    const cryptoMod = await import('../offline/crypto');
+                    if (cryptoMod.isEncryptionEnabled()) {
+                      await cryptoMod.primeSessionKey(token);
+                    }
+                  } catch { /* key prime best-effort */ }
+                  try {
+                    const { getLocalProfile } = await import('../offline/repos/profileRepo');
+                    const cachedProfile = await getLocalProfile();
+                    if (cachedProfile) {
+                      setUser((prev) => {
+                        const merged = { ...(prev || {}), ...cachedProfile, _offlineHydrated: true };
+                        if (!merged.name) merged.name = cachedProfile.first_name || prev?.name || '';
+                        merged.email = merged.email || prev?.email;
+                        return merged;
+                      });
+                    }
+                  } catch { /* offline cache unavailable — JWT-only user stands */ }
+                  try {
+                    const { getLocalSubscription } = await import('../offline/repos/subscriptionRepo');
+                    const localSub = await getLocalSubscription();
+                    if (localSub) setSubscriptionStatus(localSub);
+                  } catch {}
+                })();
               } catch (hydrateErr) {
                 console.warn('[auth] offline hydrate failed, continuing with JWT-only user:', hydrateErr);
                 setUser({
@@ -208,10 +220,10 @@ export const AuthProvider = ({ children }) => {
                   role: jwtPayload.role || 'benefactor',
                   _offlineHydrated: true,
                 });
-              }
-              setLoading(false);
-              if (typeof window !== 'undefined') {
-                window.dispatchEvent(new Event('carryon:app-ready'));
+                setLoading(false);
+                if (typeof window !== 'undefined') {
+                  window.dispatchEvent(new Event('carryon:app-ready'));
+                }
               }
               return; // skip the rest of the online-only warmup
             }

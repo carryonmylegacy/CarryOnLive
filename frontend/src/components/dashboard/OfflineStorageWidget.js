@@ -48,6 +48,15 @@ const OfflineStorageWidget = () => {
 
   useEffect(() => { refresh(); }, [refresh]);
 
+  // Refresh when a doc is (un)pinned from another surface — e.g. the
+  // per-row PinForOfflineButton in the vault list — so this panel never
+  // shows a doc the user just unpinned elsewhere.
+  useEffect(() => {
+    const onPinsChanged = () => refresh();
+    window.addEventListener('carryon:pins-changed', onPinsChanged);
+    return () => window.removeEventListener('carryon:pins-changed', onPinsChanged);
+  }, [refresh]);
+
   const handleUnpin = async (e, docId) => {
     e.stopPropagation();
     setUnpinning(docId);
@@ -59,6 +68,9 @@ const OfflineStorageWidget = () => {
         // Server may be unreachable offline — the local evict is what matters here.
       }
       await unpinDocument(docId);
+      try {
+        window.dispatchEvent(new CustomEvent('carryon:pins-changed', { detail: { docId } }));
+      } catch { /* SSR / no window */ }
       toast.success('Removed from offline pins');
       refresh();
     } catch {

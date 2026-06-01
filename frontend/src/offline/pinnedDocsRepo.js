@@ -67,7 +67,11 @@ export async function pinDocument(doc, fetchHeaders) {
     blob,
     mime_type: blob.type || doc.mime_type || 'application/octet-stream',
     size_bytes: blob.size,
-    title: doc.title || doc.filename || '',
+    // Vault documents carry their display label on `name` (see
+    // VaultPage). Older code only checked `title`/`filename`, which are
+    // absent on vault docs — so every pinned doc rendered as "Untitled"
+    // in the Storage-used-offline panel. Check `name` too.
+    title: doc.title || doc.name || doc.filename || '',
     fetched_at: Date.now(),
   });
   return blob.size;

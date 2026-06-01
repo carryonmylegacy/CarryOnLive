@@ -49,6 +49,18 @@ const PinForOfflineButton = ({ doc, getAuthHeaders }) => {
     };
   }, [doc.id, doc.pinned_offline]);
 
+  // Stay in sync when this doc is (un)pinned from another surface — e.g.
+  // the "Storage used offline" panel's unpin button. Re-reads the local
+  // Dexie state so the row's pin icon never looks stale.
+  useEffect(() => {
+    const onPinsChanged = (e) => {
+      if (e?.detail?.docId && e.detail.docId !== doc.id) return;
+      isPinnedLocally(doc.id).then((p) => setIsPinned(!!p)).catch(() => {});
+    };
+    window.addEventListener('carryon:pins-changed', onPinsChanged);
+    return () => window.removeEventListener('carryon:pins-changed', onPinsChanged);
+  }, [doc.id]);
+
   const disabled = !!doc.is_locked;
 
   const handleToggle = async (e) => {
@@ -79,6 +91,12 @@ const PinForOfflineButton = ({ doc, getAuthHeaders }) => {
           toast.info('Marked for offline. Will download on next sync.');
         }
       }
+      // Notify sibling pin UIs (the Storage-used-offline panel and any
+      // other rendered rows for this doc) so they reflect the change
+      // immediately instead of looking "stuck" until a full reload.
+      try {
+        window.dispatchEvent(new CustomEvent('carryon:pins-changed', { detail: { docId: doc.id } }));
+      } catch { /* SSR / no window */ }
     } catch (err) {
       const detail = err.response?.data?.detail || 'Failed to update pin';
       toast.error(detail);
