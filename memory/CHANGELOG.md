@@ -1,5 +1,14 @@
 # CarryOn — Changelog
 
+## Jun 1, 2026 (pm) — "Ready for offline use" confirmation pill
+
+Added a transient confirmation pill that flashes once the Service Worker has finished caching every app chunk, so users know it's safe to go offline.
+
+- **SW (`sw-push.js`):** after the `CACHE_URLS` handler finishes and confirms every posted bundle is cached, it posts `{ type: 'OFFLINE_READY' }` to all clients.
+- **Client (`OfflineSyncProgress.js`):** listens for `OFFLINE_READY` and flashes a green-check "Ready for offline use" pill in the SAME bottom-right slot as the existing offline-caching progress pill, auto-dismissing after 2.6s. Gated identically (platform offline visible + offline mode on) and capped to once per session (`sessionStorage` guard) so it reassures without nagging.
+- **Verified** in-browser: dispatching `OFFLINE_READY` renders `[data-testid="offline-ready-pill"]` with text "Ready for offline use". Lint clean; SW syntax OK; `scripts/check.sh` = ALL CLEAR — SAFE TO PUSH.
+
+
 ## Jun 1, 2026 (pm) — True-offline PWA fixes: broken logo + ChunkLoadError
 
 **Founder report (Airplane Mode, production PWA):** (1) the CarryOn logo rendered as a broken-image box offline; (2) navigating to an unvisited page offline crashed with `ChunkLoadError: Loading chunk 1418 failed`.

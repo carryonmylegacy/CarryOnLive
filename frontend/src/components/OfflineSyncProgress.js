@@ -18,6 +18,7 @@
  */
 
 import React, { useEffect, useState, useRef } from 'react';
+import { CheckCircle2 } from 'lucide-react';
 import { getOfflineMode } from '../offline/featureFlag';
 import {
   isPlatformOfflineVisible,
@@ -37,6 +38,12 @@ export default function OfflineSyncProgress() {
   // pill vanish without a page reload.
   const [platformOfflineVisible, setPlatformOfflineVisible] = useState(() => isPlatformOfflineVisible());
   const hideTimerRef = useRef(null);
+  // "Ready for offline use" confirmation — flashed once per session when
+  // the Service Worker reports it has finished caching every app chunk
+  // (OFFLINE_READY message). Lives in the SAME bottom-right pill slot as
+  // the sync-progress indicator and auto-dismisses.
+  const [readyVisible, setReadyVisible] = useState(false);
+  const readyTimerRef = useRef(null);
 
   useEffect(() => {
     const onPlatformChange = () => setPlatformOfflineVisible(isPlatformOfflineVisible());
@@ -49,8 +56,34 @@ export default function OfflineSyncProgress() {
   useEffect(() => {
     if (!platformOfflineVisible) {
       setVisible(false);
+      setReadyVisible(false);
       if (hideTimerRef.current) { clearTimeout(hideTimerRef.current); hideTimerRef.current = null; }
+      if (readyTimerRef.current) { clearTimeout(readyTimerRef.current); readyTimerRef.current = null; }
     }
+  }, [platformOfflineVisible]);
+
+  // Listen for the Service Worker's OFFLINE_READY signal (fired once it has
+  // cached every app chunk) and flash the confirmation pill — capped to
+  // once per session so it reassures without nagging on every reload.
+  useEffect(() => {
+    if (!platformOfflineVisible) return;
+    if (getOfflineMode() !== 'on') return;
+    if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return;
+    const onSwMessage = (event) => {
+      if (event.data?.type !== 'OFFLINE_READY') return;
+      try {
+        if (sessionStorage.getItem('carryon_offline_ready_shown') === '1') return;
+        sessionStorage.setItem('carryon_offline_ready_shown', '1');
+      } catch { /* private mode — still show, just may repeat */ }
+      setReadyVisible(true);
+      if (readyTimerRef.current) clearTimeout(readyTimerRef.current);
+      readyTimerRef.current = setTimeout(() => setReadyVisible(false), 2600);
+    };
+    navigator.serviceWorker.addEventListener('message', onSwMessage);
+    return () => {
+      navigator.serviceWorker.removeEventListener('message', onSwMessage);
+      if (readyTimerRef.current) clearTimeout(readyTimerRef.current);
+    };
   }, [platformOfflineVisible]);
 
   useEffect(() => {
@@ -88,7 +121,53 @@ export default function OfflineSyncProgress() {
   // through before the effect re-evaluated, the founder's master
   // switch wins.
   if (!platformOfflineVisible) return null;
-  if (!visible || total === 0) return null;
+  const showProgress = visible && total > 0;
+  if (!showProgress && !readyVisible) return null;
+
+  // "Ready for offline use" confirmation pill — same slot/look as the
+  // progress pill, green check instead of a progress bar.
+  if (!showProgress && readyVisible) {
+    return (
+      <div
+        role="status"
+        aria-live="polite"
+        data-testid="offline-ready-pill"
+        style={{
+          position: 'fixed',
+          right: 'max(16px, env(safe-area-inset-right, 0px))',
+          bottom: 'calc(96px + env(safe-area-inset-bottom, 0px))',
+          zIndex: 2147483000,
+          pointerEvents: 'none',
+          opacity: readyVisible ? 1 : 0,
+          transition: 'opacity 260ms ease-out',
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            minWidth: 200,
+            padding: '10px 14px',
+            borderRadius: 14,
+            background: 'var(--bg2, rgba(15, 22, 41, 0.92))',
+            color: 'var(--t, #e9edf5)',
+            border: '1px solid rgba(16, 185, 129, 0.45)',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.25)',
+            backdropFilter: 'blur(14px)',
+            WebkitBackdropFilter: 'blur(14px)',
+            fontFamily: 'var(--sans, system-ui, -apple-system, sans-serif)',
+            fontSize: 13,
+            fontWeight: 600,
+          }}
+        >
+          <CheckCircle2 className="w-4 h-4" style={{ color: '#10b981', flexShrink: 0 }} />
+          <span>Ready for offline use</span>
+        </div>
+      </div>
+    );
+  }
+
   const pct = Math.round((done / total) * 100);
 
   return (

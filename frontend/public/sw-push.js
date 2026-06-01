@@ -465,6 +465,16 @@ self.addEventListener('message', (event) => {
           console.warn(`[SW] Client-requested cache skipped ${u}:`, err?.message || err);
         }
       }));
+      // If EVERY posted bundle is now in cache, the app can render fully
+      // offline. Tell the clients so they can flash a brief "Ready for
+      // offline use" confirmation pill (the app dedupes to once/session).
+      try {
+        const present = await Promise.all(urls.map((u) => cache.match(u)));
+        if (urls.length > 0 && present.every(Boolean)) {
+          const cl = await self.clients.matchAll({ includeUncontrolled: true });
+          cl.forEach((c) => c.postMessage({ type: 'OFFLINE_READY', total: urls.length }));
+        }
+      } catch { /* no-op */ }
     })());
   }
 });
