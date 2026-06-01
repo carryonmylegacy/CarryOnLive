@@ -28,6 +28,11 @@
 
 **Validation:** Real-module Node round-trip test PASSED — seal → wipe key (cold-boot sim) → `unsealRecord` self-heals from token → "Pete Mitchell"; no-token → `null`. eslint clean; housekeeping `--strict` clean. On-device retest: founder redeploys → airplane-mode cold boot → diagnostic Profile should read "Pete Mitchell" and Personal Information fields should populate.
 
+### Jun 1 (later, part 3) — Dashboard "Offline ready" badge
+
+- **`components/OfflineReadyBadge.js` (NEW):** small pill in the dashboard header that reads the SAME on-device truth (SW `GET_DIAG` cache state + decrypted profile mirror). When genuinely ready it shows a green "Offline ready" with plain-language copy: *"You can now use CarryOn without a signal — your profile, documents and plan are saved on this device."* While caching is still in progress it shows a subtle "Saving your data for offline use…". Tapping it opens the full Offline Diagnostics. Mounted in `DashboardPage.js` under the "Welcome back" subtitle.
+- eslint clean (badge + DashboardPage); housekeeping `--strict` = ALL CHECKS PASSED.
+
 
 
 ## Jun 1, 2026 (late pm) — PDF renders offline, faster boot, pill race fix

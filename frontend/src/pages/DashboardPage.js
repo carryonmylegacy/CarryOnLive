@@ -47,6 +47,7 @@ import {
 import PushPrompt from '../components/PushPrompt';
 import EstateBinderButton from '../components/EstateBinderButton';
 import EgaQuickLink from '../components/EgaQuickLink';
+import OfflineReadyBadge from '../components/OfflineReadyBadge';
 import useIacTaskStream from '../hooks/useIacTaskStream';
 
 const DashboardPage = () => {
@@ -1096,6 +1097,7 @@ const DashboardPage = () => {
           <p className="text-[var(--t4)] text-base lg:text-xl">
             Your estate plan is taking shape. Here&apos;s your overview.
           </p>
+          <OfflineReadyBadge />
         </div>
         <div className="sm:mt-1">
         </div>
