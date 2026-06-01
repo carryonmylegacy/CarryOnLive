@@ -41,6 +41,16 @@ const BeneficiaryHubPage = () => {
   useEffect(() => { fetchData();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Offline-first seed for the orbit center "You" photo. fetchData()'s
+  // /auth/me call fails offline, so without this the center node falls
+  // back to initials even when the photo bytes are cached. AuthContext
+  // hydrates user.photo_url from the encrypted offline mirror on a cold
+  // offline boot; use it here so the center avatar renders on airplane
+  // mode. Online, fetchData() overrides this with the freshest URL.
+  useEffect(() => {
+    if (!myPhoto && user?.photo_url) setMyPhoto(user.photo_url);
+  }, [user, myPhoto]);
+
   // On the multi-benefactor Hub the user is intentionally NOT inside
   // any single estate's context — they're picking which one to enter.
   // If we leave a stale `beneficiary_estate_id` from the prior visit

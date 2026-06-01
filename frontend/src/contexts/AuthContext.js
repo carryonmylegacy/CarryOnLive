@@ -166,6 +166,23 @@ export const AuthProvider = ({ children }) => {
               // they'll see empty dashboards until reconnect.
               try {
                 let cachedProfile = null;
+                // Prime the AES-GCM session key BEFORE reading the encrypted
+                // profile mirror. On a COLD OFFLINE BOOT this branch runs
+                // INSTEAD of the online path (which primes the key further
+                // below at the successful-/me block), so without this the
+                // key is null, unsealRecord() returns null, and
+                // getLocalProfile() yields nothing — stranding the user's
+                // own name, photo, username, and personal info behind a lock
+                // they can't open until they reconnect. (Founder report:
+                // orbit "You" node shows "??", Settings shows "User"/no
+                // photo, Personal Info all dashes while offline; email still
+                // shows because it's read from the JWT, not the cache.)
+                try {
+                  const cryptoMod = await import('../offline/crypto');
+                  if (cryptoMod.isEncryptionEnabled()) {
+                    await cryptoMod.primeSessionKey(token);
+                  }
+                } catch { /* key prime is best-effort — fall through to JWT-only */ }
                 try {
                   const { getLocalProfile } = await import('../offline/repos/profileRepo');
                   cachedProfile = await getLocalProfile();

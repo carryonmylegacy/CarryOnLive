@@ -1,5 +1,18 @@
 # CarryOn — Changelog
 
+## Jun 1, 2026 — Offline cold-boot now hydrates the user's own profile (name, photo, username, personal info)
+
+**Founder report:** While offline, the benefactor's own identity vanished — Beneficiary "You" orbit node showed "??", Settings Profile showed "User" / "No username set" / no photo, and Personal Information was all dashes. Email still showed.
+
+**Root cause:** The offline cache is encrypted at rest (AES-GCM; key derived from the login token via PBKDF2, held only in memory). The key is primed only on the ONLINE boot path. On a cold OFFLINE boot, `AuthContext` takes the offline-hydration branch and returns early — `primeSessionKey()` was never called — so `unsealRecord()` had no key, `getLocalProfile()` returned null, and the entire cached profile was unreadable. Email survived only because it's read from the JWT, not the cache.
+
+**Fix (2 surgical, additive edits):**
+- `contexts/AuthContext.js` — in the offline-hydration branch, derive the session key (`crypto.primeSessionKey(token)`, gated on `isEncryptionEnabled()`) BEFORE reading `getLocalProfile()`. Restores name, photo_url, username, first/middle/last name, phone, DOB, gender, marital status, and address offline. Offline-branch-only; zero effect on online boot.
+- `pages/beneficiary/BeneficiaryHubPage.js` — seed the orbit center "You" photo from the now-available `user.photo_url` (previously only set from a live `/auth/me` call that fails offline), so the center avatar renders offline like the beneficiary photos already do.
+
+**Validation:** Crypto round-trip PASS (re-deriving the key from the same token decrypts the sealed profile; a different token cannot — per-user isolation intact). Lint clean; `scripts/check.sh` = ALL CLEAR — SAFE TO PUSH; all critical-pathway (CP1c–CP1i beneficiary hub) checks green. Note: faithful cold-offline-boot E2E is only reproducible on the installed production PWA (preview SW does not serve the offline shell) — founder to confirm on production per Rule 1.
+
+
 ## May 29, 2026 — CI Backend Lint fix + Verified Inputs Manifest value alignment
 
 ### CI Backend Lint failure (push blocker)
