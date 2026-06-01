@@ -1,5 +1,24 @@
 # CarryOn — Changelog
 
+## Jun 1, 2026 (later) — On-device Offline Diagnostics + "Ready for offline" pill first-boot fix
+
+**Founder report:** "None of your fixes have taken effect" after a clean PWA reinstall — felt lied to.
+
+**Investigation (hard evidence, not claims):** Verified production `app.carryon.us` IS serving the fixes — deployed `sw-push.js` = `SHELL_VERSION v51` with the pdf workers precached 3×; `/pdf.worker.react-pdf.min.mjs` returns 200 at the correct 5.4.296 version; the live compiled bundle `main.ab489d79.js` contains `__setDeviceOffline`, `OFFLINE_READY`, `Saved your offline copy`, `getPinnedBlob`, `_offlineHydrated`; SW served with `max-age=0, must-revalidate`; index.html ↔ bundle in sync. So the code shipped — the failure is at the **device/Service-Worker runtime layer**, which the preview pod cannot reproduce.
+
+**Root-cause leads found in code:**
+- The **"Ready for offline ✓" pill never appears** because every pill effect early-returned on `getOfflineMode() !== 'on'`, and the device flag `carryon_offline_v1` defaults `'off'`. It only flips `'on'` via the admin warm-up task AFTER the component already mounted, and nothing re-subscribed → pill listener never attached on the first launch.
+- Backend master switch `offline_mode` reads `off` on preview — when off, the whole offline UI is hidden by design.
+
+**Shipped this session:**
+- **`components/OfflineDiagnostics.js` (NEW):** on-device readout overlay (open via Settings → "Offline diagnostics" or `?diag=1`). Shows the REAL device truth: is a SW controlling + which version; actual cached app-chunks (cached/expected) + missing list; PDF-viewer worker cached?; logo/shell cached?; offline flag + encryption state; and the IndexedDB mirror contents (profile decrypts?, pinned-doc count, subscription). One-tap **"Re-arm offline cache"** force-re-precaches shell + workers + every manifest chunk (`cache: 'reload'`) and reports done/total + the exact failing URLs (quota/404/network). Plus "Turn offline flag ON (this device)".
+- **`public/sw-push.js`:** bumped to `SHELL_VERSION v52-offline-diagnostics`; added `GET_DIAG` + `REARM_CACHE` MessageChannel handlers (flag-agnostic).
+- **`components/OfflineSyncProgress.js`:** pill effects now reactive — track the device flag as state, re-subscribe on `carryon:offline-mode-changed` / `carryon:offline-flag-changed`, fixing the first-boot timing bug where the pill could never fire.
+- **`pages/SettingsPage.js`:** added "Offline diagnostics" card.
+
+**Validation:** eslint clean (4 files); `node --check sw-push.js` OK; `housekeeping.sh --strict` = ALL CHECKS PASSED (0 WARN / 0 FAIL); diagnostics overlay render-verified via screenshot. **On-device confirmation REQUIRED** — preview cannot run an iOS PWA Service Worker. Next: founder deploys, runs the diagnostic on device, reports the numbers (chunks cached/expected, PDF worker Yes/No, flag value) so the precise root cause can be fixed.
+
+
 ## Jun 1, 2026 (late pm) — PDF renders offline, faster boot, pill race fix
 
 **Founder report (cruise-ship Wi-Fi-no-internet, v50 deployed):** real progress (beneficiary photos, real doc names, pinned blob opens) but: PDFs show "Could not render PDF" offline; no SDV thumbnails; login→dashboard 15s+; no "Ready for offline" pill.

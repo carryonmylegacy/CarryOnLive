@@ -15,6 +15,7 @@ import NetworkStatusBanner from './components/NetworkStatusBanner';
 import TrusteeBanner from './components/TrusteeBanner';
 import NotificationContainer from './components/AppNotification';
 import OfflineSyncProgress from './components/OfflineSyncProgress';
+import OfflineDiagnostics from './components/OfflineDiagnostics';
 import PendingUploadsIndicator from './components/PendingUploadsIndicator';
 import PendingSyncChip from './components/PendingSyncChip';
 import ScrollRestorationProvider from './components/ScrollRestorationProvider';
@@ -902,6 +903,7 @@ function App() {
           <PendingSyncChip />
           <NotificationContainer />
           <OfflineSyncProgress />
+          <OfflineDiagnostics />
           <PendingUploadsIndicator />
           <AmberAlertProvider />
           <UsernameReviewModal />

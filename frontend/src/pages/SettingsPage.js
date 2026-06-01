@@ -4,7 +4,7 @@ import apiClient from '../utils/apiClient';
 import { toast } from '../utils/toast';
 import { useAuth } from '../contexts/AuthContext';
 import { useLocalStorageBoolean } from '../hooks/useLocalStorageBoolean';
-import { Shield, LogOut, Loader2, ShieldCheck } from 'lucide-react';
+import { Shield, LogOut, Loader2, ShieldCheck, Activity } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { Switch } from '../components/ui/switch';
 import { Button } from '../components/ui/button';
@@ -322,6 +322,28 @@ const SettingsPage = () => {
           </Card>
         </>
       )}
+
+      {/* Offline diagnostics — opens the on-device readout overlay. Helps
+          the user (and support) confirm what the Service Worker actually
+          cached, on the real device, with a one-tap "Re-arm offline cache". */}
+      <Card className="glass-card" data-testid="settings-offline-diag-card">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-[var(--t)]">Offline diagnostics</p>
+              <p className="text-xs text-[var(--t5)]">See what's cached on this device and re-arm offline mode</p>
+            </div>
+            <Button
+              variant="outline"
+              onClick={() => window.dispatchEvent(new Event('carryon:open-diagnostics'))}
+              data-testid="settings-open-diagnostics"
+            >
+              <Activity className="w-4 h-4 mr-2" />
+              Open
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Sign Out */}
       <div className="pt-4">

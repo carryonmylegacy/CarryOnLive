@@ -15,7 +15,7 @@
 // ── Versioning ──────────────────────────────────────────────────────────────
 // Bump SHELL_VERSION whenever the list of precached shell assets or the
 // caching strategy changes — triggers a cache purge on next SW activation.
-const SHELL_VERSION = 'v51-2026-06-01-pdf-worker-offline';
+const SHELL_VERSION = 'v52-2026-06-01-offline-diagnostics';
 const SHELL_CACHE = `carryon-shell-${SHELL_VERSION}`;
 const RUNTIME_CACHE = `carryon-runtime-${SHELL_VERSION}`;
 const API_CACHE = `carryon-api-${SHELL_VERSION}`;
@@ -450,6 +450,82 @@ self.addEventListener('message', (event) => {
     })());
   } else if (event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
+  } else if (event.data.type === 'GET_DIAG') {
+    // On-device diagnostics: report the controlling SW version + a true
+    // count of what's ACTUALLY cached vs what the build manifest expects.
+    // This is how we tell, on a real device, whether precache completed.
+    // Replies on the MessageChannel port the client opened.
+    const port = event.ports && event.ports[0];
+    event.waitUntil((async () => {
+      const result = { version: SHELL_VERSION, caches: {} };
+      try {
+        const names = [SHELL_CACHE, RUNTIME_CACHE, IMAGE_CACHE, API_CACHE];
+        for (const n of names) {
+          try {
+            const c = await caches.open(n);
+            const keys = await c.keys();
+            result.caches[n] = keys.length;
+          } catch { result.caches[n] = -1; }
+        }
+        result.pdfWorkerReactCached = !!(await caches.match('/pdf.worker.react-pdf.min.mjs'));
+        result.pdfWorkerStdCached = !!(await caches.match('/pdf.worker.min.mjs'));
+        result.shellLogoCached = !!(await caches.match('/carryon-logo.png'));
+        // Expected vs cached app chunks (the real offline-readiness gauge).
+        try {
+          const mResp = await fetch('/asset-manifest.json', { cache: 'no-store' });
+          const m = await mResp.json();
+          const files = (m && m.files ? Object.values(m.files) : []).filter(
+            (u) => typeof u === 'string' && u.startsWith('/static/') && /\.(js|css)$/i.test(u));
+          result.expectedChunks = files.length;
+          let cached = 0; const missing = [];
+          for (const u of files) {
+            if (await caches.match(u)) cached += 1; else missing.push(u);
+          }
+          result.cachedChunks = cached;
+          result.missingCount = missing.length;
+          result.missingSample = missing.slice(0, 12);
+          result.online = true;
+        } catch (e) {
+          result.online = false;
+          result.manifestError = (e && e.message) || String(e);
+        }
+      } catch (e) {
+        result.error = (e && e.message) || String(e);
+      }
+      if (port) port.postMessage(result);
+    })());
+  } else if (event.data.type === 'REARM_CACHE') {
+    // Force a FULL re-precache: shell assets + pdf workers + every chunk in
+    // the build manifest, bypassing the HTTP cache (`cache: 'reload'`).
+    // Reports done/total + the exact URLs that failed so we can see WHY a
+    // device never became offline-ready (quota, 404, network). Replies on
+    // the client's MessageChannel port.
+    const port = event.ports && event.ports[0];
+    event.waitUntil((async () => {
+      const report = { total: 0, done: 0, failed: [] };
+      try {
+        const shell = await caches.open(SHELL_CACHE);
+        for (const u of PRECACHE_URLS) {
+          report.total += 1;
+          try { await shell.add(new Request(u, { cache: 'reload' })); report.done += 1; }
+          catch (e) { report.failed.push({ u, err: (e && e.name) || 'err' }); }
+        }
+        const runtimeCache = await caches.open(RUNTIME_CACHE);
+        const mResp = await fetch('/asset-manifest.json', { cache: 'no-store' });
+        const m = await mResp.json();
+        const files = (m && m.files ? Object.values(m.files) : []).filter(
+          (u) => typeof u === 'string' && u.startsWith('/static/') && /\.(js|css)$/i.test(u));
+        for (const u of files) {
+          report.total += 1;
+          try { await runtimeCache.add(new Request(u, { cache: 'reload' })); report.done += 1; }
+          catch (e) { report.failed.push({ u, err: (e && e.name) || 'err' }); }
+        }
+        report.ok = report.failed.length === 0;
+      } catch (e) {
+        report.error = (e && e.message) || String(e);
+      }
+      if (port) port.postMessage(report);
+    })());
   } else if (event.data.type === 'CACHE_URLS') {
     // Client telling the SW "please make sure these are cached." Sent
     // from index.js right after SW takes control, so any hashed JS/CSS

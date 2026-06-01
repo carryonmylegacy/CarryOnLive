@@ -37,6 +37,13 @@ export default function OfflineSyncProgress() {
   // flag-change broadcast so toggling in the Admin sidebar makes the
   // pill vanish without a page reload.
   const [platformOfflineVisible, setPlatformOfflineVisible] = useState(() => isPlatformOfflineVisible());
+  // Re-read the DEVICE offline flag reactively. The post-login warm-up can
+  // flip `carryon_offline_v1` to 'on' AFTER this component already mounted
+  // (admin platform-settings task), and nothing re-subscribed the pill's SW
+  // listener — so the "Ready for offline" confirmation never fired on the
+  // first launch. Tracking it as state (updated on the flag-change broadcasts)
+  // makes every gated effect below re-evaluate the moment the flag flips.
+  const [offlineOn, setOfflineOn] = useState(() => getOfflineMode() === 'on');
   const hideTimerRef = useRef(null);
   // "Ready for offline use" confirmation — flashed once per session when
   // the Service Worker reports it has finished caching every app chunk
@@ -48,7 +55,16 @@ export default function OfflineSyncProgress() {
   useEffect(() => {
     const onPlatformChange = () => setPlatformOfflineVisible(isPlatformOfflineVisible());
     window.addEventListener(PLATFORM_OFFLINE_FLAG_EVENT, onPlatformChange);
-    return () => window.removeEventListener(PLATFORM_OFFLINE_FLAG_EVENT, onPlatformChange);
+    // Device offline-flag flips (warm-up admin task, manual toggle, diagnostics
+    // "Turn offline flag ON") broadcast one of these two events.
+    const onModeChange = () => setOfflineOn(getOfflineMode() === 'on');
+    window.addEventListener('carryon:offline-mode-changed', onModeChange);
+    window.addEventListener('carryon:offline-flag-changed', onModeChange);
+    return () => {
+      window.removeEventListener(PLATFORM_OFFLINE_FLAG_EVENT, onPlatformChange);
+      window.removeEventListener('carryon:offline-mode-changed', onModeChange);
+      window.removeEventListener('carryon:offline-flag-changed', onModeChange);
+    };
   }, []);
 
   // If the platform switch flips OFF mid-sync, force-hide immediately
@@ -60,14 +76,14 @@ export default function OfflineSyncProgress() {
       if (hideTimerRef.current) { clearTimeout(hideTimerRef.current); hideTimerRef.current = null; }
       if (readyTimerRef.current) { clearTimeout(readyTimerRef.current); readyTimerRef.current = null; }
     }
-  }, [platformOfflineVisible]);
+  }, [platformOfflineVisible, offlineOn]);
 
   // Listen for the Service Worker's OFFLINE_READY signal (fired once it has
   // cached every app chunk) and flash the confirmation pill — capped to
   // once per session so it reassures without nagging on every reload.
   useEffect(() => {
     if (!platformOfflineVisible) return;
-    if (getOfflineMode() !== 'on') return;
+    if (!offlineOn) return;
     if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return;
     const onSwMessage = (event) => {
       if (event.data?.type !== 'OFFLINE_READY') return;
@@ -84,7 +100,7 @@ export default function OfflineSyncProgress() {
       navigator.serviceWorker.removeEventListener('message', onSwMessage);
       if (readyTimerRef.current) clearTimeout(readyTimerRef.current);
     };
-  }, [platformOfflineVisible]);
+  }, [platformOfflineVisible, offlineOn]);
 
   // Race-proof fallback: the SW may post OFFLINE_READY before this component
   // mounts (its message would be missed). On mount, directly inspect the
@@ -93,7 +109,7 @@ export default function OfflineSyncProgress() {
   // the manifest (which is exactly when the confirmation is meaningful).
   useEffect(() => {
     if (!platformOfflineVisible) return;
-    if (getOfflineMode() !== 'on') return;
+    if (!offlineOn) return;
     if (typeof window === 'undefined' || !window.caches) return;
     let cancelled = false;
     (async () => {
@@ -115,11 +131,11 @@ export default function OfflineSyncProgress() {
       } catch { /* offline or no manifest — nothing to confirm */ }
     })();
     return () => { cancelled = true; };
-  }, [platformOfflineVisible]);
+  }, [platformOfflineVisible, offlineOn]);
 
   useEffect(() => {
     if (!platformOfflineVisible) return;
-    if (getOfflineMode() !== 'on') return;
+    if (!offlineOn) return;
     const onStart = (e) => {
       setDone(0);
       setTotal(e.detail?.total || 0);
@@ -146,7 +162,7 @@ export default function OfflineSyncProgress() {
       window.removeEventListener('carryon:sync:finish', onFinish);
       if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
     };
-  }, [platformOfflineVisible]);
+  }, [platformOfflineVisible, offlineOn]);
 
   // Belt-and-braces render gate: even if an event somehow slipped
   // through before the effect re-evaluated, the founder's master
