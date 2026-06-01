@@ -28,10 +28,13 @@
 
 **Validation:** Real-module Node round-trip test PASSED — seal → wipe key (cold-boot sim) → `unsealRecord` self-heals from token → "Pete Mitchell"; no-token → `null`. eslint clean; housekeeping `--strict` clean. On-device retest: founder redeploys → airplane-mode cold boot → diagnostic Profile should read "Pete Mitchell" and Personal Information fields should populate.
 
-### Jun 1 (later, part 3) — Dashboard "Offline ready" badge
+### Jun 1 (later, part 3) — Offline-ready UX: removed persistent banner, pill now ends green only when sync truly finishes
 
-- **`components/OfflineReadyBadge.js` (NEW):** small pill in the dashboard header that reads the SAME on-device truth (SW `GET_DIAG` cache state + decrypted profile mirror). When genuinely ready it shows a green "Offline ready" with plain-language copy: *"You can now use CarryOn without a signal — your profile, documents and plan are saved on this device."* While caching is still in progress it shows a subtle "Saving your data for offline use…". Tapping it opens the full Offline Diagnostics. Mounted in `DashboardPage.js` under the "Welcome back" subtitle.
-- eslint clean (badge + DashboardPage); housekeeping `--strict` = ALL CHECKS PASSED.
+**Founder feedback + device proof:** crypto self-heal CONFIRMED on device — airplane-mode cold boot now shows Profile = "Pete Mitchell" (was empty). But the dashboard "Offline ready" banner was (a) persistent clutter and (b) a LIE: it showed "Offline ready" while the bottom-right pill still read "Syncing… 7/12".
+
+- **Removed** `components/OfflineReadyBadge.js` entirely + its import/mount in `DashboardPage.js`. No persistent homepage banner.
+- **`components/OfflineSyncProgress.js`:** deleted the separate `OFFLINE_READY` SW-message listener AND the cache-inspection fallback (both could assert readiness independent of the actual data sync). Now the bottom-right pill has ONE truthful completion source: on `carryon:sync:finish` it swaps the progress bar for a green "Offline ready" + checkmark, holds ~3.2s, then fades. It can no longer claim ready while syncing is in progress.
+- eslint clean; housekeeping `--strict` = ALL CHECKS PASSED (8/8 smoke green, 0 WARN/0 FAIL). On-device confirm pending.
 
 
 

@@ -8,7 +8,10 @@
  * Design:
  *   - Only mounts when the offline flag is 'on'. Shadow mode and off mode
  *     stay invisible so we don't confuse beta testers.
- *   - Auto-dismisses 1.2s after the final task completes.
+ *   - On `carryon:sync:finish` the bar swaps to a green "Offline ready" +
+ *     checkmark for ~3.2s, then fades. That is the ONLY readiness assertion
+ *     in the app (the persistent dashboard banner was removed Jun 1 2026) so
+ *     it can never claim "ready" while a sync is still in progress.
  *   - Respects safe-area insets so it never overlaps the iOS home-bar.
  *   - Light/dark aware via CSS variables.
  *
@@ -78,60 +81,10 @@ export default function OfflineSyncProgress() {
     }
   }, [platformOfflineVisible, offlineOn]);
 
-  // Listen for the Service Worker's OFFLINE_READY signal (fired once it has
-  // cached every app chunk) and flash the confirmation pill — capped to
-  // once per session so it reassures without nagging on every reload.
-  useEffect(() => {
-    if (!platformOfflineVisible) return;
-    if (!offlineOn) return;
-    if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return;
-    const onSwMessage = (event) => {
-      if (event.data?.type !== 'OFFLINE_READY') return;
-      try {
-        if (sessionStorage.getItem('carryon_offline_ready_shown') === '1') return;
-        sessionStorage.setItem('carryon_offline_ready_shown', '1');
-      } catch { /* private mode — still show, just may repeat */ }
-      setReadyVisible(true);
-      if (readyTimerRef.current) clearTimeout(readyTimerRef.current);
-      readyTimerRef.current = setTimeout(() => setReadyVisible(false), 2600);
-    };
-    navigator.serviceWorker.addEventListener('message', onSwMessage);
-    return () => {
-      navigator.serviceWorker.removeEventListener('message', onSwMessage);
-      if (readyTimerRef.current) clearTimeout(readyTimerRef.current);
-    };
-  }, [platformOfflineVisible, offlineOn]);
-
-  // Race-proof fallback: the SW may post OFFLINE_READY before this component
-  // mounts (its message would be missed). On mount, directly inspect the
-  // cache against the build manifest — if every chunk is already cached, the
-  // app is offline-ready, so flash the pill. Requires connectivity to read
-  // the manifest (which is exactly when the confirmation is meaningful).
-  useEffect(() => {
-    if (!platformOfflineVisible) return;
-    if (!offlineOn) return;
-    if (typeof window === 'undefined' || !window.caches) return;
-    let cancelled = false;
-    (async () => {
-      try {
-        if (sessionStorage.getItem('carryon_offline_ready_shown') === '1') return;
-        const resp = await fetch('/asset-manifest.json', { cache: 'no-store' });
-        if (!resp.ok) return;
-        const m = await resp.json();
-        const urls = Object.values(m.files || {}).filter(
-          (u) => typeof u === 'string' && u.startsWith('/static/') && /\.(js|css)$/i.test(u),
-        );
-        if (!urls.length) return;
-        const checks = await Promise.all(urls.map((u) => window.caches.match(u)));
-        if (cancelled || !checks.every(Boolean)) return;
-        try { sessionStorage.setItem('carryon_offline_ready_shown', '1'); } catch { /* private mode */ }
-        setReadyVisible(true);
-        if (readyTimerRef.current) clearTimeout(readyTimerRef.current);
-        readyTimerRef.current = setTimeout(() => setReadyVisible(false), 2600);
-      } catch { /* offline or no manifest — nothing to confirm */ }
-    })();
-    return () => { cancelled = true; };
-  }, [platformOfflineVisible, offlineOn]);
+  // The bottom-right pill ends with a green "Offline ready" confirmation
+  // ONLY when the warm-up SYNC actually finishes (see onFinish below) — never
+  // off a separate chunk-cache signal that could claim "ready" while the data
+  // sync is still in flight. One truthful source of completion.
 
   useEffect(() => {
     if (!platformOfflineVisible) return;
@@ -150,8 +103,15 @@ export default function OfflineSyncProgress() {
       setVisible(true);
     };
     const onFinish = () => {
-      // Give the user 1.2s to notice the "100%" state, then fade out.
-      hideTimerRef.current = setTimeout(() => setVisible(false), 1200);
+      // Sync is genuinely complete — swap the progress bar for a green
+      // "Offline ready" confirmation, hold it ~3.2s, then fade out. This is
+      // the ONLY thing that asserts offline-readiness, so it can never
+      // contradict an in-progress sync (the earlier bug where the dashboard
+      // claimed "ready" while this pill still read 7/12).
+      setVisible(false);
+      setReadyVisible(true);
+      if (readyTimerRef.current) clearTimeout(readyTimerRef.current);
+      readyTimerRef.current = setTimeout(() => setReadyVisible(false), 3200);
     };
     window.addEventListener('carryon:sync:start', onStart);
     window.addEventListener('carryon:sync:progress', onProgress);
@@ -209,7 +169,7 @@ export default function OfflineSyncProgress() {
           }}
         >
           <CheckCircle2 className="w-4 h-4" style={{ color: '#10b981', flexShrink: 0 }} />
-          <span>Ready for offline use</span>
+          <span>Offline ready</span>
         </div>
       </div>
     );
