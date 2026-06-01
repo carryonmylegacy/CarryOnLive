@@ -28,7 +28,14 @@
 
 **Validation:** Real-module Node round-trip test PASSED — seal → wipe key (cold-boot sim) → `unsealRecord` self-heals from token → "Pete Mitchell"; no-token → `null`. eslint clean; housekeeping `--strict` clean. On-device retest: founder redeploys → airplane-mode cold boot → diagnostic Profile should read "Pete Mitchell" and Personal Information fields should populate.
 
-### Jun 1 (later, part 3) — Offline-ready UX: removed persistent banner, pill now ends green only when sync truly finishes
+### Jun 1 (later, part 4) — Profile still empty offline: added crypto self-test to pinpoint it
+
+**Device truth:** Pill ✓ and banner-removal ✓ deployed. But offline cold-boot Profile is STILL "empty" (IMG_3131), while ONLINE it reads "Pete Mitchell" (IMG_3128). The `ensureSessionKey` self-heal IS committed/deployed and the salt is fixed/deterministic; a real-module Node round-trip passes — so the defect is device-specific and can't be reproduced in-pod.
+
+**Decision:** rather than blind-change the encryption (a wrong guess is worse than a precise diagnosis), added an **auto-running crypto self-test** to `OfflineDiagnostics.js`. On open it reports, on-device: auth token present?, decryption key derived?, fresh encrypt→decrypt round-trip OK?, stored profile row exists?, row encrypted (`__enc`)?, and whether the profile actually decrypts. If round-trip works but the profile won't decrypt, it prints a diagnosis ("encrypted with a DIFFERENT key — needs re-encrypting online"). This isolates token-missing vs key-derivation-failure vs key-mismatch in ONE screenshot.
+
+- eslint clean; housekeeping `--strict` = ALL CHECKS PASSED (8/8 smoke, 0 WARN/0 FAIL). Awaiting the founder's offline screenshot of the new "Crypto self-test" section to apply the exact fix.
+
 
 **Founder feedback + device proof:** crypto self-heal CONFIRMED on device — airplane-mode cold boot now shows Profile = "Pete Mitchell" (was empty). But the dashboard "Offline ready" banner was (a) persistent clutter and (b) a LIE: it showed "Offline ready" while the bottom-right pill still read "Syncing… 7/12".
 

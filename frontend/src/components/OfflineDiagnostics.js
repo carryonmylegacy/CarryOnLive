@@ -60,6 +60,7 @@ export default function OfflineDiagnostics() {
   const [loading, setLoading] = useState(false);
   const [rearm, setRearm] = useState(null);
   const [rearming, setRearming] = useState(false);
+  const [crypto, setCrypto] = useState(null);
 
   // Open when ?diag=1 is present, or on a custom event from Settings.
   useEffect(() => {
@@ -79,6 +80,7 @@ export default function OfflineDiagnostics() {
     setLoading(true);
     setDiag(null);
     setMirror(null);
+    setCrypto(null);
     // 1) Ask the SW for its real cache state.
     const swInfo = await askServiceWorker({ type: 'GET_DIAG' });
     setDiag({
@@ -106,6 +108,46 @@ export default function OfflineDiagnostics() {
       out.subscription = { ok: !!s, tier: s && (s.tier || s.plan || s.status) };
     } catch (e) { out.subscription = { ok: false, err: (e && e.message) || 'read failed' }; }
     setMirror(out);
+
+    // 3) Crypto self-test — pinpoints WHY an encrypted read returns empty
+    // offline: missing token, key won't derive, or the stored profile was
+    // encrypted with a DIFFERENT key than we can now re-derive.
+    const c = {};
+    try {
+      const enc = await import('../offline/crypto');
+      try {
+        const t = localStorage.getItem('carryon_token');
+        c.token = t ? `present (${t.length})` : 'MISSING';
+      } catch { c.token = 'err'; }
+      c.encEnabled = enc.isEncryptionEnabled();
+      try {
+        const key = await enc.ensureSessionKey();
+        c.keyDerived = !!key;
+      } catch (e) { c.keyDerived = false; c.keyErr = (e && e.message) || 'derive failed'; }
+      // Raw stored profile row (before unseal).
+      try {
+        const { getDB } = await import('../offline/db');
+        const raw = await getDB().user.get('current');
+        c.rawFound = !!raw;
+        c.rawHasEnc = !!(raw && raw.__enc);
+        c.rawHasPlainData = !!(raw && raw.data);
+        if (raw) {
+          const un = await enc.unsealRecord(raw);
+          c.unsealOk = !!un;
+          c.unsealName = un && un.data ? (un.data.name || un.data.first_name || '(no name field)') : null;
+        }
+      } catch (e) { c.rawErr = (e && e.message) || 'raw read failed'; }
+      // Fresh seal→unseal round-trip with the CURRENT key (proves WebCrypto
+      // works on this device, isolating data-vs-engine problems).
+      try {
+        const sealed = await enc.sealRecord({ id: 't', email: 't', data: { x: 'roundtrip' } }, ['id', 'email']);
+        c.roundtripEncrypted = !!sealed.__enc;
+        const back = await enc.unsealRecord(sealed);
+        c.roundtripOk = !!(back && back.data && back.data.x === 'roundtrip');
+      } catch (e) { c.roundtripErr = (e && e.message) || 'roundtrip failed'; }
+    } catch (e) { c.error = (e && e.message) || String(e); }
+    setCrypto(c);
+
     setLoading(false);
   }, []);
 
@@ -191,6 +233,23 @@ export default function OfflineDiagnostics() {
               <Row ok={mirror.profile.ok} label="Profile" value={mirror.profile.ok ? `${mirror.profile.name}` : (mirror.profile.err || 'empty')} />
               <Row ok={mirror.pinned.count > 0} label="Pinned documents" value={mirror.pinned.count < 0 ? (mirror.pinned.err || 'error') : String(mirror.pinned.count)} />
               <Row ok={mirror.subscription.ok} label="Subscription" value={mirror.subscription.ok ? (mirror.subscription.tier || 'cached') : 'empty'} />
+            </>
+          )}
+
+          {crypto && (
+            <>
+              <SectionLabel icon={ShieldCheck} text="Crypto self-test (why profile is empty)" />
+              <Row ok={crypto.token && crypto.token !== 'MISSING'} label="Auth token in storage" value={crypto.token || '—'} />
+              <Row ok={crypto.keyDerived} label="Decryption key derived" value={crypto.keyDerived ? 'Yes' : (crypto.keyErr || 'No')} />
+              <Row ok={crypto.roundtripOk} label="Encrypt→decrypt round-trip" value={crypto.roundtripOk ? 'OK' : (crypto.roundtripErr || 'FAIL')} />
+              <Row ok={crypto.rawFound} label="Stored profile row exists" value={crypto.rawFound ? 'Yes' : 'No'} />
+              <Row ok={crypto.rawHasEnc === false ? null : crypto.rawHasEnc} label="Profile row is encrypted" value={crypto.rawFound ? (crypto.rawHasEnc ? 'Yes (__enc)' : 'No (plaintext)') : '—'} />
+              <Row ok={crypto.unsealOk} label="Profile decrypts" value={crypto.unsealOk ? (crypto.unsealName || 'Yes') : 'FAILS → empty'} />
+              {(crypto.rawHasEnc && crypto.roundtripOk && !crypto.unsealOk) && (
+                <div style={{ color: 'rgba(245,158,11,0.9)', fontSize: 10.5, padding: '6px 0', lineHeight: 1.5 }}>
+                  Diagnosis: WebCrypto works and the key derives, but the stored profile was encrypted with a DIFFERENT key — it needs re-encrypting online.
+                </div>
+              )}
             </>
           )}
 
