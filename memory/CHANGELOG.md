@@ -28,7 +28,19 @@
 
 **Validation:** Real-module Node round-trip test PASSED — seal → wipe key (cold-boot sim) → `unsealRecord` self-heals from token → "Pete Mitchell"; no-token → `null`. eslint clean; housekeeping `--strict` clean. On-device retest: founder redeploys → airplane-mode cold boot → diagnostic Profile should read "Pete Mitchell" and Personal Information fields should populate.
 
-### Jun 1 (later, part 5) — LIVE-SITE diagnosis of offline-empty profile + robust fix
+### Jun 1 (later, part 6) — ROOT CAUSE NAILED: token-derived key + signed-image cache
+
+**The crypto self-test (now on-device) gave the smoking gun:** ONLINE auth token = **364 chars** → profile decrypts ("Pete Mitchell"); OFFLINE auth token = **389 chars** → "encrypted with a DIFFERENT key → empty". The bearer JWT ROTATES (different string per login/refresh) and the AES key was derived from that token string — so ciphertext written under one token couldn't be read under another. Not random — it failed whenever the current token ≠ the token that encrypted the data.
+
+**Fixes:**
+1. **`offline/crypto.js` — stable key derivation.** Key material is now `deviceSeed:userId` (a random 256-bit per-device seed in `localStorage.carryon_enc_seed_v1`, persisted once) instead of the rotating token. `decodeUserId()` pulls the stable `user_id` claim for per-user isolation. The token arg is used ONLY for namespacing now. Node test: two different tokens (same user) → encrypt with one, decrypt with the other → succeeds; different user → null (isolated).
+2. **`offline/repos/profileRepo.js` (part 5)** — plaintext identity fallback already in place, so name/email/photo show even during the migration window.
+3. **`public/sw-push.js` — signature-agnostic image cache (+ bump to v53).** Avatars + SDV thumbnails are S3-presigned URLs whose `X-Amz-*` signature changes each session, so exact-URL cache match always missed → blank offline. `cacheFirst` now matches images with `{ ignoreSearch: true }`, so a cached avatar/thumbnail matches regardless of signature.
+
+**Migration:** existing profiles were encrypted under the old token-key → unreadable under the new seed-key until ONE online boot re-encrypts them (plaintext identity bridges the gap). Avatars/thumbnails must have been viewed online once to be in cache.
+
+**Validation:** eslint clean; `node --check sw-push.js` OK; Node round-trip PASS (stable across token rotation + per-user isolation); housekeeping `--strict` pending.
+
 
 **Tested live (app.carryon.us, login petemitchell/Demo1234!!!, backend carryon-api-kacr.onrender.com):**
 - Credentials work (direct login, no OTP); `/auth/me` returns correct profile.

@@ -36,8 +36,40 @@ const ITERATIONS = 210000;
 // decrypts cloud-synced (future) payloads. Rotate only if the whole encryption
 // schema is bumped.
 const FIXED_SALT = new TextEncoder().encode('carryon-offline-v1');
+// Stable per-device secret. The key used to be derived from the bearer token,
+// but the JWT ROTATES (different string every login/refresh — observed 364 vs
+// 389 chars on the same device), which silently changed the derived key and
+// made yesterday's ciphertext undecryptable today ("encrypted with a DIFFERENT
+// key" offline). This seed is generated ONCE and persists, so the AES key is
+// reproducible across token rotations and cold boots.
+const SEED_KEY = 'carryon_enc_seed_v1';
 
 let _cachedKey = null; // CryptoKey | null — in-memory only, never persisted.
+
+function getDeviceSeed() {
+  try {
+    let seed = localStorage.getItem(SEED_KEY);
+    if (!seed) {
+      const rnd = window.crypto.getRandomValues(new Uint8Array(32));
+      let s = '';
+      for (let i = 0; i < rnd.length; i += 1) s += String.fromCharCode(rnd[i]);
+      seed = btoa(s);
+      localStorage.setItem(SEED_KEY, seed);
+    }
+    return seed;
+  } catch { return null; }
+}
+
+// Stable per-user namespace so two accounts on the same device can't read each
+// other's rows. user_id is constant across token rotations (unlike the token).
+function decodeUserId(token) {
+  try {
+    const part = (token || '').split('.')[1];
+    if (!part) return '';
+    const json = JSON.parse(atob(part.replace(/-/g, '+').replace(/_/g, '/')));
+    return json.user_id || json.sub || json.email || '';
+  } catch { return ''; }
+}
 
 // One-switch design: encryption at rest is ON whenever the main offline
 // feature flag (`carryon_offline_v1`) is set to 'on'. The legacy
@@ -60,13 +92,23 @@ export function setEncryptionMode(mode) {
   if (mode !== 'on') _cachedKey = null;
 }
 
-/** Derive + cache the session key from the user's bearer token. */
+/**
+ * Derive + cache the session key.
+ *
+ * Key material = STABLE device seed + STABLE user_id (decoded from the token).
+ * The `token` argument is used ONLY to namespace per-user — its rotating
+ * signature/exp no longer affect the key, which is what made offline reads
+ * fail intermittently before.
+ */
 export async function primeSessionKey(token) {
-  if (!token || typeof window === 'undefined' || !window.crypto?.subtle) return null;
+  if (typeof window === 'undefined' || !window.crypto?.subtle) return null;
   try {
+    const seed = getDeviceSeed();
+    if (!seed) return null;
+    const userId = decodeUserId(token);
     const enc = new TextEncoder();
     const material = await window.crypto.subtle.importKey(
-      'raw', enc.encode(token), 'PBKDF2', false, ['deriveKey'],
+      'raw', enc.encode(`${seed}:${userId}`), 'PBKDF2', false, ['deriveKey'],
     );
     const key = await window.crypto.subtle.deriveKey(
       { name: 'PBKDF2', hash: 'SHA-256', salt: FIXED_SALT, iterations: ITERATIONS },

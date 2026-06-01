@@ -15,7 +15,7 @@
 // ── Versioning ──────────────────────────────────────────────────────────────
 // Bump SHELL_VERSION whenever the list of precached shell assets or the
 // caching strategy changes — triggers a cache purge on next SW activation.
-const SHELL_VERSION = 'v52-2026-06-01-offline-diagnostics';
+const SHELL_VERSION = 'v53-2026-06-01-stable-key-img-sig';
 const SHELL_CACHE = `carryon-shell-${SHELL_VERSION}`;
 const RUNTIME_CACHE = `carryon-runtime-${SHELL_VERSION}`;
 const API_CACHE = `carryon-api-${SHELL_VERSION}`;
@@ -276,18 +276,17 @@ async function staleWhileRevalidate(request, cacheName) {
 // Cache-first with fallback to network. For content-addressable resources.
 // Never throws — on total failure returns a synthesized 504 response so
 // the fetch router can't leave respondWith() dangling.
-async function cacheFirst(request, cacheName) {
+async function cacheFirst(request, cacheName, ignoreSearch = false) {
   try {
     const cache = await caches.open(cacheName);
-    const cached = await cache.match(request);
+    // `ignoreSearch` matches cached images by path, ignoring the query string.
+    // S3-presigned avatar/thumbnail URLs carry a DIFFERENT signature
+    // (X-Amz-*) every session, so an exact-URL match always missed and the
+    // image came back blank offline. Ignoring the query makes the cached copy
+    // match regardless of signature.
+    const cached = await cache.match(request, { ignoreSearch });
     if (cached) return cached;
-    // Shell-precached assets (the CarryOn logo, flag-bg, icons) live in
-    // SHELL_CACHE — NOT the per-type cache the router selected. Without
-    // this cross-cache lookup the image handler opened only IMAGE_CACHE,
-    // missed the precached logo, hit the network, and (offline) returned a
-    // 504 → broken-image box on the login screen. Check ALL caches before
-    // touching the network.
-    const anyCached = await caches.match(request);
+    const anyCached = await caches.match(request, { ignoreSearch });
     if (anyCached) return anyCached;
     const response = await fetch(request);
     // Cache `ok` responses AND opaque cross-origin responses (S3-presigned
@@ -393,7 +392,7 @@ self.addEventListener('fetch', (event) => {
   // (Stripe, Google Fonts, Analytics) still bypasses the SW entirely.
   if (url.origin !== self.location.origin) {
     if (isImageRequest(url, request)) {
-      event.respondWith(cacheFirst(request, IMAGE_CACHE));
+      event.respondWith(cacheFirst(request, IMAGE_CACHE, true));
     }
     return;
   }
@@ -419,7 +418,7 @@ self.addEventListener('fetch', (event) => {
   // 3) Images (PNG/JPG/etc. + chat/share-card image endpoints + avatar
   //    endpoints) → cache-first.
   if (isImageRequest(url, request)) {
-    event.respondWith(cacheFirst(request, IMAGE_CACHE));
+    event.respondWith(cacheFirst(request, IMAGE_CACHE, true));
     return;
   }
 
