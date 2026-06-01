@@ -15,7 +15,7 @@
 // ── Versioning ──────────────────────────────────────────────────────────────
 // Bump SHELL_VERSION whenever the list of precached shell assets or the
 // caching strategy changes — triggers a cache purge on next SW activation.
-const SHELL_VERSION = 'v49-2026-05-25-qw-skip-step';
+const SHELL_VERSION = 'v50-2026-06-01-offline-chunks-logo';
 const SHELL_CACHE = `carryon-shell-${SHELL_VERSION}`;
 const RUNTIME_CACHE = `carryon-runtime-${SHELL_VERSION}`;
 const API_CACHE = `carryon-api-${SHELL_VERSION}`;
@@ -173,6 +173,30 @@ self.addEventListener('install', (event) => {
         } catch (e) {
           console.warn('[SW] Bundle precache failed:', e?.message || e);
         }
+        // ALSO precache every hashed chunk listed in asset-manifest.json.
+        // index.html only references the ENTRY bundles; lazy route chunks
+        // (e.g. /static/js/1418.*.chunk.js) load on demand and otherwise
+        // 404 offline (ChunkLoadError) on any page the user hasn't visited
+        // yet. The manifest enumerates EVERY chunk for this build, so this
+        // guarantees full offline navigation after the SW installs.
+        try {
+          const manifestResp = await fetch('/asset-manifest.json', { cache: 'no-store' });
+          if (manifestResp && manifestResp.ok) {
+            const manifest = await manifestResp.json();
+            const files = manifest && manifest.files ? Object.values(manifest.files) : [];
+            const chunkUrls = files.filter((u) =>
+              typeof u === 'string' && u.startsWith('/static/') && /\.(js|css)$/i.test(u));
+            const runtimeCache = await caches.open(RUNTIME_CACHE);
+            await Promise.all(chunkUrls.map((u) =>
+              runtimeCache.add(u).catch((err) => {
+                console.warn(`[SW] Chunk precache skipped ${u}:`, err?.message || err);
+              })
+            ));
+            console.log(`[SW] Precached ${chunkUrls.length} chunk(s) from manifest`);
+          }
+        } catch (e) {
+          console.warn('[SW] Manifest chunk precache failed:', e?.message || e);
+        }
       })
       .then(() => self.skipWaiting())
   );
@@ -251,6 +275,14 @@ async function cacheFirst(request, cacheName) {
     const cache = await caches.open(cacheName);
     const cached = await cache.match(request);
     if (cached) return cached;
+    // Shell-precached assets (the CarryOn logo, flag-bg, icons) live in
+    // SHELL_CACHE — NOT the per-type cache the router selected. Without
+    // this cross-cache lookup the image handler opened only IMAGE_CACHE,
+    // missed the precached logo, hit the network, and (offline) returned a
+    // 504 → broken-image box on the login screen. Check ALL caches before
+    // touching the network.
+    const anyCached = await caches.match(request);
+    if (anyCached) return anyCached;
     const response = await fetch(request);
     // Cache `ok` responses AND opaque cross-origin responses (S3-presigned
     // image URLs, CDN no-cors fetches). Opaque responses have status=0 and
@@ -422,11 +454,17 @@ self.addEventListener('message', (event) => {
     const urls = Array.isArray(event.data.urls) ? event.data.urls : [];
     event.waitUntil((async () => {
       const cache = await caches.open(RUNTIME_CACHE);
-      await Promise.all(urls.map((u) =>
-        cache.add(u).catch((err) => {
+      await Promise.all(urls.map(async (u) => {
+        try {
+          // Skip re-fetching anything already cached — the client posts the
+          // FULL build manifest on every online load, so without this guard
+          // we'd re-download every chunk each launch.
+          if (await cache.match(u)) return;
+          await cache.add(u);
+        } catch (err) {
           console.warn(`[SW] Client-requested cache skipped ${u}:`, err?.message || err);
-        })
-      ));
+        }
+      }));
     })());
   }
 });

@@ -1,5 +1,17 @@
 # CarryOn — Changelog
 
+## Jun 1, 2026 (pm) — True-offline PWA fixes: broken logo + ChunkLoadError
+
+**Founder report (Airplane Mode, production PWA):** (1) the CarryOn logo rendered as a broken-image box offline; (2) navigating to an unvisited page offline crashed with `ChunkLoadError: Loading chunk 1418 failed`.
+
+**Root causes + fixes (Service Worker `public/sw-push.js` + `src/index.js`):**
+- **Broken logo:** `/carryon-logo.png` and `/flag-bg.jpg` are precached into `SHELL_CACHE`, but the SW image fetch handler used `cacheFirst(IMAGE_CACHE)` which only checks `IMAGE_CACHE` → miss → offline 504 → broken image. Fixed `cacheFirst` to fall back to `caches.match()` (all caches) before the network.
+- **ChunkLoadError:** the SW only precached the entry bundles referenced in `index.html`; lazy route chunks (loaded on demand, never present as `<script>` tags) were never cached → 404 offline on any unvisited page. Now the SW reads `asset-manifest.json` and precaches EVERY chunk (119 in the current build) during install, and `index.js` posts the full manifest to the SW via `CACHE_URLS` on every online load — self-healing across deploys even when the SW byte content is unchanged. The `CACHE_URLS` handler now skips already-cached files (no per-launch re-download).
+- Bumped `SHELL_VERSION` v49 → v50 to force reinstall + old-cache purge.
+
+**Validation:** SW syntax OK; manifest filter verified to capture all 119 js/css chunks (hash-agnostic); lint clean; `scripts/check.sh` = ALL CLEAR — SAFE TO PUSH. NOTE: SW behavior can only be verified on the installed production PWA (preview skips SW registration in headless and serves the dev build) — founder to confirm post-deploy.
+
+
 ## Jun 1, 2026 — Offline mode hardening: fast boot, vault decryption, pin fixes
 
 **Founder report (Wi-Fi-connected-but-no-internet, prior fix already deployed):** offline took "forever" to show login then the dashboard; SDV showed pinned docs up top but the main list was empty; pinned docs all read "Untitled"; unpinning in the list "didn't unpin."

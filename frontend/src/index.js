@@ -354,8 +354,31 @@ if ('serviceWorker' in navigator && window.location.protocol !== 'file:' && !IS_
         };
         // If a controller already exists, cache right now. Otherwise wait
         // until `controllerchange` (first activation after install).
-        if (navigator.serviceWorker.controller) postBundles();
-        navigator.serviceWorker.addEventListener('controllerchange', postBundles);
+        // Lazy route chunks never appear as <script> tags in the DOM, so
+        // postBundles() above can't see them — which is exactly why
+        // navigating to an unvisited page offline threw ChunkLoadError.
+        // Pull the full build manifest and ask the SW to cache EVERY chunk.
+        // Runs on each online load, so it self-heals across deploys: a new
+        // build's hashed chunks get cached the next time the user is online,
+        // even when sw-push.js itself didn't change (so the install handler
+        // never re-ran).
+        const cacheAllChunks = async () => {
+          try {
+            const resp = await fetch('/asset-manifest.json', { cache: 'no-store' });
+            if (!resp.ok) return;
+            const manifest = await resp.json();
+            const files = manifest && manifest.files ? Object.values(manifest.files) : [];
+            const urls = files.filter(
+              (u) => typeof u === 'string' && u.startsWith('/static/') && /\.(js|css)$/i.test(u),
+            );
+            if (urls.length && navigator.serviceWorker.controller) {
+              navigator.serviceWorker.controller.postMessage({ type: 'CACHE_URLS', urls });
+            }
+          } catch { /* best-effort */ }
+        };
+        const warmCaches = () => { postBundles(); cacheAllChunks(); };
+        if (navigator.serviceWorker.controller) warmCaches();
+        navigator.serviceWorker.addEventListener('controllerchange', warmCaches);
       })
       .catch((err) => console.warn('[SW] Registration failed:', err));
   });
