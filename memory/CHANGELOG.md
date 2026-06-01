@@ -28,7 +28,18 @@
 
 **Validation:** Real-module Node round-trip test PASSED — seal → wipe key (cold-boot sim) → `unsealRecord` self-heals from token → "Pete Mitchell"; no-token → `null`. eslint clean; housekeeping `--strict` clean. On-device retest: founder redeploys → airplane-mode cold boot → diagnostic Profile should read "Pete Mitchell" and Personal Information fields should populate.
 
-### Jun 1 (later, part 4) — Profile still empty offline: added crypto self-test to pinpoint it
+### Jun 1 (later, part 5) — LIVE-SITE diagnosis of offline-empty profile + robust fix
+
+**Tested live (app.carryon.us, login petemitchell/Demo1234!!!, backend carryon-api-kacr.onrender.com):**
+- Credentials work (direct login, no OTP); `/auth/me` returns correct profile.
+- **Crypto is sound:** encrypted the real `/auth/me` profile and decrypted it with a FRESHLY re-derived key (cold-boot style) → "Pete Mitchell" (`roundtripOk:true`).
+- **Self-heal IS deployed:** live crypto chunk `6026.b6b93eea.chunk.js` references `getItem("carryon_token")` + PBKDF2 + salt.
+- **But the encrypted-profile mirror is the fragile link:** after 22s online the profile row was NOT in IndexedDB (`recFound:false`) — the app flips to optimistic-offline on a slow/cold backend and skips/fails the encrypted write. If the write is missed OR the key isn't primed at read time, the WHOLE profile reads empty offline → "User" / blank fields.
+
+**Fix (`offline/repos/profileRepo.js`):** identity fields (`name`, `first_name`, `last_name`, `email`, `photo_url`) are now stored PLAINTEXT in the local mirror; sensitive fields (DOB, address, phone, …) stay inside the encrypted `__enc` blob. `getLocalProfile()` returns the full decrypted profile when the key is available, and otherwise falls back to the plaintext identity subset — so the header/greeting/Profile page always show the user's name/email/photo offline instead of "User". `upsertLocalProfile`/`updateLocalProfile` updated to persist the plaintext identity columns.
+
+**Verified (live, real token+data):** key-good → full profile incl. DOB; key-FAIL → fallback still returns name "Pete Mitchell" + email + photo. eslint clean. Requires one online boot after deploy to re-write the profile in the new format.
+
 
 **Device truth:** Pill ✓ and banner-removal ✓ deployed. But offline cold-boot Profile is STILL "empty" (IMG_3131), while ONLINE it reads "Pete Mitchell" (IMG_3128). The `ensureSessionKey` self-heal IS committed/deployed and the salt is fixed/deterministic; a real-module Node round-trip passes — so the defect is device-specific and can't be reproduced in-pod.
 

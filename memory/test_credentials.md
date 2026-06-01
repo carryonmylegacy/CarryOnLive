@@ -2,6 +2,14 @@
 
 ## 🟢 PRODUCTION ACCOUNTS (Apr 27, 2026 — provided by user for launch sweep)
 
+### Production Benefactor — Pete Mitchell (offline-mode live testing, Jun 1 2026)
+- URL: `https://app.carryon.us` (frontend) / API `https://carryon-api-kacr.onrender.com/api`
+- Login (username): `petemitchell`
+- Password: `Demo1234!!!`
+- Email: `info@carryon.us` · Role: benefactor · user_id `6425f12a-7d24-41c0-b1bc-f987e74f727d`
+- Used for live offline-profile diagnosis. Direct login (no OTP). NOTE: single-session — logging in here can sign out the user's phone.
+
+
 ### Production Founder/Admin (the real one)
 - URL: `https://app.carryon.us`
 - Login: `founder@carryon.us`
