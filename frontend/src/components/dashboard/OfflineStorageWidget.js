@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import apiClient from '../../utils/apiClient';
 import { useNavigate } from 'react-router-dom';
-import { HardDrive, PinOff, Loader2, ArrowRight } from 'lucide-react';
+import { HardDrive, PinOff, Loader2, ArrowRight, ChevronDown } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { useAuth } from '../../contexts/AuthContext';
@@ -34,6 +34,20 @@ const OfflineStorageWidget = () => {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [unpinning, setUnpinning] = useState(null);
+  // Collapsible — remembers the user's choice. Defaults to collapsed so the
+  // panel stays compact and doesn't dominate the SDV / dashboard screen.
+  const [collapsed, setCollapsed] = useState(() => {
+    try { return localStorage.getItem('carryon_offline_storage_collapsed') !== 'false'; }
+    catch { return true; }
+  });
+
+  const toggleCollapsed = () => {
+    setCollapsed((prev) => {
+      const next = !prev;
+      try { localStorage.setItem('carryon_offline_storage_collapsed', String(next)); } catch { /* private mode */ }
+      return next;
+    });
+  };
 
   const refresh = useCallback(async () => {
     try {
@@ -87,62 +101,78 @@ const OfflineStorageWidget = () => {
   return (
     <Card className="glass-card" data-testid="offline-storage-widget">
       <CardContent className="p-4">
-        <div className="flex items-center justify-between mb-1">
-          <div className="flex items-center gap-2">
-            <HardDrive className="w-4 h-4 text-[var(--gold)]" />
-            <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--t3)]">
+        <button
+          type="button"
+          onClick={toggleCollapsed}
+          className="w-full flex items-center justify-between gap-2 text-left"
+          aria-expanded={!collapsed}
+          data-testid="offline-storage-toggle"
+        >
+          <div className="flex items-center gap-2 min-w-0">
+            <HardDrive className="w-4 h-4 text-[var(--gold)] shrink-0" />
+            <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--t3)] truncate">
               Storage used offline
             </h3>
           </div>
-          <span
-            className="text-xs font-semibold text-[var(--t4)]"
-            data-testid="offline-storage-total"
-          >
-            {formatBytes(total)} · {rows.length} {rows.length === 1 ? 'doc' : 'docs'}
-          </span>
-        </div>
-        <p className="text-xs text-[var(--t4)] mb-3 leading-relaxed">
-          These documents are saved to this device so you can open them without
-          internet (on a plane, in a hospital, during an outage). Tap the pin
-          icon to remove a document from this device — it stays safely in your
-          vault.
-        </p>
-        <ul className="space-y-1">
-          {rows.slice(0, 5).map((r) => (
-            <li
-              key={r.cache_key}
-              className="flex items-center justify-between rounded-lg px-2.5 py-1.5 text-sm hover:bg-[var(--s)] transition-colors"
-              data-testid={`offline-storage-row-${r.doc_id}`}
+          <div className="flex items-center gap-2 shrink-0">
+            <span
+              className="text-xs font-semibold text-[var(--t4)]"
+              data-testid="offline-storage-total"
             >
-              <div className="min-w-0 flex-1 mr-2">
-                <div className="text-[var(--t)] font-medium truncate">{r.title || 'Untitled'}</div>
-                <div className="text-[11px] text-[var(--t5)]">{formatBytes(r.size_bytes)}</div>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={(e) => handleUnpin(e, r.doc_id)}
-                disabled={unpinning === r.doc_id}
-                title="Unpin from offline"
-                aria-label="Unpin from offline"
-                data-testid={`offline-storage-unpin-${r.doc_id}`}
+              {formatBytes(total)} · {rows.length} {rows.length === 1 ? 'doc' : 'docs'}
+            </span>
+            <ChevronDown
+              className={`w-4 h-4 text-[var(--t4)] transition-transform duration-200 ${collapsed ? '' : 'rotate-180'}`}
+            />
+          </div>
+        </button>
+
+        {!collapsed && (
+          <>
+            <p className="text-xs text-[var(--t4)] mt-3 mb-3 leading-relaxed">
+              These documents are saved to this device so you can open them without
+              internet (on a plane, in a hospital, during an outage). Tap the pin
+              icon to remove a document from this device — it stays safely in your
+              vault.
+            </p>
+            <ul className="space-y-1">
+              {rows.slice(0, 5).map((r) => (
+                <li
+                  key={r.cache_key}
+                  className="flex items-center justify-between rounded-lg px-2.5 py-1.5 text-sm hover:bg-[var(--s)] transition-colors"
+                  data-testid={`offline-storage-row-${r.doc_id}`}
+                >
+                  <div className="min-w-0 flex-1 mr-2">
+                    <div className="text-[var(--t)] font-medium truncate">{r.title || 'Untitled'}</div>
+                    <div className="text-[11px] text-[var(--t5)]">{formatBytes(r.size_bytes)}</div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => handleUnpin(e, r.doc_id)}
+                    disabled={unpinning === r.doc_id}
+                    title="Unpin from offline"
+                    aria-label="Unpin from offline"
+                    data-testid={`offline-storage-unpin-${r.doc_id}`}
+                  >
+                    {unpinning === r.doc_id
+                      ? <Loader2 className="w-4 h-4 animate-spin" />
+                      : <PinOff className="w-4 h-4" />}
+                  </Button>
+                </li>
+              ))}
+            </ul>
+            {rows.length > 5 && (
+              <button
+                type="button"
+                onClick={() => navigate('/vault')}
+                className="mt-2 w-full text-xs text-[var(--gold)] hover:underline flex items-center justify-center gap-1"
+                data-testid="offline-storage-manage-all"
               >
-                {unpinning === r.doc_id
-                  ? <Loader2 className="w-4 h-4 animate-spin" />
-                  : <PinOff className="w-4 h-4" />}
-              </Button>
-            </li>
-          ))}
-        </ul>
-        {rows.length > 5 && (
-          <button
-            type="button"
-            onClick={() => navigate('/vault')}
-            className="mt-2 w-full text-xs text-[var(--gold)] hover:underline flex items-center justify-center gap-1"
-            data-testid="offline-storage-manage-all"
-          >
-            Manage all {rows.length} pinned docs <ArrowRight className="w-3 h-3" />
-          </button>
+                Manage all {rows.length} pinned docs <ArrowRight className="w-3 h-3" />
+              </button>
+            )}
+          </>
         )}
       </CardContent>
     </Card>
