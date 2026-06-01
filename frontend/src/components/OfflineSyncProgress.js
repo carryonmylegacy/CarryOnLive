@@ -86,6 +86,37 @@ export default function OfflineSyncProgress() {
     };
   }, [platformOfflineVisible]);
 
+  // Race-proof fallback: the SW may post OFFLINE_READY before this component
+  // mounts (its message would be missed). On mount, directly inspect the
+  // cache against the build manifest — if every chunk is already cached, the
+  // app is offline-ready, so flash the pill. Requires connectivity to read
+  // the manifest (which is exactly when the confirmation is meaningful).
+  useEffect(() => {
+    if (!platformOfflineVisible) return;
+    if (getOfflineMode() !== 'on') return;
+    if (typeof window === 'undefined' || !window.caches) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        if (sessionStorage.getItem('carryon_offline_ready_shown') === '1') return;
+        const resp = await fetch('/asset-manifest.json', { cache: 'no-store' });
+        if (!resp.ok) return;
+        const m = await resp.json();
+        const urls = Object.values(m.files || {}).filter(
+          (u) => typeof u === 'string' && u.startsWith('/static/') && /\.(js|css)$/i.test(u),
+        );
+        if (!urls.length) return;
+        const checks = await Promise.all(urls.map((u) => window.caches.match(u)));
+        if (cancelled || !checks.every(Boolean)) return;
+        try { sessionStorage.setItem('carryon_offline_ready_shown', '1'); } catch { /* private mode */ }
+        setReadyVisible(true);
+        if (readyTimerRef.current) clearTimeout(readyTimerRef.current);
+        readyTimerRef.current = setTimeout(() => setReadyVisible(false), 2600);
+      } catch { /* offline or no manifest — nothing to confirm */ }
+    })();
+    return () => { cancelled = true; };
+  }, [platformOfflineVisible]);
+
   useEffect(() => {
     if (!platformOfflineVisible) return;
     if (getOfflineMode() !== 'on') return;

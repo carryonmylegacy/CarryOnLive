@@ -151,6 +151,11 @@ export const AuthProvider = ({ children }) => {
         const optimisticTimer = _notExpired ? setTimeout(() => {
           if (optimisticPainted) return;
           optimisticPainted = true;
+          // The boot round-trip is clearly unresponsive. Mark the device
+          // offline NOW so the dashboard + every page request short-circuits
+          // to cache instead of each hanging its own 20s timeout (the cause
+          // of the 15s+ "login to dashboard" lag on Wi-Fi-with-no-internet).
+          try { if (typeof window !== 'undefined' && window.__setDeviceOffline) window.__setDeviceOffline(true); } catch { /* no-op */ }
           setUser((prev) => prev || {
             id: _jwt.user_id || _jwt.sub,
             email: _jwt.email,
@@ -197,6 +202,13 @@ export const AuthProvider = ({ children }) => {
             apiClient.get(`${API_URL}/subscriptions/enabled-features${estateParam}`, authHeaders),
           ]);
           if (optimisticTimer) clearTimeout(optimisticTimer);
+
+          // If /auth/me actually came back, we're genuinely online — clear
+          // any offline flag the optimistic-paint timer may have set so the
+          // app reconciles to live data instead of staying stuck on cache.
+          if (meRes.status === 'fulfilled') {
+            try { if (typeof window !== 'undefined' && window.__setDeviceOffline) window.__setDeviceOffline(false); } catch { /* no-op */ }
+          }
 
           if (meRes.status !== 'fulfilled') {
             // Network failed (or timed out). If the device is simply offline

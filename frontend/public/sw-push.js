@@ -15,7 +15,7 @@
 // ── Versioning ──────────────────────────────────────────────────────────────
 // Bump SHELL_VERSION whenever the list of precached shell assets or the
 // caching strategy changes — triggers a cache purge on next SW activation.
-const SHELL_VERSION = 'v50-2026-06-01-offline-chunks-logo';
+const SHELL_VERSION = 'v51-2026-06-01-pdf-worker-offline';
 const SHELL_CACHE = `carryon-shell-${SHELL_VERSION}`;
 const RUNTIME_CACHE = `carryon-runtime-${SHELL_VERSION}`;
 const API_CACHE = `carryon-api-${SHELL_VERSION}`;
@@ -42,6 +42,12 @@ const PRECACHE_URLS = [
   '/notification-icon-128.png', // Web-push toast icon (crisp at 64-128px)
   '/notification-badge-96.png', // Android tray mono silhouette
   '/apple-touch-icon-180.png',  // macOS Safari notification permission toast
+  // pdf.js workers — REQUIRED offline. Without these, react-pdf can't spin
+  // up its worker, so the SDV viewer shows "Could not render PDF" and the
+  // document thumbnails never render. They are public static files (NOT in
+  // asset-manifest.json), so they must be precached explicitly.
+  '/pdf.worker.react-pdf.min.mjs', // react-pdf viewer + DocThumbnail
+  '/pdf.worker.min.mjs',           // standalone pdfjs (kept for compat)
 ];
 
 // Hard-coded HTML served when ALL cache lookups fail AND the network is
@@ -247,7 +253,7 @@ function isImageRequest(url, request) {
 
 function isBundleAsset(url) {
   return url.pathname.startsWith('/static/') ||
-         url.pathname.match(/\.(js|css|woff2?|ttf|otf|eot)$/i);
+         url.pathname.match(/\.(js|mjs|css|woff2?|ttf|otf|eot)$/i);
 }
 
 // Stale-while-revalidate: return cache (if any), then update in background.

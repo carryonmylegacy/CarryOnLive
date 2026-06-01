@@ -1,5 +1,20 @@
 # CarryOn — Changelog
 
+## Jun 1, 2026 (late pm) — PDF renders offline, faster boot, pill race fix
+
+**Founder report (cruise-ship Wi-Fi-no-internet, v50 deployed):** real progress (beneficiary photos, real doc names, pinned blob opens) but: PDFs show "Could not render PDF" offline; no SDV thumbnails; login→dashboard 15s+; no "Ready for offline" pill.
+
+**Fixes:**
+- **PDF won't render + no thumbnails (SW `sw-push.js`):** react-pdf's worker `/pdf.worker.react-pdf.min.mjs` (used by both the viewer and `DocThumbnail`) is a PUBLIC static file the SW never precached, AND `isBundleAsset` matched `.js` but NOT `.mjs`, so the worker request fell through to network-only and 504'd offline. Now both worker files are in `PRECACHE_URLS` and `.mjs` is treated as a bundle asset (served cache-first, with the all-caches fallback finding it in `SHELL_CACHE`). Fixes offline PDF rendering AND thumbnails in one shot.
+- **15s+ login→dashboard (`index.js` + `AuthContext.js`):** on Wi-Fi-no-internet `navigator.onLine` lies (true) and request timeouts (`ECONNABORTED`) are intentionally not treated as offline, so every page hung its full 20s timeout. Added `window.__setDeviceOffline()`; AuthContext flips it true at the optimistic-paint moment so the dashboard + all pages short-circuit to cache instantly, and clears it if `/auth/me` later succeeds.
+- **"Ready for offline" pill never showed (`OfflineSyncProgress.js`):** the SW's `OFFLINE_READY` message can fire before the component mounts (missed). Added a race-proof mount-time check that inspects the cache against the build manifest and flashes the pill if every chunk is already cached.
+- Bumped `SHELL_VERSION` v50 → v51.
+
+**Note on the "Saved your offline copy" toast on close:** that's the modal's header Download button (which downloads + dismisses the viewer) — correct behavior; the confusion came from being stuck on the download-only fallback because the PDF couldn't render. The worker precache removes that dead-end.
+
+**Validation:** all lint clean; SW syntax OK; `scripts/check.sh` = ALL CLEAR — SAFE TO PUSH (81 fast tests). SW/offline behavior only verifiable on the installed production PWA — founder to confirm post-deploy.
+
+
 ## Jun 1, 2026 (pm) — Pinned documents now actually open OFFLINE (the core promise)
 
 **Founder report (Airplane Mode):** tapping a PINNED document in the SDV showed "You're offline — This document will open once you reconnect" instead of opening it. That defeats the entire purpose of pinning and misleads the user.

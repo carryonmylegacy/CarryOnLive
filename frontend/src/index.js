@@ -103,6 +103,15 @@ if (typeof window !== 'undefined') {
     }
     return false;
   };
+  // Lets the boot sequence flip the tracked flag directly. On Wi-Fi-with-
+  // no-internet (cruise ship / captive portal) navigator.onLine LIES (true)
+  // and request timeouts (ECONNABORTED) are intentionally NOT treated as
+  // offline-proof (see response interceptor), so nothing would mark the app
+  // offline — every page would hang the full 20s timeout. AuthContext calls
+  // this at its optimistic-paint moment so subsequent page requests
+  // short-circuit to cache instantly, and clears it if /auth/me later
+  // succeeds.
+  window.__setDeviceOffline = (v) => { __deviceOffline = !!v; };
 }
 
 axios.interceptors.request.use(
