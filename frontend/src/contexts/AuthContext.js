@@ -118,6 +118,69 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const initAuth = async () => {
       if (token) {
+        // Prime the at-rest decryption key the INSTANT we have a token.
+        // It's derived purely from the token and NEVER touches the
+        // network, so doing it here (before any /auth/me round-trip) means
+        // every cached read this session — profile, vault, subscription —
+        // can decrypt immediately. Critical for Wi-Fi-with-no-internet,
+        // where navigator.onLine lies and the boot requests below hang the
+        // full timeout: without this the cache stayed locked until the
+        // timeout fired. Fire-and-forget; offline paths await it too.
+        try {
+          import('../offline/crypto')
+            .then((m) => { if (m.isEncryptionEnabled()) m.primeSessionKey(token); })
+            .catch(() => {});
+        } catch { /* no-op */ }
+
+        // Optimistic offline paint. If the boot round-trip is slow — a
+        // cold backend OR Wi-Fi-with-no-internet where each request hangs
+        // its full 20s timeout — don't make the user stare at a spinner.
+        // After OPTIMISTIC_MS, if we still have a valid (unexpired) cached
+        // session, paint the authenticated shell from cache and release
+        // the splash. The boot requests below keep running and reconcile:
+        // a successful /auth/me overrides this with authoritative data; a
+        // 401/403 still logs the user out.
+        let optimisticPainted = false;
+        const _jwt = (() => {
+          try {
+            const [, b] = token.split('.');
+            return JSON.parse(atob(b.replace(/-/g, '+').replace(/_/g, '/')));
+          } catch { return null; }
+        })();
+        const _notExpired = _jwt?.exp && _jwt.exp * 1000 > Date.now();
+        const optimisticTimer = _notExpired ? setTimeout(() => {
+          if (optimisticPainted) return;
+          optimisticPainted = true;
+          setUser((prev) => prev || {
+            id: _jwt.user_id || _jwt.sub,
+            email: _jwt.email,
+            role: _jwt.role || 'benefactor',
+            _offlineHydrated: true,
+          });
+          setLoading(false);
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new Event('carryon:app-ready'));
+          }
+          (async () => {
+            try {
+              const { getLocalProfile } = await import('../offline/repos/profileRepo');
+              const cp = await getLocalProfile();
+              if (cp) {
+                setUser((prev) => {
+                  const merged = { ...(prev || {}), ...cp, _offlineHydrated: true };
+                  if (!merged.name) merged.name = cp.first_name || '';
+                  return merged;
+                });
+              }
+            } catch { /* cache locked/empty — JWT shell stands */ }
+            try {
+              const { getLocalSubscription } = await import('../offline/repos/subscriptionRepo');
+              const ls = await getLocalSubscription();
+              if (ls) setSubscriptionStatus(ls);
+            } catch { /* no cached sub */ }
+          })();
+        }, 5000) : null;
+
         try {
           // Fire all three boot requests in PARALLEL, not sequentially.
           // Previously these were awaited in series, so a cold Railway
@@ -133,6 +196,7 @@ export const AuthProvider = ({ children }) => {
             apiClient.get(`${API_URL}/subscriptions/status`, authHeaders),
             apiClient.get(`${API_URL}/subscriptions/enabled-features${estateParam}`, authHeaders),
           ]);
+          if (optimisticTimer) clearTimeout(optimisticTimer);
 
           if (meRes.status !== 'fulfilled') {
             // Network failed (or timed out). If the device is simply offline

@@ -1,5 +1,20 @@
 # CarryOn — Changelog
 
+## Jun 1, 2026 — Offline mode hardening: fast boot, vault decryption, pin fixes
+
+**Founder report (Wi-Fi-connected-but-no-internet, prior fix already deployed):** offline took "forever" to show login then the dashboard; SDV showed pinned docs up top but the main list was empty; pinned docs all read "Untitled"; unpinning in the list "didn't unpin."
+
+**Diagnoses + fixes:**
+- **20s boot hang (the "takes forever"):** On Wi-Fi-with-no-internet iOS reports `navigator.onLine=true`, so the app fired `/auth/me` and hung the full 20s timeout (axios `ECONNABORTED` is deliberately excluded from fast-offline detection to protect slow uploads). Added an **optimistic paint** in `AuthContext`: if the boot round-trip hasn't resolved in 5s and the cached session is valid, render the authenticated shell from cache and release the splash; the real request keeps running and reconciles (success overrides; 401/403 still logs out). 20s request timeout kept for cold-backend recovery. Online login verified unaffected (0.4s to dashboard).
+- **Empty vault offline / blank profile despite prior fix:** the at-rest decryption key was primed too late (only after `/auth/me` resolved/timed out). Now primed the INSTANT a token exists at boot — it needs only the token, never the network — so every cached read (profile, vault, subscription) decrypts immediately regardless of connectivity. Also made the offline-hydrate branch non-blocking (JWT shell first, profile merges in background).
+- **"Untitled" pinned docs:** `pinDocument` saved `title` from `doc.title || doc.filename`, but vault docs carry their label on `name`. Added `doc.name` to the fallback.
+- **Unpin "not wired up":** the per-row `PinForOfflineButton` and the `OfflineStorageWidget` panel are separate components that didn't notify each other. Added a shared `carryon:pins-changed` event so both surfaces update instantly (backend unpin was already persisting correctly — purely a UI-sync gap).
+
+**Files:** `contexts/AuthContext.js`, `pages/beneficiary/BeneficiaryHubPage.js`, `offline/pinnedDocsRepo.js`, `components/vault/PinForOfflineButton.js`, `components/dashboard/OfflineStorageWidget.js`.
+
+**Validation:** Lint clean; `scripts/check.sh` = ALL CLEAR — SAFE TO PUSH (81 fast tests); online login E2E verified (0.4s). True cold-offline-boot only reproducible on the installed production PWA (preview SW doesn't serve the offline shell) — founder to confirm on production per Rule 1.
+
+
 ## Jun 1, 2026 — Offline cold-boot now hydrates the user's own profile (name, photo, username, personal info)
 
 **Founder report:** While offline, the benefactor's own identity vanished — Beneficiary "You" orbit node showed "??", Settings Profile showed "User" / "No username set" / no photo, and Personal Information was all dashes. Email still showed.
