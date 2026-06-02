@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { Tabs, TabsContent } from '../components/ui/tabs';
 import { toast } from '../utils/toast';
 // STATIC import — chunks fail when first edit/delete happens offline.
 import { enqueue as enqueueOutbox } from '../offline/outbox';
@@ -35,6 +35,7 @@ import { ReturnPopup } from '../components/GuidedActivation';
 import { API_URL } from '../config';
 import { getLocalVaultItems, upsertLocalVaultItems } from '../offline/repos/vaultRepo';
 import VaultDocumentCard from '../components/vault/VaultDocumentCard';
+import CategoryFilterSelect from '../components/vault/CategoryFilterSelect';
 import VaultUploadPanel from '../components/vault/VaultUploadPanel';
 // EssentialOfflineSlots was removed from the benefactor SDV on Feb 12, 2026
 // per user request — those 4 essential-doc tiles belong only on the
@@ -1184,24 +1185,15 @@ const VaultPage = () => {
         />
       </div>
 
-      {/* Category Tabs */}
+      {/* Category filter — "Executive Filter": one glass trigger that opens a
+          premium bottom-sheet (mobile) / popover (desktop) instead of a
+          3-row wall of 17 pills. */}
       <Tabs value={activeCategory} onValueChange={setActiveCategory}>
-        <div className="-mx-4 px-4 sm:mx-0 sm:px-0">
-          <TabsList className="bg-[var(--s)] p-1 flex flex-wrap gap-1 h-auto w-full">
-          {categories.map((cat) => (
-            <TabsTrigger
-              key={cat.id}
-              value={cat.id}
-              className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-[#0b1120] text-xs sm:text-sm px-2 sm:px-3 py-1.5 flex-shrink-0"
-              data-testid={`category-${cat.id}`}
-            >
-              <cat.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-              <span className="sm:hidden">{cat.id === 'all' ? 'All' : cat.label}</span>
-              <span className="hidden sm:inline">{cat.label}</span>
-            </TabsTrigger>
-          ))}
-        </TabsList>
-        </div>
+        <CategoryFilterSelect
+          categories={categories}
+          activeCategory={activeCategory}
+          onChange={setActiveCategory}
+        />
         <TabsContent value={activeCategory} className="mt-6">
           {/* The 4 gold-outlined essential offline slots used to render here.
               They were removed from the benefactor SDV on Feb 12, 2026 — that
