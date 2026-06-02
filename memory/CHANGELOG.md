@@ -1,5 +1,18 @@
 # CarryOn — Changelog
 
+## Jun 2, 2026 — SDV: alphabetized category filter + collapsible AI-eligibility banner
+
+**Founder report (the original two-part order that got split by a mid-coding summary in the prior fork — only one half had landed):**
+1. The SDV document-type filter pills were in a semantic-but-random-looking order ("pretty JV") — wanted alphabetical (or a cleaner presentation).
+2. The gold "Select up to 5 documents to include in your AI analyses" banner (the yellow box) should be collapsible.
+
+**Shipped (`pages/VaultPage.js`):**
+- **Red section — category filter pills reordered.** `categories` array now lists every document type ALPHABETICALLY by label (Deed, Durable POA, Financial, Financial POA, General POA, Healthcare Directive, Legal (Other), Life Insurance, Limited POA, Living Will, Medical, Personal, Power of Attorney (legacy), Springing POA, Trust, Will) with **"All" pinned first** (it's the default selector / filter-clear, so burying it alphabetically would hurt UX). Order is display-only — `activeCategory`/`d.category` filtering is unaffected.
+- **Yellow box — AI-eligibility banner now collapsible.** Added `aiBannerCollapsed` state persisted to `localStorage.carryon_ai_banner_collapsed` (defaults expanded so first-time users read the instructions, then can collapse to de-clutter). The whole header row (sparkle icon + title + N/5 counter + chevron) is a toggle button (`data-testid="ai-eligibility-toggle"`); collapsing hides only the long instructional paragraph, keeping the title + live counter visible. Chevron rotates 180° on expand. Mirrors the proven `OfflineStorageWidget` collapse pattern.
+
+**Validation:** ESLint clean on `VaultPage.js`; frontend `webpack compiled successfully`; `housekeeping.sh --strict` → ALL CHECKS PASSED (0 WARN / 0 FAIL). Live screenshot login intentionally skipped — preview Pete Mitchell is single-session and a preview login would sign out the founder's live on-device test. Changes are deterministic/presentational; final visual confirm is on-device per Rule 1.
+
+
 ## Jun 1, 2026 (later) — On-device Offline Diagnostics + "Ready for offline" pill first-boot fix
 
 **Founder report:** "None of your fixes have taken effect" after a clean PWA reinstall — felt lied to.

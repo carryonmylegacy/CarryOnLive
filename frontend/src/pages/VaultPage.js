@@ -19,6 +19,7 @@ import {
   FolderLock,
   Heart,
   Sparkles,
+  ChevronDown,
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -46,28 +47,28 @@ import { VaultSetLockModal, VaultRemoveLockModal, VaultBackupCodeModal } from '.
 import { useDraftState } from '../hooks/useDraftState';
 const PDFViewerModal = lazy(() => import('../components/PDFViewerModal'));
 
+// "All" is pinned first (it's the default selector / clears the filter);
+// every other document type is listed ALPHABETICALLY by label so the
+// filter bar is predictable and scannable instead of grouped-by-internal-
+// taxonomy (which read as a random order to users).
 const categories = [
   { id: 'all', label: 'All', icon: FolderOpen },
-  { id: 'will', label: 'Will', icon: FileText },
-  { id: 'trust', label: 'Trust', icon: FileText },
-  // ── 4 essential offline slots (these get gold-outlined placeholder
-  //    cards at the top of the SDV — see EssentialOfflineSlots.js) ───
-  { id: 'living_will', label: 'Living Will', icon: Heart },
-  { id: 'healthcare_directive', label: 'Healthcare Directive', icon: Heart },
-  { id: 'general_poa', label: 'General POA', icon: FileText },
-  { id: 'financial_poa', label: 'Financial POA', icon: FileText },
-  // ── Other POA variants (regular categories — not gold slots) ──────
-  { id: 'durable_poa', label: 'Durable POA', icon: FileText },
-  { id: 'springing_poa', label: 'Springing POA', icon: FileText },
-  { id: 'limited_poa', label: 'Limited POA', icon: FileText },
-  // ── Generic / other categories ────────────────────────────────────
-  { id: 'life_insurance', label: 'Life Insurance', icon: Shield },
   { id: 'deed', label: 'Deed', icon: File },
-  { id: 'poa', label: 'Power of Attorney (legacy)', icon: FileText },
+  { id: 'durable_poa', label: 'Durable POA', icon: FileText },
   { id: 'financial', label: 'Financial', icon: File },
-  { id: 'medical', label: 'Medical', icon: FileArchive },
+  { id: 'financial_poa', label: 'Financial POA', icon: FileText },
+  { id: 'general_poa', label: 'General POA', icon: FileText },
+  { id: 'healthcare_directive', label: 'Healthcare Directive', icon: Heart },
   { id: 'legal', label: 'Legal (Other)', icon: FileText },
+  { id: 'life_insurance', label: 'Life Insurance', icon: Shield },
+  { id: 'limited_poa', label: 'Limited POA', icon: FileText },
+  { id: 'living_will', label: 'Living Will', icon: Heart },
+  { id: 'medical', label: 'Medical', icon: FileArchive },
   { id: 'personal', label: 'Personal', icon: FileImage },
+  { id: 'poa', label: 'Power of Attorney (legacy)', icon: FileText },
+  { id: 'springing_poa', label: 'Springing POA', icon: FileText },
+  { id: 'trust', label: 'Trust', icon: FileText },
+  { id: 'will', label: 'Will', icon: FileText },
 ];
 
 const VaultPage = () => {
@@ -80,6 +81,20 @@ const VaultPage = () => {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [activeCategory, setActiveCategory] = useState('all');
+  // Collapsible "Select up to 5 documents…" AI-eligibility banner.
+  // Remembers the user's choice; defaults expanded so first-time users
+  // read the instructions, then can collapse it to de-clutter the SDV.
+  const [aiBannerCollapsed, setAiBannerCollapsed] = useState(() => {
+    try { return localStorage.getItem('carryon_ai_banner_collapsed') === 'true'; }
+    catch { return false; }
+  });
+  const toggleAiBanner = () => {
+    setAiBannerCollapsed((prev) => {
+      const next = !prev;
+      try { localStorage.setItem('carryon_ai_banner_collapsed', String(next)); } catch { /* private mode */ }
+      return next;
+    });
+  };
   const [searchQuery, setSearchQuery] = useState('');
   const searchTimerRef = useRef(null);
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -1223,28 +1238,43 @@ const VaultPage = () => {
               const aiCount = documents.filter(d => d.ai_eligible).length;
               return (
                 <div
-                  className="mb-4 rounded-xl p-3 flex items-center gap-3"
+                  className="mb-4 rounded-xl p-3"
                   style={{
                     background: 'linear-gradient(180deg, rgba(var(--gold-rgb), 0.10), rgba(var(--gold-rgb), 0.03))',
                     border: '1px solid rgba(var(--gold-rgb), 0.35)',
                   }}
                   data-testid="ai-eligibility-banner"
                 >
-                  <div className="w-9 h-9 rounded-full flex-shrink-0 flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #d4af37, #F0C95C)' }}>
-                    <Sparkles className="w-4 h-4" style={{ color: '#080e1a' }} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-[var(--t)]">
-                      Select up to 5 documents to include in your AI analyses
-                    </p>
-                    <p className="text-xs text-[var(--t4)] leading-snug mt-0.5">
-                      Tap the gold <span className="font-bold text-[var(--gold)]">AI</span> badge on each document's thumbnail to include it. Choose your most important estate documents — will, trust, power of attorney, deeds, life-insurance policies. Selected documents get a gold frame.
-                    </p>
-                  </div>
-                  <div className="flex-shrink-0 text-right">
-                    <div className="text-2xl font-bold leading-none" style={{ color: aiCount >= 5 ? '#10b981' : 'var(--gold)' }}>{aiCount}<span className="text-sm font-normal text-[var(--t5)]"> / 5</span></div>
-                    <div className="text-[11px] uppercase tracking-wider text-[var(--t5)] font-bold mt-1">selected</div>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={toggleAiBanner}
+                    className="w-full flex items-center gap-3 text-left"
+                    aria-expanded={!aiBannerCollapsed}
+                    data-testid="ai-eligibility-toggle"
+                  >
+                    <div className="w-9 h-9 rounded-full flex-shrink-0 flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #d4af37, #F0C95C)' }}>
+                      <Sparkles className="w-4 h-4" style={{ color: '#080e1a' }} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-[var(--t)]">
+                        Select up to 5 documents to include in your AI analyses
+                      </p>
+                      {!aiBannerCollapsed && (
+                        <p className="text-xs text-[var(--t4)] leading-snug mt-0.5">
+                          Tap the gold <span className="font-bold text-[var(--gold)]">AI</span> badge on each document's thumbnail to include it. Choose your most important estate documents — will, trust, power of attorney, deeds, life-insurance policies. Selected documents get a gold frame.
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex-shrink-0 flex items-center gap-2">
+                      <div className="text-right">
+                        <div className="text-2xl font-bold leading-none" style={{ color: aiCount >= 5 ? '#10b981' : 'var(--gold)' }}>{aiCount}<span className="text-sm font-normal text-[var(--t5)]"> / 5</span></div>
+                        <div className="text-[11px] uppercase tracking-wider text-[var(--t5)] font-bold mt-1">selected</div>
+                      </div>
+                      <ChevronDown
+                        className={`w-4 h-4 text-[var(--t4)] transition-transform duration-200 ${aiBannerCollapsed ? '' : 'rotate-180'}`}
+                      />
+                    </div>
+                  </button>
                 </div>
               );
             })()}
