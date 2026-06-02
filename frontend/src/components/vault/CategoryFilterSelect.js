@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronDown, Check } from 'lucide-react';
 import { Drawer, DrawerContent, DrawerTrigger, DrawerTitle } from '../ui/drawer';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
@@ -52,6 +52,21 @@ TriggerButton.displayName = 'CategoryFilterTrigger';
 
 const CategoryFilterSelect = ({ categories, activeCategory, onChange }) => {
   const [open, setOpen] = useState(false);
+  // Render ONLY the Drawer (mobile) OR the Popover (desktop) — never both.
+  // Radix portals overlay content outside the JSX tree, so Tailwind
+  // `md:hidden` / `hidden md:block` wrappers can't hide the inactive one;
+  // mounting both would double the portaled overlays and duplicate every
+  // data-testid. A live matchMedia switch keeps exactly one in the DOM.
+  const [isDesktop, setIsDesktop] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches,
+  );
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 768px)');
+    const onChange = (e) => setIsDesktop(e.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+
   const active = categories.find((c) => c.id === activeCategory) || categories[0];
   const isFiltered = active.id !== 'all';
 
@@ -88,45 +103,42 @@ const CategoryFilterSelect = ({ categories, activeCategory, onChange }) => {
     </div>
   );
 
-  return (
-    <>
-      {/* Mobile — premium bottom sheet */}
-      <div className="md:hidden">
-        <Drawer open={open} onOpenChange={setOpen}>
-          <DrawerTrigger asChild>
-            <TriggerButton active={active} isFiltered={isFiltered} open={open} />
-          </DrawerTrigger>
-          <DrawerContent
-            className="bg-[var(--bg2)] border-t border-[var(--b)] max-h-[80vh]"
-            data-testid="category-drawer-content"
-          >
-            <DrawerTitle className="px-4 pt-3 pb-2 text-lg font-semibold text-[var(--t)]">
-              Document category
-            </DrawerTitle>
-            <div className="overflow-y-auto" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
-              {List}
-            </div>
-          </DrawerContent>
-        </Drawer>
-      </div>
+  if (isDesktop) {
+    return (
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <TriggerButton active={active} isFiltered={isFiltered} open={open} />
+        </PopoverTrigger>
+        <PopoverContent
+          align="start"
+          className="w-[var(--radix-popover-trigger-width)] p-0 bg-[var(--bg2)] border border-[var(--b)] max-h-[420px] overflow-y-auto"
+          data-testid="category-popover-content"
+        >
+          {List}
+        </PopoverContent>
+      </Popover>
+    );
+  }
 
-      {/* Desktop — anchored popover, matched to trigger width */}
-      <div className="hidden md:block">
-        <Popover open={open} onOpenChange={setOpen}>
-          <PopoverTrigger asChild>
-            <TriggerButton active={active} isFiltered={isFiltered} open={open} />
-          </PopoverTrigger>
-          <PopoverContent
-            align="start"
-            className="w-[var(--radix-popover-trigger-width)] p-0 bg-[var(--bg2)] border border-[var(--b)] max-h-[420px] overflow-y-auto"
-            data-testid="category-popover-content"
-          >
-            {List}
-          </PopoverContent>
-        </Popover>
-      </div>
-    </>
+  return (
+    <Drawer open={open} onOpenChange={setOpen}>
+      <DrawerTrigger asChild>
+        <TriggerButton active={active} isFiltered={isFiltered} open={open} />
+      </DrawerTrigger>
+      <DrawerContent
+        className="bg-[var(--bg2)] border-t border-[var(--b)] max-h-[80vh]"
+        data-testid="category-drawer-content"
+      >
+        <DrawerTitle className="px-4 pt-3 pb-2 text-lg font-semibold text-[var(--t)]">
+          Document category
+        </DrawerTitle>
+        <div className="overflow-y-auto" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+          {List}
+        </div>
+      </DrawerContent>
+    </Drawer>
   );
 };
 
 export default CategoryFilterSelect;
+

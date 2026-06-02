@@ -1,5 +1,17 @@
 # CarryOn — Changelog
 
+## Jun 2, 2026 (later) — SDV category filter redesigned → "Executive Filter" (glass trigger + bottom-sheet/popover)
+
+**Founder request:** "Figure out a sexier way to enable the user to select these pills." The SDV document-type filter was a 3-row wall of 17 wrapping pills (looked "JV", ate vertical space). Chose design Option A ("Executive Filter") after founder picked it from two options.
+
+**Shipped:**
+- **NEW `components/vault/CategoryFilterSelect.js`** — replaces the pill wall with a single full-width glass trigger bar (`h-14`, "Filter by type" label + current selection + chevron; turns gold when a non-"All" type is active). Tapping it opens a premium **bottom-sheet on mobile** (shadcn `Drawer`/vaul) and an **anchored popover on desktop** (shadcn `Popover`, width-matched to the trigger). The list is the alphabetized categories with **"All documents" pinned first** as the reset; the active row is gold-highlighted with a trailing `Check` icon (not colour-alone). Built for the 40+ audience: 56px tap targets, 15px list text, ARIA `listbox`/`option`, focus-visible gold ring, safe-area padding. Uses existing CSS vars (`--gold`, `--gold-rgb`, `--bg2`, `--b`, `--t`, `--t4`, `--s`) + `glass-card`.
+- **`pages/VaultPage.js`** — `<Tabs>` now wraps `<CategoryFilterSelect …onChange={setActiveCategory}/>` + the unchanged `<TabsContent>`; removed the old `TabsList`/`TabsTrigger` pill block and their now-unused imports.
+- **Dual-mount fix (from testing-agent review):** Radix portals overlay content outside the JSX tree, so `md:hidden`/`hidden md:block` wrappers couldn't hide the inactive overlay — both Drawer + Popover were mounting at all times (34 duplicate `category-item` testids, doubled listeners). Now a live `window.matchMedia('(min-width:768px)')` switch renders **only one** of Drawer/Popover, keeping testids unique.
+
+**Validation:** `testing_agent_v3_fork` (iteration_159) — frontend-only, seeded benefactor (NOT Pete's live session), **100% of acceptance criteria pass** on both mobile Drawer and desktop Popover (trigger renders, old pills gone, alphabetical order with "All documents" first, select closes overlay + updates trigger + filters grid, reset works). Post-fix: ESLint clean · webpack compiled successfully · `housekeeping.sh --strict` = ALL CHECKS PASSED (0 WARN / 0 FAIL). Final on-device visual confirm per Rule 1.
+
+
 ## Jun 2, 2026 — SDV: alphabetized category filter + collapsible AI-eligibility banner
 
 **Founder report (the original two-part order that got split by a mid-coding summary in the prior fork — only one half had landed):**
