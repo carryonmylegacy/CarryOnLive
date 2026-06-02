@@ -12,6 +12,8 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from config import XAI_MODEL, XAI_MODEL_LIGHT, db, logger, xai_client
 from models import ChatRequest, ChatResponse, ChecklistItem
+from services.access_control import require_estate_actor
+from services.ai_burn_guard import require_ai_burn_budget
 from services.ai_safety import hardened_system_prompt
 from services.encryption import decrypt_aes256, get_estate_salt
 from services.readiness import calculate_estate_readiness
@@ -41,6 +43,23 @@ _HEAVY_AI_WAIT_TIMEOUT_S = 30.0
 # worst-case per user per day — predictable for B2B unit economics.
 # Override via env if a paid tier needs more.
 PER_USER_DAILY_TOKEN_BUDGET = int(os.environ.get("PER_USER_DAILY_TOKEN_BUDGET", "500000"))
+
+
+def _guardian_ai_guard_feature(action: str | None) -> str:
+    heavy_actions = {
+        "analyze_vault",
+        "generate_todo",
+        "generate_iac",
+        "analyze_readiness",
+        "state_law_brief",
+        "find_inconsistencies",
+        "quickstart_gap_check",
+    }
+    if action == "generate_iac":
+        return "guardian_generate_iac"
+    if action in heavy_actions:
+        return "guardian_heavy"
+    return "guardian_chat"
 
 
 async def _get_user_estate(current_user: dict, projection: dict | None = None):
@@ -428,6 +447,8 @@ async def chat_with_guardian(data: ChatRequest, current_user: dict = Depends(get
     if not xai_client:
         raise HTTPException(status_code=500, detail="AI service not configured")
 
+    await require_ai_burn_budget(current_user, _guardian_ai_guard_feature(data.action))
+
     # ── Rate limits (per-user, rolling 24h) ──
     # `generate_iac` is a heavy full-vault analysis that ends in a PDF
     # download. Users very rarely change major estate docs more than
@@ -530,6 +551,12 @@ async def chat_with_guardian(data: ChatRequest, current_user: dict = Depends(get
             estate_id = estates[0]["id"]
 
     if estate_id:
+        actor = await require_estate_actor(estate_id, current_user)
+        if not (actor.get("is_owner") or actor.get("is_admin")):
+            raise HTTPException(
+                status_code=403,
+                detail="Estate Guardian is available only to the estate owner. Beneficiaries should use Beneficiary Concierge.",
+            )
         needs_content = data.action in (
             "analyze_vault",
             "generate_todo",

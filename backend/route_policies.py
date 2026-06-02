@@ -243,7 +243,7 @@ ROUTE_POLICIES: dict = {
         "estate_id_source": "path.document_id(documents)",
     },
     # ── Guardian (EGA) ─────────────────────────────────────────────────────
-    "POST /api/guardian/chat": {"auth": "required", "estate_access": "member", "estate_id_source": "body.estate_id"},
+    "POST /api/chat/guardian": {"auth": "required", "estate_access": "owner", "estate_id_source": "body.estate_id"},
     "POST /api/guardian/export-todo": {
         "auth": "required",
         "estate_access": "member",

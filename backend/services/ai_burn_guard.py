@@ -17,6 +17,11 @@ from config import db
 DEFAULT_LIMITS = {
     "quickstart_generate": 1,
     "beneficiary_concierge": 10,
+    "guardian_generate_iac": 1,
+    "guardian_heavy": 3,
+    "guardian_chat": 10,
+    "ccp_generate": 3,
+    "ccp_risk_profile": 5,
     "voice_transcribe": 10,
     "voice_verify": 10,
     "cfp_smart_categorize": 25,

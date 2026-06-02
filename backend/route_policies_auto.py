@@ -1403,7 +1403,12 @@ AUTO_IMPORTED_POLICIES = {
         "auth": "required",
         "notes": "CERTIFIED: CCP authed routes \u2014 current_user required",
     },
-    "POST /api/chat/guardian": {"auth": "required", "notes": "CERTIFIED: Guardian chat \u2014 subscription-gated"},
+    "POST /api/chat/guardian": {
+        "auth": "required",
+        "estate_access": "owner",
+        "estate_id_source": "body.estate_id",
+        "notes": "CERTIFIED: Guardian chat \u2014 subscription + owner-gated",
+    },
     "POST /api/compliance/deletion-request": {
         "auth": "required",
         "notes": "CERTIFIED: compliance \u2014 admin/operator gate",

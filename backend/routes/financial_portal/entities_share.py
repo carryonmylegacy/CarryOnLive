@@ -21,7 +21,7 @@ Two surfaces, one file:
      b. Estate transition state:
           - transitioned     → return everything that is NOT marked private
           - not transitioned → return entities only when entities_share.show_now is True
-                               AND caller's user_id is in entities_share.now_beneficiary_ids
+                               AND caller matches entities_share.now_beneficiary_ids
      c. Per-credential visibility:
           - 'private'         → omit entirely
           - 'posthumous_only' → only if transitioned
@@ -34,14 +34,15 @@ client drive a write are exposed beyond what the chart needs to render.
 from datetime import datetime, timezone
 from typing import List
 
-from fastapi import Depends, HTTPException
+from fastapi import Depends
 from pydantic import BaseModel, Field
 
 from config import db
+from services.access_control import can_access_document
 from services.photo_urls import resolve_photo_url
 from utils import get_current_user
 
-from ._core import router
+from ._core import _resolve_financial_actor, router
 
 
 def _now_iso() -> str:
@@ -72,23 +73,16 @@ async def get_entities_share(estate_id: str, current_user: dict = Depends(get_cu
     version that only tells them whether THEY are allowed to see it
     pre-transition (no list of other beneficiaries leaked).
     """
-    estate = await db.estates.find_one({"id": estate_id}, {"_id": 0})
-    if not estate:
-        raise HTTPException(status_code=404, detail="Estate not found")
-
-    is_owner = estate.get("owner_id") == current_user["id"]
-    is_admin = current_user.get("role") == "admin"
-    is_beneficiary = current_user["id"] in (estate.get("beneficiaries") or [])
-    if not (is_owner or is_admin or is_beneficiary):
-        raise HTTPException(status_code=403, detail="Not authorized")
-
+    actor = await _resolve_financial_actor(estate_id, current_user)
+    estate = actor["estate"]
     share = await _load_share(estate)
-    if is_owner or is_admin:
+    if actor["is_owner"] or actor["is_admin"]:
         return share
     # Beneficiary view: don't reveal which OTHER beneficiaries can see now.
+    allowed_now = bool(share["show_now"] and set(share["now_beneficiary_ids"]) & actor.get("release_ids", set()))
     return {
         "show_now": bool(share["show_now"]),
-        "you_can_see_now": bool(share["show_now"] and current_user["id"] in share["now_beneficiary_ids"]),
+        "you_can_see_now": allowed_now,
     }
 
 
@@ -98,18 +92,22 @@ async def patch_entities_share(
     payload: EntitiesShareSettings,
     current_user: dict = Depends(get_current_user),
 ):
-    estate = await db.estates.find_one({"id": estate_id}, {"_id": 0})
-    if not estate:
-        raise HTTPException(status_code=404, detail="Estate not found")
-    is_owner = estate.get("owner_id") == current_user["id"]
-    is_admin = current_user.get("role") == "admin"
-    if not (is_owner or is_admin):
-        raise HTTPException(status_code=403, detail="Only the estate owner can change sharing")
+    actor = await _resolve_financial_actor(estate_id, current_user, require_owner=True)
+    estate = actor["estate"]
 
     # Validate that every now_beneficiary_id is actually a beneficiary
     # of this estate. Silently drop invalid IDs rather than 400-erroring
     # so a stale UI selection doesn't block save.
     valid = set(estate.get("beneficiaries") or [])
+    ben_rows = await db.beneficiaries.find(
+        {"estate_id": estate_id, "deleted_at": None},
+        {"_id": 0, "id": 1, "user_id": 1},
+    ).to_list(500)
+    for row in ben_rows:
+        if row.get("id"):
+            valid.add(row["id"])
+        if row.get("user_id"):
+            valid.add(row["user_id"])
     cleaned = [b for b in payload.now_beneficiary_ids if b in valid]
 
     new_doc = {
@@ -152,18 +150,16 @@ def _credential_for_beneficiary(cred: dict) -> dict:
 
 @router.get("/financial/entities/beneficiary-view/{estate_id}")
 async def get_entities_beneficiary_view(estate_id: str, current_user: dict = Depends(get_current_user)):
-    estate = await db.estates.find_one({"id": estate_id}, {"_id": 0})
-    if not estate:
-        raise HTTPException(status_code=404, detail="Estate not found")
-    is_owner = estate.get("owner_id") == current_user["id"]
-    is_admin = current_user.get("role") == "admin"
-    is_beneficiary = current_user["id"] in (estate.get("beneficiaries") or [])
-    if not (is_owner or is_admin or is_beneficiary):
-        raise HTTPException(status_code=403, detail="Not authorized")
+    actor = await _resolve_financial_actor(estate_id, current_user)
+    estate = actor["estate"]
+    is_owner = actor["is_owner"]
+    is_admin = actor["is_admin"]
 
     is_transitioned = estate.get("status") == "transitioned"
     share = await _load_share(estate)
-    beneficiary_can_see_now = bool(share["show_now"] and current_user["id"] in share["now_beneficiary_ids"])
+    beneficiary_can_see_now = bool(
+        share["show_now"] and set(share["now_beneficiary_ids"]) & actor.get("release_ids", set())
+    )
 
     # Hard gate. Pre-transition beneficiaries who weren't picked simply
     # get an empty payload — the frontend won't even render the tile.
@@ -204,7 +200,7 @@ async def get_entities_beneficiary_view(estate_id: str, current_user: dict = Dep
     documents: list = []
     if referenced_doc_ids:
         doc_cursor = db.documents.find(
-            {"id": {"$in": list(referenced_doc_ids)}, "deleted_at": None},
+            {"estate_id": estate_id, "id": {"$in": list(referenced_doc_ids)}, "deleted_at": None},
             {
                 "_id": 0,
                 "id": 1,
@@ -214,9 +210,15 @@ async def get_entities_beneficiary_view(estate_id: str, current_user: dict = Dep
                 "file_type": 1,
                 "size": 1,
                 "uploaded_at": 1,
+                "designated_beneficiaries": 1,
+                "visibility_timing": 1,
+                "deleted_at": 1,
             },
         )
         documents = await doc_cursor.to_list(5000)
+        if not (is_owner or is_admin):
+            phase = "post" if is_transitioned else "pre"
+            documents = [doc for doc in documents if can_access_document(doc, actor, phase=phase)]
 
     # Credentials — filtered by visibility + transition state.
     cred_cursor = db.digital_wallet.find(

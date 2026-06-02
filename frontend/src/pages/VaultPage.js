@@ -564,7 +564,7 @@ const VaultPage = () => {
   };
 
   const toggleBeneficiaryForDoc = (docId, benId, currentDesignation, currentDoc) => {
-    const current = currentDesignation || ['all'];
+    const current = Array.isArray(currentDesignation) ? currentDesignation : [];
     const isAll = current.includes('all');
     if (benId === 'all') {
       handleDesignateBeneficiaries(docId, ['all'], currentDoc?.visibility_timing);
@@ -576,7 +576,6 @@ const VaultPage = () => {
       newList = beneficiaries.map(b => b.id).filter(id => id !== benId);
     } else if (current.includes(benId)) {
       newList = current.filter(id => id !== benId);
-      if (newList.length === 0) newList = ['all']; // Can't have empty — default to all
     } else {
       newList = [...current, benId];
       // Don't auto-convert to "all" — keep individual IDs so Pre/Post toggles stay visible
@@ -611,7 +610,11 @@ const VaultPage = () => {
     if (!timing[benId].pre && !timing[benId].post) {
       timing[benId].post = true;
     }
-    handleDesignateBeneficiaries(docId, currentDoc?.designated_beneficiaries || ['all'], timing);
+    handleDesignateBeneficiaries(
+      docId,
+      Array.isArray(currentDoc?.designated_beneficiaries) ? currentDoc.designated_beneficiaries : [],
+      timing
+    );
   };
 
 

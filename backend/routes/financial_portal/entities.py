@@ -164,6 +164,26 @@ def _strip_id(doc: dict) -> dict:
     return doc
 
 
+async def _filter_estate_document_ids(estate_id: str, document_ids: List[str] | None) -> List[str]:
+    """Keep entity-linked document refs inside the estate boundary."""
+    ordered: List[str] = []
+    seen: set[str] = set()
+    for raw_id in document_ids or []:
+        doc_id = str(raw_id).strip()
+        if doc_id and doc_id not in seen:
+            seen.add(doc_id)
+            ordered.append(doc_id)
+    if not ordered:
+        return []
+
+    rows = await db.documents.find(
+        {"estate_id": estate_id, "id": {"$in": ordered}, "deleted_at": None},
+        {"_id": 0, "id": 1},
+    ).to_list(500)
+    valid_ids = {row["id"] for row in rows if row.get("id")}
+    return [doc_id for doc_id in ordered if doc_id in valid_ids]
+
+
 # ===================== ENTITY CRUD =====================
 
 
@@ -258,6 +278,7 @@ async def create_entity(payload: EntityCreate, current_user: dict = Depends(get_
     estate, can_manage = await _verify_estate_access(payload.estate_id, current_user, require_owner=True)
     if not can_manage:
         raise HTTPException(status_code=403, detail="Only the estate owner can create entities")
+    document_ids = await _filter_estate_document_ids(payload.estate_id, payload.document_ids)
 
     doc = {
         "id": str(uuid.uuid4()),
@@ -272,7 +293,7 @@ async def create_entity(payload: EntityCreate, current_user: dict = Depends(get_
         "tax_election": (payload.tax_election or None),
         "registered_agent": (payload.registered_agent or None),
         "notes": (payload.notes or None),
-        "document_ids": list(payload.document_ids or []),
+        "document_ids": document_ids,
         "gross_assets": payload.gross_assets,
         "gross_debts": payload.gross_debts,
         "created_at": _now_iso(),
@@ -299,8 +320,11 @@ async def update_entity(
     update_fields = payload.model_dump(exclude_unset=True)
     if "name" in update_fields and isinstance(update_fields["name"], str):
         update_fields["name"] = update_fields["name"].strip()
-    if "document_ids" in update_fields and update_fields["document_ids"] is None:
-        update_fields["document_ids"] = []
+    if "document_ids" in update_fields:
+        update_fields["document_ids"] = await _filter_estate_document_ids(
+            existing["estate_id"],
+            update_fields["document_ids"],
+        )
     update_fields["updated_at"] = _now_iso()
     await db.cfp_entities.update_one({"id": entity_id}, {"$set": update_fields})
     refreshed = await db.cfp_entities.find_one({"id": entity_id}, {"_id": 0})

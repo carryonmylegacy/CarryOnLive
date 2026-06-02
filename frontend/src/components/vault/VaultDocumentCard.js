@@ -264,9 +264,11 @@ const VaultDocumentCard = ({
             >
               <Users className="w-4 h-4" style={{ color: 'var(--t4)' }} />
               <span className="text-sm font-semibold" style={{ color: '#D8DEE9' }}>
-                {(!doc.designated_beneficiaries || doc.designated_beneficiaries?.includes('all'))
+                {doc.designated_beneficiaries?.includes('all')
                   ? `All ${beneficiaries.length} Beneficiaries`
-                  : `${doc.designated_beneficiaries.length} of ${beneficiaries.length} Beneficiaries`}
+                  : (doc.designated_beneficiaries?.length || 0) === 0
+                    ? 'No beneficiaries yet'
+                    : `${doc.designated_beneficiaries.length} of ${beneficiaries.length} Beneficiaries`}
               </span>
               {expandedDesignation === doc.id
                 ? <ChevronUp className="w-4 h-4 ml-auto" style={{ color: 'var(--t4)' }} />
@@ -275,7 +277,7 @@ const VaultDocumentCard = ({
             {expandedDesignation === doc.id && (
               <div className="mt-3 space-y-1.5" onClick={(e) => e.stopPropagation()}>
                 {beneficiaries.map(ben => {
-                  const designation = doc.designated_beneficiaries || ['all'];
+                  const designation = Array.isArray(doc.designated_beneficiaries) ? doc.designated_beneficiaries : [];
                   const isAll = designation.includes('all');
                   const isOn = isAll || designation.includes(ben.id);
                   const timing = doc.visibility_timing?.[ben.id] || { pre: false, post: true };

@@ -19,6 +19,7 @@ from pydantic import BaseModel
 from typing import Optional
 
 from config import db, xai_client, XAI_MODEL, XAI_MODEL_LIGHT, logger
+from services.ai_burn_guard import require_ai_burn_budget
 from services.ai_safety import hardened_system_prompt
 from services.estate_auth import is_estate_member as _is_estate_member, is_estate_owner as _is_estate_owner
 from utils import get_current_user
@@ -311,6 +312,7 @@ async def wizard_generate_plan(data: WizardRequest, current_user: dict = Depends
     primary_concern = data.concern.strip() if data.concern else (data.concerns[0] if data.concerns else "")
     if not primary_concern:
         raise HTTPException(status_code=400, detail="A disaster type is required")
+    await require_ai_burn_budget(current_user, "ccp_generate")
 
     # Build the user prompt with disaster-specific context
     household_desc = ", ".join(data.household) if data.household else "adults only"

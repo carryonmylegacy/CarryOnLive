@@ -83,6 +83,8 @@ async def register(data: UserCreate):
     user = {
         "id": user_id,
         "email": data.email,
+        "email_lower": str(data.email).lower().strip(),
+        "email_verified": False,
         "username": username,
         "username_lower": username_lower,
         "password": hash_password(data.password),

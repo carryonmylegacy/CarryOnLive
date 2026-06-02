@@ -34,6 +34,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, EmailStr
 
 from config import db, xai_client, logger
+from services.ai_burn_guard import require_ai_burn_budget
 from services.estate_auth import is_estate_member, is_estate_owner
 from utils import RESEND_API_KEY, SENDER_EMAIL, get_current_user
 
@@ -939,6 +940,8 @@ async def risk_profile(req: RiskProfileRequest, current_user: dict = Depends(get
                 return cached
         except Exception:
             pass
+
+    await require_ai_burn_budget(current_user, "ccp_risk_profile")
 
     location_hint = ", ".join([p for p in [req.city, req.state, req.zip_code] if p]) or "unknown US location"
     # Static prefix is identical across all calls (cached at module
