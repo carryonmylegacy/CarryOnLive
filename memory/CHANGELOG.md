@@ -1,5 +1,18 @@
 # CarryOn — Changelog
 
+## Jun 3, 2026 — Offline "ready" pill made HONEST + beneficiary estates actually cached (Option A: make the claims true)
+
+Founder demand: "I want to ship what I'm advertising. Period. Make it work." Audited `warmup.js` against both Offline Capabilities cards and closed the two real gaps that made the marketing copy false:
+
+**Gap 1 — the "Offline ready" pill lied about media.** The pill fires on `carryon:sync:finish`, which resolved as soon as the *data* tasks finished — but every image/video blob prefetch (SDV thumbnails, milestone videos, beneficiary/estate photos) was **fire-and-forget** (`.catch(()=>{})`, never awaited). So the pill could assert "Offline ready" while thumbnails/videos were still downloading or had silently failed.
+- Fix (`offline/warmup.js`): new bounded-concurrency `runLimited(items, fn, limit=4)` helper; `taskDashboard` now **awaits** the beneficiary-photo, SDV-thumbnail (cap 50), and MM-video (cap 15) blob prefetches before resolving. `carryon:sync:finish` — the app's single readiness assertion — can no longer fire until the promised media is genuinely persisted to IndexedDB. (Profile photo was already awaited.)
+
+**Gap 2 — beneficiary estates were never pre-cached → "Estate switching — all cached locally" was false.** `warmUpAfterLogin` only warmed **owner** estates; beneficiary-connected estates were only cached if the user manually opened each page online. The beneficiary pages already had offline *read* paths (`readBenSection` keyed `beneficiary:<section>:<estateId>`) — warmup just never *wrote* those keys.
+- Fix: new `taskBeneficiaryEstate(estateId)` mirrors `BeneficiaryDashboardPage`'s online fetch into the **same** `cacheBenSection` keys the pages read offline — estate, permissions, documents, messages, checklist, financial (bills/debts/accounts/summary) — plus awaited MM-video + SDV-thumbnail bytes. `warmUpAfterLogin` now `cacheBenEstates(allEstates)` + warms every beneficiary-connected estate (capped 15 to avoid a login-time request storm). Pre-transition estates correctly stop after permissions (no post-transition content to leak).
+
+**Verified (preview, seeded benefactor, offline flag on):** login → dashboard clean; `[offline] warm-up complete: 12/12 tasks in 926ms` (no crash from the new code/awaited media); `carryon_list_cache:beneficiary:estates` now populated live (new `cacheBenEstates` path runs); per-estate beneficiary keys correctly empty for an owner-only account. ESLint clean; `housekeeping.sh --strict` unchanged from baseline (only the pre-existing pip-audit DS FAIL + legacy sub-11px font WARN remain — both out of scope per founder). True multi-estate offline beneficiary E2E is on-device per Rule 1 (headless Chrome can't run the PWA SW). No backend changes.
+
+
 ## Jun 2, 2026 (late night) — Offline persistence for SDV thumbnails + Milestone media
 
 These were pre-existing offline GAPS that only became visible once the SW white-screen fix let offline boot work at all. Both media types were never wired into the persistent Dexie `imageBlob` store (SDV thumbnails lived only in an in-memory LRU; beneficiary milestone video explicitly blocked offline with "requires an internet connection").

@@ -41,10 +41,34 @@ import { upsertLocalMessages } from './repos/messagesRepo';
 import { prefetchPhotosFrom } from './prefetchPhotos';
 import { fetchAndStoreImageBlob, fetchAndStoreAuthedBlob } from './imageBlobsRepo';
 import { saveList } from '../utils/localListCache';
+import { cacheBenEstates, cacheBenSection } from '../utils/beneficiaryOfflineCache';
 
 function emit(type, detail) {
   if (typeof window === 'undefined') return;
   try { window.dispatchEvent(new CustomEvent(type, { detail })); } catch {}
+}
+
+/**
+ * Drain a list of items through `fn` with a bounded concurrency cap,
+ * awaiting them all. Used for media blob prefetches that MUST complete
+ * before the warm-up task resolves — otherwise the "Offline ready" pill
+ * (which fires on `carryon:sync:finish`) would claim readiness while
+ * thumbnails / videos were still downloading or had silently failed.
+ * Each `fn` is best-effort (its own try/catch) so one bad blob never
+ * blocks the rest. The browser's ~6-conn/origin limit + this cap keep
+ * the wire from being flooded.
+ */
+async function runLimited(items, fn, limit = 4) {
+  const arr = Array.isArray(items) ? items : [];
+  if (!arr.length) return;
+  let i = 0;
+  const workers = Array.from({ length: Math.min(limit, arr.length) }, async () => {
+    while (i < arr.length) {
+      const item = arr[i++];
+      try { await fn(item); } catch { /* best-effort per item */ }
+    }
+  });
+  await Promise.all(workers);
 }
 
 function taskProfile(headers) {
@@ -206,13 +230,13 @@ function taskDashboard(estateId, headers) {
         prefetchPhotosFrom(bens.data);
         // Phase 9b — also persist photo BYTES under stable cache keys
         // so they survive S3 presigned-URL rotation across sessions.
-        // Fire-and-forget; failures are non-fatal.
-        for (const b of bens.data) {
-          if (b.photo_url && b.id) {
-            fetchAndStoreImageBlob(b.photo_url, `beneficiary:${b.id}:photo`, 'photo')
-              .catch(() => {});
-          }
-        }
+        // AWAITED (Jun 3 2026) so the warm-up task — and therefore the
+        // "Offline ready" pill — does not resolve until these photos are
+        // genuinely persisted. Bounded concurrency keeps it quick.
+        await runLimited(
+          bens.data.filter((b) => b.photo_url && b.id),
+          (b) => fetchAndStoreImageBlob(b.photo_url, `beneficiary:${b.id}:photo`, 'photo'),
+        );
       }
       if (msgs?.data) await upsertLocalMessages(estateId, msgs.data);
       if (docs?.data) await upsertLocalVaultItems(estateId, docs.data);
@@ -223,20 +247,25 @@ function taskDashboard(estateId, headers) {
       // endpoints → routed through fetchAndStoreAuthedBlob. Fire-and-forget,
       // capped, and quota-safe (putImageBlob swallows quota errors). The
       // browser's 6-connections-per-origin limit naturally throttles these.
+      // Phase 9c — prime SDV thumbnail blobs + Milestone Message media so
+      // the vault grid paints and MM videos play on airplane mode WITHOUT
+      // the user having opened each one online first. AWAITED (Jun 3 2026)
+      // so the "Offline ready" pill is HONEST — it cannot fire until the
+      // promised media is actually persisted to IndexedDB. Bounded
+      // concurrency (the browser also caps ~6 conns/origin); putImageBlob
+      // swallows quota errors so a full disk degrades gracefully.
       try {
         if (Array.isArray(docs?.data)) {
           const previewable = docs.data
             .filter((d) => d?.id && !d.is_locked && /pdf|image/i.test(d.file_type || ''))
             .slice(0, 50);
-          for (const d of previewable) {
-            fetchAndStoreAuthedBlob(`/documents/${d.id}/preview`, `docthumb:${d.id}`, 'doc_thumb').catch(() => {});
-          }
+          await runLimited(previewable, (d) =>
+            fetchAndStoreAuthedBlob(`/documents/${d.id}/preview`, `docthumb:${d.id}`, 'doc_thumb'));
         }
         if (Array.isArray(msgs?.data)) {
           const withVideo = msgs.data.filter((mm) => mm?.id && mm.video_url).slice(0, 15);
-          for (const mm of withVideo) {
-            fetchAndStoreAuthedBlob(`/messages/video/${mm.video_url}`, `mm:${mm.id}:video`, 'milestone_media').catch(() => {});
-          }
+          await runLimited(withVideo, (mm) =>
+            fetchAndStoreAuthedBlob(`/messages/video/${mm.video_url}`, `mm:${mm.id}:video`, 'milestone_media'));
         }
       } catch { /* dynamic import / quota issues — skip */ }
     },
@@ -341,6 +370,67 @@ function taskDAVBeneficiaries(estateId, headers) {
   };
 }
 
+/**
+ * Beneficiary-estate warm-up (Jun 3 2026).
+ *
+ * Mirrors BeneficiaryDashboardPage's online fetch into the SAME
+ * `beneficiary:<section>:<estateId>` localStorage cache keys that the
+ * beneficiary pages read on an offline mount (via `readBenSection`).
+ * Without this the Offline Capabilities card's promise — "Estate
+ * switching — switch between every estate you are a beneficiary of —
+ * all cached locally" — was false for any estate the beneficiary hadn't
+ * manually opened page-by-page while online. Now a single login warms
+ * Dashboard / Vault / Messages / Checklist / Financial for every
+ * connected estate, plus the MM video + SDV thumbnail bytes.
+ */
+function taskBeneficiaryEstate(estateId, headers) {
+  return {
+    label: `ben-estate:${estateId.slice(0, 6)}`,
+    run: async () => {
+      const [estateRes, permRes] = await Promise.all([
+        apiClient.get(`${API_URL}/estates/${estateId}`, headers).catch(() => null),
+        apiClient.get(`${API_URL}/beneficiary/my-permissions/${estateId}`, headers).catch(() => null),
+      ]);
+      if (estateRes?.data) cacheBenSection(estateId, 'estate', estateRes.data);
+      const perms = permRes?.data || null;
+      if (perms) cacheBenSection(estateId, 'permissions', perms);
+      // Pre-transition estates expose no post-transition content — stop here.
+      if (!perms || !perms.is_transitioned) return;
+      const fa = perms.feature_access || {};
+      const [docsRes, msgsRes, clRes] = await Promise.all([
+        fa.sdv_access !== false ? apiClient.get(`${API_URL}/documents/${estateId}`, headers).catch(() => null) : null,
+        fa.mm_access !== false ? apiClient.get(`${API_URL}/messages/${estateId}`, headers).catch(() => null) : null,
+        fa.iac_access !== false ? apiClient.get(`${API_URL}/checklists/${estateId}`, headers).catch(() => null) : null,
+      ]);
+      if (docsRes?.data) cacheBenSection(estateId, 'documents', docsRes.data);
+      if (msgsRes?.data) cacheBenSection(estateId, 'messages', msgsRes.data);
+      if (clRes?.data) cacheBenSection(estateId, 'checklist', clRes.data);
+      // Financial designations the BeneficiaryFinancialPage reads offline.
+      const [bills, debts, accts, summary] = await Promise.all([
+        apiClient.get(`${API_URL}/financial/bills/${estateId}`, headers).catch(() => ({ data: [] })),
+        apiClient.get(`${API_URL}/financial/debts/${estateId}`, headers).catch(() => ({ data: [] })),
+        apiClient.get(`${API_URL}/financial/accounts/${estateId}`, headers).catch(() => ({ data: [] })),
+        apiClient.get(`${API_URL}/financial/summary/${estateId}`, headers).catch(() => ({ data: null })),
+      ]);
+      const pick = (r) => (Array.isArray(r?.data) ? r.data : []);
+      cacheBenSection(estateId, 'financial_bills', pick(bills));
+      cacheBenSection(estateId, 'financial_debts', pick(debts));
+      cacheBenSection(estateId, 'financial_accounts', pick(accts));
+      if (summary?.data) cacheBenSection(estateId, 'financial_summary', summary.data);
+      // Persist MM video + SDV thumbnail BYTES so they play / paint offline.
+      // AWAITED so the "Offline ready" pill stays honest for beneficiaries too.
+      const withVideo = (Array.isArray(msgsRes?.data) ? msgsRes.data : [])
+        .filter((m) => m?.id && m.video_url).slice(0, 15);
+      await runLimited(withVideo, (m) =>
+        fetchAndStoreAuthedBlob(`/messages/video/${m.video_url}`, `mm:${m.id}:video`, 'milestone_media'));
+      const thumbs = (Array.isArray(docsRes?.data) ? docsRes.data : [])
+        .filter((d) => d?.id && !d.is_locked && /pdf|image/i.test(d.file_type || '')).slice(0, 50);
+      await runLimited(thumbs, (d) =>
+        fetchAndStoreAuthedBlob(`/documents/${d.id}/preview`, `docthumb:${d.id}`, 'doc_thumb'));
+    },
+  };
+}
+
 /** Drain a list of lazy tasks with a concurrency cap, dispatching progress. */
 async function runTasksWithProgress(tasks) {
   const total = tasks.length;
@@ -405,6 +495,20 @@ export async function warmUpAfterLogin(token) {
 
   // Mirror the estate list itself for the Dashboard switcher.
   try { await upsertLocalEstates(allEstates); } catch {}
+  // Mirror the beneficiary-connected estate list + warm each one so a
+  // beneficiary can switch between EVERY estate they're connected to and
+  // read its cached sections fully offline (matches the Offline
+  // Capabilities card's "Estate switching — all cached locally" promise).
+  // Capped to protect a user connected to an unusually large number of
+  // estates from a login-time request storm.
+  let beneficiaryEstateIds = [];
+  try {
+    cacheBenEstates(allEstates);
+    beneficiaryEstateIds = allEstates
+      .filter((e) => e.id && !ownedEstateIds.includes(e.id))
+      .map((e) => e.id)
+      .slice(0, 15);
+  } catch {}
   // Pre-warm estate / owner photos for the tree + dashboard header.
   prefetchPhotosFrom(allEstates);
   // Phase 9b — persist estate cover + owner photo BYTES under stable
@@ -451,6 +555,7 @@ export async function warmUpAfterLogin(token) {
     ...warmEstateIds.map((id) => taskChecklist(id, headers)),
     ...warmEstateIds.map((id) => taskCCP(id, headers)),
     ...warmEstateIds.map((id) => taskDAVBeneficiaries(id, headers)),
+    ...beneficiaryEstateIds.map((id) => taskBeneficiaryEstate(id, headers)),
   ];
 
   await runTasksWithProgress(tasks);
