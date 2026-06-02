@@ -1,5 +1,20 @@
 # CarryOn — Changelog
 
+## Jun 2, 2026 (late night) — Offline persistence for SDV thumbnails + Milestone media
+
+These were pre-existing offline GAPS that only became visible once the SW white-screen fix let offline boot work at all. Both media types were never wired into the persistent Dexie `imageBlob` store (SDV thumbnails lived only in an in-memory LRU; beneficiary milestone video explicitly blocked offline with "requires an internet connection").
+
+Fix (uses the established `imageBlob` Dexie store — IndexedDB, survives quit/relaunch + SW version bumps, gated by the `carryon_offline_v1` flag):
+- `offline/imageBlobsRepo.js`: new `fetchAndStoreAuthedBlob(apiPath, cacheKey, kind)` — Bearer-authenticated fetch→persist for our own API media (the existing `fetchAndStoreImageBlob` is presigned-S3/no-auth only).
+- `components/DocThumbnail.js`: read-through — online fetches `/documents/{id}/preview` and persists it under `docthumb:<id>`; offline serves the persisted blob; network-failure falls back to cache before the placeholder.
+- `pages/beneficiary/BeneficiaryMessagesPage.js`: milestone video now plays OFFLINE from `mm:<id>:video` cache; first online play persists it; only shows "not saved for offline yet" when genuinely uncached + offline (replaced the hard block).
+- `offline/warmup.js`: post-login warmup now PROACTIVELY prefetches SDV thumbnails (cap 50) + milestone videos (cap 15) into `imageBlob`, fire-and-forget + quota-safe, so they're saved without opening each first.
+
+Validated (preview, benefactor account, `?offline=on`): vault loaded with 0 errors; 2 thumbnails persisted to `imageBlob` (`docthumb:*`); after `set_offline(true)`, the blob read back from IndexedDB (size>0, correct type) with no network. Milestone path is symmetric (same put/get helpers).
+
+Follow-ups (not done): benefactor-side `MessagesPage.js` playback read-through; voice playback for beneficiaries appears unwired (decorative UI only) — separate from offline. Companion idea: give the SW IMAGE_CACHE a stable (non-versioned) name so SW-cached <img> photos also survive deploys.
+
+
 ## Jun 2, 2026 (night) — FIX: offline white-screen regression (stale SW version)
 
 Root cause: `public/sw-push.js` used a MANUALLY-bumped `SHELL_VERSION` constant (stuck at `v53-2026-06-01`). Each app rebuild emits new hashed JS/CSS chunk filenames, but the service worker only re-runs its `install` precache when sw-push.js is byte-different. Because the version wasn't bumped after the morning's rebuilds, the browser saw no SW update → the stale worker kept serving a cached `index.html` pointing at NEW chunks it had never cached → React couldn't mount → blank white screen on the next OFFLINE launch.

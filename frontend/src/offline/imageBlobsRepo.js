@@ -173,3 +173,36 @@ export async function deleteImageBlob(cacheKey) {
   if (!cacheKey) return;
   try { await getDB().imageBlob.delete(cacheKey); } catch {}
 }
+
+/**
+ * Authenticated variant of fetchAndStoreImageBlob.
+ *
+ * `fetchAndStoreImageBlob` is for cross-origin PRESIGNED S3 URLs (no auth
+ * header, credentials omitted). SDV document previews and Milestone Message
+ * media are served by our OWN API behind a Bearer token, so they need the
+ * auth header — we route them through apiClient and persist the resulting
+ * blob under a stable cache key so they survive offline + deploys.
+ *
+ * apiPath is relative to API_URL (e.g. `/documents/<id>/preview`).
+ * Fire-and-forget friendly: returns false on any failure.
+ */
+export async function fetchAndStoreAuthedBlob(apiPath, cacheKey, kind = 'doc_thumb') {
+  if (!apiPath || !cacheKey) return false;
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) return false;
+  const token = (typeof localStorage !== 'undefined') ? localStorage.getItem('carryon_token') : null;
+  if (!token) return false;
+  try {
+    const { default: apiClient } = await import('../utils/apiClient');
+    const { API_URL } = await import('../config');
+    const res = await apiClient.get(`${API_URL}${apiPath}`, {
+      headers: { Authorization: `Bearer ${token}` },
+      responseType: 'blob',
+    });
+    const blob = res.data instanceof Blob ? res.data : new Blob([res.data]);
+    if (!blob || blob.size === 0) return false;
+    await putImageBlob(cacheKey, blob, kind);
+    return true;
+  } catch {
+    return false;
+  }
+}

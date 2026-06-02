@@ -12,6 +12,8 @@ import {
   cacheBenSection, readBenSection,
   isOffline as isBenOffline,
 } from '../../utils/beneficiaryOfflineCache';
+import { getImageBlob, putImageBlob } from '../../offline/imageBlobsRepo';
+import { isOfflineEnabled } from '../../offline/featureFlag';
 
 const BeneficiaryMessagesPage = () => {
   const { getAuthHeaders } = useAuth();
@@ -117,14 +119,28 @@ const BeneficiaryMessagesPage = () => {
                     className="rounded-xl flex items-center justify-center mb-4 cursor-pointer transition-all active:scale-[0.98]"
                     style={{ background: 'rgba(37,99,235,0.05)', border: '2px dashed rgba(37,99,235,0.2)', aspectRatio: '16/9' }}
                     onClick={async () => {
+                      const cacheKey = `mm:${m.id}:video`;
+                      // 1) Serve the persisted offline copy first — works
+                      //    on airplane mode if it was cached on a prior
+                      //    online visit or by the post-login warmup.
+                      if (isOfflineEnabled()) {
+                        try {
+                          const cachedBlob = await getImageBlob(cacheKey);
+                          if (cachedBlob) { setVideoBlobUrl(URL.createObjectURL(cachedBlob)); return; }
+                        } catch { /* non-fatal */ }
+                      }
+                      // 2) Not cached and offline — we genuinely can't fetch it.
                       if (isBenOffline()) {
-                        toast.error('Video playback requires an internet connection.');
+                        toast.error("This video isn't saved for offline yet — reconnect once to download it.");
                         return;
                       }
+                      // 3) Online: fetch, play, and persist for next time.
                       setVideoLoading(true);
                       try {
                         const res = await apiClient.get(`${API_URL}/messages/video/${m.video_url}`, { ...getAuthHeaders(), responseType: 'blob' });
-                        setVideoBlobUrl(URL.createObjectURL(res.data));
+                        const blob = res.data instanceof Blob ? res.data : new Blob([res.data]);
+                        setVideoBlobUrl(URL.createObjectURL(blob));
+                        if (isOfflineEnabled()) putImageBlob(cacheKey, blob, 'milestone_media');
                       } catch { /* silent */ }
                       finally { setVideoLoading(false); }
                     }}

@@ -39,7 +39,7 @@ import { upsertLocalVaultItems } from './repos/vaultRepo';
 import { upsertLocalVoices } from './repos/voicesRepo';
 import { upsertLocalMessages } from './repos/messagesRepo';
 import { prefetchPhotosFrom } from './prefetchPhotos';
-import { fetchAndStoreImageBlob } from './imageBlobsRepo';
+import { fetchAndStoreImageBlob, fetchAndStoreAuthedBlob } from './imageBlobsRepo';
 import { saveList } from '../utils/localListCache';
 
 function emit(type, detail) {
@@ -216,6 +216,29 @@ function taskDashboard(estateId, headers) {
       }
       if (msgs?.data) await upsertLocalMessages(estateId, msgs.data);
       if (docs?.data) await upsertLocalVaultItems(estateId, docs.data);
+
+      // Phase 9c — prime SDV thumbnail blobs + Milestone Message media so
+      // the vault grid paints and MM videos play on airplane mode WITHOUT
+      // the user having opened each one online first. Authenticated (Bearer)
+      // endpoints → routed through fetchAndStoreAuthedBlob. Fire-and-forget,
+      // capped, and quota-safe (putImageBlob swallows quota errors). The
+      // browser's 6-connections-per-origin limit naturally throttles these.
+      try {
+        if (Array.isArray(docs?.data)) {
+          const previewable = docs.data
+            .filter((d) => d?.id && !d.is_locked && /pdf|image/i.test(d.file_type || ''))
+            .slice(0, 50);
+          for (const d of previewable) {
+            fetchAndStoreAuthedBlob(`/documents/${d.id}/preview`, `docthumb:${d.id}`, 'doc_thumb').catch(() => {});
+          }
+        }
+        if (Array.isArray(msgs?.data)) {
+          const withVideo = msgs.data.filter((mm) => mm?.id && mm.video_url).slice(0, 15);
+          for (const mm of withVideo) {
+            fetchAndStoreAuthedBlob(`/messages/video/${mm.video_url}`, `mm:${mm.id}:video`, 'milestone_media').catch(() => {});
+          }
+        }
+      } catch { /* dynamic import / quota issues — skip */ }
     },
   };
 }

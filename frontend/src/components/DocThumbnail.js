@@ -3,6 +3,8 @@ import { Document, Page, pdfjs } from 'react-pdf';
 import { FileText, File } from 'lucide-react';
 import apiClient from '../utils/apiClient';
 import { getCachedBlob, setCachedBlob } from '../utils/blobCache';
+import { getImageBlob, putImageBlob } from '../offline/imageBlobsRepo';
+import { isOfflineEnabled } from '../offline/featureFlag';
 import { API_URL } from '../config';
 
 // react-pdf bundles its own pinned `pdfjs-dist` (currently 5.4.296). The
@@ -42,38 +44,77 @@ const DocThumbnail = ({ doc }) => {
     setBlobUrl(null);
     setTextPreview(null);
     setError(false);
-    if (!isPreviewable || doc.is_locked) return;
+    if (!isPreviewable || doc.is_locked) return undefined;
 
-    // Check LRU cache first (PDF/image only — text previews are tiny
-    // strings and cheaper to refetch than to manage in the blob cache).
+    // Check in-memory LRU cache first (PDF/image only — text previews are
+    // tiny strings and cheaper to refetch than to manage in the blob cache).
     if (!isText) {
       const cached = getCachedBlob(doc.id);
-      if (cached) { setBlobUrl(cached); return; }
+      if (cached) { setBlobUrl(cached); return undefined; }
     }
 
-    const token = localStorage.getItem('carryon_token');
-    if (!token) { setError(true); return; }
+    // Persistent offline cache key. Stored as bytes in IndexedDB so the
+    // SDV thumbnail survives an offline relaunch (and SW version bumps).
+    const cacheKey = `docthumb:${doc.id}`;
+    const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
 
-    setLoading(true);
-    apiClient.get(`${API_URL}/documents/${doc.id}/preview`, {
-      headers: { 'Authorization': `Bearer ${token}` },
-      responseType: isText ? 'text' : 'blob',
-    }).then(res => {
-      if (!mountedRef.current) return;
-      if (isText) {
-        const txt = typeof res.data === 'string' ? res.data : String(res.data || '');
-        setTextPreview(txt.slice(0, 1200));
-      } else {
-        const blob = new Blob([res.data], { type: doc.file_type });
-        const url = URL.createObjectURL(blob);
-        setCachedBlob(doc.id, url);
-        setBlobUrl(url);
+    const run = async () => {
+      // OFFLINE (non-text): serve the persisted blob if we cached it on a
+      // prior online visit; otherwise fall back to the placeholder.
+      if (offline && !isText) {
+        if (isOfflineEnabled()) {
+          try {
+            const storedBlob = await getImageBlob(cacheKey);
+            if (storedBlob && mountedRef.current) {
+              setBlobUrl(URL.createObjectURL(storedBlob));
+              return;
+            }
+          } catch { /* non-fatal */ }
+        }
+        if (mountedRef.current) setError(true);
+        return;
       }
-    }).catch(() => {
-      if (mountedRef.current) setError(true);
-    }).finally(() => {
-      if (mountedRef.current) setLoading(false);
-    });
+
+      const token = localStorage.getItem('carryon_token');
+      if (!token) { if (mountedRef.current) setError(true); return; }
+
+      if (mountedRef.current) setLoading(true);
+      try {
+        const res = await apiClient.get(`${API_URL}/documents/${doc.id}/preview`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+          responseType: isText ? 'text' : 'blob',
+        });
+        if (!mountedRef.current) return;
+        if (isText) {
+          const txt = typeof res.data === 'string' ? res.data : String(res.data || '');
+          setTextPreview(txt.slice(0, 1200));
+        } else {
+          const blob = new Blob([res.data], { type: doc.file_type });
+          const url = URL.createObjectURL(blob);
+          setCachedBlob(doc.id, url);
+          setBlobUrl(url);
+          // Persist for offline relaunch (fire-and-forget, gated by flag).
+          if (isOfflineEnabled()) putImageBlob(cacheKey, blob, 'doc_thumb');
+        }
+      } catch {
+        // Network failed (e.g. we just went offline). Fall back to the
+        // persisted blob before surfacing the error placeholder.
+        if (!isText && isOfflineEnabled()) {
+          try {
+            const storedBlob = await getImageBlob(cacheKey);
+            if (storedBlob && mountedRef.current) {
+              setBlobUrl(URL.createObjectURL(storedBlob));
+              return;
+            }
+          } catch { /* non-fatal */ }
+        }
+        if (mountedRef.current) setError(true);
+      } finally {
+        if (mountedRef.current) setLoading(false);
+      }
+    };
+
+    run();
 
     return () => { mountedRef.current = false; };
   }, [doc.id, doc.is_locked, doc.file_type, isPreviewable, isText]);
