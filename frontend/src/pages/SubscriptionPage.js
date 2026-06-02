@@ -268,8 +268,10 @@ const SubscriptionPage = () => {
         </div>
       ))}
 
-      {/* Founders Circle link — only show if campaign active and user is not a beneficiary */}
-      {fcActive && !isInBeneficiaryPortal && fcSubs.filter(s => s.status === 'active' || s.status === 'completed').length === 0 && (
+      {/* Founders Circle link — only show if campaign active, user is not a
+          beneficiary, AND Free Mode is off (don't upsell a paid lifetime plan
+          while everything is free — it's mixed messaging). */}
+      {fcActive && !isInBeneficiaryPortal && !subscriptionStatus?.platform_free_mode && fcSubs.filter(s => s.status === 'active' || s.status === 'completed').length === 0 && (
         <button
           onClick={() => navigate('/founders-circle')}
           className="w-full rounded-xl p-4 flex items-center gap-3 transition-all hover:scale-[1.01] active:scale-[0.99] text-left"
