@@ -1,5 +1,20 @@
 # CarryOn — Changelog
 
+## Jun 2, 2026 (night) — FIX: offline white-screen regression (stale SW version)
+
+Root cause: `public/sw-push.js` used a MANUALLY-bumped `SHELL_VERSION` constant (stuck at `v53-2026-06-01`). Each app rebuild emits new hashed JS/CSS chunk filenames, but the service worker only re-runs its `install` precache when sw-push.js is byte-different. Because the version wasn't bumped after the morning's rebuilds, the browser saw no SW update → the stale worker kept serving a cached `index.html` pointing at NEW chunks it had never cached → React couldn't mount → blank white screen on the next OFFLINE launch.
+
+Fix (approved both):
+- Bumped `SHELL_VERSION` → `build-2026-06-02-...` (immediate heal on next deploy).
+- New `frontend/scripts/prebuild-sw-version.js` + wired into the `build` script: every production build now stamps a UNIQUE `SHELL_VERSION` automatically, so the SW always reinstalls, re-precaches the current build's index.html + ALL manifest chunks, purges old-version caches (activate handler already does this), and claims clients. Class of regression can't recur. (Tradeoff accepted: each deploy re-downloads the shell once online — correctness first.)
+
+Validation (SW-level, isolated `swtest.html` against a real production build served locally — full app couldn't be used because headless Chrome crashes with the SW active, which is also why `IS_HEADLESS` disables the SW under automation):
+- Online: entry bundle + index.html + all 140 chunks precached into `carryon-*-build-2026-06-02-...` caches.
+- OFFLINE (fetched through the SW): `/index.html` 200, `/` 200, entry `main.*.js` 200 → shell boots, no white screen.
+
+Note: this is a BUILD-TIME fix → takes effect only after a new production deploy; an already-installed PWA self-heals the next time it opens ONLINE against the new deploy. Preview (dev server) is unaffected/irrelevant since it doesn't run `yarn build` and disables the SW under automation.
+
+
 ## Jun 2, 2026 (night) — Free Mode user-facing UI (gold tile + greyed tiers)
 
 Problem: the founder's Admin "Free Mode" toggle (`platform_free_mode`) flipped backend access flags but produced ZERO visible change on the user's Subscription page — because Beta Mode already grants free access (OR-combined), and there was no UI that surfaced Free Mode distinctly.
