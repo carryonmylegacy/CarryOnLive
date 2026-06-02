@@ -551,6 +551,12 @@ async def chat_with_guardian(data: ChatRequest, current_user: dict = Depends(get
             estate_id = estates[0]["id"]
 
     if estate_id:
+        # Owner-gate (BOLA fix). Two-tier 403 layering:
+        #   • require_estate_actor raises a generic 403 if the caller is not a
+        #     member of this estate at all.
+        #   • the explicit check below returns the friendly message to a genuine
+        #     BENEFICIARY (member, but not owner/admin) — Estate Guardian is an
+        #     owner-only surface; beneficiaries use the Beneficiary Concierge.
         actor = await require_estate_actor(estate_id, current_user)
         if not (actor.get("is_owner") or actor.get("is_admin")):
             raise HTTPException(

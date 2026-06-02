@@ -1,5 +1,21 @@
 # CarryOn — Changelog
 
+## Jun 2, 2026 (late) — codex2.patch SANITIZED & selectively applied (P0 audit finalize)
+
+Hand-extracted only the genuine net-new security fixes from the 12.8k-line `codex2.patch`; **rejected** every fail-open / noise block. Fail-closed posture fully preserved.
+
+**APPLIED (sanitized):**
+- **Guardian owner-gate (BOLA):** `POST /api/chat/guardian` is now OWNER/ADMIN only (`routes/guardian.py` + `route_policies.py` corrected the stale `/api/guardian/chat` key → `/api/chat/guardian` owner; `route_policies_auto.py` upgraded to owner gate). Genuine beneficiaries get a friendly 403 → "use Beneficiary Concierge."
+- **Financial-portal BOLA:** `entities_share.py` (get/patch share + beneficiary-view) migrated to the canonical `_resolve_financial_actor` + `can_access_document` model; doc query scoped by `estate_id`. `entities.py` gained `_filter_estate_document_ids()` to keep entity-linked `document_ids` inside the estate boundary (create + update).
+- **AI burn-guard wiring:** `require_ai_burn_budget` added to guardian chat (feature-mapped), `ccp/risk-profile`, `ccp/wizard/generate`; new `DEFAULT_LIMITS` entries. No-op while guard disabled by default.
+- **Email-as-identity:** `auth/register.py` now stamps new users `email_verified=False` + `email_lower` (blocks email→beneficiary binding until OTP).
+- **Fail-closed Vault UI:** `VaultDocumentCard.js` / `VaultPage.js` no longer treat empty/missing designation as "all" (shows "No beneficiaries yet"; no auto-revert to `['all']`).
+
+**REJECTED (per fail-closed defense):** `0003` migration's non-essential-docs → `["all"]` backfill; `documents.py` upload `else: ["all"]` branch; the nested `carryon-mega-hardening.patch` block; the `frontend/yarn.lock` churn. Left `db_indexes.py` blanket email-verified stamp untouched (avoids locking out legacy/seeded users).
+
+**Verification:** testing agent iteration_160 → **10/10 backend assertions pass, 0 issues**; `test_hardening_failclosed_identity.py` 11/11; new reusable `tests/test_iter160_bola_burnguard.py`; ruff + ESLint clean; `housekeeping.sh --strict` green except the pre-existing pip-audit dep drift (untouched here).
+
+
 ## Jun 2, 2026 (evening) — Hardening mega-patch FINALIZED + production-readiness gates
 
 Founder approved production deploy (no real users yet — zero blast radius for the fail-closed/migration changes). Executed in verified gates:
