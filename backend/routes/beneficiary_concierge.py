@@ -39,6 +39,8 @@ from pydantic import BaseModel
 from config import XAI_MODEL, XAI_MODEL_LIGHT, db, logger, xai_client
 from routes.feature_gates import get_feature_gates
 from routes.guardian import extract_document_text
+from services.access_control import can_access_document, resolve_estate_actor
+from services.ai_burn_guard import require_ai_burn_budget
 from services.ai_safety import hardened_system_prompt
 from utils import get_current_user
 
@@ -151,7 +153,7 @@ class StatusResponse(BaseModel):
 # ── Gating helper ─────────────────────────────────────────────────────
 
 
-async def _resolve_concierge_access(user_id: str, estate_id: str) -> dict[str, Any]:
+async def _resolve_concierge_access(current_user: dict, estate_id: str) -> dict[str, Any]:
     """Return a dict describing whether BEC is available for this caller
     on this estate, plus the resolved benefactor name and accessible
     document set if so. Never raises — callers branch on `available`.
@@ -172,12 +174,11 @@ async def _resolve_concierge_access(user_id: str, estate_id: str) -> dict[str, A
     if not estate:
         return {"available": False, "reason": "estate_not_found"}
 
-    # Caller must be a beneficiary on the estate
-    beneficiary_link = await db.beneficiaries.find_one(
-        {"estate_id": estate_id, "user_id": user_id},
-        {"_id": 0},
-    )
-    if not beneficiary_link:
+    try:
+        actor = await resolve_estate_actor(estate_id, current_user)
+    except HTTPException:
+        return {"available": False, "reason": "estate_not_found"}
+    if not actor.get("is_beneficiary"):
         return {"available": False, "reason": "not_a_beneficiary"}
 
     # Benefactor's plan must have BEC enabled (founder/admin-controlled
@@ -191,20 +192,16 @@ async def _resolve_concierge_access(user_id: str, estate_id: str) -> dict[str, A
         return {"available": False, "reason": "benefactor_missing"}
     from .feature_gates import _get_benefactor_tier  # local import — avoids circular
 
-    tier = await _get_benefactor_tier(current_user={"id": user_id}, estate_id=estate_id) or "base"
+    tier = await _get_benefactor_tier(current_user={"id": current_user.get("id")}, estate_id=estate_id) or "base"
     gates = await get_feature_gates()
     if not (gates.get("bec") or {}).get(tier, False):
         return {"available": False, "reason": "feature_disabled_for_tier"}
 
     is_transitioned = estate.get("status") == "transitioned"
 
-    # Documents the caller is allowed to see. Post-transition uses the
-    # legacy designation-by-user_id rule already in production. Pre-
-    # transition mirrors GET /api/documents/{estate_id}/pre-transition
-    # exactly: designation by ben_record_id, plus the essential-offline
-    # categories (living will, healthcare directive, general POA,
-    # financial POA, legacy `poa`) OR explicit visibility_timing
-    # opt-in for that beneficiary.
+    # Documents the caller is allowed to see. This must mirror SDV release
+    # rules exactly; BEC cannot have a separate interpretation of who gets
+    # which document.
     docs_cursor = db.documents.find(
         # Soft-deleted docs are hidden from the SDV in the frontend; we
         # mirror that here so BEC never references a document the
@@ -226,32 +223,10 @@ async def _resolve_concierge_access(user_id: str, estate_id: str) -> dict[str, A
     )
     accessible: list[dict[str, Any]] = []
 
-    if is_transitioned:
-        async for doc in docs_cursor:
-            designation = doc.get("designated_beneficiaries") or ["all"]
-            if "all" in designation or user_id in designation:
-                accessible.append(doc)
-    else:
-        ben_record_id = beneficiary_link.get("id")
-        ESSENTIAL_OFFLINE = {
-            "living_will",
-            "healthcare_directive",
-            "general_poa",
-            "financial_poa",
-            "poa",
-        }
-        async for doc in docs_cursor:
-            designation = doc.get("designated_beneficiaries") or ["all"]
-            is_designated = "all" in designation or (ben_record_id and ben_record_id in designation)
-            if not is_designated:
-                continue
-            cat = doc.get("category") or ""
-            if cat in ESSENTIAL_OFFLINE:
-                accessible.append(doc)
-                continue
-            timing = doc.get("visibility_timing") or {}
-            if ben_record_id and ben_record_id in timing and timing[ben_record_id].get("pre", False):
-                accessible.append(doc)
+    phase = "post" if is_transitioned else "pre"
+    async for doc in docs_cursor:
+        if can_access_document(doc, actor, phase=phase):
+            accessible.append(doc)
 
     benefactor_first = (benefactor.get("name") or estate.get("name") or "your loved one").split()[0]
 
@@ -274,7 +249,7 @@ async def concierge_status(
     current_user: dict = Depends(get_current_user),
 ) -> StatusResponse:
     """Lightweight gate check for the frontend (no LLM call)."""
-    info = await _resolve_concierge_access(current_user["id"], estate_id)
+    info = await _resolve_concierge_access(current_user, estate_id)
     if not info["available"]:
         return StatusResponse(available=False, reason=info["reason"])
     docs = info["documents"]
@@ -302,7 +277,7 @@ async def concierge_ask(
 ) -> dict[str, Any]:
     """Beneficiary asks a question; we ground the answer in the docs
     they have access to and call xAI Grok. All gating runs server-side."""
-    info = await _resolve_concierge_access(current_user["id"], payload.estate_id)
+    info = await _resolve_concierge_access(current_user, payload.estate_id)
     if not info["available"]:
         # Map gating reasons to clear HTTP errors so the frontend can
         # render a precise "this is why you can't use it yet" panel.
@@ -324,6 +299,7 @@ async def concierge_ask(
         raise HTTPException(status_code=400, detail="question_required")
     if len(question) > 1000:
         raise HTTPException(status_code=400, detail="question_too_long")
+    await require_ai_burn_budget(current_user, "beneficiary_concierge")
 
     # Build the document context with a stable citation marker for each
     # doc ([#1], [#2], …). The system prompt instructs the model to
@@ -647,7 +623,7 @@ async def concierge_document_snippet(
     same gating as the ask endpoint — caller must be a beneficiary on a
     transitioned estate, the benefactor's tier must include `bec`, and
     the document must be in the caller's designated set."""
-    info = await _resolve_concierge_access(current_user["id"], estate_id)
+    info = await _resolve_concierge_access(current_user, estate_id)
     if not info["available"]:
         reason = info["reason"]
         status_code = {
@@ -706,7 +682,7 @@ async def concierge_sessions(
     chat or start a new one — same UX as the Estate Guardian's
     multi-conversation panel.
     """
-    info = await _resolve_concierge_access(current_user["id"], estate_id)
+    info = await _resolve_concierge_access(current_user, estate_id)
     if not info["available"]:
         return {"sessions": []}
 
@@ -753,7 +729,7 @@ async def concierge_session_delete(
     Hard-scoped by user_id + estate_id so a beneficiary can never
     delete another beneficiary's session even with a guessed id.
     """
-    info = await _resolve_concierge_access(current_user["id"], estate_id)
+    info = await _resolve_concierge_access(current_user, estate_id)
     if not info["available"]:
         raise HTTPException(status_code=403, detail=info["reason"])
     res = await db.beneficiary_concierge_messages.delete_many(  # session hard-delete
@@ -778,7 +754,7 @@ async def concierge_history(
     used when the user clicks into a specific chat from the landing
     page. Without it, returns every turn (legacy single-thread view).
     """
-    info = await _resolve_concierge_access(current_user["id"], estate_id)
+    info = await _resolve_concierge_access(current_user, estate_id)
     if not info["available"]:
         return {"messages": []}
     query: dict[str, Any] = {

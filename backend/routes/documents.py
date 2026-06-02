@@ -17,6 +17,7 @@ from config import db, logger
 from guards import require_benefactor_role
 from models import Document, DocumentUnlockRequest
 from services.audit import audit_log
+from services.access_control import can_access_document, filter_accessible_documents, require_estate_actor
 from services.encryption import (
     decrypt_aes256,
     encrypt_aes256,
@@ -110,20 +111,13 @@ async def _migrate_doc_to_cloud(doc_id: str, document: dict):
 @router.get("/documents/{estate_id}")
 async def get_documents(estate_id: str, current_user: dict = Depends(get_current_user)):
     """List all documents for an estate."""
-    # Verify estate access
-    estate = await db.estates.find_one({"id": estate_id}, {"_id": 0})
-    if not estate:
-        raise HTTPException(status_code=404, detail="Estate not found")
-    is_owner = estate.get("owner_id") == current_user["id"]
-    is_beneficiary = current_user["id"] in estate.get("beneficiaries", [])
-    is_admin = current_user["role"] == "admin"
-    if not (is_owner or is_beneficiary or is_admin):
-        raise HTTPException(status_code=403, detail="Access denied")
+    actor = await require_estate_actor(estate_id, current_user)
 
     documents = await db.documents.find(
         {"estate_id": estate_id, "deleted_at": None},
         {"_id": 0, "file_data": 0, "lock_password_hash": 0, "backup_code": 0},
     ).to_list(100)
+    documents = filter_accessible_documents(documents, actor)
 
     # Resolve linked CFP entities (reverse lookup): for each doc, list
     # the entities whose document_ids include this doc.id. Lets the
@@ -165,56 +159,13 @@ async def get_pre_transition_documents(estate_id: str, current_user: dict = Depe
       - Emergency docs (living_will, poa) that are designated to this beneficiary
       - Any other documents where visibility_timing[ben_record_id].pre == True
     """
-    estate = await db.estates.find_one({"id": estate_id}, {"_id": 0})
-    if not estate:
-        raise HTTPException(status_code=404, detail="Estate not found")
-
-    is_beneficiary = current_user["id"] in estate.get("beneficiaries", [])
-    is_admin = current_user["role"] == "admin"
-    if not (is_beneficiary or is_admin):
-        raise HTTPException(status_code=403, detail="Access denied")
-
-    # Find this user's beneficiary record ID for the estate
-    ben_record = await db.beneficiaries.find_one(
-        {"estate_id": estate_id, "user_id": current_user["id"]}, {"_id": 0, "id": 1}
-    )
-    ben_id = ben_record["id"] if ben_record else None
+    actor = await require_estate_actor(estate_id, current_user)
 
     documents = await db.documents.find(
         {"estate_id": estate_id, "deleted_at": None},
         {"_id": 0, "file_data": 0, "lock_password_hash": 0, "backup_code": 0},
     ).to_list(200)
-
-    # The 4 "essential offline" slots that get gold-outlined placeholders
-    # in the benefactor's SDV. These are the documents a beneficiary
-    # absolutely must be able to read offline if a transition (or a
-    # medical emergency) happens out of cell range. The pre-transition
-    # endpoint surfaces them automatically; the benefactor controls
-    # WHICH beneficiaries each one is shared with via
-    # `designated_beneficiaries` per doc.
-    ESSENTIAL_OFFLINE_CATEGORIES = {"living_will", "healthcare_directive", "general_poa", "financial_poa"}
-    # Legacy `poa` rolls into "general_poa" for the pre-transition gate.
-    emergency_categories = ESSENTIAL_OFFLINE_CATEGORIES | {"poa"}
-    result = []
-    for doc in documents:
-        designation = doc.get("designated_beneficiaries", ["all"])
-        is_designated = "all" in designation or (ben_id and ben_id in designation)
-        if not is_designated:
-            continue
-
-        cat = doc.get("category", "")
-        if cat in emergency_categories:
-            result.append(doc)
-            continue
-
-        # Check visibility_timing for pre-transition access
-        timing = doc.get("visibility_timing", {})
-        if ben_id and ben_id in timing:
-            if timing[ben_id].get("pre", False):
-                result.append(doc)
-        elif "all" in designation and not timing:
-            # Legacy: all + no timing = post-only (default behavior)
-            pass
+    result = filter_accessible_documents(documents, actor, phase="pre")
 
     for doc in result:
         doc["encryption_version"] = doc.get("encryption_version", "aes-256-gcm")
@@ -329,18 +280,9 @@ async def get_beneficiary_essential_docs(estate_id: str, current_user: dict = De
     pin-offline endpoint) and local-aware (the client also persists
     the binary to Dexie via pinnedDocsRepo).
     """
-    estate = await db.estates.find_one({"id": estate_id}, {"_id": 0})
-    if not estate:
-        raise HTTPException(status_code=404, detail="Estate not found")
-    is_beneficiary = current_user["id"] in estate.get("beneficiaries", [])
-    is_admin = current_user["role"] == "admin"
-    if not (is_beneficiary or is_admin):
+    actor = await require_estate_actor(estate_id, current_user)
+    if not (actor.get("is_beneficiary") or actor.get("is_admin")):
         raise HTTPException(status_code=403, detail="Access denied")
-
-    ben_record = await db.beneficiaries.find_one(
-        {"estate_id": estate_id, "user_id": current_user["id"]}, {"_id": 0, "id": 1}
-    )
-    ben_id = ben_record["id"] if ben_record else None
 
     docs = (
         await db.documents.find(
@@ -360,8 +302,7 @@ async def get_beneficiary_essential_docs(estate_id: str, current_user: dict = De
         cat = d.get("category", "")
         slot_cat = "general_poa" if cat == "poa" else cat
         # Only include docs the current beneficiary is designated for.
-        designation = d.get("designated_beneficiaries", []) or []
-        if not ("all" in designation or (ben_id and ben_id in designation)):
+        if not can_access_document(d, actor, phase="pre"):
             continue
         if slot_cat not in by_cat:
             d["encryption_version"] = d.get("encryption_version", "aes-256-gcm")
@@ -593,6 +534,10 @@ async def unlock_document(
     if not document:
         raise HTTPException(status_code=404, detail="Document not found")
 
+    actor = await require_estate_actor(document["estate_id"], current_user)
+    if not (actor["is_owner"] or actor["is_admin"]):
+        raise HTTPException(status_code=403, detail="Only the estate owner can unlock documents")
+
     if not document.get("is_locked"):
         return {"message": "Document is not locked", "unlocked": True}
 
@@ -753,14 +698,9 @@ async def download_document(
     if not document:
         raise HTTPException(status_code=404, detail="Document not found")
 
-    # Verify estate access
-    estate = await db.estates.find_one({"id": document["estate_id"]}, {"_id": 0})
-    if not estate:
-        raise HTTPException(status_code=404, detail="Estate not found")
-    is_owner = estate.get("owner_id") == current_user["id"]
-    is_beneficiary = current_user["id"] in estate.get("beneficiaries", [])
-    is_admin = current_user["role"] == "admin"
-    if not (is_owner or is_beneficiary or is_admin):
+    actor = await require_estate_actor(document["estate_id"], current_user)
+    estate = actor["estate"]
+    if not can_access_document(document, actor):
         raise HTTPException(status_code=403, detail="Access denied")
 
     # SOC 2: Log sensitive data access
@@ -891,14 +831,9 @@ async def preview_document(
     if not document:
         raise HTTPException(status_code=404, detail="Document not found")
 
-    # Verify estate access
-    estate = await db.estates.find_one({"id": document["estate_id"]}, {"_id": 0})
-    if not estate:
-        raise HTTPException(status_code=404, detail="Estate not found")
-    is_owner = estate.get("owner_id") == current_user["id"]
-    is_beneficiary = current_user["id"] in estate.get("beneficiaries", [])
-    is_admin = current_user["role"] == "admin"
-    if not (is_owner or is_beneficiary or is_admin):
+    actor = await require_estate_actor(document["estate_id"], current_user)
+    estate = actor["estate"]
+    if not can_access_document(document, actor):
         raise HTTPException(status_code=403, detail="Access denied")
 
     # Check section-level lock (triple lock) — block preview when SDV is locked
@@ -1106,11 +1041,8 @@ async def set_document_pinned_offline(
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
 
-    # Access check: owner OR designated beneficiary.
-    estate = await db.estates.find_one({"id": doc["estate_id"]}, {"_id": 0, "id": 1, "owner_id": 1, "beneficiaries": 1})
-    is_owner = estate and estate.get("owner_id") == current_user["id"]
-    is_beneficiary = estate and current_user["id"] in (estate.get("beneficiaries") or [])
-    if not (is_owner or is_beneficiary):
+    actor = await require_estate_actor(doc["estate_id"], current_user)
+    if not can_access_document(doc, actor):
         raise HTTPException(status_code=403, detail="Access denied")
 
     if pinned and doc.get("is_locked"):

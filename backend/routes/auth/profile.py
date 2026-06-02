@@ -375,7 +375,12 @@ async def update_email(data: EmailUpdate, current_user: dict = Depends(get_curre
         # routes/auth/login.py), so store `email` lowercased to keep
         # email-based login working post-change. We also stamp
         # `email_lower` for any future queries that key off it.
-        {"$set": {"email": new_email_lower, "email_lower": new_email_lower}},
+        #
+        # SECURITY: a changed email is UNVERIFIED until the user proves control
+        # of the new address via OTP at next login (verify_otp sets it back to
+        # True). Until then it must not grant any email-matched estate/
+        # beneficiary access — see resolve_estate_actor + _reconcile_beneficiary_by_email.
+        {"$set": {"email": new_email_lower, "email_lower": new_email_lower, "email_verified": False}},
     )
     logger.info(f"User {current_user['id']} updated email from {old_email!r} to {new_email!r}")
 

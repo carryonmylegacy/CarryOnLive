@@ -273,7 +273,7 @@ const BeneficiaryDashboardPage = () => {
             milestone messages, secure documents, and immediate-action checklist here.
           </p>
           <button
-            onClick={() => navigate('/beneficiary/emergency-access')}
+            onClick={() => navigate('/beneficiary/upload-certificate')}
             className="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-bold transition-all"
             style={{ background: 'rgba(220,38,38,0.12)', border: '1px solid rgba(220,38,38,0.4)', color: '#fca5a5' }}
             data-testid="empty-emergency-access"

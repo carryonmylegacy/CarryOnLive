@@ -35,6 +35,7 @@ const DigitalWalletPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const fromGettingStarted = location.state?.fromGettingStarted;
+  const isBeneficiaryPortal = location.pathname.startsWith('/beneficiary');
   const [entries, setEntries] = useState([]);
   const [beneficiaries, setBeneficiaries] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -205,9 +206,11 @@ const DigitalWalletPage = () => {
             </p>
           </div>
         </div>
-        <Button className="gold-button w-full sm:w-auto" onClick={() => setShowAdd(true)} data-testid="add-wallet-entry">
-          <Plus className="w-5 h-5 mr-2" /> Add Account
-        </Button>
+        {!isBeneficiaryPortal && (
+          <Button className="gold-button w-full sm:w-auto" onClick={() => setShowAdd(true)} data-testid="add-wallet-entry">
+            <Plus className="w-5 h-5 mr-2" /> Add Account
+          </Button>
+        )}
       </div>
 
       <SectionLockBanner sectionId="digital-access" />
@@ -233,11 +236,19 @@ const DigitalWalletPage = () => {
         <Card className="glass-card">
           <CardContent className="p-8 text-center">
             <KeyRound className="w-12 h-12 mx-auto text-[var(--gold)] mb-4 opacity-50" />
-            <h3 className="text-lg font-bold text-[var(--t)] mb-2">No Digital Accounts Yet</h3>
-            <p className="text-sm text-[var(--t4)] mb-4">Store your email, banking, social media, subscription, and other account credentials here. Each can be assigned to a specific beneficiary.</p>
-            <Button className="gold-button" onClick={() => setShowAdd(true)}>
-              <Plus className="w-4 h-4 mr-2" /> Add Your First Account
-            </Button>
+            <h3 className="text-lg font-bold text-[var(--t)] mb-2">
+              {isBeneficiaryPortal ? 'No Digital Accounts Available' : 'No Digital Accounts Yet'}
+            </h3>
+            <p className="text-sm text-[var(--t4)] mb-4">
+              {isBeneficiaryPortal
+                ? 'No digital credentials have been released to you for this estate.'
+                : 'Store your email, banking, social media, subscription, and other account credentials here. Each can be assigned to a specific beneficiary.'}
+            </p>
+            {!isBeneficiaryPortal && (
+              <Button className="gold-button" onClick={() => setShowAdd(true)}>
+                <Plus className="w-4 h-4 mr-2" /> Add Your First Account
+              </Button>
+            )}
           </CardContent>
         </Card>
       ) : (
@@ -246,7 +257,7 @@ const DigitalWalletPage = () => {
               the very top of the list. The inline editor expands below
               its header, pushing every existing tile down — matching
               the Go-Bag / FFN inline pattern. */}
-          {showAdd && (
+          {showAdd && !isBeneficiaryPortal && (
             <Card className="glass-card" data-testid="wallet-entry-new">
               <CardContent className="p-4 space-y-3">
                 <div className="flex items-start justify-between">
@@ -347,7 +358,7 @@ const DigitalWalletPage = () => {
                             </>
                           )}
                         </div>
-                        {!isEditing && (
+                        {!isEditing && !isBeneficiaryPortal && (
                           <div className="flex gap-1">
                             <button onClick={() => setEditEntry(entry)} className="p-1.5 rounded-lg hover:bg-[var(--s)] text-[var(--t4)]" data-testid={`edit-wallet-${entry.id}`} aria-label="Edit entry">
                               <Edit2 className="w-4 h-4" />

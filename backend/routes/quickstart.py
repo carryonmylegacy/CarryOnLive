@@ -44,6 +44,7 @@ from models import Document
 from services.audit import audit_log
 from services.encryption import encrypt_aes256, get_estate_salt
 from services.quickstart_ai import _qw_beneficiaries, build_quickstart_prompt, parse_quickstart_response
+from services.ai_burn_guard import require_ai_burn_budget
 from services.quickstart_pdf import _build_verified_inputs_manifest, build_quickstart_pdf
 from services.pdf_verification import create_snapshot as create_pdf_verification_snapshot
 from dataclasses import asdict as _dataclass_asdict
@@ -800,6 +801,7 @@ async def generate_guide(current_user: dict = Depends(get_current_user)):
             status_code=503,
             detail="AI service not configured. Please contact support.",
         )
+    await require_ai_burn_budget(current_user, "quickstart_generate")
 
     user_id = current_user["id"]
     estate_id = await _user_active_estate_id(user_id)

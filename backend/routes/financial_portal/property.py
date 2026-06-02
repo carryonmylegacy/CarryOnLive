@@ -3,7 +3,8 @@
 from ._core import (
     router,
     _verify_estate_access,
-    _filter_for_beneficiary,
+    _filter_for_actor,
+    _resolve_financial_actor,
     PropertyAssetCreate,
     PropertyAssetUpdate,
 )
@@ -17,13 +18,15 @@ import uuid
 @router.get("/financial/property/{estate_id}")
 async def get_property_assets(estate_id: str, current_user: dict = Depends(get_current_user)):
     """Get all property assets for an estate."""
-    estate, is_owner = await _verify_estate_access(estate_id, current_user)
+    actor = await _resolve_financial_actor(estate_id, current_user)
+    estate = actor["estate"]
+    is_owner = actor["is_owner"] or actor["is_admin"]
     items = await db.property_assets.find({"estate_id": estate_id, "deleted_at": None}, {"_id": 0}).to_list(500)
     if not is_owner:
         is_transitioned = estate.get("status") == "transitioned"
-        items = _filter_for_beneficiary(
+        items = _filter_for_actor(
             items,
-            current_user["id"],
+            actor,
             is_transitioned,
             cfp_pre_transition_visible=estate.get("cfp_pre_transition_visible", False),
         )

@@ -13,6 +13,7 @@ from typing import Optional
 
 from config import db
 from guards import check_staff_role as require_staff
+from services.access_control import build_message_delivery_update, resolve_beneficiary_delivery_ids
 from services.audit import get_client_ip, log_audit_event
 from services.notifications import notify
 from utils import get_current_user
@@ -216,18 +217,24 @@ async def review_delivery(
     )
 
     if data.action == "approve":
-        # Deliver the message immediately
+        message = await db.messages.find_one({"id": delivery["message_id"]}, {"_id": 0})
+        if not message:
+            raise HTTPException(status_code=404, detail="Message not found")
+        delivery_ids = await resolve_beneficiary_delivery_ids(delivery["estate_id"], delivery.get("beneficiary_id"))
+
+        # Deliver the message to this beneficiary only. Multi-recipient
+        # milestone messages become globally delivered only after every
+        # intended recipient has their own approved delivery.
         await db.messages.update_one(
             {"id": delivery["message_id"]},
-            {
-                "$set": {
-                    "is_delivered": True,
-                    "delivered_at": now.isoformat(),
-                    "delivered_via": "milestone_review",
-                    "milestone_report_id": delivery["milestone_report_id"],
-                    "delivered_by": current_user["id"],
-                }
-            },
+            build_message_delivery_update(
+                message,
+                delivery_ids,
+                delivered_at=now.isoformat(),
+                delivered_via="milestone_review",
+                milestone_report_id=delivery["milestone_report_id"],
+                delivered_by=current_user["id"],
+            ),
         )
 
         # Audit log — delivery confirmed
@@ -320,18 +327,22 @@ async def process_scheduled_deliveries(current_user: dict = Depends(get_current_
     now = datetime.now(timezone.utc)
 
     for delivery in scheduled:
-        # Deliver the message
+        message = await db.messages.find_one({"id": delivery["message_id"]}, {"_id": 0})
+        if not message:
+            continue
+        delivery_ids = await resolve_beneficiary_delivery_ids(delivery["estate_id"], delivery.get("beneficiary_id"))
+
+        # Deliver the message to this beneficiary only.
         await db.messages.update_one(
             {"id": delivery["message_id"]},
-            {
-                "$set": {
-                    "is_delivered": True,
-                    "delivered_at": now.isoformat(),
-                    "delivered_via": "scheduled_milestone",
-                    "milestone_report_id": delivery["milestone_report_id"],
-                    "delivered_by": delivery.get("reviewed_by", "system"),
-                }
-            },
+            build_message_delivery_update(
+                message,
+                delivery_ids,
+                delivered_at=now.isoformat(),
+                delivered_via="scheduled_milestone",
+                milestone_report_id=delivery["milestone_report_id"],
+                delivered_by=delivery.get("reviewed_by", "system"),
+            ),
         )
 
         # Update delivery status

@@ -46,6 +46,7 @@ export const ADMIN_SECTIONS = [
       { key: 'support', label: 'Support', icon: Headphones, path: '/admin/support' },
       { key: 'verifications', label: 'Verify', icon: FileKey, path: '/admin/verifications' },
       { key: 'milestones', label: 'Milestones', icon: CheckSquare, path: '/admin/milestones' },
+      { key: 'emergency-access', label: 'Emergency', icon: AlertTriangle, path: '/admin/emergency-access' },
       { key: 'escalations', label: 'Escalations', icon: AlertTriangle, path: '/admin/escalations' },
       { key: 'ops-dashboard', label: 'Ops Dashboard', icon: Activity, path: '/admin/ops-dashboard' },
       { key: 'canned-responses', label: 'Templates', icon: MessageSquare, path: '/admin/canned-responses' },

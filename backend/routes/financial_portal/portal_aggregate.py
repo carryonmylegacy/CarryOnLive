@@ -19,13 +19,31 @@ from fastapi import Depends, HTTPException, Response
 from pydantic import BaseModel
 
 from config import db
+from services.access_control import emergency_scope_allows
 from utils import get_current_user
 
 from ._core import (
-    _filter_for_beneficiary,
+    _filter_for_actor,
+    _financial_item_visible_for_actor,
+    _resolve_financial_actor,
     _verify_estate_access,
     router,
 )
+
+
+def _dav_visible_for_actor(entry: dict, actor: dict) -> bool:
+    if actor.get("is_owner") or actor.get("is_admin"):
+        return True
+    if not actor.get("is_beneficiary"):
+        return False
+    assigned = entry.get("assigned_beneficiary_id")
+    if not assigned or str(assigned) not in actor.get("release_ids", set()):
+        return False
+    if emergency_scope_allows(actor, "digital_wallet"):
+        return True
+    if actor.get("is_transitioned"):
+        return True
+    return entry.get("beneficiary_visibility") == "show_now"
 
 
 # ===================== 1. SINGLE-SHOT AGGREGATOR =====================
@@ -35,7 +53,9 @@ async def get_financial_portal(estate_id: str, current_user: dict = Depends(get_
     debts, accounts, property, designations, summary, dav, beneficiaries,
     payments, custom-categories) with one round-trip. Mirrors filtering
     rules from the per-collection endpoints."""
-    estate, is_owner = await _verify_estate_access(estate_id, current_user)
+    actor = await _resolve_financial_actor(estate_id, current_user)
+    estate = actor["estate"]
+    is_owner = actor["is_owner"] or actor["is_admin"]
 
     bills = await db.bills.find({"estate_id": estate_id, "deleted_at": None}, {"_id": 0}).to_list(500)
     debts = await db.debts.find({"estate_id": estate_id, "deleted_at": None}, {"_id": 0}).to_list(500)
@@ -44,21 +64,19 @@ async def get_financial_portal(estate_id: str, current_user: dict = Depends(get_
         500
     )
     custom_categories = await db.financial_custom_categories.find({"estate_id": estate_id}, {"_id": 0}).to_list(200)
-    dav_entries = await db.digital_wallet.find({"estate_id": estate_id}, {"_id": 0, "encrypted_password": 0}).to_list(
-        500
-    )
+    dav_entries = await db.digital_wallet.find(
+        {"estate_id": estate_id, "deleted_at": None},
+        {"_id": 0, "encrypted_password": 0, "encrypted_additional": 0, "password": 0, "additional_access": 0},
+    ).to_list(500)
 
     if not is_owner:
         is_transitioned = estate.get("status") == "transitioned"
         cfp_pre = estate.get("cfp_pre_transition_visible", False)
-        bills = _filter_for_beneficiary(bills, current_user["id"], is_transitioned, cfp_pre_transition_visible=cfp_pre)
-        debts = _filter_for_beneficiary(debts, current_user["id"], is_transitioned, cfp_pre_transition_visible=cfp_pre)
-        accounts = _filter_for_beneficiary(
-            accounts, current_user["id"], is_transitioned, cfp_pre_transition_visible=cfp_pre
-        )
-        property_assets = _filter_for_beneficiary(
-            property_assets, current_user["id"], is_transitioned, cfp_pre_transition_visible=cfp_pre
-        )
+        bills = _filter_for_actor(bills, actor, is_transitioned, cfp_pre_transition_visible=cfp_pre)
+        debts = _filter_for_actor(debts, actor, is_transitioned, cfp_pre_transition_visible=cfp_pre)
+        accounts = _filter_for_actor(accounts, actor, is_transitioned, cfp_pre_transition_visible=cfp_pre)
+        property_assets = _filter_for_actor(property_assets, actor, is_transitioned, cfp_pre_transition_visible=cfp_pre)
+        dav_entries = [entry for entry in dav_entries if _dav_visible_for_actor(entry, actor)]
 
     return {
         "bills": bills,
@@ -95,7 +113,23 @@ async def bulk_mark_bills_paid(
     estate_id = bills[0]["estate_id"]
     if any(b["estate_id"] != estate_id for b in bills):
         raise HTTPException(status_code=400, detail="bill_ids span multiple estates")
-    await _verify_estate_access(estate_id, current_user)
+    actor = await _resolve_financial_actor(estate_id, current_user)
+    requested_ids = set(data.bill_ids)
+    found_ids = {bill["id"] for bill in bills}
+    if requested_ids != found_ids:
+        raise HTTPException(status_code=404, detail="One or more bills were not found")
+    if not (actor["is_owner"] or actor["is_admin"]):
+        visible_ids = {
+            bill["id"]
+            for bill in bills
+            if _financial_item_visible_for_actor(
+                bill,
+                actor,
+                cfp_pre_transition_visible=actor["estate"].get("cfp_pre_transition_visible", False),
+            )
+        }
+        if requested_ids != visible_ids:
+            raise HTTPException(status_code=403, detail="One or more bills are not visible to this beneficiary")
     now = datetime.now(timezone.utc).isoformat()
     payments = []
     import uuid
@@ -137,7 +171,9 @@ async def get_thirty_day_cashflow(estate_id: str, current_user: dict = Depends(g
     """Forward-looking 30-day timeline of bills + minimum debt payments,
     grouped by day. Used by the Beneficiary Financial Page so heirs can
     see what's due before the next paycheck."""
-    estate, is_owner = await _verify_estate_access(estate_id, current_user)
+    actor = await _resolve_financial_actor(estate_id, current_user)
+    estate = actor["estate"]
+    is_owner = actor["is_owner"] or actor["is_admin"]
     bills = await db.bills.find({"estate_id": estate_id, "deleted_at": None, "status": "active"}, {"_id": 0}).to_list(
         500
     )
@@ -147,8 +183,8 @@ async def get_thirty_day_cashflow(estate_id: str, current_user: dict = Depends(g
     if not is_owner:
         is_transitioned = estate.get("status") == "transitioned"
         cfp_pre = estate.get("cfp_pre_transition_visible", False)
-        bills = _filter_for_beneficiary(bills, current_user["id"], is_transitioned, cfp_pre_transition_visible=cfp_pre)
-        debts = _filter_for_beneficiary(debts, current_user["id"], is_transitioned, cfp_pre_transition_visible=cfp_pre)
+        bills = _filter_for_actor(bills, actor, is_transitioned, cfp_pre_transition_visible=cfp_pre)
+        debts = _filter_for_actor(debts, actor, is_transitioned, cfp_pre_transition_visible=cfp_pre)
 
     today = datetime.now(timezone.utc)
     timeline = []

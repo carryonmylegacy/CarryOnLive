@@ -8,7 +8,7 @@ from typing import List, Literal, Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from config import db
+from services.access_control import emergency_scope_allows, resolve_estate_actor
 
 router = APIRouter()
 
@@ -321,17 +321,92 @@ class DesignationUpdate(BaseModel):
 
 async def _verify_estate_access(estate_id: str, user: dict, require_owner: bool = False):
     """Verify user has access to the estate. Returns the estate doc."""
-    estate = await db.estates.find_one({"id": estate_id}, {"_id": 0})
-    if not estate:
-        raise HTTPException(status_code=404, detail="Estate not found")
-    is_owner = estate.get("owner_id") == user["id"]
-    is_admin = user.get("role") == "admin"
-    is_beneficiary = user["id"] in (estate.get("beneficiaries") or [])
+    actor = await _resolve_financial_actor(estate_id, user, require_owner=require_owner)
+    return actor["estate"], actor["is_owner"] or actor["is_admin"]
+
+
+async def _resolve_financial_actor(estate_id: str, user: dict, require_owner: bool = False):
+    """Resolve financial-portal access using the estate actor identity map."""
+    actor = await resolve_estate_actor(estate_id, user)
+    is_owner = actor["is_owner"]
+    is_admin = actor["is_admin"]
+    is_beneficiary = actor["is_beneficiary"]
     if require_owner and not (is_owner or is_admin):
         raise HTTPException(status_code=403, detail="Only the estate owner can perform this action")
     if not (is_owner or is_admin or is_beneficiary):
         raise HTTPException(status_code=403, detail="Not authorized")
-    return estate, is_owner or is_admin
+    return actor
+
+
+def _clean_id_set(values) -> set[str]:
+    result: set[str] = set()
+    for value in values or []:
+        if value is None:
+            continue
+        text = str(value).strip()
+        if text:
+            result.add(text)
+    return result
+
+
+def _timing_for_actor(item: dict, actor: dict) -> dict | None:
+    timing = item.get("visibility_timing") or {}
+    if not isinstance(timing, dict):
+        return None
+    for release_id in actor.get("release_ids", set()):
+        row = timing.get(release_id)
+        if isinstance(row, dict):
+            return row
+    return None
+
+
+def _financial_item_visible_for_actor(
+    item: dict,
+    actor: dict,
+    is_transitioned: bool | None = None,
+    *,
+    cfp_pre_transition_visible: bool = False,
+) -> bool:
+    """True when this CFP item is visible to the actor right now."""
+    if actor.get("is_owner") or actor.get("is_admin"):
+        return True
+    if not actor.get("is_beneficiary"):
+        return False
+
+    transitioned = actor.get("is_transitioned") if is_transitioned is None else is_transitioned
+
+    designated = _clean_id_set(item.get("designated_beneficiaries"))
+    if "all" not in designated and not (designated & actor.get("release_ids", set())):
+        # FAIL-CLOSED: un-designated financial items are private to the owner.
+        return False
+    if emergency_scope_allows(actor, "financial_portal"):
+        return True
+    if not transitioned and not cfp_pre_transition_visible:
+        return False
+
+    timing = _timing_for_actor(item, actor)
+    if transitioned:
+        return True if timing is None else bool(timing.get("post", True))
+    return bool(timing and timing.get("pre", False))
+
+
+def _filter_for_actor(
+    items: list,
+    actor: dict,
+    is_transitioned: bool | None = None,
+    *,
+    cfp_pre_transition_visible: bool = False,
+) -> list:
+    return [
+        item
+        for item in items
+        if _financial_item_visible_for_actor(
+            item,
+            actor,
+            is_transitioned,
+            cfp_pre_transition_visible=cfp_pre_transition_visible,
+        )
+    ]
 
 
 def _filter_for_beneficiary(
@@ -358,14 +433,13 @@ def _filter_for_beneficiary(
         return []
 
     visible = []
+    actor = {"is_beneficiary": True, "release_ids": _clean_id_set([user_id])}
     for item in items:
-        designated = item.get("designated_beneficiaries", ["all"])
-        if "all" not in designated and user_id not in designated:
-            continue
-        # Check timing
-        timing = item.get("visibility_timing", {}).get(user_id, {"pre": False, "post": True})
-        if is_transitioned and timing.get("post", True):
-            visible.append(item)
-        elif not is_transitioned and timing.get("pre", False):
+        if _financial_item_visible_for_actor(
+            item,
+            actor,
+            is_transitioned,
+            cfp_pre_transition_visible=cfp_pre_transition_visible,
+        ):
             visible.append(item)
     return visible

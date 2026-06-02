@@ -66,6 +66,10 @@ def invalidate_subscription_cache(user_id: str) -> None:
     _SUBSCRIPTION_CACHE.pop(user_id, None)
 
 
+def invalidate_all_subscription_cache() -> None:
+    _SUBSCRIPTION_CACHE.clear()
+
+
 def get_cached_membership(user_id: str, estate_id: str) -> bool | None:
     return _ESTATE_MEMBERSHIP_CACHE.get((user_id, estate_id))
 

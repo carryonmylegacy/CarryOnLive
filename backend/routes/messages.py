@@ -14,8 +14,9 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, File, HTTPException, Query as QueryParam, Response, UploadFile
 
 from config import db, logger
-from guards import require_benefactor_role, require_estate_member, require_estate_owner
+from guards import require_benefactor_role, require_estate_owner
 from models import Message, MessageCreate, MessageUpdate
+from services.access_control import can_access_message, require_estate_actor
 from services.audit import audit_log
 from services.encryption import (
     decrypt_aes256,
@@ -37,17 +38,24 @@ _download_tokens: dict[str, dict] = {}
 async def create_download_token(message_id: str, current_user: dict = Depends(get_current_user)):
     """Create a short-lived token for direct browser downloads (iOS Safari)."""
     msg = await db.messages.find_one(
-        {"id": message_id}, {"_id": 0, "id": 1, "estate_id": 1, "video_url": 1, "voice_url": 1}
+        {"id": message_id},
+        {
+            "_id": 0,
+            "id": 1,
+            "estate_id": 1,
+            "video_url": 1,
+            "voice_url": 1,
+            "recipients": 1,
+            "is_delivered": 1,
+            "delivered_recipient_ids": 1,
+            "recipient_delivery_status": 1,
+            "deleted_at": 1,
+        },
     )
     if not msg:
         raise HTTPException(status_code=404, detail="Message not found")
-    estate = await db.estates.find_one({"id": msg["estate_id"]}, {"_id": 0, "id": 1, "owner_id": 1, "beneficiaries": 1})
-    if not estate:
-        raise HTTPException(status_code=404, detail="Estate not found")
-    is_owner = estate["owner_id"] == current_user["id"]
-    is_ben = current_user["id"] in estate.get("beneficiaries", [])
-    is_admin = current_user["role"] in ("admin", "operator")
-    if not (is_owner or is_ben or is_admin):
+    actor = await require_estate_actor(msg["estate_id"], current_user, allow_staff=True)
+    if not can_access_message(msg, actor):
         raise HTTPException(status_code=403, detail="Access denied")
 
     token = str(uuid.uuid4())
@@ -102,38 +110,10 @@ async def get_messages(estate_id: str, current_user: dict = Depends(get_current_
     """List all milestone messages for an estate."""
     estate_salt = await get_estate_salt(estate_id)
 
-    # Determine relationship to estate
-    estate = await db.estates.find_one({"id": estate_id}, {"_id": 0})
-    if not estate:
-        raise HTTPException(status_code=404, detail="Estate not found")
-
-    is_owner = estate["owner_id"] == current_user["id"]
-    is_ben = current_user["id"] in estate.get("beneficiaries", [])
-    is_admin = current_user["role"] in ("admin", "operator")
-
-    if not (is_owner or is_ben or is_admin):
-        raise HTTPException(status_code=403, detail="Access denied")
-
-    if is_ben and not is_owner:
-        # Beneficiary view (regardless of role): only delivered messages they're a recipient of
-        ben_records = await db.beneficiaries.find(
-            {"estate_id": estate_id, "user_id": current_user["id"]},
-            {"_id": 0, "id": 1},
-        ).to_list(10)
-        recipient_ids = [current_user["id"]] + [b["id"] for b in ben_records]
-
-        messages = await db.messages.find(
-            {
-                "estate_id": estate_id,
-                "recipients": {"$in": recipient_ids},
-                "is_delivered": True,
-                "deleted_at": None,
-            },
-            {"_id": 0},
-        ).to_list(100)
-    else:
-        # Owner or admin: see all messages
-        messages = await db.messages.find({"estate_id": estate_id, "deleted_at": None}, {"_id": 0}).to_list(100)
+    actor = await require_estate_actor(estate_id, current_user, allow_staff=True)
+    messages = await db.messages.find({"estate_id": estate_id, "deleted_at": None}, {"_id": 0}).to_list(100)
+    if not (actor["is_owner"] or actor["is_admin"] or actor["is_operator"]):
+        messages = [msg for msg in messages if can_access_message(msg, actor)]
 
     # Decrypt message fields
     decrypted = []
@@ -148,23 +128,11 @@ async def get_message_video(video_id: str, current_user: dict = Depends(get_curr
     """Get video data for a message"""
     # Check if video is in cloud storage
     message = await db.messages.find_one({"video_url": video_id}, {"_id": 0})
-    if message:
-        estate = await db.estates.find_one({"id": message["estate_id"]}, {"_id": 0})
-        is_owner = estate and estate["owner_id"] == current_user["id"]
-        is_ben = estate and current_user["id"] in estate.get("beneficiaries", [])
-        is_admin = current_user["role"] in ("admin", "operator")
-
-        if is_ben and not is_owner:
-            # Beneficiary view: only delivered messages they're a recipient of
-            ben_records = await db.beneficiaries.find(
-                {"estate_id": message["estate_id"], "user_id": current_user["id"]},
-                {"_id": 0, "id": 1},
-            ).to_list(10)
-            valid_ids = {current_user["id"]} | {b["id"] for b in ben_records}
-            if not (valid_ids & set(message.get("recipients", []))) or not message.get("is_delivered"):
-                raise HTTPException(status_code=403, detail="Access denied")
-        elif not (is_owner or is_admin):
-            raise HTTPException(status_code=403, detail="Access denied")
+    if not message:
+        raise HTTPException(status_code=404, detail="Video not found")
+    actor = await require_estate_actor(message["estate_id"], current_user, allow_staff=True)
+    if not can_access_message(message, actor):
+        raise HTTPException(status_code=403, detail="Access denied")
 
     # Try cloud storage first
     video_storage_key = f"estates/{message['estate_id']}/{video_id}"
@@ -326,23 +294,11 @@ async def download_video_direct(video_id: str, dt: str = QueryParam(...)):
 async def get_message_voice(voice_id: str, current_user: dict = Depends(get_current_user)):
     """Get voice recording data for a message"""
     message = await db.messages.find_one({"voice_url": voice_id}, {"_id": 0})
-    if message:
-        estate = await db.estates.find_one({"id": message["estate_id"]}, {"_id": 0})
-        is_owner = estate and estate["owner_id"] == current_user["id"]
-        is_ben = estate and current_user["id"] in estate.get("beneficiaries", [])
-        is_admin = current_user["role"] in ("admin", "operator")
-
-        if is_ben and not is_owner:
-            # Beneficiary view: only delivered messages they're a recipient of
-            ben_records = await db.beneficiaries.find(
-                {"estate_id": message["estate_id"], "user_id": current_user["id"]},
-                {"_id": 0, "id": 1},
-            ).to_list(10)
-            valid_ids = {current_user["id"]} | {b["id"] for b in ben_records}
-            if not (valid_ids & set(message.get("recipients", []))) or not message.get("is_delivered"):
-                raise HTTPException(status_code=403, detail="Access denied")
-        elif not (is_owner or is_admin):
-            raise HTTPException(status_code=403, detail="Access denied")
+    if not message:
+        raise HTTPException(status_code=404, detail="Voice recording not found")
+    actor = await require_estate_actor(message["estate_id"], current_user, allow_staff=True)
+    if not can_access_message(message, actor):
+        raise HTTPException(status_code=403, detail="Access denied")
 
     voice_storage_key = f"voices/{voice_id}"
     try:
@@ -555,8 +511,9 @@ async def get_message_attachment(message_id: str, current_user: dict = Depends(g
     if not message:
         raise HTTPException(status_code=404, detail="Message not found")
 
-    # IDOR guard — only owner / beneficiary / admin can download an attachment.
-    await require_estate_member(message.get("estate_id"), current_user)
+    actor = await require_estate_actor(message.get("estate_id"), current_user, allow_staff=True)
+    if not can_access_message(message, actor):
+        raise HTTPException(status_code=403, detail="Access denied")
 
     attachment_url = message.get("attachment_url")
     if not attachment_url:
@@ -589,7 +546,11 @@ async def update_message(message_id: str, data: MessageUpdate, current_user: dic
         raise HTTPException(status_code=404, detail="Message not found")
     # IDOR guard — only the estate owner (or admin) can edit a message.
     await require_estate_owner(existing.get("estate_id"), current_user)
-    if existing.get("is_delivered"):
+    if (
+        existing.get("is_delivered")
+        or existing.get("delivered_recipient_ids")
+        or existing.get("recipient_delivery_status")
+    ):
         raise HTTPException(status_code=400, detail="Cannot edit a delivered message")
 
     estate_salt = await get_estate_salt(existing["estate_id"])
@@ -741,11 +702,9 @@ async def download_message(message_id: str, current_user: dict = Depends(get_cur
     if not message:
         raise HTTPException(status_code=404, detail="Message not found")
 
-    estate = await db.estates.find_one({"id": message["estate_id"]}, {"_id": 0})
-    is_owner = estate and estate["owner_id"] == current_user["id"]
-    is_ben = estate and current_user["id"] in estate.get("beneficiaries", [])
-    is_admin = current_user["role"] in ("admin", "operator")
-    if not (is_owner or is_ben or is_admin):
+    actor = await require_estate_actor(message["estate_id"], current_user, allow_staff=True)
+    estate = actor["estate"]
+    if not can_access_message(message, actor):
         raise HTTPException(status_code=403, detail="Access denied")
 
     estate_salt = await get_estate_salt(message["estate_id"])

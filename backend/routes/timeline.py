@@ -2,9 +2,10 @@
 
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 
 from config import db
+from services.access_control import can_access_document, can_access_message, require_estate_actor
 from utils import get_current_user
 
 router = APIRouter()
@@ -13,16 +14,9 @@ router = APIRouter()
 @router.get("/timeline/{estate_id}")
 async def get_legacy_timeline(estate_id: str, current_user: dict = Depends(get_current_user)):
     """Build a chronological timeline of all estate events."""
-    # Verify access
-    estate = await db.estates.find_one({"id": estate_id}, {"_id": 0})
-    if not estate:
-        raise HTTPException(status_code=404, detail="Estate not found")
-
-    is_owner = estate.get("owner_id") == current_user["id"]
-    is_ben = await db.beneficiaries.find_one({"estate_id": estate_id, "user_id": current_user["id"]}, {"_id": 0})
-    is_admin = current_user.get("role") == "admin"
-    if not is_owner and not is_ben and not is_admin:
-        raise HTTPException(status_code=403, detail="Access denied")
+    actor = await require_estate_actor(estate_id, current_user, allow_staff=True)
+    estate = actor["estate"]
+    can_view_all = actor.get("is_owner") or actor.get("is_admin") or actor.get("is_operator")
 
     events = []
 
@@ -40,7 +34,9 @@ async def get_legacy_timeline(estate_id: str, current_user: dict = Depends(get_c
     )
 
     # 2. Documents uploaded
-    docs = await db.documents.find({"estate_id": estate_id}, {"_id": 0}).to_list(500)
+    docs = await db.documents.find({"estate_id": estate_id, "deleted_at": None}, {"_id": 0}).to_list(500)
+    if not can_view_all:
+        docs = [doc for doc in docs if can_access_document(doc, actor)]
     for doc in docs:
         events.append(
             {
@@ -78,7 +74,9 @@ async def get_legacy_timeline(estate_id: str, current_user: dict = Depends(get_c
         )
 
     # 4. Messages created
-    msgs = await db.messages.find({"estate_id": estate_id}, {"_id": 0}).to_list(500)
+    msgs = await db.messages.find({"estate_id": estate_id, "deleted_at": None}, {"_id": 0}).to_list(500)
+    if not can_view_all:
+        msgs = [msg for msg in msgs if can_access_message(msg, actor)]
     for msg in msgs:
         events.append(
             {

@@ -53,6 +53,7 @@ import { DOCK_REGISTRY, ADMIN_PORTALS, scopeArr } from './navConfig';
 import MobileOtpToggle from './MobileOtpToggle';
 import SignupOtpToggle from './SignupOtpToggle';
 import MobileOfflineToggle from './MobileOfflineToggle';
+import PlatformBooleanToggle from './PlatformBooleanToggle';
 import DebugValues from './DebugValues';
 
 export { DOCK_REGISTRY }; // re-export so existing consumers don't break
@@ -1050,6 +1051,26 @@ const MobileNav = () => {
                   <SignupOtpToggle />
                   {/* Offline master switch — placed directly below OTP per PM request. */}
                   <MobileOfflineToggle />
+                  <PlatformBooleanToggle
+                    settingKey="platform_free_mode"
+                    label="Free Mode"
+                    Icon={Gift}
+                    activeColor="#22c55e"
+                    activeLabel="On"
+                    inactiveLabel="Off"
+                    mobile
+                    testId="mobile-free-mode-toggle"
+                  />
+                  <PlatformBooleanToggle
+                    settingKey="ai_burn_guard_enabled"
+                    label="AI Guard"
+                    Icon={Sparkles}
+                    activeColor="#f59e0b"
+                    activeLabel="On"
+                    inactiveLabel="Off"
+                    mobile
+                    testId="mobile-ai-burn-guard-toggle"
+                  />
                 </div>
               )}
 

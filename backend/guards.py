@@ -67,6 +67,21 @@ async def get_subscription_access(current_user: dict = Depends(get_current_user)
         _cache_set(current_user["id"], result)
         return result
 
+    platform_settings = await db.platform_settings.find_one(
+        {"_id": "global"},
+        {"_id": 0, "platform_free_mode": 1},
+    )
+    if platform_settings and platform_settings.get("platform_free_mode"):
+        result = {
+            "has_access": True,
+            "reason": "platform_free_mode",
+            "is_dormant": False,
+            "is_grace": False,
+            "platform_free_mode": True,
+        }
+        _cache_set(current_user["id"], result)
+        return result
+
     # Check subscription status
     sub = await db.user_subscriptions.find_one({"user_id": user["id"]}, {"_id": 0})
     if sub:

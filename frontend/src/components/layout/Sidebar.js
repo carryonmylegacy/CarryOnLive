@@ -48,6 +48,7 @@ import SidebarPillButton from './SidebarPillButton';
 import PublicDeviceModeMenuButton from './PublicDeviceModeMenuButton';
 import AdminSectionNav from './AdminSectionNav';
 import BenefactorSectionNav from './BenefactorSectionNav';
+import PlatformBooleanToggle from './PlatformBooleanToggle';
 import { API_URL } from '../../config';
 import { filterNavByFeatures } from '../../utils/featureGates';
 import { applyUserMenuOrder } from '../../config/menuRegistry';
@@ -946,6 +947,26 @@ const Sidebar = () => {
               IndexedDB sync, outbox drain, pending uploads, and at-rest
               encryption together. */}
           <OfflineModeToggle collapsed={collapsed} />
+          <PlatformBooleanToggle
+            settingKey="platform_free_mode"
+            label="Free Mode"
+            Icon={Gift}
+            activeColor="#22c55e"
+            activeLabel="On"
+            inactiveLabel="Off"
+            collapsed={collapsed}
+            testId="sidebar-free-mode-toggle"
+          />
+          <PlatformBooleanToggle
+            settingKey="ai_burn_guard_enabled"
+            label="AI Guard"
+            Icon={Sparkles}
+            activeColor="#f59e0b"
+            activeLabel="On"
+            inactiveLabel="Off"
+            collapsed={collapsed}
+            testId="sidebar-ai-burn-guard-toggle"
+          />
         </>
       )}
 

@@ -13,9 +13,10 @@ keeping it isolated makes the auth boundary easier to audit.
 Mounted in `server.py` alongside the rest of the documents routers.
 """
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 
 from config import db
+from services.access_control import filter_accessible_documents, require_estate_actor
 from utils import get_current_user
 
 router = APIRouter()
@@ -27,14 +28,8 @@ async def get_vault_security_info(estate_id: str, current_user: dict = Depends(g
     # Security audit (Feb 2026): previously this endpoint returned vault
     # metadata for ANY estate_id passed by a logged-in user. Now gated
     # to estate owner / beneficiary / admin to plug a SOC 2 CC6.1 leak.
-    estate = await db.estates.find_one({"id": estate_id}, {"_id": 0, "id": 1, "owner_id": 1, "beneficiaries": 1})
-    if not estate:
-        raise HTTPException(status_code=404, detail="Estate not found")
-    is_owner = estate.get("owner_id") == current_user["id"]
-    is_beneficiary = current_user["id"] in estate.get("beneficiaries", [])
-    is_admin = current_user.get("role") == "admin"
-    if not (is_owner or is_beneficiary or is_admin):
-        raise HTTPException(status_code=403, detail="Access denied")
+    actor = await require_estate_actor(estate_id, current_user)
+    can_view_all = actor.get("is_owner") or actor.get("is_admin")
 
     documents = await db.documents.find(
         {"estate_id": estate_id, "deleted_at": None},
@@ -48,6 +43,8 @@ async def get_vault_security_info(estate_id: str, current_user: dict = Depends(g
             "file_size": 1,
         },
     ).to_list(200)
+    if not can_view_all:
+        documents = filter_accessible_documents(documents, actor)
 
     total_docs = len(documents)
     cloud_stored = sum(1 for d in documents if d.get("storage_key"))

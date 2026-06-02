@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from config import db
+from services.access_control import require_estate_actor
 from utils import get_current_user
 
 router = APIRouter()
@@ -34,16 +35,11 @@ class SectionPermissionsUpdate(BaseModel):
 @router.get("/estate/{estate_id}/section-permissions")
 async def get_estate_section_permissions(estate_id: str, current_user: dict = Depends(get_current_user)):
     """Get section permissions for all beneficiaries of an estate."""
-    estate = await db.estates.find_one({"id": estate_id}, {"_id": 0})
-    if not estate:
-        raise HTTPException(status_code=404, detail="Estate not found")
-
-    # Only benefactor (owner), admin, or a beneficiary of this estate can read
-    is_owner = estate.get("owner_id") == current_user["id"]
-    is_admin = current_user.get("role") == "admin"
-    is_beneficiary = current_user["id"] in (estate.get("beneficiaries") or [])
-    if not (is_owner or is_admin or is_beneficiary):
-        raise HTTPException(status_code=403, detail="Not authorized")
+    actor = await require_estate_actor(estate_id, current_user)
+    if not (actor.get("is_owner") or actor.get("is_admin") or actor.get("is_primary_beneficiary")):
+        raise HTTPException(
+            status_code=403, detail="Only the estate owner or primary beneficiary can view all permissions"
+        )
 
     beneficiaries = await db.beneficiaries.find({"estate_id": estate_id}, {"_id": 0}).to_list(100)
 
@@ -67,7 +63,10 @@ async def get_estate_section_permissions(estate_id: str, current_user: dict = De
 async def get_my_section_permissions(estate_id: str, current_user: dict = Depends(get_current_user)):
     """Get the current beneficiary's section permissions for an estate."""
     # Find the beneficiary record for this user
-    ben = await db.beneficiaries.find_one({"estate_id": estate_id, "user_id": current_user["id"]}, {"_id": 0})
+    beneficiary_link_or = [{"user_id": current_user["id"]}]
+    if current_user.get("email"):
+        beneficiary_link_or.append({"email": current_user["email"].lower().strip()})
+    ben = await db.beneficiaries.find_one({"estate_id": estate_id, "$or": beneficiary_link_or}, {"_id": 0})
     if not ben:
         raise HTTPException(status_code=404, detail="Not a beneficiary of this estate")
 
@@ -92,21 +91,14 @@ async def get_my_section_permissions(estate_id: str, current_user: dict = Depend
     # filtration point read by Sidebar / MobileNav / Beneficiary
     # Dashboard tiles, so getting it right here cleans up every
     # surface in one shot.
-    estate = await db.estates.find_one({"id": estate_id}, {"_id": 0, "id": 1, "owner_id": 1})
-    owner_id = (estate or {}).get("owner_id")
-    owner = (
-        await db.users.find_one({"id": owner_id}, {"_id": 0, "id": 1, "subscription_tier": 1, "plan": 1})
-        if owner_id
-        else None
-    )
-    tier = (owner or {}).get("subscription_tier") or (owner or {}).get("plan") or "base"
-
     try:
-        from routes.feature_gates import get_feature_gates
+        from routes.feature_gates import _get_benefactor_tier, get_feature_gates
 
         gates = await get_feature_gates()
+        tier = await _get_benefactor_tier(current_user=current_user, estate_id=estate_id) or "base"
     except Exception:
         gates = {}
+        tier = "base"
 
     def _tier_has(feature_key: str) -> bool:
         # If gates couldn't load or feature missing → fail closed.
@@ -167,8 +159,11 @@ async def update_section_permissions(
 
     if is_transitioned:
         # Post-transition: only primary beneficiary or admin
+        beneficiary_link_or = [{"user_id": current_user["id"]}]
+        if current_user.get("email"):
+            beneficiary_link_or.append({"email": current_user["email"].lower().strip()})
         primary_ben = await db.beneficiaries.find_one(
-            {"estate_id": estate_id, "is_primary": True, "user_id": current_user["id"]},
+            {"estate_id": estate_id, "is_primary": True, "$or": beneficiary_link_or},
             {"_id": 0},
         )
         if not primary_ben and not is_admin:

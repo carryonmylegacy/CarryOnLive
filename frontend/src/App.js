@@ -762,6 +762,7 @@ function AppRoutes() {
         <Route path="/beneficiary/vault" element={<TransitionGate section="vault" allowPreTransition><BeneficiaryVaultPage /></TransitionGate>} />
         <Route path="/beneficiary/messages" element={<TransitionGate section="messages"><BeneficiaryMessagesPage /></TransitionGate>} />
         <Route path="/beneficiary/checklist" element={<TransitionGate section="checklist"><BeneficiaryChecklistPage /></TransitionGate>} />
+        <Route path="/beneficiary/digital-wallet" element={<TransitionGate section="digital_wallet"><FeatureGate><DigitalWalletPage /></FeatureGate></TransitionGate>} />
         {/* Legacy /beneficiary/guardian route — Estate Guardian (EGA)
             was the benefactor-side AI; pointing beneficiaries to it was
             an artifact of an earlier build. As of May 5, 2026 the

@@ -3,7 +3,9 @@
 from ._core import (
     router,
     _verify_estate_access,
-    _filter_for_beneficiary,
+    _filter_for_actor,
+    _financial_item_visible_for_actor,
+    _resolve_financial_actor,
     BillCreate,
     BillUpdate,
     BillPaymentCreate,
@@ -129,13 +131,15 @@ async def _upsert_dav_for_bill(
 @router.get("/financial/bills/{estate_id}")
 async def get_bills(estate_id: str, current_user: dict = Depends(get_current_user)):
     """Get all bills for an estate."""
-    estate, is_owner = await _verify_estate_access(estate_id, current_user)
+    actor = await _resolve_financial_actor(estate_id, current_user)
+    estate = actor["estate"]
+    is_owner = actor["is_owner"] or actor["is_admin"]
     bills = await db.bills.find({"estate_id": estate_id, "deleted_at": None}, {"_id": 0}).to_list(500)
     if not is_owner:
         is_transitioned = estate.get("status") == "transitioned"
-        bills = _filter_for_beneficiary(
+        bills = _filter_for_actor(
             bills,
-            current_user["id"],
+            actor,
             is_transitioned,
             cfp_pre_transition_visible=estate.get("cfp_pre_transition_visible", False),
         )
@@ -263,7 +267,13 @@ async def get_bill_payments(bill_id: str, current_user: dict = Depends(get_curre
     bill = await db.bills.find_one({"id": bill_id, "deleted_at": None}, {"_id": 0})
     if not bill:
         raise HTTPException(status_code=404, detail="Bill not found")
-    await _verify_estate_access(bill["estate_id"], current_user)
+    actor = await _resolve_financial_actor(bill["estate_id"], current_user)
+    if not _financial_item_visible_for_actor(
+        bill,
+        actor,
+        cfp_pre_transition_visible=actor["estate"].get("cfp_pre_transition_visible", False),
+    ):
+        raise HTTPException(status_code=403, detail="Bill is not visible to this beneficiary")
     payments = (
         await db.bill_payments.find(
             {"bill_id": bill_id, "deleted_at": None},
@@ -281,7 +291,13 @@ async def mark_bill_paid(bill_id: str, data: BillPaymentCreate, current_user: di
     bill = await db.bills.find_one({"id": bill_id, "deleted_at": None}, {"_id": 0})
     if not bill:
         raise HTTPException(status_code=404, detail="Bill not found")
-    await _verify_estate_access(bill["estate_id"], current_user)
+    actor = await _resolve_financial_actor(bill["estate_id"], current_user)
+    if not _financial_item_visible_for_actor(
+        bill,
+        actor,
+        cfp_pre_transition_visible=actor["estate"].get("cfp_pre_transition_visible", False),
+    ):
+        raise HTTPException(status_code=403, detail="Bill is not visible to this beneficiary")
     now = datetime.now(timezone.utc).isoformat()
     payment = {
         "id": str(uuid.uuid4()),
@@ -306,7 +322,17 @@ async def undo_bill_payment(payment_id: str, current_user: dict = Depends(get_cu
     payment = await db.bill_payments.find_one({"id": payment_id, "deleted_at": None}, {"_id": 0})
     if not payment:
         raise HTTPException(status_code=404, detail="Payment not found")
-    await _verify_estate_access(payment["estate_id"], current_user)
+    actor = await _resolve_financial_actor(payment["estate_id"], current_user)
+    if not (actor["is_owner"] or actor["is_admin"]):
+        if payment.get("paid_by") != current_user.get("id"):
+            raise HTTPException(status_code=403, detail="Only the original payer can undo this payment")
+        bill = await db.bills.find_one({"id": payment.get("bill_id"), "deleted_at": None}, {"_id": 0})
+        if not bill or not _financial_item_visible_for_actor(
+            bill,
+            actor,
+            cfp_pre_transition_visible=actor["estate"].get("cfp_pre_transition_visible", False),
+        ):
+            raise HTTPException(status_code=403, detail="Payment is not visible to this beneficiary")
     await db.bill_payments.update_one(
         {"id": payment_id}, {"$set": {"deleted_at": datetime.now(timezone.utc).isoformat()}}
     )

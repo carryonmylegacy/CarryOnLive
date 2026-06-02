@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from config import db, logger
 from guards import require_benefactor_role
 from models import Estate, EstateCreate, EstateUpdate
+from services.access_control import require_estate_actor
 from services.encryption import generate_estate_salt
 from services.readiness import calculate_estate_readiness, ensure_default_checklist
 from utils import get_current_user, log_activity
@@ -48,8 +49,11 @@ async def get_estates(current_user: dict = Depends(get_current_user)):
 
     # Fallback: also check beneficiary records that link to this user
     # (handles cases where the estate array wasn't updated)
+    beneficiary_link_or = [{"user_id": current_user["id"]}]
+    if current_user.get("email"):
+        beneficiary_link_or.append({"email": current_user["email"].lower().strip()})
     linked_records = await db.beneficiaries.find(
-        {"user_id": current_user["id"]},
+        {"$or": beneficiary_link_or},
         {"_id": 0, "id": 1, "estate_id": 1},
     ).to_list(200)
     missing_ids = [
@@ -141,7 +145,10 @@ async def get_estates(current_user: dict = Depends(get_current_user)):
 async def get_family_connections(current_user: dict = Depends(get_current_user)):
     """Get all family connections for a beneficiary with relationship data for orbit visualization"""
     # Allow both beneficiaries and benefactors who are also beneficiaries
-    ben_records = await db.beneficiaries.find({"user_id": current_user["id"]}, {"_id": 0}).to_list(100)
+    beneficiary_link_or = [{"user_id": current_user["id"]}]
+    if current_user.get("email"):
+        beneficiary_link_or.append({"email": current_user["email"].lower().strip()})
+    ben_records = await db.beneficiaries.find({"$or": beneficiary_link_or}, {"_id": 0}).to_list(100)
     if not ben_records:
         return []
 
@@ -468,18 +475,8 @@ async def customize_estate_name(
 @router.get("/estates/{estate_id}")
 async def get_estate(estate_id: str, current_user: dict = Depends(get_current_user)):
     """Get a single estate by ID."""
-    estate = await db.estates.find_one({"id": estate_id}, {"_id": 0})
-    if not estate:
-        raise HTTPException(status_code=404, detail="Estate not found")
-
-    # Check access — based on actual relationship, not just role
-    is_owner = estate["owner_id"] == current_user["id"]
-    is_beneficiary = current_user["id"] in estate.get("beneficiaries", [])
-    is_admin = current_user["role"] in ("admin", "operator")
-    if not (is_owner or is_beneficiary or is_admin):
-        raise HTTPException(status_code=403, detail="Access denied")
-
-    return estate
+    actor = await require_estate_actor(estate_id, current_user, allow_staff=True)
+    return actor["estate"]
 
 
 @router.post("/beneficiary/become-benefactor")
@@ -1037,16 +1034,7 @@ async def recalculate_estate_readiness(estate_id: str, current_user: dict = Depe
 @router.get("/activity/{estate_id}")
 async def get_activity_log(estate_id: str, limit: int = 50, current_user: dict = Depends(get_current_user)):
     """Get activity log for an estate"""
-    estate = await db.estates.find_one({"id": estate_id}, {"_id": 0})
-    if not estate:
-        raise HTTPException(status_code=404, detail="Estate not found")
-
-    # Check access — based on actual relationship, not just role
-    is_owner = estate["owner_id"] == current_user["id"]
-    is_beneficiary = current_user["id"] in estate.get("beneficiaries", [])
-    is_admin = current_user.get("role") == "admin"
-    if not (is_owner or is_beneficiary or is_admin):
-        raise HTTPException(status_code=403, detail="Access denied")
+    await require_estate_actor(estate_id, current_user, allow_staff=True)
 
     activities = (
         await db.activity_logs.find({"estate_id": estate_id}, {"_id": 0})

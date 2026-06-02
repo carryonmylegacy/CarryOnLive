@@ -101,7 +101,16 @@ async def resolve_user_by_identifier(identifier: str) -> dict | None:
 
 
 async def _reconcile_beneficiary_by_email(user: dict):
-    """Auto-link and status-sync beneficiary records for this user on every login."""
+    """Auto-link and status-sync beneficiary records for this user on every login.
+
+    SECURITY: the email -> user_id binding only runs once the email is verified
+    (set True on OTP success). This prevents a user who pointed their account
+    email at a victim's address (via /auth/email, without re-verifying) from
+    claiming the victim's beneficiary records on a subsequent trusted-device
+    login that skips OTP.
+    """
+    if not user.get("email_verified"):
+        return
     email = (user.get("email") or "").lower().strip()
     if not email:
         return

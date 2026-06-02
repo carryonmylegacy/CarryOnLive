@@ -2,8 +2,8 @@
 
 from ._core import (
     router,
-    _verify_estate_access,
-    _filter_for_beneficiary,
+    _filter_for_actor,
+    _resolve_financial_actor,
 )
 from fastapi import Depends, HTTPException
 from utils import get_current_user
@@ -15,7 +15,9 @@ from pydantic import BaseModel
 @router.get("/financial/summary/{estate_id}")
 async def get_financial_summary(estate_id: str, current_user: dict = Depends(get_current_user)):
     """Get aggregated financial summary for the dashboard tile."""
-    estate, is_owner = await _verify_estate_access(estate_id, current_user)
+    actor = await _resolve_financial_actor(estate_id, current_user)
+    estate = actor["estate"]
+    is_owner = actor["is_owner"] or actor["is_admin"]
 
     # Match the CFP page's own list filter: a bill/debt/account/property
     # is "active for counting purposes" unless it was explicitly cancelled
@@ -43,14 +45,10 @@ async def get_financial_summary(estate_id: str, current_user: dict = Depends(get
     if not is_owner:
         is_transitioned = estate.get("status") == "transitioned"
         cfp_pre = estate.get("cfp_pre_transition_visible", False)
-        bills = _filter_for_beneficiary(bills, current_user["id"], is_transitioned, cfp_pre_transition_visible=cfp_pre)
-        debts = _filter_for_beneficiary(debts, current_user["id"], is_transitioned, cfp_pre_transition_visible=cfp_pre)
-        accounts = _filter_for_beneficiary(
-            accounts, current_user["id"], is_transitioned, cfp_pre_transition_visible=cfp_pre
-        )
-        property_assets = _filter_for_beneficiary(
-            property_assets, current_user["id"], is_transitioned, cfp_pre_transition_visible=cfp_pre
-        )
+        bills = _filter_for_actor(bills, actor, is_transitioned, cfp_pre_transition_visible=cfp_pre)
+        debts = _filter_for_actor(debts, actor, is_transitioned, cfp_pre_transition_visible=cfp_pre)
+        accounts = _filter_for_actor(accounts, actor, is_transitioned, cfp_pre_transition_visible=cfp_pre)
+        property_assets = _filter_for_actor(property_assets, actor, is_transitioned, cfp_pre_transition_visible=cfp_pre)
 
     # Calculate monthly bills total
     monthly_total = 0.0
@@ -154,7 +152,9 @@ async def get_financial_coverage_score(estate_id: str, current_user: dict = Depe
     the benefactor has documented their financial position for beneficiaries.
     This is NOT a judgment of financial health — it measures completeness
     of documentation on the platform."""
-    await _verify_estate_access(estate_id, current_user)
+    actor = await _resolve_financial_actor(estate_id, current_user)
+    estate = actor["estate"]
+    is_owner = actor["is_owner"] or actor["is_admin"]
 
     # Same not-cancelled-not-paused inclusion rule as
     # get_financial_summary — keeps the score and the dashboard tile
@@ -168,6 +168,19 @@ async def get_financial_coverage_score(estate_id: str, current_user: dict = Depe
     property_assets = await db.property_assets.find({"estate_id": estate_id, "deleted_at": None}, {"_id": 0}).to_list(
         500
     )
+
+    if not is_owner:
+        is_transitioned = estate.get("status") == "transitioned"
+        cfp_pre = estate.get("cfp_pre_transition_visible", False)
+        bills = _filter_for_actor(bills, actor, is_transitioned, cfp_pre_transition_visible=cfp_pre)
+        debts = _filter_for_actor(debts, actor, is_transitioned, cfp_pre_transition_visible=cfp_pre)
+        accounts = _filter_for_actor(accounts, actor, is_transitioned, cfp_pre_transition_visible=cfp_pre)
+        property_assets = _filter_for_actor(
+            property_assets,
+            actor,
+            is_transitioned,
+            cfp_pre_transition_visible=cfp_pre,
+        )
 
     all_items = bills + debts + accounts + property_assets
     total_items = len(all_items)
@@ -293,9 +306,11 @@ class SmartCategorizeRequest(BaseModel):
 async def smart_categorize(data: SmartCategorizeRequest, current_user: dict = Depends(get_current_user)):
     """Use AI to auto-categorize a bill/debt/account and suggest biller details."""
     from config import xai_client, XAI_MODEL_LIGHT, logger
+    from services.ai_burn_guard import require_ai_burn_budget
 
     if not xai_client:
         raise HTTPException(status_code=503, detail="AI service not available")
+    await require_ai_burn_budget(current_user, "cfp_smart_categorize")
 
     bill_categories = (
         "mortgage_rent, utilities, insurance, subscriptions, credit_card, "

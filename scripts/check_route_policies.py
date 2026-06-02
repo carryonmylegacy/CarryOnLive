@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
 """Route policy coverage CI gate.
 
-Scans all @router.<verb>("/path") decorators under /app/backend/routes/ and
-compares against /app/backend/route_policies.py:ROUTE_POLICIES.
+Scans all @router.<verb>("/path") decorators under backend/routes/ and
+compares against backend/route_policies.py:ROUTE_POLICIES.
 
 The gate is **ratchet-style**: it doesn't require 100% coverage on day 1 —
 it only fails if a push REDUCES coverage. Today's baseline is recorded in
-/app/.route_policy_baseline. Adding new endpoints without registering them
+.route_policy_baseline. Adding new endpoints without registering them
 will trip the gate; existing un-annotated endpoints are grandfathered until
 their next touch (when CI will fail and force registration).
 
 Usage:
-    python /app/scripts/check_route_policies.py            # report only
-    python /app/scripts/check_route_policies.py --strict   # fail on regression
-    python /app/scripts/check_route_policies.py --update-baseline  # record current state
+    python scripts/check_route_policies.py            # report only
+    python scripts/check_route_policies.py --strict   # fail on regression
+    python scripts/check_route_policies.py --update-baseline  # record current state
 """
 
 from __future__ import annotations
@@ -24,10 +24,11 @@ import sys
 from pathlib import Path
 
 
-ROUTES_DIR = Path("/app/backend/routes")
-POLICIES_FILE = Path("/app/backend/route_policies.py")
-AUTO_POLICIES_FILE = Path("/app/backend/route_policies_auto.py")
-BASELINE_FILE = Path("/app/.route_policy_baseline")
+ROOT = Path(__file__).resolve().parents[1]
+ROUTES_DIR = ROOT / "backend" / "routes"
+POLICIES_FILE = ROOT / "backend" / "route_policies.py"
+AUTO_POLICIES_FILE = ROOT / "backend" / "route_policies_auto.py"
+BASELINE_FILE = ROOT / ".route_policy_baseline"
 
 ROUTER_DECORATOR = re.compile(
     r'@router\.(get|post|put|delete|patch)\(\s*"((?:[^"\\]|\\.)*?)"',
@@ -48,7 +49,7 @@ def discover_routes() -> list[tuple[str, str, str]]:
             # Most routers are mounted with prefix /api in server.py; account for that
             if not path.startswith("/api"):
                 path = "/api" + path
-            routes.append((method, path, str(p.relative_to("/app"))))
+            routes.append((method, path, str(p.relative_to(ROOT))))
     return routes
 
 

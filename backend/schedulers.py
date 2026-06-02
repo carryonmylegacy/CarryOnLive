@@ -122,6 +122,7 @@ async def milestone_delivery_scheduler():
     from datetime import datetime, timezone
 
     from config import db
+    from services.access_control import build_message_delivery_update, resolve_beneficiary_delivery_ids
     from services.notifications import notify
 
     while True:
@@ -147,17 +148,22 @@ async def milestone_delivery_scheduler():
             delivery_time = datetime.now(timezone.utc)
 
             for delivery in scheduled:
+                message = await db.messages.find_one({"id": delivery["message_id"]}, {"_id": 0})
+                if not message:
+                    continue
+                delivery_ids = await resolve_beneficiary_delivery_ids(
+                    delivery["estate_id"], delivery.get("beneficiary_id")
+                )
                 await db.messages.update_one(
                     {"id": delivery["message_id"]},
-                    {
-                        "$set": {
-                            "is_delivered": True,
-                            "delivered_at": delivery_time.isoformat(),
-                            "delivered_via": "scheduled_milestone",
-                            "milestone_report_id": delivery["milestone_report_id"],
-                            "delivered_by": delivery.get("reviewed_by", "system"),
-                        }
-                    },
+                    build_message_delivery_update(
+                        message,
+                        delivery_ids,
+                        delivered_at=delivery_time.isoformat(),
+                        delivered_via="scheduled_milestone",
+                        milestone_report_id=delivery["milestone_report_id"],
+                        delivered_by=delivery.get("reviewed_by", "system"),
+                    ),
                 )
                 await db.milestone_deliveries.update_one(
                     {"id": delivery["id"]},

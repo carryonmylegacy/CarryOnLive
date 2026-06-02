@@ -505,10 +505,13 @@ async def verify_otp(data: OTPVerifyWithTrust, request: Request):
         )
 
     token = await create_session_token(user["id"], user["email"], user["role"])
+    # OTP success PROVES the user controls this email, so it can now be trusted
+    # for authorization (estate/beneficiary email matching + reconcile binding).
     await db.users.update_one(
         {"id": user["id"]},
-        {"$set": {"last_login_at": datetime.now(timezone.utc).isoformat()}},
+        {"$set": {"last_login_at": datetime.now(timezone.utc).isoformat(), "email_verified": True}},
     )
+    user["email_verified"] = True
     await _reconcile_beneficiary_by_email(user)
 
     client_ip = get_client_ip(request)

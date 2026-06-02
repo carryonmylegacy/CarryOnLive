@@ -66,6 +66,7 @@ import { TrainingTrackerTab } from '../components/admin/TrainingTrackerTab';
 import { SectionMembersTab } from '../components/admin/SectionMembersTab';
 import { NotificationCategoriesTab } from '../components/admin/NotificationCategoriesTab';
 import { PlatformRulesTab } from '../components/admin/PlatformRulesTab';
+import { EmergencyAccessTab } from '../components/admin/EmergencyAccessTab';
 import { PrototypesTab } from '../components/admin/PrototypesTab';
 import { PartnersTab } from '../components/admin/PartnersTab';
 import { VoicesTab } from '../components/admin/VoicesTab';
@@ -364,6 +365,7 @@ const AdminPage = ({ operatorMode = false }) => {
       case 'ops-kb': return operatorMode ? <KnowledgeBaseTab getAuthHeaders={getAuthHeaders} isFounder={false} /> : null;
       case 'ops-dashboard': return <OpsDashboardTab getAuthHeaders={getAuthHeaders} />;
       case 'milestones': return <MilestoneDeliveriesTab getAuthHeaders={getAuthHeaders} />;
+      case 'emergency-access': return <EmergencyAccessTab getAuthHeaders={getAuthHeaders} />;
       default: return null;
     }
   };

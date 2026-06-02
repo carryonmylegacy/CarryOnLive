@@ -1,5 +1,32 @@
 # CarryOn — Changelog
 
+## Jun 2, 2026 — Hardening MEGA-PATCH: audit-fixes base + 3 adversarial-finding fixes (APPLIED + TESTED)
+
+Combined the founder-supplied `carryon-hardening-audit-fixes.patch` (canonical access-control refactor: `services/access_control.py`, P0 SDV/transition/message fixes, emergency-access consumption, CFP/DAV, BEC↔SDV consistency, GDPR endpoint fix, free-mode toggle, AI burn guard) with fixes for the 3 adversarial unauthorized-access paths I found. Applied to `/app`, tested, and exported as `/app/carryon-mega-hardening.patch` (49 files; reverse-apply verified — forward-applies cleanly to commit b765133).
+
+**Finding #1 — email-as-identity / impersonation (CONFIRMED exploitable via `update_email`):**
+- `update_email` (auth/profile.py) now sets `email_verified=False` on change — a changed email grants NO email-matched access until re-verified.
+- `resolve_estate_actor` (access_control.py) only folds the account email into authorization `release_ids` when `email_verified` is True; `user_id` is always trusted.
+- `_reconcile_beneficiary_by_email` (auth/_core.py) only binds email→user_id when `email_verified` (blocks persistent takeover via trusted-device logins that skip OTP).
+- `verify_otp` (auth/login.py) sets `email_verified=True` on OTP success (genuine proof of control).
+- One-time idempotent grandfather migration (db_indexes.py) stamps `email_verified=True` on all pre-existing accounts so the new gate locks nobody out.
+
+**Finding #2 — default-OPEN designation → fail-CLOSED (founder-approved):**
+- `_designation_matches` + `can_access_document` (access_control.py) and `_financial_item_visible_for_actor` (financial_portal/_core.py): an item with **no** explicit designation is now private to the owner (was implicitly `["all"]` = shared with every beneficiary post-transition).
+
+**Finding #3 — message fan-out fail-OPEN → fail-CLOSED + legacy reconciliation:**
+- `message_recipient_matches`: empty/missing `recipients` now returns False (was True = visible to every beneficiary).
+- New migration `0002_reconcile_message_delivery.py`: rebuilds per-recipient delivery from the `milestone_deliveries` audit trail and drops the global `is_delivered` where not every named recipient can be proven delivered — closing the legacy co-recipient leak.
+
+**Auth:** routed through `integration_playbook_expert_v2` before writing (pending-email/verify-on-change, gate-on-verified, grandfather, bind-by-user_id patterns).
+
+**Validation:** new `tests/test_hardening_failclosed_identity.py` (10/10 pass, incl. unverified-email-≠-identity proof); core access-control suite via dev-login = 47 passed / 0 failed; backend boots clean (migrations 0001+0002 applied); ruff clean; `housekeeping.sh --strict` code checks = ALL CHECKS PASSED. The HTTP test failures observed are the single-session harness artifact (shared `info@carryon.us` account → `active_session_exists`/`401`), not logic.
+
+**Known/orthogonal (NOT in this patch):**
+- Dependency-vuln check went 8→12 — pure pip-audit CVE-feed drift (requirements.txt unchanged); needs a separate dependency-bump task, intentionally not bundled into an access-control patch.
+- Audit finding P1-07 (guardian.py EGA `documents[:10]` fallback sending non-AI-eligible doc content to the model) is still NOT addressed — it was outside the base patch and outside the 3 adversarial findings; flagged for a follow-up.
+
+
 ## Jun 2, 2026 (later) — SDV category filter redesigned → "Executive Filter" (glass trigger + bottom-sheet/popover)
 
 **Founder request:** "Figure out a sexier way to enable the user to select these pills." The SDV document-type filter was a 3-row wall of 17 wrapping pills (looked "JV", ate vertical space). Chose design Option A ("Executive Filter") after founder picked it from two options.

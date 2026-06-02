@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from config import db
 from guards import require_admin, require_staff
 from models import DeathCertificate, MilestoneReport, MilestoneReportCreate
+from services.access_control import message_delivered_to_actor, recipient_ids_for_actor, require_estate_actor
 from services.audit import get_client_ip, log_audit_event
 from services.encryption import encrypt_aes256, get_estate_salt
 from utils import get_current_user
@@ -25,22 +26,8 @@ async def upload_death_certificate(
     current_user: dict = Depends(get_current_user),
 ):
     """Upload a death certificate for verification — encrypted with AES-256-GCM."""
-
-    # Enforce subscription: the estate's benefactor must have an active subscription
-    estate = await db.estates.find_one({"id": estate_id}, {"_id": 0})
-    if estate:
-        benefactor = await db.users.find_one({"id": estate.get("owner_id")}, {"_id": 0})
-        if benefactor:
-            from guards import get_subscription_access
-
-            access = await get_subscription_access(
-                {"id": benefactor["id"], "role": benefactor.get("role", "benefactor")}
-            )
-            if not access["has_access"]:
-                raise HTTPException(
-                    status_code=403,
-                    detail="The estate owner's subscription is inactive. A subscription is required to process transition requests.",
-                )
+    actor = await require_estate_actor(estate_id, current_user, allow_staff=True)
+    estate = actor["estate"]
 
     content = await file.read()
 
@@ -548,13 +535,25 @@ async def delete_certificate(
         # 3. Un-deliver ALL messages for this estate (scoped — does not
         # touch messages on other estates)
         msg_res = await db.messages.update_many(
-            {"estate_id": estate_id, "is_delivered": True},
+            {
+                "estate_id": estate_id,
+                "$or": [
+                    {"is_delivered": True},
+                    {"delivered_recipient_ids": {"$exists": True, "$ne": []}},
+                    {"recipient_delivery_status": {"$exists": True}},
+                ],
+            },
             {
                 "$set": {"is_delivered": False},
                 "$unset": {
                     "delivered_at": "",
                     "delivered_via": "",
+                    "delivered_by": "",
+                    "last_delivered_at": "",
+                    "delivery_state": "",
                     "milestone_report_id": "",
+                    "delivered_recipient_ids": "",
+                    "recipient_delivery_status": "",
                 },
             },
         )
@@ -635,13 +634,14 @@ async def delete_certificate(
 async def get_transition_status(estate_id: str, current_user: dict = Depends(get_current_user)):
     # Get the MOST RECENT certificate for this estate
     """Check the transition status of an estate."""
+    actor = await require_estate_actor(estate_id, current_user, allow_staff=True)
     certificates = (
         await db.death_certificates.find({"estate_id": estate_id}, {"_id": 0, "file_data": 0})
         .sort("created_at", -1)
         .to_list(1)
     )
     certificate = certificates[0] if certificates else None
-    estate = await db.estates.find_one({"id": estate_id}, {"_id": 0})
+    estate = actor["estate"]
 
     return {
         # Defensive `.get()` — legacy estate docs predating the
@@ -668,16 +668,9 @@ async def report_milestone(data: MilestoneReportCreate, current_user: dict = Dep
     if not is_beneficiary:
         raise HTTPException(status_code=403, detail="Only beneficiaries can report milestones")
 
-    # Enforce subscription: beneficiary must have an active subscription to report new milestones
-    # (Delivered messages remain accessible forever regardless of subscription status)
-    from guards import get_subscription_access
-
-    access = await get_subscription_access(current_user)
-    if not access.get("has_access"):
-        raise HTTPException(
-            status_code=403,
-            detail="An active subscription is required to report milestones. Your previously delivered messages remain accessible.",
-        )
+    actor = await require_estate_actor(data.estate_id, current_user)
+    if not actor.get("is_beneficiary"):
+        raise HTTPException(status_code=403, detail="Only beneficiaries on this estate can report milestones")
 
     report = MilestoneReport(
         estate_id=data.estate_id,
@@ -693,11 +686,12 @@ async def report_milestone(data: MilestoneReportCreate, current_user: dict = Dep
     # Match custom events by custom_event_label
     event_type_lower = data.event_type.lower().strip()
 
+    recipient_ids = recipient_ids_for_actor(actor)
     query = {
         "estate_id": data.estate_id,
-        "recipients": current_user["id"],
+        "recipients": {"$in": list(recipient_ids)},
         "trigger_type": "event",
-        "is_delivered": False,
+        "deleted_at": None,
         "$or": [
             # Standard event match (birthday, graduation, marriage)
             {"trigger_value": event_type_lower},
@@ -707,6 +701,7 @@ async def report_milestone(data: MilestoneReportCreate, current_user: dict = Dep
         ],
     }
     messages = await db.messages.find(query, {"_id": 0}).to_list(100)
+    messages = [msg for msg in messages if not message_delivered_to_actor(msg, actor)]
 
     # Also check for age milestones if the event is an age-related one
     age_events = {"turned 18": 18, "turned 25": 25}
@@ -714,28 +709,28 @@ async def report_milestone(data: MilestoneReportCreate, current_user: dict = Dep
         age_messages = await db.messages.find(
             {
                 "estate_id": data.estate_id,
-                "recipients": current_user["id"],
+                "recipients": {"$in": list(recipient_ids)},
                 "trigger_type": "age_milestone",
                 "trigger_age": age_events[event_type_lower],
-                "is_delivered": False,
+                "deleted_at": None,
             },
             {"_id": 0},
         ).to_list(100)
-        messages.extend(age_messages)
+        messages.extend([msg for msg in age_messages if not message_delivered_to_actor(msg, actor)])
 
     # Also check specific_date messages if event_date matches
     if data.event_date:
         date_messages = await db.messages.find(
             {
                 "estate_id": data.estate_id,
-                "recipients": current_user["id"],
+                "recipients": {"$in": list(recipient_ids)},
                 "trigger_type": "specific_date",
                 "trigger_date": data.event_date,
-                "is_delivered": False,
+                "deleted_at": None,
             },
             {"_id": 0},
         ).to_list(100)
-        messages.extend(date_messages)
+        messages.extend([msg for msg in date_messages if not message_delivered_to_actor(msg, actor)])
 
     # Deduplicate by message id
     seen = set()
@@ -755,6 +750,7 @@ async def report_milestone(data: MilestoneReportCreate, current_user: dict = Dep
             "message_id": msg["id"],
             "message_title": msg.get("title", ""),
             "beneficiary_id": current_user["id"],
+            "beneficiary_record_ids": sorted(actor.get("beneficiary_record_ids") or []),
             "beneficiary_name": current_user.get("name", ""),
             "event_type": data.event_type,
             "event_description": data.event_description,
@@ -779,6 +775,7 @@ async def report_milestone(data: MilestoneReportCreate, current_user: dict = Dep
             "message_id": None,
             "message_title": "(No matching message — manual review)",
             "beneficiary_id": current_user["id"],
+            "beneficiary_record_ids": sorted(actor.get("beneficiary_record_ids") or []),
             "beneficiary_name": current_user.get("name", ""),
             "event_type": data.event_type,
             "event_description": data.event_description,

@@ -41,7 +41,11 @@ const PrivacyCard = () => {
     setConsentLoading(true);
     try {
       const updated = { ...consent, [key]: value };
-      await apiClient.put(`${API_URL}/compliance/consent`, { [key]: value }, getAuthHeaders());
+      await apiClient.put(`${API_URL}/compliance/consent`, {
+        marketing_emails: !!updated.marketing_emails,
+        analytics_tracking: !!updated.analytics_tracking,
+        third_party_sharing: !!updated.third_party_sharing,
+      }, getAuthHeaders());
       setConsent(updated);
       const label = PREF_LABELS[key] || 'Preference';
       toast.success(`${label} ${value ? 'enabled' : 'disabled'} — saved.`);
@@ -52,7 +56,7 @@ const PrivacyCard = () => {
   const handleDataExport = useCallback(async () => {
     setExportLoading(true);
     try {
-      const res = await apiClient.get(`${API_URL}/compliance/export`, getAuthHeaders());
+      const res = await apiClient.get(`${API_URL}/compliance/data-export`, getAuthHeaders());
       const blob = new Blob([JSON.stringify(res.data, null, 2)], { type: 'application/json' });
       const filename = `carryon-data-export-${new Date().toISOString().split('T')[0]}.json`;
       await iosSafeDownload(blob, filename, 'Data export', 'privacy_data_export');
@@ -71,13 +75,17 @@ const PrivacyCard = () => {
   const handleDeleteRequest = useCallback(async () => {
     setDeleteLoading(true);
     try {
-      await apiClient.post(`${API_URL}/compliance/delete-request`, { reason: deleteReason }, getAuthHeaders());
+      await apiClient.post(
+        `${API_URL}/compliance/deletion-request`,
+        { confirm_email: deleteEmail, reason: deleteReason },
+        getAuthHeaders(),
+      );
       toast.success('Account deletion requested. You will receive a confirmation email.');
       setShowDeleteConfirm(false);
       setTimeout(() => logout(), 3000);
     } catch (err) { toast.error(err.response?.data?.detail || 'Failed to submit deletion request'); }
     finally { setDeleteLoading(false); }
-  }, [deleteReason, getAuthHeaders, logout]);
+  }, [deleteEmail, deleteReason, getAuthHeaders, logout]);
 
   return (
     <>

@@ -9,13 +9,43 @@ from pydantic import BaseModel, Field
 
 from config import db
 from guards import require_benefactor_role
-from services.encryption import decrypt_field, encrypt_field, get_estate_salt
 from services.audit import audit_log, log_audit_event, get_client_ip
+from services.access_control import emergency_scope_allows, require_estate_actor
+from services.encryption import decrypt_field, encrypt_field, get_estate_salt
 from utils import get_current_user
 
 router = APIRouter()
 
 # ===================== DIGITAL WALLET VAULT =====================
+
+
+def _entry_assigned_to_actor(entry: dict, actor: dict) -> bool:
+    assigned = entry.get("assigned_beneficiary_id")
+    return bool(assigned and assigned in (actor.get("release_ids") or set()))
+
+
+def _entry_visible_to_beneficiary(entry: dict, actor: dict) -> bool:
+    if not _entry_assigned_to_actor(entry, actor):
+        return False
+    if emergency_scope_allows(actor, "digital_wallet"):
+        return True
+    if actor.get("is_transitioned"):
+        return True
+    return entry.get("beneficiary_visibility") == "show_now"
+
+
+def _decrypt_wallet_entry(entry: dict, estate_salt: bytes) -> dict:
+    if entry.get("encrypted_password"):
+        try:
+            entry["password"] = decrypt_field(entry["encrypted_password"], estate_salt)
+        except Exception:
+            entry["password"] = ""
+    if entry.get("encrypted_additional"):
+        try:
+            entry["additional_access"] = decrypt_field(entry["encrypted_additional"], estate_salt)
+        except Exception:
+            entry["additional_access"] = ""
+    return entry
 
 
 class DigitalWalletEntry(BaseModel):
@@ -61,14 +91,9 @@ class DigitalWalletUpdate(BaseModel):
 @router.get("/digital-wallet/{estate_id}")
 async def get_digital_wallet(estate_id: str, request: Request = None, current_user: dict = Depends(get_current_user)):
     """List all digital wallet entries for an estate."""
-    estate = await db.estates.find_one({"id": estate_id}, {"_id": 0})
-    if not estate:
-        raise HTTPException(status_code=404, detail="Estate not found")
-
-    # Check if user is owner, admin, or assigned beneficiary (post-transition)
-    is_owner = estate.get("owner_id") == current_user["id"]
-    is_admin = current_user.get("role") == "admin"
-    is_transitioned = estate.get("transitioned", False)
+    actor = await require_estate_actor(estate_id, current_user)
+    is_owner = actor["is_owner"]
+    is_admin = actor["is_admin"]
 
     entries = await db.digital_wallet.find({"estate_id": estate_id, "deleted_at": None}, {"_id": 0}).to_list(200)
 
@@ -92,16 +117,7 @@ async def get_digital_wallet(estate_id: str, request: Request = None, current_us
     if is_owner or is_admin:
         # Owner sees all entries with decrypted passwords
         for entry in entries:
-            if entry.get("encrypted_password"):
-                try:
-                    entry["password"] = decrypt_field(entry["encrypted_password"], estate_salt)
-                except Exception:
-                    entry["password"] = ""
-            if entry.get("encrypted_additional"):
-                try:
-                    entry["additional_access"] = decrypt_field(entry["encrypted_additional"], estate_salt)
-                except Exception:
-                    entry["additional_access"] = ""
+            _decrypt_wallet_entry(entry, estate_salt)
         # SOC 2 CC6.1: Audit sensitive data access
         await log_audit_event(
             actor_id=current_user["id"],
@@ -116,20 +132,15 @@ async def get_digital_wallet(estate_id: str, request: Request = None, current_us
             details={"entry_count": len(entries)},
         )
         return entries
-    elif is_transitioned:
-        # Beneficiary sees only entries assigned to them
-        my_entries = [e for e in entries if e.get("assigned_beneficiary_id") == current_user["id"]]
+
+    if actor["is_beneficiary"]:
+        # Beneficiary sees only entries assigned to them. Pre-transition access
+        # requires the benefactor's explicit "show_now" visibility; after
+        # transition, assigned DAV entries release as the existing product
+        # promise intended.
+        my_entries = [e for e in entries if _entry_visible_to_beneficiary(e, actor)]
         for entry in my_entries:
-            if entry.get("encrypted_password"):
-                try:
-                    entry["password"] = decrypt_field(entry["encrypted_password"], estate_salt)
-                except Exception:
-                    entry["password"] = ""
-            if entry.get("encrypted_additional"):
-                try:
-                    entry["additional_access"] = decrypt_field(entry["encrypted_additional"], estate_salt)
-                except Exception:
-                    entry["additional_access"] = ""
+            _decrypt_wallet_entry(entry, estate_salt)
         # SOC 2 CC6.1: Audit sensitive data access (beneficiary)
         await log_audit_event(
             actor_id=current_user["id"],
@@ -144,8 +155,8 @@ async def get_digital_wallet(estate_id: str, request: Request = None, current_us
             details={"entry_count": len(my_entries), "access_type": "beneficiary"},
         )
         return my_entries
-    else:
-        raise HTTPException(status_code=403, detail="Access denied")
+
+    raise HTTPException(status_code=403, detail="Access denied")
 
 
 @router.post("/digital-wallet")

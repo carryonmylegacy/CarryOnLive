@@ -120,6 +120,9 @@ async def ensure_indexes(db, logger):
         await db.family_plans.create_index("owner_id")
         await db.emergency_access.create_index("estate_id")
         await db.emergency_access.create_index("beneficiary_id")
+        await db.emergency_access.create_index(
+            [("estate_id", 1), ("requester_id", 1), ("status", 1), ("access_expires_at", 1)]
+        )
         await db.section_security.create_index("estate_id")
         await db.digital_wallet.create_index("estate_id")
         await db.activity_log.create_index("user_id")
@@ -185,6 +188,17 @@ async def ensure_indexes(db, logger):
         await db.beneficiary_grace_periods.create_index("beneficiary_id")
         # Subscription settings index
         await db.subscription_settings.create_index("key", unique=True)
+        await db.ai_burn_guard_usage.create_index([("user_id", 1), ("feature", 1), ("date", 1)])
+        # One-time idempotent grandfather for the email_verified authorization
+        # gate (resolve_estate_actor). Existing accounts predate the flag but
+        # were all created through the signup-email-OTP flow, so they are
+        # effectively verified — stamp the flag so the new gate does not lock
+        # them out. New rows are created without it and only become True on a
+        # genuine OTP success (verify_otp).
+        await db.users.update_many(
+            {"email_verified": {"$exists": False}},
+            {"$set": {"email_verified": True}},
+        )
         # Financial Portal (CFP) indexes
         await db.bills.create_index([("estate_id", 1), ("deleted_at", 1)])
         await db.bills.create_index("status")

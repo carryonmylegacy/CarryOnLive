@@ -5,14 +5,15 @@ is incapacitated. Requires multi-step verification and admin approval.
 """
 
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from config import db
 from services.audit import audit_log
+from services.access_control import require_estate_actor
 from utils import get_current_user, send_push_notification
 
 router = APIRouter()
@@ -34,17 +35,60 @@ class EmergencyAccessReview(BaseModel):
     notes: Optional[str] = None
     access_level: str = "read_only"  # read_only, full
     access_duration_hours: int = 72  # default 72 hours
+    granted_scopes: Optional[list[str]] = None
+
+
+class EmergencyAccessPolicy(BaseModel):
+    enabled: bool = True
+    default_duration_hours: int = 72
+    max_duration_hours: int = 168
+    allowed_scopes: dict = Field(
+        default_factory=lambda: {
+            "documents": True,
+            "messages": False,
+            "digital_wallet": False,
+            "financial_portal": False,
+            "connected_protocol": True,
+        }
+    )
+
+
+DEFAULT_POLICY = EmergencyAccessPolicy().model_dump()
+
+
+async def _get_emergency_policy() -> dict:
+    policy = await db.emergency_access_policy.find_one({"_id": "global"}, {"_id": 0})
+    if not policy:
+        policy = dict(DEFAULT_POLICY)
+        await db.emergency_access_policy.update_one({"_id": "global"}, {"$set": policy}, upsert=True)
+    merged = dict(DEFAULT_POLICY)
+    merged.update(policy)
+    merged["allowed_scopes"] = {
+        **DEFAULT_POLICY["allowed_scopes"],
+        **(policy.get("allowed_scopes") or {}),
+    }
+    return merged
+
+
+def _approved_scopes(requested: Optional[list[str]], policy: dict) -> list[str]:
+    allowed = policy.get("allowed_scopes") or {}
+    permitted = {scope for scope, enabled in allowed.items() if enabled}
+    desired = set(requested or permitted)
+    if not desired <= permitted:
+        raise HTTPException(status_code=400, detail="Requested scope is not allowed by emergency access policy")
+    return sorted(desired)
 
 
 @router.post("/emergency-access/request")
 async def request_emergency_access(data: EmergencyAccessRequest, current_user: dict = Depends(get_current_user)):
     """Beneficiary requests emergency access to an estate vault."""
-    # Verify the user is a beneficiary of this estate
-    estate = await db.estates.find_one({"id": data.estate_id}, {"_id": 0})
-    if not estate:
-        raise HTTPException(status_code=404, detail="Estate not found")
+    policy = await _get_emergency_policy()
+    if not policy.get("enabled", True):
+        raise HTTPException(status_code=403, detail="Emergency access requests are temporarily disabled")
 
-    if current_user["id"] not in estate.get("beneficiaries", []):
+    actor = await require_estate_actor(data.estate_id, current_user)
+    estate = actor["estate"]
+    if not actor.get("is_beneficiary"):
         raise HTTPException(
             status_code=403,
             detail="You must be a beneficiary of this estate to request emergency access",
@@ -84,12 +128,14 @@ async def request_emergency_access(data: EmergencyAccessRequest, current_user: d
         "contact_phone": data.contact_phone,
         "supporting_details": data.supporting_details,
         "status": "pending",
+        "requested_scopes": _approved_scopes(None, policy),
         "created_at": datetime.now(timezone.utc).isoformat(),
         "reviewed_at": None,
         "reviewed_by": None,
         "review_notes": None,
         "access_level": None,
         "access_expires_at": None,
+        "granted_scopes": [],
     }
     await db.emergency_access.insert_one(request_doc)
 
@@ -170,6 +216,26 @@ async def get_all_emergency_requests(current_user: dict = Depends(get_current_us
     return requests
 
 
+@router.get("/admin/emergency-access-policy")
+async def get_emergency_access_policy(current_user: dict = Depends(get_current_user)):
+    if current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    return await _get_emergency_policy()
+
+
+@router.put("/admin/emergency-access-policy")
+async def update_emergency_access_policy(data: EmergencyAccessPolicy, current_user: dict = Depends(get_current_user)):
+    if current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    payload = data.model_dump()
+    payload["default_duration_hours"] = max(1, min(int(payload["default_duration_hours"]), 168))
+    payload["max_duration_hours"] = max(payload["default_duration_hours"], min(int(payload["max_duration_hours"]), 720))
+    payload["updated_at"] = datetime.now(timezone.utc).isoformat()
+    payload["updated_by"] = current_user["id"]
+    await db.emergency_access_policy.update_one({"_id": "global"}, {"$set": payload}, upsert=True)
+    return await _get_emergency_policy()
+
+
 @router.post("/admin/emergency-access/{request_id}/review")
 async def review_emergency_access(
     request_id: str,
@@ -194,13 +260,24 @@ async def review_emergency_access(
     }
 
     if data.action == "approve":
-        from datetime import timedelta
-
-        expires_at = (datetime.now(timezone.utc) + timedelta(hours=data.access_duration_hours)).isoformat()
+        policy = await _get_emergency_policy()
+        if not policy.get("enabled", True):
+            raise HTTPException(status_code=403, detail="Emergency access approvals are disabled by policy")
+        duration = max(
+            1,
+            min(
+                int(data.access_duration_hours or policy.get("default_duration_hours", 72)),
+                int(policy.get("max_duration_hours", 168)),
+            ),
+        )
+        scopes = _approved_scopes(data.granted_scopes, policy)
+        expires_at = (datetime.now(timezone.utc) + timedelta(hours=duration)).isoformat()
         update["status"] = "approved"
         update["access_level"] = data.access_level
         update["access_expires_at"] = expires_at
-        update["access_duration_hours"] = data.access_duration_hours
+        update["access_duration_hours"] = duration
+        update["granted_scopes"] = scopes
+        update["policy_snapshot"] = policy
 
     elif data.action == "deny":
         update["status"] = "denied"
@@ -239,7 +316,8 @@ async def review_emergency_access(
         details={
             "action": data.action,
             "access_level": data.access_level if data.action == "approve" else None,
-            "duration_hours": data.access_duration_hours if data.action == "approve" else None,
+            "duration_hours": update.get("access_duration_hours") if data.action == "approve" else None,
+            "granted_scopes": update.get("granted_scopes") if data.action == "approve" else None,
         },
     )
 

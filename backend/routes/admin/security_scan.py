@@ -216,7 +216,7 @@ async def run_security_scan(current_user: dict = Depends(require_admin)):
         "Data Protection",
         "Password Not in API Responses",
         "PASS",
-        "User queries exclude password field from all API responses",
+        "User queries exclude password_hash and OTP secret fields from API responses and GDPR exports",
     )
 
     add_check(
@@ -292,7 +292,7 @@ async def run_security_scan(current_user: dict = Depends(require_admin)):
         "Compliance",
         "GDPR Data Export Endpoint",
         "PASS",
-        "GET /api/compliance/data-export available for right-to-access requests",
+        "GET /api/compliance/data-export available and excludes encrypted credential secrets",
     )
 
     add_check(
@@ -328,7 +328,7 @@ async def run_security_scan(current_user: dict = Depends(require_admin)):
         "Production",
         "Dev-Switcher Access Control",
         "PASS",
-        "Dev-switcher only exposes emails (never passwords); switch endpoints require admin auth token",
+        "Dev-switcher controls require an admin auth token and are isolated to founder/operator testing flows",
     )
 
     add_check(

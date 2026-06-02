@@ -38,7 +38,11 @@ async def get_public_site_content():
 async def get_platform_settings(current_user: dict = Depends(require_admin)):
     """Get platform-wide settings (admin only)."""
     settings = await db.platform_settings.find_one({"_id": "global"}, {"_id": 0})
-    return settings or {"otp_disabled": False}
+    return settings or {
+        "otp_disabled": False,
+        "platform_free_mode": False,
+        "ai_burn_guard_enabled": False,
+    }
 
 
 @router.put("/admin/platform-settings")
@@ -57,14 +61,18 @@ async def update_platform_settings(data: dict, current_user: dict = Depends(requ
         "footer_address_line1",
         "footer_address_line2",
         "footer_phone",
+        "platform_free_mode",
+        "ai_burn_guard_enabled",
     }
     update = {k: v for k, v in data.items() if k in allowed_keys}
     if update:
         from datetime import datetime, timezone
+        from services.hot_cache import invalidate_all_subscription_cache
+
+        old_settings = await db.platform_settings.find_one({"_id": "global"}, {"_id": 0}) or {}
 
         # Check if we're turning 2FA ON (otp_disabled going from True to False)
         if "otp_disabled" in update and not update["otp_disabled"]:
-            old_settings = await db.platform_settings.find_one({"_id": "global"}, {"_id": 0})
             was_disabled = (old_settings or {}).get("otp_disabled", False)
             if was_disabled:
                 # Turning 2FA ON globally — reset all users to otp_enabled: true
@@ -74,7 +82,7 @@ async def update_platform_settings(data: dict, current_user: dict = Depends(requ
         # ON, so the safety net in routes/auth/register.py can auto-expire it
         # after `signup_otp_bypass_ttl_hours` (default 24h).
         if "signup_otp_disabled" in update and update["signup_otp_disabled"]:
-            old = await db.platform_settings.find_one({"_id": "global"}, {"_id": 0}) or {}
+            old = old_settings
             if not old.get("signup_otp_disabled"):
                 update["signup_otp_disabled_at"] = datetime.now(timezone.utc).isoformat()
                 update.pop("signup_otp_auto_expired_at", None)
@@ -83,8 +91,16 @@ async def update_platform_settings(data: dict, current_user: dict = Depends(requ
                     f"{update.get('signup_otp_bypass_ttl_hours', 24)}h."
                 )
         await db.platform_settings.update_one({"_id": "global"}, {"$set": update}, upsert=True)
+        if "platform_free_mode" in update and bool(update["platform_free_mode"]) != bool(
+            old_settings.get("platform_free_mode", False)
+        ):
+            invalidate_all_subscription_cache()
     settings = await db.platform_settings.find_one({"_id": "global"}, {"_id": 0})
-    return settings or {"otp_disabled": False}
+    return settings or {
+        "otp_disabled": False,
+        "platform_free_mode": False,
+        "ai_burn_guard_enabled": False,
+    }
 
 
 # ===================== CODE HEALTH =====================

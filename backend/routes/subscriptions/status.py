@@ -65,6 +65,13 @@ async def get_subscription_status(current_user: dict = Depends(get_current_user)
     user_doc = await db.users.find_one({"id": current_user["id"]}, {"_id": 0})
     sub = await db.user_subscriptions.find_one({"user_id": current_user["id"]}, {"_id": 0})
     settings = await get_subscription_settings()
+    platform_settings = (
+        await db.platform_settings.find_one(
+            {"_id": "global"},
+            {"_id": 0, "platform_free_mode": 1, "ai_burn_guard_enabled": 1},
+        )
+        or {}
+    )
 
     # Check admin overrides
     override = await db.subscription_overrides.find_one({"user_id": current_user["id"]}, {"_id": 0})
@@ -80,6 +87,8 @@ async def get_subscription_status(current_user: dict = Depends(get_current_user)
     verification = await db.tier_verifications.find_one({"user_id": current_user["id"]}, {"_id": 0})
 
     is_beta = settings.get("beta_mode", True)
+    platform_free_mode = bool(platform_settings.get("platform_free_mode", False))
+    ai_burn_guard_enabled = bool(platform_settings.get("ai_burn_guard_enabled", False))
     is_beta_tester = (user_doc or {}).get("is_beta_tester", False)
     has_free_access = override and override.get("free_access", False)
     has_active_sub = sub and sub.get("status") in ("active", "past_due")
@@ -130,7 +139,17 @@ async def get_subscription_status(current_user: dict = Depends(get_current_user)
         has_active_sub = True
 
     # User has access if: beta mode OR per-user beta OR free override OR active subscription OR trial active
-    has_access = is_beta or is_beta_tester or has_free_access or has_active_sub or trial.get("trial_active", False)
+    has_access = (
+        platform_free_mode
+        or is_beta
+        or is_beta_tester
+        or has_free_access
+        or has_active_sub
+        or trial.get("trial_active", False)
+    )
+    if platform_free_mode:
+        is_grace = False
+        is_dormant = False
 
     # Determine eligible special tiers based on DOB
     eligible_tiers = []
@@ -274,9 +293,11 @@ async def get_subscription_status(current_user: dict = Depends(get_current_user)
         "subscription": sub,
         "trial": trial,
         "beta_mode": is_beta,
+        "platform_free_mode": platform_free_mode,
+        "ai_burn_guard_enabled": ai_burn_guard_enabled,
         "is_beta_tester": is_beta_tester,
         "beta_accepted": bool((user_doc or {}).get("beta_accepted_at")),
-        "free_access": is_beta or is_beta_tester or has_free_access,
+        "free_access": platform_free_mode or is_beta or is_beta_tester or has_free_access,
         "custom_discount": override.get("custom_discount", 0) if override else 0,
         "has_active_subscription": has_access,
         "needs_subscription": not has_access,

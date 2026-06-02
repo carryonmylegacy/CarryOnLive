@@ -28,7 +28,18 @@ async def export_user_data(current_user: dict = Depends(get_current_user)):
     user_id = current_user["id"]
 
     # Collect all user data across collections
-    user_profile = await db.users.find_one({"id": user_id}, {"_id": 0, "password": 0})
+    user_profile = await db.users.find_one(
+        {"id": user_id},
+        {
+            "_id": 0,
+            "password": 0,
+            "password_hash": 0,
+            "otp_secret": 0,
+            "backup_codes": 0,
+            "vault_master_key_hash": 0,
+            "security_answers": 0,
+        },
+    )
 
     estates = await db.estates.find({"owner_id": user_id}, {"_id": 0}).to_list(100)
 
@@ -42,6 +53,8 @@ async def export_user_data(current_user: dict = Depends(get_current_user)):
             "storage_key": 0,
             "lock_password_hash": 0,
             "backup_code": 0,
+            "voice_passphrase_hash": 0,
+            "voice_passphrase_backup_code": 0,
         },
     ).to_list(1000)
 
@@ -60,7 +73,14 @@ async def export_user_data(current_user: dict = Depends(get_current_user)):
 
     digital_wallet = await db.digital_wallet.find(
         {"estate_id": {"$in": estate_ids}},
-        {"_id": 0, "encrypted_value": 0},
+        {
+            "_id": 0,
+            "encrypted_value": 0,
+            "encrypted_password": 0,
+            "encrypted_additional": 0,
+            "password": 0,
+            "additional_access": 0,
+        },
     ).to_list(500)
 
     dts_tasks = await db.dts_tasks.find({"estate_id": {"$in": estate_ids}}, {"_id": 0}).to_list(500)
@@ -111,7 +131,7 @@ async def export_user_data(current_user: dict = Depends(get_current_user)):
             "subscription": subscriptions,
             "consent_preferences": user_consent,
             "consent_history": consent_history,
-            "note": "Encrypted document content and message bodies are excluded from this export. They can be accessed through the Secure Document Vault.",
+            "note": "Encrypted document content, message bodies, credential secrets, OTP secrets, and password hashes are excluded from this export.",
         }
     )
 

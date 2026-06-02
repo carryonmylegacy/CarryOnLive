@@ -31,6 +31,7 @@ const FEATURE_LABELS = {
   '/beneficiary/estate-chat': 'Estate Chat',
   '/beneficiary/connected-protocol': 'CarryOn Contingency Protocols',
   '/beneficiary/financial': 'Connected Financial Portal',
+  '/beneficiary/digital-wallet': 'Digital Access Vault',
 };
 
 export const FeatureGate = ({ children }) => {

@@ -27,7 +27,9 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from pydantic import BaseModel
 
 from config import db, logger
-from guards import require_benefactor_role, require_estate_member, require_estate_owner
+from guards import require_benefactor_role, require_estate_owner
+from services.access_control import can_access_document, require_estate_actor
+from services.ai_burn_guard import require_ai_burn_budget
 from utils import get_current_user, hash_password, verify_password
 
 router = APIRouter()
@@ -57,6 +59,7 @@ async def transcribe_voice(file: UploadFile = File(...), current_user: dict = De
     api_key = os.environ.get("EMERGENT_LLM_KEY")
     if not api_key:
         raise HTTPException(status_code=500, detail="Voice service not configured")
+    await require_ai_burn_budget(current_user, "voice_transcribe")
 
     try:
         content = await file.read()
@@ -97,6 +100,7 @@ async def verify_voice_passphrase(
     api_key = os.environ.get("EMERGENT_LLM_KEY")
     if not api_key:
         raise HTTPException(status_code=500, detail="Voice service not configured")
+    await require_ai_burn_budget(current_user, "voice_verify")
 
     try:
         content = await file.read()
@@ -172,9 +176,11 @@ async def verify_document_voice_passphrase(
     document = await db.documents.find_one({"id": document_id}, {"_id": 0})
     if not document:
         raise HTTPException(status_code=404, detail="Document not found")
-    # IDOR guard — only owner/beneficiary/admin can attempt verification.
-    # This blocks any cross-tenant brute-force on voice passphrase hashes.
-    await require_estate_member(document.get("estate_id"), current_user)
+    # IDOR + release guard — even attempting a voice phrase is sensitive
+    # metadata, so the caller must be allowed to access this exact document.
+    actor = await require_estate_actor(document.get("estate_id"), current_user)
+    if not can_access_document(document, actor):
+        raise HTTPException(status_code=403, detail="Access denied")
     if not document.get("voice_passphrase_hash"):
         raise HTTPException(status_code=400, detail="Voice passphrase not set up. Use backup code.")
 
@@ -194,8 +200,10 @@ async def get_voice_hint(document_id: str, current_user: dict = Depends(get_curr
     document = await db.documents.find_one({"id": document_id}, {"_id": 0})
     if not document:
         raise HTTPException(status_code=404, detail="Document not found")
-    # IDOR guard — even the hint is sensitive metadata; require estate membership.
-    await require_estate_member(document.get("estate_id"), current_user)
+    # IDOR + release guard — the hint itself is sensitive metadata.
+    actor = await require_estate_actor(document.get("estate_id"), current_user)
+    if not can_access_document(document, actor):
+        raise HTTPException(status_code=403, detail="Access denied")
     return {
         "has_passphrase": bool(document.get("voice_passphrase_hash")),
         "hint": document.get("voice_passphrase_hint", "Not set"),
