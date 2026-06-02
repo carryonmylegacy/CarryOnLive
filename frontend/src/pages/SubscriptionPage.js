@@ -294,7 +294,15 @@ const SubscriptionPage = () => {
         onShowPaywall={() => !isInBeneficiaryPortal && setShowPaywall(true)}
       />
 
-      {!isInBeneficiaryPortal && <FamilyPlanSettings getAuthHeaders={() => getAuthHeaders()} />}
+      {!isInBeneficiaryPortal && (
+        <div
+          className={subscriptionStatus?.platform_free_mode ? 'opacity-40 grayscale pointer-events-none select-none transition-opacity duration-300' : ''}
+          aria-hidden={subscriptionStatus?.platform_free_mode ? 'true' : undefined}
+          data-testid="family-plan-region"
+        >
+          <FamilyPlanSettings getAuthHeaders={() => getAuthHeaders()} />
+        </div>
+      )}
 
       {showPaywall && !isInBeneficiaryPortal && (
         <SubscriptionPaywall onDismiss={() => setShowPaywall(false)} />
