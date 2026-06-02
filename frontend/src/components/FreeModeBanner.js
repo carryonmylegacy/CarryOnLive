@@ -1,0 +1,55 @@
+import React from 'react';
+import { Gift } from 'lucide-react';
+
+// Single source of truth for the Free Mode messaging so the Subscription
+// page and the standalone paywall never drift apart. Copy intentionally
+// frames Free Mode as the CURRENT state ("right now", "in these early days",
+// "while Free Mode is active") — it does NOT promise the platform will be
+// free forever, leaving the future pricing model open.
+export const FREE_MODE_HEADLINE = 'CarryOn is in Free Mode';
+export const FREE_MODE_BODY =
+  "Right now, every feature and every tier is unlocked for everyone — at no cost. In these early days, our founder wants as many families as possible to experience everything CarryOn offers and protect what matters most, without cost getting in the way. While Free Mode is active, all plans below are paused and you won't be charged anything. Please use CarryOn to its fullest and get the maximum value from it — consider it our gift to you and your family.";
+
+export const FreeModeBanner = ({ className = '' }) => (
+  <div
+    className={`relative overflow-hidden rounded-2xl p-5 sm:p-6 ${className}`}
+    style={{
+      background: 'linear-gradient(135deg, rgba(var(--gold-rgb), 0.16), rgba(var(--gold-rgb), 0.04))',
+      border: '1.5px solid rgba(var(--gold-rgb), 0.45)',
+      boxShadow: '0 12px 40px -12px rgba(var(--gold-rgb), 0.35)',
+    }}
+    data-testid="free-mode-banner"
+  >
+    {/* Gold shimmer top line — mirrors the Premium tile accent. */}
+    <div
+      className="absolute top-0 left-0 right-0 h-[2px]"
+      style={{ background: 'linear-gradient(90deg, transparent, rgba(var(--gold-rgb), 0.7), transparent)' }}
+    />
+    <div className="flex items-start gap-3.5">
+      <div
+        className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+        style={{ background: 'rgba(var(--gold-rgb), 0.14)', border: '1px solid rgba(var(--gold-rgb), 0.3)' }}
+      >
+        <Gift className="w-5 h-5 text-[var(--gold)]" />
+      </div>
+      <div className="min-w-0">
+        <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+          <h3 className="text-base sm:text-lg font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>
+            {FREE_MODE_HEADLINE}
+          </h3>
+          <span
+            className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
+            style={{ color: 'var(--bg2)', background: 'var(--gold)' }}
+          >
+            Active
+          </span>
+        </div>
+        <p className="text-sm text-[var(--t3)] leading-relaxed" data-testid="free-mode-banner-body">
+          {FREE_MODE_BODY}
+        </p>
+      </div>
+    </div>
+  </div>
+);
+
+export default FreeModeBanner;

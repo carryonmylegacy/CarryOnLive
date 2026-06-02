@@ -1,5 +1,18 @@
 # CarryOn — Changelog
 
+## Jun 2, 2026 (night) — Free Mode user-facing UI (gold tile + greyed tiers)
+
+Problem: the founder's Admin "Free Mode" toggle (`platform_free_mode`) flipped backend access flags but produced ZERO visible change on the user's Subscription page — because Beta Mode already grants free access (OR-combined), and there was no UI that surfaced Free Mode distinctly.
+
+Built (frontend-only; backend already returns `platform_free_mode` in `/subscriptions/status`):
+- New shared `components/FreeModeBanner.js` — gold "CarryOn is in Free Mode" tile + "ACTIVE" badge. Copy intentionally framed as CURRENT/temporary ("right now", "in these early days", "while Free Mode is active") so it does NOT commit the founder to perpetual-free (future non-profit→for-profit path stays open).
+- `SubscriptionManagement.js` (benefactor + beneficiary): renders the gold tile when `platform_free_mode`; greys out + disables (`opacity-40 grayscale pointer-events-none`) the entire tier grid AND billing toggle; suppresses the now-redundant Beta/trial status banner + beneficiary Founders-Circle message while Free Mode is on.
+- `SubscriptionPaywall.js` (standalone paywall): same gold tile + greyed/disabled tiers and billing toggle.
+- `PlatformBooleanToggle.js`: new optional `activeBadge` prop → Sidebar + MobileNav Free Mode toggle now shows a green "LIVE" pill when active.
+
+Verified via screenshot (preview, `platform_free_mode` toggled in DB then reverted to false): ON → gold banner + greyed non-interactive tiles + Beta banner suppressed; OFF → normal full-color interactive tiles (no regression). ESLint clean on all 6 files. No backend changes.
+
+
 ## Jun 2, 2026 (late) — codex2.patch SANITIZED & selectively applied (P0 audit finalize)
 
 Hand-extracted only the genuine net-new security fixes from the 12.8k-line `codex2.patch`; **rejected** every fail-open / noise block. Fail-closed posture fully preserved.

@@ -1060,6 +1060,7 @@ const MobileNav = () => {
                     inactiveLabel="Off"
                     mobile
                     testId="mobile-free-mode-toggle"
+                    activeBadge="LIVE"
                   />
                   <PlatformBooleanToggle
                     settingKey="ai_burn_guard_enabled"

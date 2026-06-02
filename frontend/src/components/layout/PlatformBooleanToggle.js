@@ -14,6 +14,7 @@ const PlatformBooleanToggle = ({
   collapsed = false,
   mobile = false,
   testId,
+  activeBadge,
 }) => {
   const [on, setOn] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -69,6 +70,15 @@ const PlatformBooleanToggle = ({
         <span className="font-medium" style={{ color: on ? activeColor : '#A0AABF' }}>
           {label} {on ? activeLabel : inactiveLabel}
         </span>
+        {on && activeBadge && (
+          <span
+            className="text-[9px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded-full"
+            style={{ color: '#0b1120', background: activeColor }}
+            data-testid={`${testId}-badge`}
+          >
+            {activeBadge}
+          </span>
+        )}
       </button>
     );
   }
@@ -102,6 +112,15 @@ const PlatformBooleanToggle = ({
       <div className="flex items-center gap-2">
         <Icon className="w-4 h-4" style={{ color: on ? activeColor : 'var(--t3)' }} />
         <span className="text-xs font-bold text-[var(--t)]">{label}</span>
+        {on && activeBadge && (
+          <span
+            className="text-[9px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded-full"
+            style={{ color: '#0b1120', background: activeColor }}
+            data-testid={`${testId}-badge`}
+          >
+            {activeBadge}
+          </span>
+        )}
       </div>
       <Switch checked={on} onCheckedChange={toggle} disabled={busy} data-testid={`${testId}-switch`} />
     </div>

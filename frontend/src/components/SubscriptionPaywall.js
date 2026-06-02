@@ -11,6 +11,7 @@ import { useIAPPurchase } from '../hooks/useIAPPurchase';
 import { API_URL } from '../config';
 import { openStripeCheckout } from '../utils/stripeRedirect';
 import { suspendAutoLogout } from '../utils/autoLogoutSuspend';
+import { FreeModeBanner } from './FreeModeBanner';
 
 const TIER_ICONS = {
   premium: Crown,
@@ -346,6 +347,9 @@ export default function SubscriptionPaywall({ onDismiss }) {
   });
 
   const trial = subStatus?.trial || {};
+  // Founder-wide Free Mode — gold banner replaces the plan picker and
+  // the tiers are greyed out / non-interactive (nobody is charged).
+  const platformFreeMode = subStatus?.platform_free_mode;
 
   if (loading || confirmingPayment) {
     return (
@@ -525,8 +529,11 @@ export default function SubscriptionPaywall({ onDismiss }) {
           )}
         </div>
 
+        {/* Free Mode banner — replaces the plan-selection flow. */}
+        {platformFreeMode && <FreeModeBanner className="w-full max-w-2xl mb-6 animate-fade-in" />}
+
         {/* Billing Cycle Toggle */}
-        <div className="flex items-center gap-2 mb-6 animate-fade-in" data-testid="billing-toggle">
+        <div className={`flex items-center gap-2 mb-6 animate-fade-in ${platformFreeMode ? 'opacity-40 grayscale pointer-events-none select-none' : ''}`} data-testid="billing-toggle">
           {['monthly', 'quarterly', 'annual'].map((b) => (
             <button
               key={b}
@@ -560,7 +567,7 @@ export default function SubscriptionPaywall({ onDismiss }) {
             discount tiers tuck behind a gold pill (lazy collapse,
             mirroring the landing page). Same renderer is used for
             both grids to guarantee zero card-render regression. */}
-        <div className="max-w-5xl w-full mb-8 animate-fade-in">
+        <div className={`max-w-5xl w-full mb-8 animate-fade-in ${platformFreeMode ? 'opacity-40 grayscale pointer-events-none select-none' : ''}`} aria-hidden={platformFreeMode ? 'true' : undefined}>
         {(() => {
           const filteredPlans = visiblePlans.filter(p => !['hospice'].includes(p.id) || p.price === 0);
           const mainPlans = filteredPlans.filter(p => MAIN_TIER_IDS_PAYWALL.includes(p.id));

@@ -15,6 +15,7 @@ import { Input } from '../ui/input';
 import { toast } from '../../utils/toast';
 import { API_URL } from '../../config';
 import { suspendAutoLogout } from '../../utils/autoLogoutSuspend';
+import { FreeModeBanner } from '../FreeModeBanner';
 
 const TIER_STYLES = {
   ben_premium: { accent: '#d4af37', icon: Crown, label: 'Best Value' },
@@ -172,6 +173,10 @@ export const SubscriptionManagement = ({
   const pendingPlanId = pendingIntent?.plan_id || null;
   const _pendingBilling = pendingIntent?.billing_cycle || null;
   const isBeta = subscriptionStatus?.beta_mode;
+  // When the founder turns on platform-wide Free Mode, the entire tier
+  // selection is replaced by a single gold "Free Mode" banner and the
+  // plan tiles are greyed out / non-interactive (no one is being charged).
+  const platformFreeMode = subscriptionStatus?.platform_free_mode;
   const lockedTier = subscriptionStatus?.beneficiary_locked_tier;
   const estateTransitioned = subscriptionStatus?.estate_transitioned || false;
   const benCanSubscribe = !isBeneficiary || estateTransitioned;
@@ -552,13 +557,15 @@ export const SubscriptionManagement = ({
         </div>
       </CardHeader>
       <CardContent className="pt-2">
+        {/* Free Mode — replaces the choose/your-plan flow entirely. */}
+        {platformFreeMode && <FreeModeBanner className="mb-6" />}
         {/* Status Banner — shown ONLY for non-active states (beta,
             free trial, or no-plan-chosen). Active subscribers already
             see their full plan name + price in the "Current Plan"
             card below, so an extra "${plan_name} · ${cycle}" banner
             here is redundant — and was rendering as the confusing
             "undefined · annual" when plan_name wasn't populated. */}
-        {subscriptionStatus && !(currentSub?.status === 'active' && !isBeta) && (
+        {subscriptionStatus && !platformFreeMode && !(currentSub?.status === 'active' && !isBeta) && (
           <div className="mb-6 p-4 rounded-xl relative overflow-hidden" style={{
             background: isBeta
               ? 'linear-gradient(135deg, rgba(139,92,246,0.08), rgba(59,130,246,0.05))'
@@ -601,8 +608,13 @@ export const SubscriptionManagement = ({
           </div>
         )}
 
-        {/* Billing Toggle — hidden for military beneficiaries (flat rate) */}
-        {showBillingToggle && <BeneficiaryBillingToggle billing={billing} onChange={setBilling} />}
+        {/* Billing Toggle — hidden for military beneficiaries (flat rate).
+            Greyed + disabled under Free Mode (no plan to bill). */}
+        {showBillingToggle && (
+          <div className={platformFreeMode ? 'opacity-40 grayscale pointer-events-none select-none' : ''} aria-hidden={platformFreeMode ? 'true' : undefined}>
+            <BeneficiaryBillingToggle billing={billing} onChange={setBilling} />
+          </div>
+        )}
 
         {/* Locked tier info for beneficiaries */}
         {isBeneficiary && lockedPlan && (
@@ -615,7 +627,7 @@ export const SubscriptionManagement = ({
         )}
 
         {/* Founders Circle beneficiary message */}
-        {isBeneficiary && subscriptionStatus?.free_access && (
+        {isBeneficiary && subscriptionStatus?.free_access && !platformFreeMode && (
           <div className="mb-5 p-4 rounded-xl flex items-start gap-3" style={{ background: 'rgba(var(--gold-rgb), 0.08)', border: '1px solid rgba(var(--gold-rgb), 0.25)' }}>
             <Crown className="w-5 h-5 text-[var(--gold)] flex-shrink-0 mt-0.5" />
             <p className="text-xs text-[var(--t3)] leading-relaxed">
@@ -668,7 +680,14 @@ export const SubscriptionManagement = ({
             slides down the eligibility/discount tiers (New Adult,
             Military, Veteran, Hospice, Enterprise) when tapped. The
             inline `renderPlanCard` is reused by both grids so the card
-            markup stays single-source-of-truth and zero-regression. */}
+            markup stays single-source-of-truth and zero-regression.
+            When Free Mode is on, the whole region is greyed out and
+            made non-interactive — the gold banner above takes over. */}
+        <div
+          className={platformFreeMode ? 'opacity-40 grayscale pointer-events-none select-none transition-opacity duration-300' : ''}
+          aria-hidden={platformFreeMode ? 'true' : undefined}
+          data-testid="plan-selection-region"
+        >
         {(() => {
           const renderPlanCard = (plan, useFlexWidth) => {
             const style = TIER_STYLES[plan.id] || TIER_STYLES.base;
@@ -1034,6 +1053,7 @@ export const SubscriptionManagement = ({
             </>
           );
         })()}
+        </div>
 
         {/* Apple-required subscription disclosures */}
         <div className="mt-4 p-3 rounded-xl text-center space-y-1" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>

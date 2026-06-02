@@ -956,6 +956,7 @@ const Sidebar = () => {
             inactiveLabel="Off"
             collapsed={collapsed}
             testId="sidebar-free-mode-toggle"
+            activeBadge="LIVE"
           />
           <PlatformBooleanToggle
             settingKey="ai_burn_guard_enabled"
