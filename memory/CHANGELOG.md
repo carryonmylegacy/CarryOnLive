@@ -1,5 +1,18 @@
 # CarryOn — Changelog
 
+## Jun 2, 2026 (evening) — Hardening mega-patch FINALIZED + production-readiness gates
+
+Founder approved production deploy (no real users yet — zero blast radius for the fail-closed/migration changes). Executed in verified gates:
+
+- **Gate 1 — P1-07 closed (the last open audit finding).** `routes/guardian.py gather_estate_context`: removed the legacy `documents[:10]` fallback that sent **un-flagged document content + names** to the Estate Guardian AI. Now FAIL-CLOSED — only `ai_eligible` docs go to the model (names + content); the rest are summarised as an opaque count ("+N other document(s) … withheld from this prompt"). Content extraction gated on `ai_docs`.
+- **Gate 2 — tests.** `tests/test_hardening_failclosed_identity.py` → **11/11 pass**, incl. new P1-07 regression (seeded estate proves an un-flagged doc's name/content never enters the prompt) + unverified-email-≠-identity + fail-closed doc/financial/message. Core access suite (dev-login) 47/0.
+- **Gate 3 — dependency drift triaged & DEFERRED.** pip-audit 8→12 is CVE-feed disclosure drift (requirements.txt untouched): `pyjwt`, `starlette` (major 0.49→1.0), `litellm`, `idna`, `python-dotenv`, dev-only `black`/`pip`. NOT bumped inside a security deploy (regression risk, esp. starlette major + litellm); baseline NOT silently greened (keeps auth-relevant pyjwt advisories visible). Tracked as #1 post-deploy follow-up. Non-blocking for runtime.
+- **Gate 4 — app health.** Frontend renders full landing/login (no white screen); backend healthy (db connected, 12/12 schedulers, 0 errored); GDPR fix verified live (`/api/compliance/data-export` → 401, was 404).
+- **Gate 5 — deploy preflight (deployment_agent): READY.** No hardcoded env/secrets/URLs; migrations idempotent; supervisor valid; FE builds. One non-blocking note: `CORS_ORIGINS` lists real domains (app.carryon.us etc.) + preview; middleware auto-adds FRONTEND_URL, so fine for Vercel/Render; only a new `*.emergent.host` target would need that origin added.
+
+**Final artifact:** `/app/carryon-mega-hardening.patch` (50 files, 7,932 lines), regenerated from base `b765133` — applies cleanly to a fresh checkout. Changes are also committed in the working branch (deploy via platform / Save to Github).
+
+
 ## Jun 2, 2026 — Hardening MEGA-PATCH: audit-fixes base + 3 adversarial-finding fixes (APPLIED + TESTED)
 
 Combined the founder-supplied `carryon-hardening-audit-fixes.patch` (canonical access-control refactor: `services/access_control.py`, P0 SDV/transition/message fixes, emergency-access consumption, CFP/DAV, BEC↔SDV consistency, GDPR endpoint fix, free-mode toggle, AI burn guard) with fixes for the 3 adversarial unauthorized-access paths I found. Applied to `/app`, tested, and exported as `/app/carryon-mega-hardening.patch` (49 files; reverse-apply verified — forward-applies cleanly to commit b765133).

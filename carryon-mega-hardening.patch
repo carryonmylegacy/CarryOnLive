@@ -1735,6 +1735,61 @@ index 2776f1da..c411f7a5 100644
  
      bill_categories = (
          "mortgage_rent, utilities, insurance, subscriptions, credit_card, "
+diff --git a/backend/routes/guardian.py b/backend/routes/guardian.py
+index 946365d6..a72741a0 100644
+--- a/backend/routes/guardian.py
++++ b/backend/routes/guardian.py
+@@ -273,28 +273,32 @@ async def gather_estate_context(estate_id: str, include_doc_content: bool = Fals
+     # Documents
+     context_parts.append("**DOCUMENTS IN VAULT:**")
+     if documents:
+-        # AI eligibility: users mark only the documents that materially
+-        # drive an IAC / EGA analysis (will, trust, POA, deeds, life
+-        # insurance policy, etc.). Everything else (random PDFs, photos,
+-        # tax-year-old receipts) stays out of the AI prompt so the model
+-        # focuses on what matters AND the prompt stays within a sane
+-        # token budget. If the user hasn't marked anything yet we fall
+-        # back to the legacy "first 10" cap to preserve old behavior.
+-        ai_eligible_docs = [d for d in documents if d.get("ai_eligible") is True]
+-        if ai_eligible_docs:
+-            ai_docs = ai_eligible_docs
+-        else:
+-            ai_docs = documents[:10]
+-
+-        for doc in documents:
++        # Data-handling contract: ONLY documents the benefactor explicitly flags
++        # as AI-eligible are ever sent to the model — names, metadata, AND
++        # content. Everything else is summarised as a bare count so the model
++        # knows it exists without us disclosing it. FAIL-CLOSED: if nothing is
++        # flagged, no document names or content go to the AI. (Removes the
++        # legacy `documents[:10]` fallback, which leaked the content of
++        # un-flagged documents into the prompt — audit finding P1-07.)
++        ai_docs = [d for d in documents if d.get("ai_eligible") is True]
++        withheld_count = len(documents) - len(ai_docs)
++
++        for doc in ai_docs:
+             locked_status = f" [LOCKED - {doc.get('lock_type', 'unknown')}]" if doc.get("is_locked") else ""
+-            ai_flag = " [AI-eligible]" if doc.get("ai_eligible") else ""
+             context_parts.append(
+-                f"- {doc['name']} (Category: {doc['category']}, Type: {doc.get('file_type', 'unknown')}, Size: {doc.get('file_size', 0)} bytes){locked_status}{ai_flag}"
++                f"- {doc['name']} (Category: {doc['category']}, Type: {doc.get('file_type', 'unknown')}, Size: {doc.get('file_size', 0)} bytes){locked_status} [AI-eligible]"
++            )
++        if withheld_count:
++            context_parts.append(
++                f"- (+{withheld_count} other document(s) in the vault not flagged for AI analysis — withheld from this prompt)"
++            )
++        if not ai_docs:
++            context_parts.append(
++                "- No documents have been flagged for AI analysis yet. Ask the benefactor to tap the gold AI badge on the documents they want analysed."
+             )
+ 
+-        # Include document content if requested
+-        if include_doc_content:
++        # Include document content if requested — only for AI-eligible docs.
++        if include_doc_content and ai_docs:
+             context_parts.append("\n**DOCUMENT CONTENTS (for analysis):**")
+ 
+             # Adaptive per-doc cap. Grok-4 has a generous context window
 diff --git a/backend/routes/messages.py b/backend/routes/messages.py
 index 1bb543e1..0f835350 100644
 --- a/backend/routes/messages.py
