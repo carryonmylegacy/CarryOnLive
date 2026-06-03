@@ -111,6 +111,10 @@ export const PartnersTab = ({ getAuthHeaders }) => {
   const [saving, setSaving] = useState(false);
   const [partners, setPartners] = useState([]);
   const [columns, setColumns] = useState([]);
+  // Which gate set the matrix edits: a partner's tailored tier (normal
+  // operation) or their FREE tier (used when platform-wide Free Mode is ON).
+  const [gateMode, setGateMode] = useState('tailored');
+  const gateField = gateMode === 'free' ? 'free_feature_gates' : 'feature_gates';
   const [showNew, setShowNew] = useState(false);
   const [newForm, setNewForm] = useState({
     company_name: '', slug: '', code: '', discount_percent: 100,
@@ -189,8 +193,16 @@ export const PartnersTab = ({ getAuthHeaders }) => {
 
   const updatePartner = async (id, patch) => {
     // Optimistic UI: update the local row immediately so toggles feel
-    // snappy. On failure we re-fetch to roll back.
-    setPartners((prev) => prev.map(p => p.id === id ? { ...p, ...patch, feature_gates: { ...(p.feature_gates || {}), ...(patch.feature_gates || {}) } } : p));
+    // snappy. On failure we re-fetch to roll back. Merge whichever gate
+    // map was patched (tailored or free) so partial gate updates don't
+    // clobber the other field.
+    setPartners((prev) => prev.map(p => {
+      if (p.id !== id) return p;
+      const merged = { ...p, ...patch };
+      if (patch.feature_gates) merged.feature_gates = { ...(p.feature_gates || {}), ...patch.feature_gates };
+      if (patch.free_feature_gates) merged.free_feature_gates = { ...(p.free_feature_gates || {}), ...patch.free_feature_gates };
+      return merged;
+    }));
     try {
       await apiClient.put(`${API_URL}/admin/partners/${id}`, patch, { headers: { ...authHeaders(), 'Content-Type': 'application/json' } });
     } catch (err) {
@@ -200,8 +212,9 @@ export const PartnersTab = ({ getAuthHeaders }) => {
   };
 
   const toggleGate = (partner, featureKey) => {
-    const next = !((partner.feature_gates || {})[featureKey]);
-    updatePartner(partner.id, { feature_gates: { ...(partner.feature_gates || {}), [featureKey]: next } });
+    const current = partner[gateField] || {};
+    const next = !current[featureKey];
+    updatePartner(partner.id, { [gateField]: { ...current, [featureKey]: next } });
   };
 
   const deletePartner = async (id, name) => {
@@ -297,13 +310,45 @@ export const PartnersTab = ({ getAuthHeaders }) => {
                 White-Label Partners
               </h3>
               <p className="text-sm text-[var(--t4)] mt-1">
-                Each row is a B2B partnership. Toggle which pillars each partner offers to their clients,
-                then share their unique landing page link.
+                {gateMode === 'free' ? (
+                  <>Editing each partner&apos;s <span className="font-semibold" style={{ color: '#4ADE80' }}>Free tier</span> —
+                  the features their members receive when the platform-wide <span className="font-semibold">Free</span> toggle is ON.</>
+                ) : (
+                  <>Editing each partner&apos;s <span className="font-semibold text-[#8B5CF6]">tailored tier</span> — the pillars
+                  they offer their clients during normal (paid) operation.</>
+                )}
               </p>
             </div>
             <Button size="sm" className="gold-button text-xs" onClick={() => setShowNew(true)} data-testid="add-partner-btn">
               <Plus className="w-3 h-3 mr-1" /> New Partner
             </Button>
+          </div>
+
+          {/* Tier editing mode switch */}
+          <div className="mt-4 inline-flex rounded-lg p-0.5" style={{ background: 'var(--s)', border: '1px solid var(--b)' }} data-testid="partner-gate-mode-switch">
+            <button
+              onClick={() => setGateMode('tailored')}
+              className="px-3 py-1.5 rounded-md text-xs font-semibold transition-all"
+              style={gateMode === 'tailored'
+                ? { background: 'rgba(139,92,246,0.18)', color: '#8B5CF6', border: '1px solid rgba(139,92,246,0.4)' }
+                : { background: 'transparent', color: 'var(--t4)', border: '1px solid transparent' }}
+              data-testid="partner-gate-mode-tailored"
+            >
+              Tailored tier
+            </button>
+            <button
+              onClick={() => setGateMode('free')}
+              className="px-3 py-1.5 rounded-md text-xs font-semibold transition-all flex items-center gap-1.5"
+              style={gateMode === 'free'
+                ? { background: 'rgba(74,222,128,0.15)', color: '#4ADE80', border: '1px solid rgba(74,222,128,0.4)' }
+                : { background: 'transparent', color: 'var(--t4)', border: '1px solid transparent' }}
+              data-testid="partner-gate-mode-free"
+            >
+              {gateMode === 'free' && (
+                <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#4ADE80', boxShadow: '0 0 6px rgba(74,222,128,0.8)' }} />
+              )}
+              Free tier
+            </button>
           </div>
         </CardContent>
       </Card>
@@ -438,6 +483,8 @@ export const PartnersTab = ({ getAuthHeaders }) => {
                     key={partner.id}
                     partner={partner}
                     columns={columns}
+                    gateField={gateField}
+                    gateMode={gateMode}
                     authHeaders={authHeaders}
                     fileInputs={fileInputs}
                     onUpdate={updatePartner}
@@ -506,7 +553,7 @@ export const PartnersTab = ({ getAuthHeaders }) => {
   );
 };
 
-function PartnerRow({ partner, columns, fileInputs, onUpdate, onToggleGate, onUploadLogo, onDelete, onCopy, onCopyEmail, onSendEmail, sending, copied }) {
+function PartnerRow({ partner, columns, gateField, gateMode, fileInputs, onUpdate, onToggleGate, onUploadLogo, onDelete, onCopy, onCopyEmail, onSendEmail, sending, copied }) {
   // Pre-pitch UX (May 20, 2026): default partner rows to a read-only
   // identity view with pencil + trash icons next to the logo. Tap the
   // pencil to expand into the editable Input fields. Keeps rows
@@ -806,14 +853,14 @@ function PartnerRow({ partner, columns, fileInputs, onUpdate, onToggleGate, onUp
 
       {/* Feature toggle cells */}
       {columns.map(col => {
-        const enabled = !!(partner.feature_gates || {})[col.key];
+        const enabled = !!(partner[gateField] || {})[col.key];
         return (
           <td key={col.key} className="px-2 py-3 text-center align-middle">
             <Switch
               checked={enabled}
               onCheckedChange={() => onToggleGate(partner, col.key)}
-              data-testid={`partner-gate-${partner.slug}-${col.key}`}
-              aria-label={`Toggle ${col.label} for ${partner.company_name}`}
+              data-testid={`partner-gate-${gateMode}-${partner.slug}-${col.key}`}
+              aria-label={`Toggle ${col.label} (${gateMode} tier) for ${partner.company_name}`}
             />
           </td>
         );

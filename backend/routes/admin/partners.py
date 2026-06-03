@@ -157,6 +157,11 @@ async def list_partners(current_user: dict = Depends(get_current_user)):
         counts = {row["_id"]: row["n"] async for row in db.users.aggregate(pipeline)}
         for p in partners:
             p["active_users_count"] = int(counts.get(p["id"], 0))
+            # Backfill a display default for partners created before the
+            # free-tier field existed (not persisted until the founder
+            # actually toggles it — keeps the UI consistent).
+            if not isinstance(p.get("free_feature_gates"), dict):
+                p["free_feature_gates"] = _default_gates()
 
     # Inline-encode logo bytes as a data URL so the admin UI renders
     # the brand mark without a separate image fetch (which has been
@@ -192,6 +197,7 @@ class PartnerCreate(BaseModel):
     tagline: str = ""
     partner_email: str = ""
     feature_gates: Optional[dict] = None
+    free_feature_gates: Optional[dict] = None
     active: bool = True
 
 
@@ -224,6 +230,7 @@ async def create_partner(body: PartnerCreate, current_user: dict = Depends(get_c
         "tagline": (body.tagline or "").strip()[:280],
         "partner_email": (body.partner_email or "").strip()[:120],
         "feature_gates": _coerce_gates(body.feature_gates),
+        "free_feature_gates": _coerce_gates(body.free_feature_gates),
         "logo_key": None,
         "active": bool(body.active),
         "created_at": datetime.now(timezone.utc).isoformat(),
@@ -242,6 +249,7 @@ class PartnerUpdate(BaseModel):
     tagline: Optional[str] = None
     partner_email: Optional[str] = None
     feature_gates: Optional[dict] = None
+    free_feature_gates: Optional[dict] = None
     active: Optional[bool] = None
 
 
@@ -284,6 +292,8 @@ async def update_partner(
         update["partner_email"] = body.partner_email.strip()[:120]
     if body.feature_gates is not None:
         update["feature_gates"] = _coerce_gates(body.feature_gates)
+    if body.free_feature_gates is not None:
+        update["free_feature_gates"] = _coerce_gates(body.free_feature_gates)
     if body.active is not None:
         update["active"] = bool(body.active)
 

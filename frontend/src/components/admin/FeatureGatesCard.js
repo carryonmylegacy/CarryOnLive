@@ -16,6 +16,7 @@ const TIER_LABELS = {
   hospice: 'Hospice',
   veteran: 'Veteran',
   enterprise: 'Enterpr.',
+  free_mode: 'Free Mode',
 };
 
 const TIER_COLORS = {
@@ -27,6 +28,7 @@ const TIER_COLORS = {
   hospice: '#ec4899',
   veteran: '#F59E0B',
   enterprise: '#8B5CF6',
+  free_mode: '#4ADE80',
 };
 
 export const FeatureGatesCard = ({ getAuthHeaders }) => {
@@ -143,6 +145,25 @@ export const FeatureGatesCard = ({ getAuthHeaders }) => {
           Control which platform features are visible per subscription tier. Toggling a feature OFF
           hides it from navigation, dashboard, and blocks API access for users on that tier.
         </p>
+
+        {/* Free Mode column explainer */}
+        <div
+          className="mb-4 p-3 rounded-xl flex items-start gap-2.5"
+          style={{ background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.25)' }}
+          data-testid="feature-gates-free-mode-note"
+        >
+          <span
+            className="mt-0.5 w-2.5 h-2.5 rounded-full flex-shrink-0"
+            style={{ background: '#4ADE80', boxShadow: '0 0 8px rgba(74,222,128,0.7)' }}
+          />
+          <p className="text-xs text-[var(--t4)]">
+            The <span className="font-bold" style={{ color: '#4ADE80' }}>Free Mode</span> column is
+            the source of truth when the platform-wide <span className="font-semibold">Free</span> toggle
+            is ON: every (non-partner) user receives exactly the features enabled here, regardless of their
+            normal tier. B2B partner members instead follow their own <span className="font-semibold">Free tier</span> in
+            the Partners tab.
+          </p>
+        </div>
 
         {/* Matrix table */}
         <div className="overflow-x-auto -mx-1">

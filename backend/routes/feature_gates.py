@@ -111,7 +111,10 @@ PLATFORM_FEATURES = [
 
 FEATURE_KEYS = [f["key"] for f in PLATFORM_FEATURES]
 
-# All benefactor tier IDs from DEFAULT_PLANS
+# All benefactor tier IDs from DEFAULT_PLANS.
+# `free_mode` is a SPECIAL gate column (not a purchasable plan): it is the
+# single source of truth for what features every (non-partner) user sees
+# while the platform-wide Free toggle is ON. See get_user_enabled_features.
 TIER_IDS = [
     "premium",
     "standard",
@@ -121,6 +124,7 @@ TIER_IDS = [
     "hospice",
     "veteran",
     "enterprise",
+    "free_mode",
 ]
 
 
@@ -149,10 +153,14 @@ async def get_feature_gates() -> dict:
                 gates[f["key"]] = {tid: False for tid in TIER_IDS}
                 changed = True
             else:
-                # Ensure any new tiers added to code are present
+                # Ensure any new tiers added to code are present.
+                # New tier defaults respect a feature's `default_off` flag
+                # (e.g. CES, Trustee Mode) so a freshly-added tier like
+                # `free_mode` starts with sensible visibility the founder
+                # can then fine-tune in the Feature Gates tab.
                 for tid in TIER_IDS:
                     if tid not in gates[f["key"]]:
-                        gates[f["key"]][tid] = True
+                        gates[f["key"]][tid] = not f.get("default_off", False)
                         changed = True
         if changed:
             await db.subscription_settings.update_one(
@@ -332,6 +340,19 @@ async def get_user_enabled_features(
         # access enforcement — this decides visibility only.
         effective_tier = "premium"
 
+    # Platform-wide Free Mode (founder global toggle). When ON, feature
+    # VISIBILITY is sourced from dedicated free gates rather than the user's
+    # normal subscription tier:
+    #   • non-partner users  → the global "free_mode" gate column (Feature
+    #     Gates tab)
+    #   • B2B partner members → that partner's separate "free tier"
+    #     (free_feature_gates) — so every partner keeps a tailored tier for
+    #     normal operation AND a free tier coupled to platform free-ness.
+    platform_settings = await db.platform_settings.find_one(
+        {"_id": "global"}, {"_id": 0, "platform_free_mode": 1}
+    )
+    free_mode_on = bool((platform_settings or {}).get("platform_free_mode", False))
+
     gates = await get_feature_gates()
     enabled = get_enabled_features_for_tier(gates, effective_tier)
 
@@ -343,12 +364,6 @@ async def get_user_enabled_features(
     # snapshot on the user. This guarantees that when an admin
     # toggles a feature for a partner in the Partners tab, ALL of
     # that partner's members see the change immediately. No drift.
-    #
-    # Backwards-compat: legacy users redeemed before live-read
-    # rollout have a `partner_feature_gates` blob on their record.
-    # That blob is now IGNORED — we always go to `b2b_partners`. If
-    # the partner row has been deleted or deactivated, the user
-    # falls back to their normal tier gates (no orphaned access).
     user_doc = await db.users.find_one(
         {"id": current_user["id"]},
         {"_id": 0, "id": 1, "partner_id": 1},
@@ -356,18 +371,38 @@ async def get_user_enabled_features(
     if user_doc and user_doc.get("partner_id"):
         partner_doc = await db.b2b_partners.find_one(
             {"id": user_doc["partner_id"], "active": True},
-            {"_id": 0, "id": 1, "feature_gates": 1},
+            {"_id": 0, "id": 1, "feature_gates": 1, "free_feature_gates": 1},
         )
-        if partner_doc and isinstance(partner_doc.get("feature_gates"), dict):
-            partner_gates = partner_doc["feature_gates"]
-            enabled = [k for k in FEATURE_KEYS if partner_gates.get(k, False)]
-            return {
-                "enabled_features": enabled,
-                "all_enabled": len(enabled) == len(FEATURE_KEYS),
-                "partner_override": True,
-            }
+        if partner_doc:
+            if free_mode_on:
+                # Partner's FREE tier, falling back to their tailored tier
+                # if the free tier has not been configured yet.
+                partner_gates = (
+                    partner_doc.get("free_feature_gates")
+                    if isinstance(partner_doc.get("free_feature_gates"), dict)
+                    else partner_doc.get("feature_gates")
+                )
+            else:
+                partner_gates = partner_doc.get("feature_gates")
+            if isinstance(partner_gates, dict):
+                enabled = [k for k in FEATURE_KEYS if partner_gates.get(k, False)]
+                return {
+                    "enabled_features": enabled,
+                    "all_enabled": len(enabled) == len(FEATURE_KEYS),
+                    "partner_override": True,
+                    "free_mode": free_mode_on,
+                }
         # Partner inactive or deleted → silently fall through to
         # tier-based gates rather than locking the user out.
+
+    # ─── Platform Free Mode for non-partner users ────────────────
+    if free_mode_on:
+        enabled = get_enabled_features_for_tier(gates, "free_mode")
+        return {
+            "enabled_features": enabled,
+            "all_enabled": len(enabled) == len(FEATURE_KEYS),
+            "free_mode": True,
+        }
 
     return {"enabled_features": enabled, "all_enabled": len(enabled) == len(FEATURE_KEYS)}
 
