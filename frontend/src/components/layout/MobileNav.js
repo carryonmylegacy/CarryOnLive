@@ -81,6 +81,14 @@ const MobileNav = () => {
   // the hamburger menu). Keyed per-role.
   const [menuOrderBenefactor, setMenuOrderBenefactor] = useState([]);
   const [menuOrderBeneficiary, setMenuOrderBeneficiary] = useState([]);
+  // Platform-wide Subscription visibility — founder's master switch hides
+  // the Subscription menu item for everyone when off.
+  const [subsVisible, setSubsVisible] = useState(() => isPlatformSubscriptionsVisible());
+  React.useEffect(() => {
+    const onChange = () => setSubsVisible(isPlatformSubscriptionsVisible());
+    window.addEventListener(PLATFORM_SUBSCRIPTIONS_FLAG_EVENT, onChange);
+    return () => window.removeEventListener(PLATFORM_SUBSCRIPTIONS_FLAG_EVENT, onChange);
+  }, []);
 
   // Platform-wide queued-write tally so we can paint a subtle amber
   // dot on the hamburger menu whenever there's anything waiting to
