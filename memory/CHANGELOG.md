@@ -1,5 +1,18 @@
 # CarryOn — Changelog
 
+## Jun 3, 2026 (later) — "Saved offline ✓" badge — bound to ACTUAL local cache, never an intent flag
+
+Founder follow-up to the offline-parity work: "I want those linked to the actual act of that thing being properly cached. I don't want it to show a mark because something says it's supposed to be saved — only show the green checkmark when the thing is actually saved locally."
+
+Built a strict, read-only truth indicator:
+- **NEW `components/OfflineSavedBadge.js`** — renders the green "Saved offline" pill ONLY when its `check()` resolves truthy, where `check` reads the **real IndexedDB store** (not any server flag). Re-checks on mount + on `carryon:pins-changed`, `carryon:sync:finish`, and a new `carryon:offline:blob-saved` event, so it flips on the instant the bytes land and off the instant they're evicted/unpinned.
+- **`offline/imageBlobsRepo.js`** — `putImageBlob` now dispatches `carryon:offline:blob-saved` after a successful write, so badges react to on-demand caching (e.g. first video play) without a reload.
+- **Documents (`components/vault/VaultDocumentCard.js`)** — badge check = `isPinnedLocally(doc.id)` (the FULL pinned-doc blob in Dexie = genuinely openable offline). Deliberately NOT the server `pinned_offline` intent flag and NOT the thumbnail — so a doc "marked for offline" whose blob hasn't downloaded shows NO check.
+- **Milestone videos (`components/messages/MessageCard.js` benefactor + `pages/beneficiary/BeneficiaryMessagesPage.js`)** — badge check = `getImageBlob('mm:<id>:video')` present.
+
+**Verified (preview, seeded benefactor):** Vault + Messages render clean with the new code (webpack compiled successfully, ESLint clean on all 5 files); with nothing cached the badges are correctly ABSENT (0 `doc-saved-offline-*`, 0 `mm-saved-offline-*`) — proving truthful negative. `housekeeping.sh --strict` unchanged from baseline (the 11px-bold pill matches the existing "AI ✓"/"Delivered" badge pattern, adds no new sub-11px WARN). Positive case (badge appears) is structurally guaranteed by the IndexedDB-backed `check` + event wiring; on-device confirmation per Rule 1 after a real pin / cached video. No backend changes.
+
+
 ## Jun 3, 2026 — Offline "ready" pill made HONEST + beneficiary estates actually cached (Option A: make the claims true)
 
 Founder demand: "I want to ship what I'm advertising. Period. Make it work." Audited `warmup.js` against both Offline Capabilities cards and closed the two real gaps that made the marketing copy false:

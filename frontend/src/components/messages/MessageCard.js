@@ -5,6 +5,8 @@ import {
 } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
+import OfflineSavedBadge from '../OfflineSavedBadge';
+import { getImageBlob } from '../../offline/imageBlobsRepo';
 
 /**
  * MessageCard
@@ -141,6 +143,18 @@ const MessageCard = ({
                 {loadingPlayback ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
                 Play Video
               </button>
+            )}
+
+            {/* Truthful offline indicator — only when this milestone's video
+                bytes are genuinely cached in IndexedDB (mm:<id>:video). */}
+            {msg.message_type === 'video' && msg.video_url && (
+              <div className="mb-4">
+                <OfflineSavedBadge
+                  testId={`mm-saved-offline-${msg.id}`}
+                  check={() => getImageBlob(`mm:${msg.id}:video`).then((b) => !!b)}
+                  label="Saved offline"
+                />
+              </div>
             )}
 
             {msg.message_type === 'attachment' && msg.attachment_name && (

@@ -31,6 +31,13 @@ export async function putImageBlob(cacheKey, blob, kind = 'photo') {
       kind,
       fetched_at: Date.now(),
     });
+    // Notify any truthful "Saved offline" indicators that a real blob just
+    // landed locally so they can re-check and flip on without a reload.
+    try {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('carryon:offline:blob-saved', { detail: { cacheKey, kind } }));
+      }
+    } catch { /* SSR / no window */ }
   } catch {
     /* quota exceeded or schema mismatch — non-fatal */
   }

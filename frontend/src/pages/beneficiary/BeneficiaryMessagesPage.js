@@ -14,6 +14,7 @@ import {
 } from '../../utils/beneficiaryOfflineCache';
 import { getImageBlob, putImageBlob } from '../../offline/imageBlobsRepo';
 import { isOfflineEnabled } from '../../offline/featureFlag';
+import OfflineSavedBadge from '../../components/OfflineSavedBadge';
 
 const BeneficiaryMessagesPage = () => {
   const { getAuthHeaders } = useAuth();
@@ -161,6 +162,15 @@ const BeneficiaryMessagesPage = () => {
                     <Play className="w-12 h-12 mx-auto text-[var(--bl3)] mb-2" />
                     <div className="text-sm text-[var(--t4)]">Video message</div>
                   </div>
+                </div>
+              )}
+              {m.video_url && (
+                <div className="mt-3">
+                  <OfflineSavedBadge
+                    testId={`mm-saved-offline-${m.id}`}
+                    check={() => getImageBlob(`mm:${m.id}:video`).then((b) => !!b)}
+                    label="Saved offline"
+                  />
                 </div>
               )}
               {m.content && <p className="text-sm text-[var(--t3)] leading-relaxed">{m.content}</p>}

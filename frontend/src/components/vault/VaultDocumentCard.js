@@ -8,6 +8,8 @@ import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import DocThumbnail from '../DocThumbnail';
 import PinForOfflineButton from './PinForOfflineButton';
+import OfflineSavedBadge from '../OfflineSavedBadge';
+import { isPinnedLocally } from '../../offline/pinnedDocsRepo';
 
 // Map an entity category → small icon for the SDV thumbnail overlay.
 const ENTITY_ICON = {
@@ -175,6 +177,17 @@ const VaultDocumentCard = ({
           <p className="text-[#64748b] text-xs mb-3">
             {formatFileSize(doc.file_size)} · {doc.category}
           </p>
+
+          {/* Truthful offline indicator — only shows when the FULL document
+              blob is genuinely pinned in local IndexedDB (isPinnedLocally),
+              never off the server `pinned_offline` intent flag. */}
+          <div className="mb-3" onClick={(e) => e.stopPropagation()}>
+            <OfflineSavedBadge
+              testId={`doc-saved-offline-${doc.id}`}
+              check={() => isPinnedLocally(doc.id)}
+              label="Saved offline"
+            />
+          </div>
           
           <div className="flex items-center gap-2">
           <Button 
