@@ -15,6 +15,7 @@ const PlatformBooleanToggle = ({
   mobile = false,
   testId,
   activeBadge,
+  onChange,
 }) => {
   const [on, setOn] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -45,6 +46,10 @@ const PlatformBooleanToggle = ({
       );
       const authoritative = !!res.data?.[settingKey];
       setOn(authoritative);
+      // Let the caller mirror the change into any local flag immediately so
+      // the current session reflects it without waiting for a full reload
+      // (e.g. hiding the Subscription menu item the instant it's toggled).
+      try { onChange?.(authoritative); } catch { /* non-fatal */ }
       toast.success(`${label} ${authoritative ? activeLabel : inactiveLabel}`);
     } catch (err) {
       setOn(!next);

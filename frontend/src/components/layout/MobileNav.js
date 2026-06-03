@@ -54,7 +54,7 @@ import MobileOtpToggle from './MobileOtpToggle';
 import SignupOtpToggle from './SignupOtpToggle';
 import MobileOfflineToggle from './MobileOfflineToggle';
 import PlatformBooleanToggle from './PlatformBooleanToggle';
-import { isPlatformSubscriptionsVisible, PLATFORM_SUBSCRIPTIONS_FLAG_EVENT } from '../../utils/platformSubscriptionsFlag';
+import { isPlatformSubscriptionsVisible, setPlatformSubscriptionsFlag, PLATFORM_SUBSCRIPTIONS_FLAG_EVENT } from '../../utils/platformSubscriptionsFlag';
 import DebugValues from './DebugValues';
 
 export { DOCK_REGISTRY }; // re-export so existing consumers don't break
@@ -1092,6 +1092,7 @@ const MobileNav = () => {
                     inactiveLabel="Hidden"
                     mobile
                     testId="mobile-subscriptions-toggle"
+                    onChange={(val) => setPlatformSubscriptionsFlag(val ? 'on' : 'off')}
                   />
                 </div>
               )}

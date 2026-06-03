@@ -49,7 +49,7 @@ import PublicDeviceModeMenuButton from './PublicDeviceModeMenuButton';
 import AdminSectionNav from './AdminSectionNav';
 import BenefactorSectionNav from './BenefactorSectionNav';
 import PlatformBooleanToggle from './PlatformBooleanToggle';
-import { isPlatformSubscriptionsVisible, PLATFORM_SUBSCRIPTIONS_FLAG_EVENT } from '../../utils/platformSubscriptionsFlag';
+import { isPlatformSubscriptionsVisible, setPlatformSubscriptionsFlag, PLATFORM_SUBSCRIPTIONS_FLAG_EVENT } from '../../utils/platformSubscriptionsFlag';
 import { API_URL } from '../../config';
 import { filterNavByFeatures } from '../../utils/featureGates';
 import { applyUserMenuOrder } from '../../config/menuRegistry';
@@ -988,6 +988,7 @@ const Sidebar = () => {
             inactiveLabel="Hidden"
             collapsed={collapsed}
             testId="sidebar-subscriptions-toggle"
+            onChange={(val) => setPlatformSubscriptionsFlag(val ? 'on' : 'off')}
           />
         </div>
       )}
