@@ -148,13 +148,18 @@ export const AuthProvider = ({ children }) => {
           } catch { return null; }
         })();
         const _notExpired = _jwt?.exp && _jwt.exp * 1000 > Date.now();
-        const optimisticTimer = _notExpired ? setTimeout(() => {
+        // Paint the authenticated shell from cache and release the splash.
+        // Idempotent (guarded by `optimisticPainted`) so it's safe to call
+        // from BOTH the 5s safety-net timer and the fast offline probe below.
+        const paintOptimistic = () => {
           if (optimisticPainted) return;
           optimisticPainted = true;
-          // The boot round-trip is clearly unresponsive. Mark the device
-          // offline NOW so the dashboard + every page request short-circuits
-          // to cache instead of each hanging its own 20s timeout (the cause
-          // of the 15s+ "login to dashboard" lag on Wi-Fi-with-no-internet).
+          // The boot round-trip is unresponsive. Mark the device offline NOW
+          // so the dashboard + every page request short-circuits to cache
+          // instead of each hanging its own 20s timeout (the cause of the
+          // 15s+ "login to dashboard" lag on Wi-Fi-with-no-internet). If
+          // /auth/me later succeeds we clear this flag and reconcile to live
+          // data, so a rare false-positive self-corrects.
           try { if (typeof window !== 'undefined' && window.__setDeviceOffline) window.__setDeviceOffline(true); } catch { /* no-op */ }
           setUser((prev) => prev || {
             id: _jwt.user_id || _jwt.sub,
@@ -184,7 +189,41 @@ export const AuthProvider = ({ children }) => {
               if (ls) setSubscriptionStatus(ls);
             } catch { /* no cached sub */ }
           })();
-        }, 5000) : null;
+        };
+        // 5s safety net: if NOTHING resolved (slow/cold backend), still
+        // release the splash from cache rather than spin forever.
+        const optimisticTimer = _notExpired ? setTimeout(paintOptimistic, 5000) : null;
+
+        // Fast offline discriminator (cuts the offline cold-boot wait from
+        // ~5s to ~1.5s). We probe a STATIC same-origin asset — /manifest.json
+        // is served by the FRONTEND host and is NOT served from the SW cache
+        // (it falls through to network in sw-push.js), so:
+        //   • genuinely offline  → the fetch throws / aborts within 1.5s
+        //     → paint from cache immediately.
+        //   • online but slow/cold BACKEND → the static asset still returns
+        //     near-instantly (it doesn't touch the backend) → we do NOT
+        //     false-flag offline; the boot requests + reconciliation proceed.
+        // This is the clean signal iOS's lying `navigator.onLine` can't give.
+        if (_notExpired && typeof fetch === 'function') {
+          (async () => {
+            try {
+              const ctrl = new AbortController();
+              const to = setTimeout(() => ctrl.abort(), 1500);
+              await fetch(`/manifest.json?cy_boot=${Date.now()}`, {
+                method: 'GET',
+                cache: 'no-store',
+                signal: ctrl.signal,
+              });
+              clearTimeout(to);
+              // Reached the host (any response) → we're online; let the
+              // normal boot flow + reconciliation run.
+            } catch {
+              // Network error or 1.5s abort → the static host is unreachable
+              // → genuinely offline. Paint from cache now.
+              paintOptimistic();
+            }
+          })();
+        }
 
         try {
           // Fire all three boot requests in PARALLEL, not sequentially.

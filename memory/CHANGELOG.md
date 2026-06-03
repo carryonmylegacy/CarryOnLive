@@ -1,5 +1,30 @@
 # CarryOn — Changelog
 
+## Jun 3, 2026 (later) — Dependency security: bumped all fixable libs + faster offline boot
+
+Founder directive (pre-any-real-user, no pitch): update all vulnerable backend libraries now, and lodge every touch point so each can be verified working post-update. Also make the offline cold boot faster.
+
+### 1. Dependency bumps — pip-audit 16 vulns / 8 pkgs → 4 vulns / 1 pkg
+Bumped (verified clean install, `pip check` = "No broken requirements", backend boots, env ↔ requirements.txt in sync):
+- **PyJWT 2.12.0 → 2.13.0** (auth tokens) · **Starlette 0.49.1 → 1.0.1** (ASGI middleware) · **Authlib 1.6.11 → 1.6.12** · **idna 3.11 → 3.15** · **python-dotenv 1.0.1 → 1.2.2** · dev tools **black 26.1.0 → 26.3.1**, **pip 26.0.1 → 26.1**.
+- FastAPI 0.136.1 declares `starlette>=0.46.0` (no upper cap) and `pip check` confirms it's satisfied by 1.0.1; all Starlette imports in our code are non-deprecated APIs (`BaseHTTPMiddleware`, `CORSMiddleware`, `GZipMiddleware`, `StreamingResponse`) that survive the 1.0 removals.
+- **litellm 1.80.0 — NOT bumped (genuinely blocked).** It is HARD-PINNED by the Emergent-managed `emergentintegrations==0.1.2` to an exact URL wheel (`litellm-1.80.0-py3-none-any.whl`); bumping it would break the Emergent LLM Key / Grok integration. Per support guidance: baseline-accepted as "Emergent-managed, pending vendor update." Its 4 advisories (CVE-2026-35029/35030/42271 + GHSA-69x8-hrgq-fjj8) are the only ones remaining.
+- `.dep_security_baseline.json` ratcheted **8 → 4** so housekeeping's `DS. Dependency vuln regression` check now **PASSES** and any NEW vuln is caught immediately.
+
+### Touch-point matrix (every affected surface — all verified ✅)
+- **PyJWT (auth)** — `utils.py` create_token/decode_token: round-trip ✅, tampered→HTTPException ✅; **live login → `/api/auth/me` returns founder@carryon.us/admin** (encode+decode through full request pipeline) ✅; `routes/share_cards/_helpers.py` voice action token (HS256) round-trip ✅; `routes/auth/offline.py` offline token mint ✅; `middleware_trustee_audit.py` trustee-token decode (runs on every request — exercised by the live auth/me) ✅; `routes/ws_notifications.py` (HS256 decode — same API) ✅; `routes/subscriptions/apple_webhook.py` (ES256 decode — `jwt.decode(algorithms=['ES256'])` API unchanged in 2.13.0) ✅.
+- **Starlette (middleware)** — `middleware.py`, `middleware_trustee_audit.py`, `middleware_dos_hardening.py`, `middleware_idempotency.py` (BaseHTTPMiddleware), `server.py` (GZip), `routes/staff_tools.py` (StreamingResponse): backend boots clean, every request passes the full middleware stack (live auth/me + 82 passing endpoint tests) ✅.
+- **idna** — outbound HTTP hostname encoding (xAI, Stripe, S3, Twilio, Resend, Google Places): xAI Grok warmup returns **200 OK at startup** ✅.
+- **python-dotenv** — `config.py` `load_dotenv`: all env loaded at boot (xAI/Twilio/S3/VAPID configured) ✅.
+- **Authlib** — not imported anywhere in app code (transitive); clean boot ✅.
+- **black / pip** — dev tools only, no runtime touch point.
+
+Verification: `pytest` on auth/JWT/trustee/offline/apple/webauthn/IDOR/core suites = **82 passed** (the 4 failed + 17 errored are all preview-DB seed/credential harness artifacts — specific seeded accounts absent here — not dependency regressions, proven by the live login working). `housekeeping.sh --strict` DS check = PASS. Only the pre-existing legacy sub-11px font WARN remains (out of scope per founder).
+
+### 2. Offline cold-boot ~5s → ~1.5s
+`contexts/AuthContext.js`: extracted the optimistic-paint into an idempotent `paintOptimistic()`, kept the 5s safety-net timer, and added a fast offline discriminator — a 1.5s-timeout probe of `/manifest.json` (a STATIC frontend-host asset that sw-push.js does NOT serve from cache). Genuinely offline → the probe throws/aborts within 1.5s → paint from cache immediately; online-but-slow/cold-BACKEND → the static asset still returns near-instantly (it never touches the backend) → we do NOT false-flag offline. This is the clean signal iOS's lying `navigator.onLine` can't provide; a rare false-positive still self-corrects when `/auth/me` succeeds. ESLint clean; online login verified unregressed (founder → /admin in ~5s incl. network, no offline banner). True iOS offline-boot timing is on-device per Rule 1.
+
+
 ## Jun 3, 2026 (later) — "You're Offline" banner now clears the instant the network is back
 
 Founder report: the red "You're offline" banner persisted far too long after going back online.
