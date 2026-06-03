@@ -1,5 +1,21 @@
 # CarryOn — Changelog
 
+## Jun 3, 2026 (later, REGRESSION FIX) — Offline boot reliability: media prefetch made non-blocking again
+
+Founder report (live iOS PWA): glitchy, timing-fragile offline boot — very long login (BLACK → WHITE screen), only works via a "precise dance" (quit → online → sign out → reopen → offline), some beneficiary avatars empty, SDV thumbnails took forever / never loaded. "Not a practical use case."
+
+**Root cause (confirmed by troubleshoot RCA): my OWN earlier-today change.** Making the warm-up media prefetch AWAITED (to give the "Offline ready" pill an honest source) blocked warm-up tasks on up to ~1,040 blob fetches and saturated the browser's ~6-connections-per-origin pool for 60-120s. That starved the visible page's own on-render thumbnail/avatar fetches (→ "thumbnails never loaded"), and on iOS Wi-Fi-with-no-internet (where `navigator.onLine` lies) the hung fetches compounded into the long black/white boot + timing fragility. The "precise dance" only worked because signing out clears the token, so reopening offline skips warm-up entirely.
+
+**Fix (`offline/warmup.js`):**
+- Media prefetch (SDV thumbnails, MM videos, photos) is now NON-BLOCKING again — new `idlePrefetch()` defers the work to `requestIdleCallback` (3s timeout fallback) and throttles to 2 concurrent, fire-and-forget. Warm-up tasks resolve immediately after caching API data, so the page paints fast and keeps connection headroom.
+- Caps cut hard: SDV thumbnails 50→12, MM videos 15→8 per estate; beneficiary-estate fan-out 15→3. The rest lazy-load on demand (DocThumbnail / play handler already cache on render — the reliable path; warm-up is just a best-effort head start).
+- The per-item "Saved offline" badges (OfflineSavedBadge, IndexedDB-backed) remain the HONEST per-item signal. The global pill now reflects "data ready" (fast) rather than blocking on every blob — the architecturally correct split.
+
+**Verified (preview, seeded benefactor):** `[offline] warm-up complete: 12/12 tasks in ~1s` (was blocking for many seconds on media), dashboard paints immediately, no errors. ESLint clean; webpack compiled. On-device confirmation per Rule 1: offline boot should now be fast and timing-independent.
+
+**Known follow-up (NOT bundled — pre-existing, deeper):** some beneficiary avatars are S3 presigned URLs that can expire before warm-up/render caches them → empty offline. Robust fix is a backend re-sign-on-demand photo proxy; tracked separately. The boot's `navigator.onLine`-lies → 5s optimistic-paint delay is also pre-existing architecture.
+
+
 ## Jun 3, 2026 (later, fix) — Benefactor MM video now PLAYS offline (the "spins forever" bug)
 
 Founder report (airplane mode, benefactor portal): a video Milestone Message correctly showed the new green "Saved offline" badge, but tapping **Play Video** spun forever then nothing. The badge was telling the truth (warm-up HAD persisted the bytes under `mm:<id>:video`) — the playback handler just never read them.

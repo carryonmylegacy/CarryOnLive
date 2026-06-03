@@ -49,16 +49,11 @@ function emit(type, detail) {
 }
 
 /**
- * Drain a list of items through `fn` with a bounded concurrency cap,
- * awaiting them all. Used for media blob prefetches that MUST complete
- * before the warm-up task resolves — otherwise the "Offline ready" pill
- * (which fires on `carryon:sync:finish`) would claim readiness while
- * thumbnails / videos were still downloading or had silently failed.
- * Each `fn` is best-effort (its own try/catch) so one bad blob never
- * blocks the rest. The browser's ~6-conn/origin limit + this cap keep
- * the wire from being flooded.
+ * Drain a list of items through `fn` with a bounded concurrency cap.
+ * Each `fn` is best-effort (its own try/catch) so one bad item never
+ * blocks the rest.
  */
-async function runLimited(items, fn, limit = 4) {
+async function runLimited(items, fn, limit = 2) {
   const arr = Array.isArray(items) ? items : [];
   if (!arr.length) return;
   let i = 0;
@@ -69,6 +64,33 @@ async function runLimited(items, fn, limit = 4) {
     }
   });
   await Promise.all(workers);
+}
+
+/**
+ * NON-BLOCKING, idle-scheduled media prefetch (Jun 3 2026 — reliability fix).
+ *
+ * Media blobs (SDV thumbnails, MM videos, photos) must NEVER block warm-up
+ * task completion or saturate the browser's ~6-connections-per-origin pool
+ * while the user is looking at the page. Awaiting them (the earlier "honest
+ * pill" approach) starved the visible page's own thumbnail/avatar fetches
+ * and made the offline boot timing-fragile. Instead we:
+ *   - return immediately (fire-and-forget — the task resolves without it),
+ *   - defer the work to browser idle time (requestIdleCallback),
+ *   - cap to 2 concurrent so user-initiated requests keep headroom.
+ * The truthful per-item "Saved offline" badges (OfflineSavedBadge) are the
+ * honest signal that a specific blob actually landed — not this prefetch.
+ */
+function idlePrefetch(items, fn) {
+  const arr = (Array.isArray(items) ? items : []).filter(Boolean);
+  if (!arr.length) return;
+  const schedule = (cb) => {
+    if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
+      window.requestIdleCallback(cb, { timeout: 3000 });
+    } else {
+      setTimeout(cb, 250);
+    }
+  };
+  schedule(() => { runLimited(arr, fn, 2).catch(() => {}); });
 }
 
 function taskProfile(headers) {
@@ -228,12 +250,11 @@ function taskDashboard(estateId, headers) {
         // Pre-warm every beneficiary photo into the SW IMAGE_CACHE so
         // the family tree paints correctly on airplane mode.
         prefetchPhotosFrom(bens.data);
-        // Phase 9b — also persist photo BYTES under stable cache keys
-        // so they survive S3 presigned-URL rotation across sessions.
-        // AWAITED (Jun 3 2026) so the warm-up task — and therefore the
-        // "Offline ready" pill — does not resolve until these photos are
-        // genuinely persisted. Bounded concurrency keeps it quick.
-        await runLimited(
+        // Phase 9b — also persist photo BYTES under stable cache keys so
+        // they survive S3 presigned-URL rotation across sessions.
+        // NON-BLOCKING + idle-scheduled (Jun 3 2026): never holds warm-up
+        // worker slots or saturates connections the visible page needs.
+        idlePrefetch(
           bens.data.filter((b) => b.photo_url && b.id),
           (b) => fetchAndStoreImageBlob(b.photo_url, `beneficiary:${b.id}:photo`, 'photo'),
         );
@@ -249,22 +270,22 @@ function taskDashboard(estateId, headers) {
       // browser's 6-connections-per-origin limit naturally throttles these.
       // Phase 9c — prime SDV thumbnail blobs + Milestone Message media so
       // the vault grid paints and MM videos play on airplane mode WITHOUT
-      // the user having opened each one online first. AWAITED (Jun 3 2026)
-      // so the "Offline ready" pill is HONEST — it cannot fire until the
-      // promised media is actually persisted to IndexedDB. Bounded
-      // concurrency (the browser also caps ~6 conns/origin); putImageBlob
-      // swallows quota errors so a full disk degrades gracefully.
+      // the user having opened each one online first. NON-BLOCKING +
+      // idle-scheduled + throttled (Jun 3 2026 reliability fix): this can
+      // NEVER block warm-up completion or starve the visible page's own
+      // on-render thumbnail fetches. Caps kept small; the rest lazy-load
+      // on demand via DocThumbnail / the play handler.
       try {
         if (Array.isArray(docs?.data)) {
           const previewable = docs.data
             .filter((d) => d?.id && !d.is_locked && /pdf|image/i.test(d.file_type || ''))
-            .slice(0, 50);
-          await runLimited(previewable, (d) =>
+            .slice(0, 12);
+          idlePrefetch(previewable, (d) =>
             fetchAndStoreAuthedBlob(`/documents/${d.id}/preview`, `docthumb:${d.id}`, 'doc_thumb'));
         }
         if (Array.isArray(msgs?.data)) {
-          const withVideo = msgs.data.filter((mm) => mm?.id && mm.video_url).slice(0, 15);
-          await runLimited(withVideo, (mm) =>
+          const withVideo = msgs.data.filter((mm) => mm?.id && mm.video_url).slice(0, 8);
+          idlePrefetch(withVideo, (mm) =>
             fetchAndStoreAuthedBlob(`/messages/video/${mm.video_url}`, `mm:${mm.id}:video`, 'milestone_media'));
         }
       } catch { /* dynamic import / quota issues — skip */ }
@@ -418,14 +439,15 @@ function taskBeneficiaryEstate(estateId, headers) {
       cacheBenSection(estateId, 'financial_accounts', pick(accts));
       if (summary?.data) cacheBenSection(estateId, 'financial_summary', summary.data);
       // Persist MM video + SDV thumbnail BYTES so they play / paint offline.
-      // AWAITED so the "Offline ready" pill stays honest for beneficiaries too.
+      // NON-BLOCKING + idle-scheduled — never blocks this estate's warm-up
+      // or competes with the page the beneficiary is viewing.
       const withVideo = (Array.isArray(msgsRes?.data) ? msgsRes.data : [])
-        .filter((m) => m?.id && m.video_url).slice(0, 15);
-      await runLimited(withVideo, (m) =>
+        .filter((m) => m?.id && m.video_url).slice(0, 8);
+      idlePrefetch(withVideo, (m) =>
         fetchAndStoreAuthedBlob(`/messages/video/${m.video_url}`, `mm:${m.id}:video`, 'milestone_media'));
       const thumbs = (Array.isArray(docsRes?.data) ? docsRes.data : [])
-        .filter((d) => d?.id && !d.is_locked && /pdf|image/i.test(d.file_type || '')).slice(0, 50);
-      await runLimited(thumbs, (d) =>
+        .filter((d) => d?.id && !d.is_locked && /pdf|image/i.test(d.file_type || '')).slice(0, 12);
+      idlePrefetch(thumbs, (d) =>
         fetchAndStoreAuthedBlob(`/documents/${d.id}/preview`, `docthumb:${d.id}`, 'doc_thumb'));
     },
   };
@@ -499,15 +521,15 @@ export async function warmUpAfterLogin(token) {
   // beneficiary can switch between EVERY estate they're connected to and
   // read its cached sections fully offline (matches the Offline
   // Capabilities card's "Estate switching — all cached locally" promise).
-  // Capped to protect a user connected to an unusually large number of
-  // estates from a login-time request storm.
+  // Capped low (3) to protect a user connected to many estates from a
+  // login-time request storm; additional estates warm lazily on first visit.
   let beneficiaryEstateIds = [];
   try {
     cacheBenEstates(allEstates);
     beneficiaryEstateIds = allEstates
       .filter((e) => e.id && !ownedEstateIds.includes(e.id))
       .map((e) => e.id)
-      .slice(0, 15);
+      .slice(0, 3);
   } catch {}
   // Pre-warm estate / owner photos for the tree + dashboard header.
   prefetchPhotosFrom(allEstates);
