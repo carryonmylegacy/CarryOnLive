@@ -1,5 +1,20 @@
 # CarryOn — Changelog
 
+## Jun 3, 2026 (CRITICAL FIX) — Reconnect no longer flashes "new user" empty states across sections
+
+Founder report (live PWA, device enrolled for offline access): navigating fine OFFLINE, then going back ONLINE *while in the platform* made every section render its first-run empty state — Beneficiaries "add your first beneficiary," Vault "add your first document," etc., as if the account were brand new. **Confirmed NOT data loss:** a clean reopen online restored everything (founder verified). Server data was never touched.
+
+Root cause: iOS fires the `online` window event OPTIMISTICALLY — the connection is frequently unusable for 1–2s after. The prior logic cleared the offline flag the instant `online` fired. The many section pages that `refetch on 'online'` then fired requests into that dead window; the requests failed, and because iOS often hard-re-mounts the page on the airplane-mode toggle (resetting React state to `[]`), their `fetchData` bypassed the offline short-circuit (which gates on `navigator.onLine === false`) and fell through to the empty "add your first…" CTA instead of the local Dexie mirror.
+
+Fix (central, `frontend/src/index.js` — no per-page changes):
+- **Don't trust the raw `online` event.** It no longer clears `__deviceOffline`; it only starts the connectivity probe. The flag (and the patched `navigator.onLine`) keep reporting OFFLINE until a REAL round-trip is confirmed — so during iOS's premature window every page's existing offline short-circuit reads from cache and can never flash empty.
+- **Confirm via probe (immediate first tick, then 3s):** a successful `/manifest.json` fetch (SW-bypassing, static frontend host) clears the flag.
+- **Belt-and-suspenders:** the axios response interceptor now clears the flag on ANY successful response (proof of connectivity).
+- **Auto-refresh on confirmed reconnect:** when the flag flips true→false, `__applyDeviceOffline` re-dispatches a synthetic `online` event so all the section pages refetch fresh data — now that requests actually succeed.
+
+Verified (preview, event simulation): forced offline → `__isDeviceOffline()=true`/`navigator.onLine=false`; **raw `online` event → flag STAYS true synchronously** (the critical assertion — pages read cache, no empty state); ~1.5s later the probe confirms → flag clears → synthetic `online` fires (refetch). Loop-safe (`onlineFires` stable at 2). Normal login unregressed (founder → /admin ~5.2s, no banner). ESLint clean. iOS PWA on-device confirmation per Rule 1 after deploy.
+
+
 ## Jun 3, 2026 (later) — Dependency security: bumped all fixable libs + faster offline boot
 
 Founder directive (pre-any-real-user, no pitch): update all vulnerable backend libraries now, and lodge every touch point so each can be verified working post-update. Also make the offline cold boot faster.

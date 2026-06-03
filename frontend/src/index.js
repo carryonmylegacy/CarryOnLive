@@ -43,10 +43,10 @@ let __deviceOffline = (typeof navigator !== 'undefined' && navigator.onLine === 
 // Single choke-point for mutating the offline flag. Dispatches a
 // `carryon:device-offline-changed` event ONLY when the value actually
 // flips, so subscribers (NetworkStatusBanner, page guards) react the
-// instant connectivity state changes instead of waiting on iOS Safari's
-// unreliable / delayed native `online` event. It also drives a
-// lightweight connectivity probe so the offline→online (reconnect)
-// transition is detected promptly even when iOS never fires `online`.
+// instant connectivity state changes. On a true→false flip (confirmed
+// reconnection) it ALSO re-dispatches a synthetic `online` event so the
+// many pages that refetch on `online` reload their data NOW that the
+// connection is genuinely usable — not during iOS's premature window.
 function __applyDeviceOffline(v) {
   const next = !!v;
   if (next === __deviceOffline) {
@@ -60,28 +60,33 @@ function __applyDeviceOffline(v) {
     window.dispatchEvent(
       new CustomEvent('carryon:device-offline-changed', { detail: { offline: next } }),
     );
+    // Confirmed reconnection → tell every `online` listener to refetch,
+    // now that a real round-trip has succeeded (so their requests won't
+    // fail into empty "add your first…" states the way the raw, premature
+    // iOS `online` event caused).
+    if (!next) window.dispatchEvent(new Event('online'));
   } catch { /* CustomEvent unsupported — subscribers fall back to native events */ }
 }
 
-// Connectivity probe: while offline, poll a tiny same-origin resource that
-// the Service Worker does NOT serve from cache (`/manifest.json` falls
-// through to default network handling in sw-push.js), so a successful
-// response proves a REAL working round-trip — not iOS's lying
-// `navigator.onLine`. The moment it succeeds we clear the flag, which
-// unmounts the offline banner immediately on reconnect.
+// Connectivity probe: poll a tiny same-origin resource that the Service
+// Worker does NOT serve from cache (`/manifest.json` falls through to
+// default network handling in sw-push.js), so a successful response proves
+// a REAL working round-trip — not iOS's lying `navigator.onLine`. The first
+// tick runs immediately so reconnection is confirmed fast; then every 3s.
 let __offlineProbeTimer = null;
+async function __probeTick() {
+  try {
+    const resp = await fetch(`/manifest.json?cy_probe=${Date.now()}`, {
+      method: 'GET',
+      cache: 'no-store',
+    });
+    if (resp && resp.ok) __applyDeviceOffline(false);
+  } catch { /* still offline — keep probing */ }
+}
 function __startOfflineProbe() {
   if (__offlineProbeTimer || typeof window === 'undefined' || typeof fetch !== 'function') return;
-  const tick = async () => {
-    try {
-      const resp = await fetch(`/manifest.json?cy_probe=${Date.now()}`, {
-        method: 'GET',
-        cache: 'no-store',
-      });
-      if (resp && resp.ok) __applyDeviceOffline(false);
-    } catch { /* still offline — keep probing */ }
-  };
-  __offlineProbeTimer = setInterval(tick, 3000);
+  __probeTick(); // immediate first check — don't wait 3s to confirm reconnect
+  __offlineProbeTimer = setInterval(__probeTick, 3000);
 }
 function __stopOfflineProbe() {
   if (__offlineProbeTimer) {
@@ -92,7 +97,14 @@ function __stopOfflineProbe() {
 
 if (typeof window !== 'undefined') {
   window.addEventListener('offline', () => __applyDeviceOffline(true));
-  window.addEventListener('online', () => __applyDeviceOffline(false));
+  // iOS fires `online` OPTIMISTICALLY — the connection is frequently not
+  // usable for a second or two. Do NOT clear the offline flag here (that
+  // was the cause of section pages flashing empty "add your first…" states
+  // on reconnect: they'd refetch, the request would fail, and the re-mounted
+  // page would fall through to its empty state instead of cache). Instead,
+  // keep reporting offline and let the probe confirm a real round-trip — the
+  // probe (or the first successful API response, below) clears the flag.
+  window.addEventListener('online', () => { if (__deviceOffline) __startOfflineProbe(); });
   // Booted already offline (cold launch in airplane mode) → start probing now.
   if (__deviceOffline) __startOfflineProbe();
 }
@@ -227,7 +239,14 @@ function _isUploadUrl(url) {
   return false;
 }
 axios.interceptors.response.use(
-  (res) => res,
+  (res) => {
+    // Any successful response is proof of a usable connection. If a stale
+    // offline flag is still set (e.g. iOS fired `online` early and the probe
+    // hasn't confirmed yet, or a transient earlier failure set it), clear it
+    // now so the app reconciles to live data immediately.
+    try { if (__deviceOffline) __applyDeviceOffline(false); } catch { /* swallow */ }
+    return res;
+  },
   (err) => {
     try {
       const url = err?.config?.url || '';
