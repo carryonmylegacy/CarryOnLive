@@ -1,5 +1,16 @@
 # CarryOn — Changelog
 
+## Jun 3, 2026 (later) — Beneficiary avatars cache reliably offline (empty-avatar fix)
+
+Founder report: some beneficiary avatars are empty offline. Root cause: live photos are served as **cross-origin S3 presigned URLs**, and offline caching pulled bytes into IndexedDB by `fetch()`-ing those same URLs. S3's CORS is fragile (regional 307 redirects that strip CORS headers, per-session rotating signatures, 7-day expiry), so a subset of those caching fetches silently fail → `getImageBlob` miss → initials offline. (Matches the Feb 2026 iteration_123 RCA.)
+
+Fix — fully contained in `offline/imageBlobsRepo.js` (no backend, warm-up, or render-site changes):
+- New `toCacheableUrl()` rewrites a cross-origin S3 presigned photo URL (`https://<bucket>.s3.<region>.amazonaws.com/photos/...`) to our OWN backend proxy `${API_URL}/photos/...` **for the caching fetch only**. Verified: the proxy (`routes/photos.py`, already mounted at `/api/photos/{key}`) returns `Access-Control-Allow-Origin: *` — guaranteed-correct CORS, no expiry — so `fetch()` reliably reads the bytes into IndexedDB.
+- `fetchAndStoreImageBlob` now fetches the rewritten URL and keys its host blocklist/dedup on it. The live `<img src>` still renders the presigned URL (zero live-render change). Because warm-up, `OfflineImage`'s online side-cache, and every avatar site all funnel through `fetchAndStoreImageBlob`, all of them become reliable at once. data:/external URLs pass through untouched.
+
+**Verified:** proxy serves with wildcard CORS (curl); URL transform correct (presigned → `/api/photos/...`, query stripped, data:/external pass-through); ESLint clean; webpack compiled (static `config` import — no circular dep). On-device confirmation per Rule 1: warm online once, go offline → beneficiary avatars should now paint from cache.
+
+
 ## Jun 3, 2026 (later, REGRESSION FIX) — Offline boot reliability: media prefetch made non-blocking again
 
 Founder report (live iOS PWA): glitchy, timing-fragile offline boot — very long login (BLACK → WHITE screen), only works via a "precise dance" (quit → online → sign out → reopen → offline), some beneficiary avatars empty, SDV thumbnails took forever / never loaded. "Not a practical use case."

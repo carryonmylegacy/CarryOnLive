@@ -20,6 +20,7 @@
  */
 
 import { getDB } from './db';
+import { API_URL } from '../config';
 
 /** Persist a blob under a stable cache key. Replaces any existing entry. */
 export async function putImageBlob(cacheKey, blob, kind = 'photo') {
@@ -102,13 +103,43 @@ const _corsBlockedHosts = new Set();
  */
 const _hostProbes = new Map();
 
+/**
+ * Rewrite a cross-origin S3 PRESIGNED photo URL to our OWN same-backend
+ * `/api/photos/...` proxy URL — for the CACHING fetch only.
+ *
+ * Why: the S3 bucket's CORS is fragile (regional 307 redirects that drop
+ * CORS headers, per-session rotating signatures, 7-day expiry), so the
+ * `fetch()` that pulls bytes into IndexedDB fails intermittently — the
+ * "some beneficiary avatars empty offline" bug. The backend proxy has
+ * guaranteed-correct CORS (every API call uses it) and never expires, so
+ * caching from it is reliable. The live `<img src>` keeps using the
+ * presigned `url` (this rewrite only affects the bytes we persist).
+ *
+ * Stored keys follow `photos/<category>/...`, served at `/api/photos/...`,
+ * and presigned virtual-hosted-style URLs expose that as a `/photos/...`
+ * pathname (see services/photo_urls.py). Anything that isn't a recognised
+ * S3 photo URL passes through unchanged.
+ */
+function toCacheableUrl(url) {
+  try {
+    const u = new URL(url);
+    if (u.hostname.endsWith('amazonaws.com') && u.pathname.startsWith('/photos/')) {
+      return `${API_URL}/photos/${u.pathname.slice('/photos/'.length)}`;
+    }
+  } catch { /* malformed URL — fall through */ }
+  return url;
+}
+
 export async function fetchAndStoreImageBlob(url, cacheKey, kind = 'photo') {
   if (!url || !cacheKey) return false;
   if (!/^https?:\/\//i.test(url)) return false;
   if (typeof navigator !== 'undefined' && navigator.onLine === false) return false;
+  // Pull bytes from our CORS-reliable proxy, never the fragile cross-origin
+  // S3 presigned URL. Host blocklist / dedup key on the rewritten host.
+  const fetchUrl = toCacheableUrl(url);
   let host;
   try {
-    host = new URL(url).host;
+    host = new URL(fetchUrl).host;
   } catch {
     return false;
   }
@@ -137,7 +168,7 @@ export async function fetchAndStoreImageBlob(url, cacheKey, kind = 'photo') {
 
     let res;
     try {
-      res = await fetch(url, { credentials: 'omit', cache: 'default' });
+      res = await fetch(fetchUrl, { credentials: 'omit', cache: 'default' });
     } catch (corsOrNetwork) {
       // True fetch() rejection — CORS preflight failure or network
       // unreachable. Only the FIRST caller poisons the host blocklist;
