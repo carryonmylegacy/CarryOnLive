@@ -861,6 +861,13 @@ function App() {
       .then(({ refreshPlatformOfflineFlag }) => refreshPlatformOfflineFlag())
       .catch(() => { /* non-fatal — defaults to hidden */ });
 
+    // Same pattern for the platform-wide Subscription visibility switch so
+    // every user's menu hides the "Subscription" item when the founder
+    // turns the page off platform-wide. Defaults to VISIBLE on failure.
+    import('./utils/platformSubscriptionsFlag')
+      .then(({ refreshPlatformSubscriptionsFlag }) => refreshPlatformSubscriptionsFlag())
+      .catch(() => { /* non-fatal — defaults to visible */ });
+
     // Check for platform updates (web only — safe, silent, no crashes)
     if (!isNative) {
       const timer = setTimeout(() => checkForUpdates(), 5000);

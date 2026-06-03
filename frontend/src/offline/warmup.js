@@ -83,14 +83,13 @@ async function runLimited(items, fn, limit = 2) {
 function idlePrefetch(items, fn) {
   const arr = (Array.isArray(items) ? items : []).filter(Boolean);
   if (!arr.length) return;
-  const schedule = (cb) => {
-    if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
-      window.requestIdleCallback(cb, { timeout: 3000 });
-    } else {
-      setTimeout(cb, 250);
-    }
-  };
-  schedule(() => { runLimited(arr, fn, 2).catch(() => {}); });
+  // Defer ~1s so the post-login first paint + the visible page's own
+  // on-render media fetches grab connections first, then drain in the
+  // background at low concurrency. We use setTimeout, NOT
+  // requestIdleCallback: on iOS PWA the app may never report "idle"
+  // during active use, which silently skipped the prefetch and left
+  // SDV thumbnails / MM videos uncached offline.
+  setTimeout(() => { runLimited(arr, fn, 2).catch(() => {}); }, 1000);
 }
 
 function taskProfile(headers) {
@@ -279,12 +278,12 @@ function taskDashboard(estateId, headers) {
         if (Array.isArray(docs?.data)) {
           const previewable = docs.data
             .filter((d) => d?.id && !d.is_locked && /pdf|image/i.test(d.file_type || ''))
-            .slice(0, 12);
+            .slice(0, 40);
           idlePrefetch(previewable, (d) =>
             fetchAndStoreAuthedBlob(`/documents/${d.id}/preview`, `docthumb:${d.id}`, 'doc_thumb'));
         }
         if (Array.isArray(msgs?.data)) {
-          const withVideo = msgs.data.filter((mm) => mm?.id && mm.video_url).slice(0, 8);
+          const withVideo = msgs.data.filter((mm) => mm?.id && mm.video_url).slice(0, 12);
           idlePrefetch(withVideo, (mm) =>
             fetchAndStoreAuthedBlob(`/messages/video/${mm.video_url}`, `mm:${mm.id}:video`, 'milestone_media'));
         }
@@ -442,11 +441,11 @@ function taskBeneficiaryEstate(estateId, headers) {
       // NON-BLOCKING + idle-scheduled — never blocks this estate's warm-up
       // or competes with the page the beneficiary is viewing.
       const withVideo = (Array.isArray(msgsRes?.data) ? msgsRes.data : [])
-        .filter((m) => m?.id && m.video_url).slice(0, 8);
+        .filter((m) => m?.id && m.video_url).slice(0, 12);
       idlePrefetch(withVideo, (m) =>
         fetchAndStoreAuthedBlob(`/messages/video/${m.video_url}`, `mm:${m.id}:video`, 'milestone_media'));
       const thumbs = (Array.isArray(docsRes?.data) ? docsRes.data : [])
-        .filter((d) => d?.id && !d.is_locked && /pdf|image/i.test(d.file_type || '')).slice(0, 12);
+        .filter((d) => d?.id && !d.is_locked && /pdf|image/i.test(d.file_type || '')).slice(0, 40);
       idlePrefetch(thumbs, (d) =>
         fetchAndStoreAuthedBlob(`/documents/${d.id}/preview`, `docthumb:${d.id}`, 'doc_thumb'));
     },

@@ -31,6 +31,10 @@ async def get_public_site_content():
         # raw mode string ('on' | 'off') so the frontend can treat any
         # non-'on' value as "hide it".
         "offline_mode": settings.get("offline_mode", "off"),
+        # Public, non-sensitive feature flag (Jun 2026). When the founder's
+        # Admin sidebar "Subscriptions" toggle is OFF, EVERY user's menu must
+        # hide the Subscription item platform-wide. Defaults to True (shown).
+        "subscriptions_enabled": settings.get("subscriptions_enabled", True),
     }
 
 
@@ -38,11 +42,15 @@ async def get_public_site_content():
 async def get_platform_settings(current_user: dict = Depends(require_admin)):
     """Get platform-wide settings (admin only)."""
     settings = await db.platform_settings.find_one({"_id": "global"}, {"_id": 0})
-    return settings or {
+    settings = settings or {
         "otp_disabled": False,
         "platform_free_mode": False,
         "ai_burn_guard_enabled": False,
     }
+    # Default the Subscription visibility switch to ON so the admin toggle
+    # initialises "shown" for estates that predate the feature.
+    settings.setdefault("subscriptions_enabled", True)
+    return settings
 
 
 @router.put("/admin/platform-settings")
@@ -63,6 +71,7 @@ async def update_platform_settings(data: dict, current_user: dict = Depends(requ
         "footer_phone",
         "platform_free_mode",
         "ai_burn_guard_enabled",
+        "subscriptions_enabled",
     }
     update = {k: v for k, v in data.items() if k in allowed_keys}
     if update:

@@ -49,6 +49,7 @@ import PublicDeviceModeMenuButton from './PublicDeviceModeMenuButton';
 import AdminSectionNav from './AdminSectionNav';
 import BenefactorSectionNav from './BenefactorSectionNav';
 import PlatformBooleanToggle from './PlatformBooleanToggle';
+import { isPlatformSubscriptionsVisible, PLATFORM_SUBSCRIPTIONS_FLAG_EVENT } from '../../utils/platformSubscriptionsFlag';
 import { API_URL } from '../../config';
 import { filterNavByFeatures } from '../../utils/featureGates';
 import { applyUserMenuOrder } from '../../config/menuRegistry';
@@ -336,6 +337,14 @@ const Sidebar = () => {
     } catch { return null; }
   });
   const [devSwitching, setDevSwitching] = useState(null);
+  // Platform-wide Subscription visibility — when the founder turns the
+  // admin "Subscriptions" toggle off, the menu item disappears for everyone.
+  const [subsVisible, setSubsVisible] = useState(() => isPlatformSubscriptionsVisible());
+  useEffect(() => {
+    const onChange = () => setSubsVisible(isPlatformSubscriptionsVisible());
+    window.addEventListener(PLATFORM_SUBSCRIPTIONS_FLAG_EVENT, onChange);
+    return () => window.removeEventListener(PLATFORM_SUBSCRIPTIONS_FLAG_EVENT, onChange);
+  }, []);
 
   const isAdminSession = user?.role === 'admin' || localStorage.getItem('dev_switcher_admin_session') === 'true';
 
@@ -584,7 +593,7 @@ const Sidebar = () => {
       title: 'ACCOUNT',
       items: [
         { to: '/settings', icon: Settings, label: 'Settings' },
-        { to: '/subscription', icon: CreditCard, label: 'Subscription' },
+        ...(subsVisible ? [{ to: '/subscription', icon: CreditCard, label: 'Subscription' }] : []),
         { to: '/security-settings', icon: ShieldCheck, label: 'Security Settings' },
         { to: '/support', icon: Headphones, label: 'Customer Support' },
       ]
@@ -631,7 +640,7 @@ const Sidebar = () => {
       title: 'ACCOUNT',
       items: [
         { to: '/beneficiary/settings', icon: Settings, label: 'Settings' },
-        { to: '/beneficiary/subscription', icon: CreditCard, label: 'Subscription' },
+        ...(subsVisible ? [{ to: '/beneficiary/subscription', icon: CreditCard, label: 'Subscription' }] : []),
         { to: '/support', icon: Headphones, label: 'Customer Support' },
       ]
     }
@@ -939,7 +948,7 @@ const Sidebar = () => {
 
       {/* Admin OTP Toggle — Founder only, not operators */}
       {user?.role === 'admin' && !window.location.pathname.startsWith('/ops') && (
-        <>
+        <div className="flex flex-col gap-2 [&>*]:my-0">
           <OtpToggle collapsed={collapsed} />
           <SignupOtpToggle collapsed={collapsed} />
           {/* Offline mode master switch — founder-only. Placed directly
@@ -968,7 +977,19 @@ const Sidebar = () => {
             collapsed={collapsed}
             testId="sidebar-ai-burn-guard-toggle"
           />
-        </>
+          {/* Subscription page master switch — when OFF, the Subscription
+              menu item is hidden for EVERY user platform-wide. */}
+          <PlatformBooleanToggle
+            settingKey="subscriptions_enabled"
+            label="Subscriptions"
+            Icon={CreditCard}
+            activeColor="#3b82f6"
+            activeLabel="Shown"
+            inactiveLabel="Hidden"
+            collapsed={collapsed}
+            testId="sidebar-subscriptions-toggle"
+          />
+        </div>
       )}
 
       {/* Beta Banner — only shows when beta_mode is active */}
@@ -1023,7 +1044,7 @@ const Sidebar = () => {
                   <div className="nav-section">
                     <div className="nav-section-title">ACCOUNT</div>
                     <NavLink to="/settings" className={({ isActive }) => `nav-item-sm ${isActive ? 'active' : ''}`} data-testid="nav-settings"><Settings /><span>Settings</span></NavLink>
-                    <NavLink to="/subscription" className={({ isActive }) => `nav-item-sm ${isActive ? 'active' : ''}`} data-testid="nav-subscription"><CreditCard /><span>Subscription</span></NavLink>
+                    {subsVisible && <NavLink to="/subscription" className={({ isActive }) => `nav-item-sm ${isActive ? 'active' : ''}`} data-testid="nav-subscription"><CreditCard /><span>Subscription</span></NavLink>}
                     <NavLink to="/security-settings" className={({ isActive }) => `nav-item-sm ${isActive ? 'active' : ''}`} data-testid="nav-security-settings"><ShieldCheck /><span>Security Settings</span></NavLink>
                     <NavLink to="/support" className={({ isActive }) => `nav-item-sm ${isActive ? 'active' : ''}`} data-testid="nav-customer-support"><Headphones /><span>Customer Support</span></NavLink>
                   </div>
@@ -1031,7 +1052,7 @@ const Sidebar = () => {
                 {collapsed && (
                   <div className="nav-section">
                     <NavLink to="/settings" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} title="Settings" data-testid="nav-settings"><Settings /></NavLink>
-                    <NavLink to="/subscription" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} title="Subscription" data-testid="nav-subscription"><CreditCard /></NavLink>
+                    {subsVisible && <NavLink to="/subscription" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} title="Subscription" data-testid="nav-subscription"><CreditCard /></NavLink>}
                     <NavLink to="/security-settings" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} title="Security Settings" data-testid="nav-security-settings"><ShieldCheck /></NavLink>
                     <NavLink to="/support" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} title="Customer Support" data-testid="nav-customer-support"><Headphones /></NavLink>
                   </div>

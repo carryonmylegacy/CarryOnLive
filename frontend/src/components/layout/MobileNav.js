@@ -54,6 +54,7 @@ import MobileOtpToggle from './MobileOtpToggle';
 import SignupOtpToggle from './SignupOtpToggle';
 import MobileOfflineToggle from './MobileOfflineToggle';
 import PlatformBooleanToggle from './PlatformBooleanToggle';
+import { isPlatformSubscriptionsVisible, PLATFORM_SUBSCRIPTIONS_FLAG_EVENT } from '../../utils/platformSubscriptionsFlag';
 import DebugValues from './DebugValues';
 
 export { DOCK_REGISTRY }; // re-export so existing consumers don't break
@@ -485,7 +486,7 @@ const MobileNav = () => {
       // Beneficiary viewing their own estate (benefactor context)
       return [
         { to: '/settings', icon: Settings, label: 'Settings' },
-        { to: '/subscription', icon: CreditCard, label: 'Subscription' },
+        ...(subsVisible ? [{ to: '/subscription', icon: CreditCard, label: 'Subscription' }] : []),
         { to: '/security-settings', icon: ShieldCheck, label: 'Security Settings' },
         { to: '/support', icon: Headphones, label: 'Customer Support' },
       ];
@@ -493,14 +494,14 @@ const MobileNav = () => {
     if (user?.role === 'beneficiary' || isOnBeneficiary) {
       return [
         { to: '/beneficiary/settings', icon: Settings, label: 'Settings' },
-        { to: '/beneficiary/subscription', icon: CreditCard, label: 'Subscription' },
+        ...(subsVisible ? [{ to: '/beneficiary/subscription', icon: CreditCard, label: 'Subscription' }] : []),
         { to: '/support', icon: Headphones, label: 'Customer Support' },
       ];
     }
     // Benefactor
     return [
       { to: '/settings', icon: Settings, label: 'Settings' },
-      { to: '/subscription', icon: CreditCard, label: 'Subscription' },
+      ...(subsVisible ? [{ to: '/subscription', icon: CreditCard, label: 'Subscription' }] : []),
       { to: '/security-settings', icon: ShieldCheck, label: 'Security Settings' },
       { to: '/support', icon: Headphones, label: 'Customer Support' },
     ];
@@ -874,7 +875,7 @@ const MobileNav = () => {
                         <div className="space-y-1">
                           {[
                             { to: '/settings', icon: Settings, label: 'Settings', testid: 'mobile-nav-settings' },
-                            { to: '/subscription', icon: CreditCard, label: 'Subscription', testid: 'mobile-nav-subscription' },
+                            ...(subsVisible ? [{ to: '/subscription', icon: CreditCard, label: 'Subscription', testid: 'mobile-nav-subscription' }] : []),
                             { to: '/security-settings', icon: ShieldCheck, label: 'Security Settings', testid: 'mobile-nav-security' },
                             { to: '/support', icon: Headphones, label: 'Customer Support', testid: 'mobile-nav-support' },
                           ].map(item => (
@@ -1046,7 +1047,7 @@ const MobileNav = () => {
 
               {/* Admin OTP Toggle — Founder only */}
               {user?.role === 'admin' && !window.location.pathname.startsWith('/ops') && (
-                <div className="px-4 pb-2 space-y-2">
+                <div className="px-4 pb-2 flex flex-col gap-2 [&>*]:my-0">
                   <MobileOtpToggle />
                   <SignupOtpToggle />
                   {/* Offline master switch — placed directly below OTP per PM request. */}
@@ -1071,6 +1072,18 @@ const MobileNav = () => {
                     inactiveLabel="Off"
                     mobile
                     testId="mobile-ai-burn-guard-toggle"
+                  />
+                  {/* Subscription page master switch — hides the Subscription
+                      menu item for EVERY user platform-wide when off. */}
+                  <PlatformBooleanToggle
+                    settingKey="subscriptions_enabled"
+                    label="Subscriptions"
+                    Icon={CreditCard}
+                    activeColor="#3b82f6"
+                    activeLabel="Shown"
+                    inactiveLabel="Hidden"
+                    mobile
+                    testId="mobile-subscriptions-toggle"
                   />
                 </div>
               )}

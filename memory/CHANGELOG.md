@@ -1,5 +1,23 @@
 # CarryOn — Changelog
 
+## Jun 3, 2026 (later) — Offline media caching, Subscription master switch, toggle spacing
+
+Three founder asks in one round.
+
+### 1. Offline still buggy — SDV thumbnails + MM video not available offline
+Likely cause: my OWN prior boot-reliability change cut warm-up's media pre-cache to 12 thumbnails / 8 videos AND scheduled it via `requestIdleCallback`, which on iOS PWA can be starved during active use → media frequently never cached → empty offline.
+- `offline/warmup.js`: `idlePrefetch` now defers via `setTimeout(~1s)` instead of `requestIdleCallback` (reliable on iOS), still non-blocking + throttled (2 concurrent) so it never reintroduces the boot saturation. Caps raised: SDV thumbnails 12→40, MM videos 8→12 (per estate; beneficiary task matched). On-render caching (DocThumbnail) + on-play caching (playVideo) still cover the rest. NOTE: true offline availability is only verifiable on the installed iOS PWA (Rule 1) — headless can't run the SW.
+
+### 2. NEW: platform-wide Subscription page master switch
+- Backend `routes/admin/platform.py`: `subscriptions_enabled` added to PUT allow-list, defaulted True in the admin GET, and exposed on the PUBLIC `/api/public/site-content` so every user (not just admin) can read it. VERIFIED end-to-end via curl: PUT false → public flag False; PUT true → public flag True.
+- Frontend: new `utils/platformSubscriptionsFlag.js` (mirrors the offline flag; default VISIBLE so a revenue page is never hidden on network failure), hydrated at boot in `App.js`. New admin `PlatformBooleanToggle` ("Subscriptions", Shown/Hidden) added to both `Sidebar` and `MobileNav` alongside OTP/Offline/Free/AI-Guard. When OFF, the Subscription menu item is filtered out for EVERY user across all render paths (benefactor + beneficiary arrays, expanded + collapsed sidebar NavLinks, mobile account lists). Code stays intact — purely hidden. Toggle renders + menu re-renders live on the flag-changed event.
+
+### 3. Toggle spacing
+- Both `Sidebar` and `MobileNav` toggle groups now use `flex flex-col gap-2 [&>*]:my-0` so every global toggle has an identical vertical gap (previously `SignupOtpToggle` had no `my` while neighbors had `my-2`/`space-y`, making the top pair look closer). Verified visually — pills are now evenly spaced.
+
+**Incident:** the MobileNav edits surfaced a pre-existing orphaned duplicate of the file tail after `export default` (compile error); removed it — file compiles clean. ESLint + ruff clean across all touched files.
+
+
 ## Jun 3, 2026 (later) — Beneficiary avatars cache reliably offline (empty-avatar fix)
 
 Founder report: some beneficiary avatars are empty offline. Root cause: live photos are served as **cross-origin S3 presigned URLs**, and offline caching pulled bytes into IndexedDB by `fetch()`-ing those same URLs. S3's CORS is fragile (regional 307 redirects that strip CORS headers, per-session rotating signatures, 7-day expiry), so a subset of those caching fetches silently fail → `getImageBlob` miss → initials offline. (Matches the Feb 2026 iteration_123 RCA.)
