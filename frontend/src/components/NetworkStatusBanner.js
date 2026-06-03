@@ -21,7 +21,18 @@ import { PendingSyncChipInline } from './PendingSyncChip';
  * hamburger / page body. When hidden, the var is set back to 0px.
  */
 const NetworkStatusBanner = () => {
-  const [online, setOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
+  // Authoritative offline truth: prefer the app's event-tracked flag
+  // (`window.__isDeviceOffline()`), which sees failed requests + the
+  // connectivity probe, instead of iOS Safari's lying `navigator.onLine`.
+  const isOfflineNow = () => {
+    try {
+      if (typeof window !== 'undefined' && typeof window.__isDeviceOffline === 'function') {
+        return window.__isDeviceOffline();
+      }
+    } catch { /* fall through */ }
+    return typeof navigator !== 'undefined' ? navigator.onLine === false : false;
+  };
+  const [online, setOnline] = useState(!isOfflineNow());
   const [showReconnected, setShowReconnected] = useState(false);
   const [wasOffline, setWasOffline] = useState(false);
   const [expanded, setExpanded] = useState(true);
@@ -41,11 +52,21 @@ const NetworkStatusBanner = () => {
         setTimeout(() => setShowReconnected(false), 3000);
       }
     };
+    // The app's own offline flag is the source of truth. On reconnect the
+    // connectivity probe clears it and dispatches this event, so the banner
+    // unmounts the instant the network is genuinely back — no waiting on
+    // iOS's delayed native `online` event.
+    const onFlagChanged = (e) => {
+      if (e?.detail?.offline) goOffline();
+      else goOnline();
+    };
     window.addEventListener('online', goOnline);
     window.addEventListener('offline', goOffline);
+    window.addEventListener('carryon:device-offline-changed', onFlagChanged);
     return () => {
       window.removeEventListener('online', goOnline);
       window.removeEventListener('offline', goOffline);
+      window.removeEventListener('carryon:device-offline-changed', onFlagChanged);
     };
   }, [wasOffline]);
 

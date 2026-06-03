@@ -1,5 +1,18 @@
 # CarryOn — Changelog
 
+## Jun 3, 2026 (later) — "You're Offline" banner now clears the instant the network is back
+
+Founder report: the red "You're offline" banner persisted far too long after going back online.
+
+Root cause: `NetworkStatusBanner.js` drove its state ONLY from the native `online`/`offline` window events + a one-time `navigator.onLine` read. On the iOS PWA the native `online` event (offline→online) is unreliable/delayed, and the banner never observed the app's own `__deviceOffline` flag clearing — so it lingered until iOS finally fired `online` (or a request happened to succeed and AuthContext cleared the flag at boot).
+
+Fix (frontend-only):
+- `index.js`: routed every `__deviceOffline` mutation (window events, `__setDeviceOffline`, the response-interceptor "networkish failure" path) through a single `__applyDeviceOffline()` choke-point that dispatches a `carryon:device-offline-changed` event ONLY on an actual flip. Added a lightweight connectivity probe: while offline it polls `/manifest.json?cy_probe=<ts>` (cache:'no-store') every 3s — a path the SW does NOT serve from cache (falls through to default network), so a successful response proves a REAL round-trip, not iOS's lying `navigator.onLine`. On success it clears the flag immediately; probe stops once back online.
+- `NetworkStatusBanner.js`: initial state now reads `window.__isDeviceOffline()` (the authoritative flag) instead of `navigator.onLine`, and it subscribes to `carryon:device-offline-changed` (in addition to native events) so it unmounts the moment connectivity returns — no arbitrary delay.
+
+Verified (preview, screenshot E2E): `__setDeviceOffline(true)` → red banner appears; `__setDeviceOffline(false)` (the iOS reconnect path where native `online` lags) → banner immediately flips to the green "Back online — syncing your changes" confirmation, then auto-hides (3s). ESLint clean on both files; `housekeeping.sh --strict` shows no new WARN/FAIL (only the pre-existing pip-audit DS FAIL + legacy sub-11px font WARN remain — both out of scope per founder). True iOS PWA confirmation on-device per Rule 1. No backend changes.
+
+
 ## Jun 3, 2026 (later) — Offline media caching, Subscription master switch, toggle spacing
 
 Three founder asks in one round.

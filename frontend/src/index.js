@@ -39,9 +39,62 @@ axios.defaults.timeout = 8000;
 // module-level flag so axios can short-circuit requests even when
 // `navigator.onLine` lies.
 let __deviceOffline = (typeof navigator !== 'undefined' && navigator.onLine === false);
+
+// Single choke-point for mutating the offline flag. Dispatches a
+// `carryon:device-offline-changed` event ONLY when the value actually
+// flips, so subscribers (NetworkStatusBanner, page guards) react the
+// instant connectivity state changes instead of waiting on iOS Safari's
+// unreliable / delayed native `online` event. It also drives a
+// lightweight connectivity probe so the offline→online (reconnect)
+// transition is detected promptly even when iOS never fires `online`.
+function __applyDeviceOffline(v) {
+  const next = !!v;
+  if (next === __deviceOffline) {
+    if (next) __startOfflineProbe(); // already offline — ensure probe runs
+    return;
+  }
+  __deviceOffline = next;
+  if (next) __startOfflineProbe();
+  else __stopOfflineProbe();
+  try {
+    window.dispatchEvent(
+      new CustomEvent('carryon:device-offline-changed', { detail: { offline: next } }),
+    );
+  } catch { /* CustomEvent unsupported — subscribers fall back to native events */ }
+}
+
+// Connectivity probe: while offline, poll a tiny same-origin resource that
+// the Service Worker does NOT serve from cache (`/manifest.json` falls
+// through to default network handling in sw-push.js), so a successful
+// response proves a REAL working round-trip — not iOS's lying
+// `navigator.onLine`. The moment it succeeds we clear the flag, which
+// unmounts the offline banner immediately on reconnect.
+let __offlineProbeTimer = null;
+function __startOfflineProbe() {
+  if (__offlineProbeTimer || typeof window === 'undefined' || typeof fetch !== 'function') return;
+  const tick = async () => {
+    try {
+      const resp = await fetch(`/manifest.json?cy_probe=${Date.now()}`, {
+        method: 'GET',
+        cache: 'no-store',
+      });
+      if (resp && resp.ok) __applyDeviceOffline(false);
+    } catch { /* still offline — keep probing */ }
+  };
+  __offlineProbeTimer = setInterval(tick, 3000);
+}
+function __stopOfflineProbe() {
+  if (__offlineProbeTimer) {
+    clearInterval(__offlineProbeTimer);
+    __offlineProbeTimer = null;
+  }
+}
+
 if (typeof window !== 'undefined') {
-  window.addEventListener('offline', () => { __deviceOffline = true; });
-  window.addEventListener('online', () => { __deviceOffline = false; });
+  window.addEventListener('offline', () => __applyDeviceOffline(true));
+  window.addEventListener('online', () => __applyDeviceOffline(false));
+  // Booted already offline (cold launch in airplane mode) → start probing now.
+  if (__deviceOffline) __startOfflineProbe();
 }
 
 // PATCH `navigator.onLine` itself so every consumer in the codebase (and
@@ -111,7 +164,7 @@ if (typeof window !== 'undefined') {
   // this at its optimistic-paint moment so subsequent page requests
   // short-circuit to cache instantly, and clears it if /auth/me later
   // succeeds.
-  window.__setDeviceOffline = (v) => { __deviceOffline = !!v; };
+  window.__setDeviceOffline = (v) => { __applyDeviceOffline(v); };
 }
 
 axios.interceptors.request.use(
@@ -183,7 +236,7 @@ axios.interceptors.response.use(
         err?.message === 'Network Error' ||
         err?.code === 'ERR_OFFLINE'
       );
-      if (networkish && !_isUploadUrl(url)) __deviceOffline = true;
+      if (networkish && !_isUploadUrl(url)) __applyDeviceOffline(true);
     } catch { /* swallow */ }
     return Promise.reject(err);
   },
