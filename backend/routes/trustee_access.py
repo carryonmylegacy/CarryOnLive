@@ -190,15 +190,19 @@ def _grant_public(grant: dict) -> dict:
     }
 
 
-def _require_benefactor(user: dict) -> None:
+async def _require_benefactor(user: dict) -> None:
     """Only an estate OWNER (not a trustee acting-as) can manage grants.
 
-    An owner is either a primary benefactor/admin, OR a dual-role account
-    that owns an estate (role='beneficiary' + is_also_benefactor=True) — e.g.
-    someone invited as a beneficiary who later created their own estate and
-    now operates a Benefactor Portal. Every grant operation is scoped to
-    benefactor_id == user['id'], so a dual-role owner can only ever see or
-    manage grants for their OWN estate.
+    The authoritative signal is ACTUAL estate ownership. get_current_user
+    returns the RAW user doc and does NOT compute the derived
+    is_also_benefactor flag (login/profile compute it on the fly via
+    `stored_flag OR owns_estate`). So a dual-role user who owns an estate but
+    whose stored `is_also_benefactor` field was never set (e.g. someone
+    invited as a beneficiary who later created their own estate) would be
+    wrongly denied if we only checked role/flag. We therefore fall back to a
+    live estate-ownership lookup. Every grant op is scoped to
+    benefactor_id == user['id'], so this only ever grants access to the
+    user's OWN estate — no cross-estate exposure.
     """
     if user.get("_trustee_mode"):
         raise HTTPException(
@@ -206,6 +210,9 @@ def _require_benefactor(user: dict) -> None:
             detail="Trustee accounts cannot manage trustee grants. Sign in as the benefactor.",
         )
     if user.get("role") in ("benefactor", "admin") or user.get("is_also_benefactor"):
+        return
+    owns_estate = await db.estates.find_one({"owner_id": user["id"]}, {"_id": 0, "id": 1})
+    if owns_estate:
         return
     raise HTTPException(status_code=403, detail="Only benefactors can manage trustee grants.")
 
@@ -294,7 +301,7 @@ def _invite_html(benefactor_name: str, trustee_name: str, claim_url: str, expire
 @router.get("/trustee/grants")
 async def list_grants(current_user: dict = Depends(get_current_user)):
     """Benefactor lists every grant they have ever created (any status)."""
-    _require_benefactor(current_user)
+    await _require_benefactor(current_user)
     rows = (
         await db.trustee_grants.find(
             {"benefactor_id": current_user["id"]},
@@ -319,7 +326,7 @@ async def list_grants(current_user: dict = Depends(get_current_user)):
 @router.post("/trustee/grants")
 async def invite_trustee(data: TrusteeGrantInvite, current_user: dict = Depends(get_current_user)):
     """Benefactor sends an email invite. No password is set here."""
-    _require_benefactor(current_user)
+    await _require_benefactor(current_user)
     _validate_duration(data.duration, data.custom_days)
 
     email_lower = data.email.lower().strip()
@@ -409,7 +416,7 @@ async def update_grant(
     `expires_at` from the existing `claimed_at`. If still `pending`,
     the new `duration` is recorded and will be used at claim time.
     """
-    _require_benefactor(current_user)
+    await _require_benefactor(current_user)
     grant = await db.trustee_grants.find_one(
         {"id": grant_id, "benefactor_id": current_user["id"]},
         {"_id": 0},
@@ -448,7 +455,7 @@ async def resend_invite(grant_id: str, current_user: dict = Depends(get_current_
     re-fires the invitation email. Only valid for grants currently in
     `pending` or `otp_pending` status.
     """
-    _require_benefactor(current_user)
+    await _require_benefactor(current_user)
     grant = await db.trustee_grants.find_one(
         {"id": grant_id, "benefactor_id": current_user["id"]},
         {"_id": 0},
@@ -501,7 +508,7 @@ async def resend_invite(grant_id: str, current_user: dict = Depends(get_current_
 @router.delete("/trustee/grants/{grant_id}")
 async def revoke_grant(grant_id: str, current_user: dict = Depends(get_current_user)):
     """Benefactor revokes (soft-deletes) a grant at any status."""
-    _require_benefactor(current_user)
+    await _require_benefactor(current_user)
     result = await db.trustee_grants.update_one(
         {"id": grant_id, "benefactor_id": current_user["id"], "revoked_at": None},
         {"$set": {"revoked_at": _now_iso(), "status": "revoked"}},
@@ -690,7 +697,7 @@ async def complete_claim(token: str, data: TrusteeClaimComplete):
 @router.post("/trustee/audit/{event_id}/undo")
 async def undo_trustee_event(event_id: str, current_user: dict = Depends(get_current_user)):
     """Restore the pre-mutation snapshot for a trustee-audit event."""
-    _require_benefactor(current_user)
+    await _require_benefactor(current_user)
     event = await db.trustee_audit_events.find_one(
         {"id": event_id, "benefactor_id": current_user["id"]},
         {"_id": 0},

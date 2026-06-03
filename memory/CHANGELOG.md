@@ -1,5 +1,16 @@
 # CarryOn — Changelog
 
+## Jun 3, 2026 (bug, deeper root cause) — Trustee create still denied: check now uses actual estate ownership
+
+Founder: still denied creating a trustee after the previous `_require_benefactor` fix.
+
+Deeper root cause: the earlier fix allowed `role in (benefactor,admin) OR is_also_benefactor`, but `is_also_benefactor` is a DERIVED value. Login (`auth/_core.py:40`) and `/auth/me` (`auth/profile.py:87`) compute it as `stored_flag OR owns_estate` — so the frontend shows the Benefactor Portal because the user OWNS AN ESTATE, even when the stored DB field is False/absent. But `get_current_user` returns the RAW user doc and never computes `owns_estate`, so `current_user['is_also_benefactor']` was still falsy at the permission check → estate owners whose stored flag was never set stayed blocked.
+
+Fix (`routes/trustee_access.py`): `_require_benefactor` is now `async` and falls back to a live estate-ownership lookup — `db.estates.find_one({"owner_id": user['id']})`. Allows role benefactor/admin, OR stored is_also_benefactor, OR actual estate ownership. Still blocks pure beneficiaries (no estate) and trustee-acting-as. All 6 call sites updated to `await`. Grant ops remain scoped to `benefactor_id == user['id']` (own estate only).
+
+Verified: estate owner with `role=beneficiary` + NO stored flag → now ALLOWED (the exact missed scenario); non-owner beneficiary → blocked; trustee-acting-as → blocked; 9/9 `test_trustee_mode.py` pass; lint clean; housekeeping only the pre-existing font WARN. NOT yet deployed — production (carryon.us) still runs the old/insufficient code until the next push+redeploy.
+
+
 ## Jun 3, 2026 (feature) — Free Mode tile on the login hero
 
 Founder request: duplicate the Subscription page's "Free" tile onto the homepage, beneath the logo/verbiage and above the scroll-down pill, sized so the left column's height balances the login card.
