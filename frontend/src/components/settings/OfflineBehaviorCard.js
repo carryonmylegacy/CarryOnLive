@@ -11,9 +11,8 @@
  */
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { Wifi, WifiOff, CloudUpload, Info, RefreshCw, Trash2, FileText, Video, Mic, MessageSquare } from 'lucide-react';
+import { Wifi, WifiOff, CloudUpload, RefreshCw, Trash2, FileText, Video, Mic, MessageSquare } from 'lucide-react';
 import { countPendingUploads, listPendingUploads, updatePendingUpload, deletePendingUpload } from '../../offline/pendingUploadsRepo';
-import { getOfflineMode } from '../../offline/featureFlag';
 import { toast } from '../../utils/toast';
 
 const LIMITS = [
@@ -114,9 +113,6 @@ export default function OfflineBehaviorCard() {
     }
   };
 
-  const mode = getOfflineMode();
-  const inertMode = mode === 'off';
-
   return (
     <div
       className="rounded-xl border p-4 sm:p-5"
@@ -146,17 +142,6 @@ export default function OfflineBehaviorCard() {
         you're back online. Existing files from the cloud (documents you've
         already uploaded, milestones already sent) open when you reconnect.
       </p>
-
-      {inertMode && (
-        <div className="text-[11px] mb-4 p-2 rounded bg-[rgba(250,204,21,0.08)] border border-[rgba(250,204,21,0.25)] text-[var(--t3)] flex items-start gap-2">
-          <Info className="w-3.5 h-3.5 mt-0.5 shrink-0" />
-          <span>
-            Offline mode is not yet enabled on your account. This is a preview
-            of what's coming — your admin will flip the switch once it's fully
-            tested with your cohort.
-          </span>
-        </div>
-      )}
 
       <div className="rounded-lg border overflow-hidden" style={{ borderColor: 'var(--b)' }}>
         <div className="grid grid-cols-3 text-[11px] font-semibold uppercase tracking-wide px-3 py-2" style={{ background: 'var(--bg)', color: 'var(--t3)' }}>

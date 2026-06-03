@@ -36,6 +36,7 @@ const WORKS_OFFLINE = [
 const ONLINE_ONLY = [
   { feature: 'New file uploads', detail: 'Vault document uploads & beneficiary photos need a connection — they queue partway then complete on reconnect' },
   { feature: 'AI Guardian chat', detail: 'Live AI conversations require the AI service' },
+  { feature: 'PDF generation', detail: 'Binder & document PDF exports are rendered on the server — they need a connection' },
   { feature: 'Email invitations', detail: 'Sending an invite to a beneficiary or trustee uses the email service' },
   { feature: 'Document lock / unlock', detail: 'Server-side encryption is performed online' },
   { feature: 'Payment setup', detail: 'Stripe payment-method capture for paid Trustee tasks' },
