@@ -1,5 +1,16 @@
 # CarryOn — Changelog
 
+## Jun 3, 2026 (later, fix) — Benefactor MM video now PLAYS offline (the "spins forever" bug)
+
+Founder report (airplane mode, benefactor portal): a video Milestone Message correctly showed the new green "Saved offline" badge, but tapping **Play Video** spun forever then nothing. The badge was telling the truth (warm-up HAD persisted the bytes under `mm:<id>:video`) — the playback handler just never read them.
+
+Root cause: `pages/MessagesPage.js::playVideo` (benefactor) went straight to `apiClient.get('/messages/video/<id>')` with `setLoadingPlayback(true)` and a 30s timeout for any message with a `video_url`. Offline, that request can't resolve → infinite spinner → silent failure. The beneficiary page (`BeneficiaryMessagesPage`) already had the offline read-through; the benefactor page never got it (it was the deferred "benefactor-side playback read-through" follow-up).
+
+Fix (`pages/MessagesPage.js`): `playVideo` now (1) serves the persisted offline copy first via `getImageBlob('mm:<id>:video')` — the same bytes the "Saved offline" badge reflects; (2) if genuinely device-offline AND uncached, fails fast with an honest toast instead of hanging; (3) online, fetches + plays + persists the blob (so it's playable offline next time and the badge becomes truthful). Direct mirror of the proven beneficiary path. Added `getImageBlob`/`putImageBlob` imports.
+
+**Verified:** ESLint clean; webpack compiled successfully. On-device offline playback confirmation per Rule 1 (the cached video the founder already has under `mm:<id>:video` will now open from cache). No backend changes.
+
+
 ## Jun 3, 2026 (later) — "Saved offline ✓" badge — bound to ACTUAL local cache, never an intent flag
 
 Founder follow-up to the offline-parity work: "I want those linked to the actual act of that thing being properly cached. I don't want it to show a mark because something says it's supposed to be saved — only show the green checkmark when the thing is actually saved locally."

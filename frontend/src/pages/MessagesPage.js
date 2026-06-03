@@ -48,6 +48,7 @@ import SortControl, { makeSorter } from '../components/ui/SortControl';
 import { useDraftState } from '../hooks/useDraftState';
 import VideoRecordingOverlay from '../components/messages/VideoRecordingOverlay';
 import { getOfflineMode } from '../offline/featureFlag';
+import { getImageBlob, putImageBlob } from '../offline/imageBlobsRepo';
 import { getLocalEstates } from '../offline/repos/estatesRepo';
 import { getLocalBeneficiaries, upsertLocalBeneficiaries } from '../offline/repos/beneficiariesRepo';
 import {
@@ -1213,6 +1214,33 @@ const MessagesPage = () => {
     }
     setLoadingPlayback(true);
     try {
+      const cacheKey = `mm:${msg.id}:video`;
+      // 1) Serve the persisted OFFLINE copy first. The post-login warm-up
+      //    (and any prior online play) persists the video bytes under
+      //    `mm:<id>:video` — this is what the truthful "Saved offline"
+      //    badge reflects. Without this read-through, tapping Play on a
+      //    genuinely-cached video while offline hit the network below and
+      //    spun for 30s before failing ("spins forever then nothing").
+      try {
+        const cachedBlob = await getImageBlob(cacheKey);
+        if (cachedBlob && cachedBlob.size > 0) {
+          setPlayingVideoUrl(URL.createObjectURL(cachedBlob));
+          return;
+        }
+      } catch { /* non-fatal — fall through to network */ }
+
+      // 2) Not cached. If the device is genuinely offline, don't hang on a
+      //    doomed 30s request — fail fast with an honest message.
+      const isDeviceOffline = (typeof window !== 'undefined' && typeof window.__isDeviceOffline === 'function')
+        ? window.__isDeviceOffline()
+        : (typeof navigator !== 'undefined' && navigator.onLine === false);
+      if (isDeviceOffline) {
+        toast.error("This video isn't saved for offline yet — reconnect once to download it.");
+        return;
+      }
+
+      // 3) Online: fetch, play, and persist for next time (so it plays
+      //    offline later and the "Saved offline" badge becomes truthful).
       const res = await apiClient.get(`${API_URL}/messages/video/${msg.video_url}`, {
         ...getAuthHeaders(),
         responseType: 'blob',
@@ -1222,7 +1250,11 @@ const MessagesPage = () => {
         toast.error('Video file is empty or unavailable');
         return;
       }
-      setPlayingVideoUrl(URL.createObjectURL(res.data));
+      const blob = res.data instanceof Blob ? res.data : new Blob([res.data]);
+      setPlayingVideoUrl(URL.createObjectURL(blob));
+      if (getOfflineMode() !== 'off') {
+        putImageBlob(cacheKey, blob, 'milestone_media');
+      }
     } catch (err) {
       if (err.code === 'ECONNABORTED') {
         toast.error('Video took too long to load. Please try again.');
