@@ -35,6 +35,11 @@ async def get_public_site_content():
         # Admin sidebar "Subscriptions" toggle is OFF, EVERY user's menu must
         # hide the Subscription item platform-wide. Defaults to True (shown).
         "subscriptions_enabled": settings.get("subscriptions_enabled", True),
+        # Public, non-sensitive feature flag (Jun 2026). When platform-wide
+        # Free Mode is ON, the marketing/login hero surfaces the "CarryOn is
+        # free right now" tile (same copy as the in-app Free banner) so
+        # prospective users see it before signing in. Defaults to False.
+        "platform_free_mode": bool(settings.get("platform_free_mode", False)),
     }
 
 

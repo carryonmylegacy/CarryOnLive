@@ -13,6 +13,7 @@ import SealedAccountScreen from '../components/SealedAccountScreen';
 import { haptics } from '../utils/haptics';
 import { API_URL } from '../config';
 import { RevealSection } from '../components/landing/RevealSection';
+import { FreeModeBanner } from '../components/FreeModeBanner';
 import LandingContent from '../components/landing/LandingContent';
 import ForgotPasswordModal from '../components/auth/ForgotPasswordModal';
 import { isPWA as isStandalonePWA } from '../utils/isPWA';
@@ -164,10 +165,14 @@ const LoginPage = () => {
   const isPWAMode = isPWA();
   const isMobileNonPWA = isMobileBrowser();
   const [footerInfo, setFooterInfo] = useState({ line1: '1550 Wilson Boulevard 7th Floor', line2: 'Arlington, VA 22209 U.S.A.', phone: '(703) 884-1527' });
+  // When the platform is in Free Mode, the hero surfaces the "CarryOn is
+  // free right now" tile (same copy as the in-app Free banner).
+  const [platformFreeMode, setPlatformFreeMode] = useState(false);
 
   useEffect(() => {
     apiClient.get(`${API_URL}/public/site-content`).then(r => {
       setFooterInfo({ line1: r.data.footer_address_line1, line2: r.data.footer_address_line2, phone: r.data.footer_phone });
+      setPlatformFreeMode(!!r.data.platform_free_mode);
     }).catch(() => {});
   }, []);
 
@@ -983,6 +988,16 @@ const LoginPage = () => {
                       </div>
                     ))}
                   </div>
+                  {/* Platform Free Mode tile — same copy as the in-app Free
+                      banner. Sits beneath the logo/verbiage and above the
+                      scroll pill so the left column balances the login card. */}
+                  {platformFreeMode && (
+                    <FreeModeBanner
+                      tone="onDark"
+                      testId="login-free-mode-tile"
+                      className="max-w-lg mb-2 animate-fade-in"
+                    />
+                  )}
                   <a href="#about" className="flex w-fit flex-col items-center justify-center gap-1 mt-10 mx-auto cursor-pointer text-center"
                     data-testid="scroll-explore-desktop"
                     style={{ opacity: 0.85, transition: 'opacity 200ms cubic-bezier(0.4,0,0.2,1)' }}

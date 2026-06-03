@@ -1,5 +1,27 @@
 # CarryOn — Changelog
 
+## Jun 3, 2026 (feature) — Free Mode tile on the login hero
+
+Founder request: duplicate the Subscription page's "Free" tile onto the homepage, beneath the logo/verbiage and above the scroll-down pill, sized so the left column's height balances the login card.
+
+- `FreeModeBanner.js`: added `tone` + `testId` props. `tone="onDark"` renders readable light text (white / 85% white) for placement over the dark flag hero regardless of the user's light/dark theme (in light mode `--t`/`--t3` are dark and would be unreadable on the hero). Default (in-app) appearance unchanged. Single shared component = DRY, same copy.
+- `routes/admin/platform.py` (`GET /public/site-content`): now also returns `platform_free_mode` (public, non-sensitive flag, alongside the existing offline_mode / subscriptions_enabled), so the pre-login hero can gate the tile.
+- `LoginPage.js`: fetches `platform_free_mode` from site-content; when ON, renders `<FreeModeBanner tone="onDark" testId="login-free-mode-tile" className="max-w-lg" />` in the desktop left column, between the security badges and the "DISCOVER MORE" scroll pill. When OFF, the tile is hidden and the original layout is untouched.
+
+Verified (preview, screenshots): with Free Mode ON the gold tile renders beneath the logo/verbiage and above the scroll pill with readable light text; the left column bottom (~809px) closely matches the login card bottom (~850px) — the requested height balance. With Free Mode OFF the tile is hidden and the scroll pill/layout are unaffected. platform_free_mode restored to FALSE after testing. ESLint + ruff clean; housekeeping `--strict` only shows the pre-existing sub-11px font WARN. Desktop two-column layout only (the height-matching is a desktop concept; mobile stacks). NOT yet deployed.
+
+
+## Jun 3, 2026 (bug) — Dual-role estate owners blocked from managing trustees
+
+Founder report (production): logged into the Benefactor Portal for "Harris Family Estate", opened Settings → Trustee Access, and got a red toast "Only benefactors can manage trustee grants."
+
+Root cause: `routes/trustee_access.py::_require_benefactor` allowed only `role in ("benefactor","admin")`. The `barnetharris` account is a DUAL-ROLE user — primary `role='beneficiary'` (invited as a beneficiary first) but also owns an estate (`is_also_benefactor=True`), so it legitimately operates a Benefactor Portal. The GET `/trustee/grants` call on panel load 403'd because the check didn't recognize estate-owning beneficiaries.
+
+Fix: `_require_benefactor` now permits `role in ("benefactor","admin") OR is_also_benefactor`. Still blocks pure beneficiaries (no estate) and trustee-acting-as sessions (`_trustee_mode`). Safe: every grant op is scoped to `benefactor_id == current_user['id']`, so a dual-role owner only ever sees/manages grants for their OWN estate (`get_current_user` returns the full user doc incl. `is_also_benefactor`).
+
+Verified: reproduced the exact 403; post-fix unit matrix (pure benefactor ✅, admin ✅, dual-role owner ✅ now allowed, pure beneficiary ✅ still blocked, trustee-acting-as ✅ still blocked); 9/9 `test_trustee_mode.py` pass; live GET `/trustee/grants` returns 200 for an allowed user. NOT yet deployed — takes effect on next production push.
+
+
 ## Jun 3, 2026 (feature) — "Free Mode" feature-gate tier + per-partner Free tier
 
 Founder request: add a new tier in Admin → Finance → Subs → Feature Gates tied to the platform-wide Free toggle. When Free Mode is ON, every user's features come from this gate. Decision: (b) B2B partners keep their tailored gates by default, AND each partner gets a SEPARATE free tier coupled to platform free-ness.

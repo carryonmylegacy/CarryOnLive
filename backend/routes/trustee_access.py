@@ -191,14 +191,23 @@ def _grant_public(grant: dict) -> dict:
 
 
 def _require_benefactor(user: dict) -> None:
-    """Only a real benefactor (not a trustee acting-as) can manage grants."""
+    """Only an estate OWNER (not a trustee acting-as) can manage grants.
+
+    An owner is either a primary benefactor/admin, OR a dual-role account
+    that owns an estate (role='beneficiary' + is_also_benefactor=True) — e.g.
+    someone invited as a beneficiary who later created their own estate and
+    now operates a Benefactor Portal. Every grant operation is scoped to
+    benefactor_id == user['id'], so a dual-role owner can only ever see or
+    manage grants for their OWN estate.
+    """
     if user.get("_trustee_mode"):
         raise HTTPException(
             status_code=403,
             detail="Trustee accounts cannot manage trustee grants. Sign in as the benefactor.",
         )
-    if user.get("role") not in ("benefactor", "admin"):
-        raise HTTPException(status_code=403, detail="Only benefactors can manage trustee grants.")
+    if user.get("role") in ("benefactor", "admin") or user.get("is_also_benefactor"):
+        return
+    raise HTTPException(status_code=403, detail="Only benefactors can manage trustee grants.")
 
 
 async def find_active_trustee_grant_by_username(login_identifier: str) -> dict | None:

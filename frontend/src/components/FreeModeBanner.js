@@ -10,7 +10,14 @@ export const FREE_MODE_HEADLINE = 'CarryOn is in Free Mode';
 export const FREE_MODE_BODY =
   "Right now, every feature and every tier is unlocked for everyone — at no cost. In these early days, our founder wants as many families as possible to experience everything CarryOn offers and protect what matters most, without cost getting in the way. While Free Mode is active, all plans below are paused and you won't be charged anything. Please use CarryOn to its fullest and get the maximum value from it — consider it our gift to you and your family.";
 
-export const FreeModeBanner = ({ className = '' }) => (
+export const FreeModeBanner = ({ className = '', tone = 'auto', testId = 'free-mode-banner' }) => {
+  // `tone="onDark"` renders readable light text for placement over a dark
+  // hero (e.g. the login page flag background), regardless of the user's
+  // light/dark theme. Default keeps the theme-aware colors used in-app.
+  const onDark = tone === 'onDark';
+  const headingColor = onDark ? '#FFFFFF' : 'var(--t)';
+  const bodyColor = onDark ? 'rgba(255,255,255,0.85)' : 'var(--t3)';
+  return (
   <div
     className={`relative overflow-hidden rounded-2xl p-5 sm:p-6 ${className}`}
     style={{
@@ -18,7 +25,7 @@ export const FreeModeBanner = ({ className = '' }) => (
       border: '1.5px solid rgba(var(--gold-rgb), 0.45)',
       boxShadow: '0 12px 40px -12px rgba(var(--gold-rgb), 0.35)',
     }}
-    data-testid="free-mode-banner"
+    data-testid={testId}
   >
     {/* Gold shimmer top line — mirrors the Premium tile accent. */}
     <div
@@ -34,7 +41,7 @@ export const FreeModeBanner = ({ className = '' }) => (
       </div>
       <div className="min-w-0">
         <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-          <h3 className="text-base sm:text-lg font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>
+          <h3 className="text-base sm:text-lg font-bold" style={{ fontFamily: 'var(--sans)', color: headingColor }}>
             {FREE_MODE_HEADLINE}
           </h3>
           <span
@@ -44,12 +51,13 @@ export const FreeModeBanner = ({ className = '' }) => (
             Active
           </span>
         </div>
-        <p className="text-sm text-[var(--t3)] leading-relaxed" data-testid="free-mode-banner-body">
+        <p className="text-sm leading-relaxed" style={{ color: bodyColor }} data-testid={`${testId}-body`}>
           {FREE_MODE_BODY}
         </p>
       </div>
     </div>
   </div>
-);
+  );
+};
 
 export default FreeModeBanner;
