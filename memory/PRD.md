@@ -241,6 +241,14 @@ When a paywall renders more cards than fit one row, **orphan rows must
 center** (symmetry is non-negotiable for live pitches). Implementation:
 `flex flex-wrap justify-center` with explicit `w-[calc(N%-X)]` widths.
 
+**Free Mode gate tier (added Jun 2026):** `feature_gates.py::TIER_IDS` includes
+a special `free_mode` column (not a purchasable plan). When the platform-wide
+**Free** toggle (`platform_settings.platform_free_mode`) is ON,
+`GET /subscriptions/enabled-features` sources every non-partner user's features
+from this `free_mode` column. B2B partner members instead follow that partner's
+own `free_feature_gates` (each partner has TWO gate sets: tailored + free),
+falling back to their tailored gates if the free tier is unconfigured.
+
 ---
 
 ## Architecture (as it stands, May 2026)

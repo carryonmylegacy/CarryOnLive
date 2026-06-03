@@ -348,9 +348,7 @@ async def get_user_enabled_features(
     #   • B2B partner members → that partner's separate "free tier"
     #     (free_feature_gates) — so every partner keeps a tailored tier for
     #     normal operation AND a free tier coupled to platform free-ness.
-    platform_settings = await db.platform_settings.find_one(
-        {"_id": "global"}, {"_id": 0, "platform_free_mode": 1}
-    )
+    platform_settings = await db.platform_settings.find_one({"_id": "global"})
     free_mode_on = bool((platform_settings or {}).get("platform_free_mode", False))
 
     gates = await get_feature_gates()

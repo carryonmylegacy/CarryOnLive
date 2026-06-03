@@ -1,5 +1,26 @@
 # CarryOn — Changelog
 
+## Jun 3, 2026 (feature) — "Free Mode" feature-gate tier + per-partner Free tier
+
+Founder request: add a new tier in Admin → Finance → Subs → Feature Gates tied to the platform-wide Free toggle. When Free Mode is ON, every user's features come from this gate. Decision: (b) B2B partners keep their tailored gates by default, AND each partner gets a SEPARATE free tier coupled to platform free-ness.
+
+Backend (`routes/feature_gates.py`):
+- Added `free_mode` as a new tier in `TIER_IDS` (last column of the gates matrix). The get_feature_gates() backfill now respects each feature's `default_off` flag when seeding a newly-added tier (so free_mode starts ON for normal features, OFF for CES/TMA).
+- `GET /subscriptions/enabled-features` now reads `platform_free_mode` (db.platform_settings _id 'global'). When ON: non-partner users resolve features from the `free_mode` gate column; B2B partner members resolve from that partner's `free_feature_gates` (falling back to their tailored `feature_gates` if not configured). When OFF: unchanged (normal tier / partner tailored gates).
+
+Backend (`routes/admin/partners.py`):
+- Added `free_feature_gates` to PartnerCreate/PartnerUpdate + create/update persistence (via `_coerce_gates`) + a display-default backfill in the list endpoint. Each partner now has two independent gate sets (tailored + free); editing one never touches the other.
+
+Frontend:
+- `FeatureGatesCard.js`: added the `free_mode` column (label "Free Mode", green) + a green explainer note (`feature-gates-free-mode-note`) clarifying it's the source of truth when the Free toggle is ON.
+- `PartnersTab.js`: added a Tailored/Free segmented switch (`partner-gate-mode-switch` → `partner-gate-mode-tailored` / `partner-gate-mode-free`); the pillar matrix edits `feature_gates` or `free_feature_gates` based on the selected mode (testids `partner-gate-{tailored|free}-{slug}-{key}`). Header copy updates per mode.
+- `QuickStartWizard.js`: the benefactor onboarding wizard no longer auto-opens while in the `/admin` or `/ops` portal (it was popping over the founder's admin work on every route, and blocked verification). Dashboard behavior unchanged.
+
+Verification: testing agent 7/7 backend pytests pass (matrix exposes free_mode last; non-partner gets free_mode column when free mode ON; single-column free_mode gate change reflected; partner free_feature_gates create/update/persist with bidirectional isolation). platform_free_mode confirmed restored to FALSE; no residual test partners. Frontend self-test (SPA nav): feature-gates-card renders with 15 free_mode toggle cells, `__isDeviceOffline()`=false, API 200 (earlier blank-pane was a headless full-`goto` request-abort artifact, not a product bug). Reusable suite: `/app/backend/tests/test_free_mode_iter161.py`.
+
+Also (dependency hygiene): bumped `aiohttp 3.13.5 → 3.14.0` (newly-published CVE-2026-34993); pip-audit back to 4 (Emergent-pinned litellm only), DS baseline stays 4, housekeeping DS check PASS. Fixed a Mongo projection-safety WARN by dropping an inclusion projection on the tiny platform_settings read. `housekeeping.sh --strict`: only the pre-existing legacy sub-11px font WARN remains (out of scope per founder).
+
+
 ## Jun 3, 2026 (CRITICAL FIX) — Reconnect no longer flashes "new user" empty states across sections
 
 Founder report (live PWA, device enrolled for offline access): navigating fine OFFLINE, then going back ONLINE *while in the platform* made every section render its first-run empty state — Beneficiaries "add your first beneficiary," Vault "add your first document," etc., as if the account were brand new. **Confirmed NOT data loss:** a clean reopen online restored everything (founder verified). Server data was never touched.

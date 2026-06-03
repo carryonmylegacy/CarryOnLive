@@ -121,11 +121,19 @@ const QuickStartWizard = ({ forceOpen = false, onClose = () => {} }) => {
   const [useExistingLoading, setUseExistingLoading] = useState(false);
 
   // Decide whether to render at all.
+  // Never surface the benefactor onboarding wizard while the user is in
+  // the admin / ops portal — a founder (who is also flagged as a
+  // benefactor) was getting this modal popped over every admin route,
+  // intercepting their work. The dashboard Resume CTA still works because
+  // it only exists outside these portals.
+  const inOpsPortal = typeof window !== 'undefined'
+    && /^\/(admin|ops)(\/|$)/.test(window.location.pathname);
   const shouldRender = eligible
     && !loading
     && progress
     && !progress.complete
-    && !dismissedThisSession;
+    && !dismissedThisSession
+    && !inOpsPortal;
 
   if (!shouldRender) return null;
 
