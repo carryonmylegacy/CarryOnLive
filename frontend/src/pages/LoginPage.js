@@ -988,26 +988,26 @@ const LoginPage = () => {
                       </div>
                     ))}
                   </div>
-                  {/* Platform Free Mode tile — same copy as the in-app Free
-                      banner. Sits beneath the logo/verbiage and above the
-                      scroll pill so the left column balances the login card. */}
-                  {platformFreeMode && (
-                    <FreeModeBanner
-                      tone="onDark"
-                      testId="login-free-mode-tile"
-                      className="max-w-lg mb-2 animate-fade-in"
-                    />
-                  )}
-                  <a href="#about" className="flex w-fit flex-col items-center justify-center gap-1 mt-10 mx-auto cursor-pointer text-center"
-                    data-testid="scroll-explore-desktop"
-                    style={{ opacity: 0.85, transition: 'opacity 200ms cubic-bezier(0.4,0,0.2,1)' }}
-                    onMouseEnter={e => e.currentTarget.style.opacity = '1'}
-                    onMouseLeave={e => e.currentTarget.style.opacity = '0.85'}>
-                    <span className="text-white/85 text-sm font-semibold tracking-[0.1em] uppercase" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.4)' }}>Discover More</span>
-                    <ChevronDown className="w-5 h-5 text-[#d4af37]" strokeWidth={2.5} style={{ animation: 'fadeInUp 1.4s ease-in-out infinite alternate' }} />
-                  </a>
                 </div>
               </div>
+              {/* Platform Free Mode tile — spans the FULL left column (from the
+                  logo's left edge to the right margin), beneath the logo/verbiage
+                  and above the scroll pill. */}
+              {platformFreeMode && (
+                <FreeModeBanner
+                  tone="onDark"
+                  testId="login-free-mode-tile"
+                  className="w-full mt-7 animate-fade-in"
+                />
+              )}
+              <a href="#about" className="flex w-fit flex-col items-center justify-center gap-1 mt-10 mx-auto cursor-pointer text-center"
+                data-testid="scroll-explore-desktop"
+                style={{ opacity: 0.85, transition: 'opacity 200ms cubic-bezier(0.4,0,0.2,1)' }}
+                onMouseEnter={e => e.currentTarget.style.opacity = '1'}
+                onMouseLeave={e => e.currentTarget.style.opacity = '0.85'}>
+                <span className="text-white/85 text-sm font-semibold tracking-[0.1em] uppercase" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.4)' }}>Discover More</span>
+                <ChevronDown className="w-5 h-5 text-[#d4af37]" strokeWidth={2.5} style={{ animation: 'fadeInUp 1.4s ease-in-out infinite alternate' }} />
+              </a>
             </RevealSection>
 
             {/* Login Card */}
