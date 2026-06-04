@@ -16,7 +16,9 @@ router = APIRouter()
 @router.get("/admin/users")
 async def get_all_users(current_user: dict = Depends(require_staff)):
     """Get all users with subscription info and beneficiary tree — admin and operators"""
-    users = await db.users.find({}, {"_id": 0, "password": 0}).to_list(1000)
+    users = await db.users.find(
+        {}, {"_id": 0, "password": 0, "onboarding_drip_state": 0, "username_lower": 0}
+    ).to_list(1000)
 
     # Build estate owner -> beneficiaries map (supports multiple estates per owner)
     estates = await db.estates.find({}, {"_id": 0, "id": 1, "owner_id": 1, "name": 1, "verified_tier": 1}).to_list(
@@ -52,22 +54,35 @@ async def get_all_users(current_user: dict = Depends(require_staff)):
         if eid:
             bens_by_estate.setdefault(eid, []).append(b)
 
+    # Batch-load every user's subscription in ONE query. This was an N+1
+    # (a separate find_one per user = up to 512 sequential round-trips on the
+    # admin roster) and was the dominant cause of the slow /admin/users
+    # response. Output is byte-for-byte identical: first subscription per user,
+    # same projected fields, None when the user has no subscription.
+    _user_ids = [u["id"] for u in users if u.get("id")]
+    _subs = await db.user_subscriptions.find(
+        {"user_id": {"$in": _user_ids}},
+        {
+            "_id": 0,
+            "user_id": 1,
+            "plan_id": 1,
+            "plan_name": 1,
+            "billing_cycle": 1,
+            "status": 1,
+            "beta_plan": 1,
+        },
+    ).to_list(len(_user_ids) + 1000)
+    subs_by_user = {}
+    for s in _subs:
+        uid = s.get("user_id")
+        if uid and uid not in subs_by_user:
+            subs_by_user[uid] = {k: v for k, v in s.items() if k != "user_id"}
+
     # Attach subscription info and linked beneficiaries to each user
     for u in users:
         if not u.get("id"):
             continue
-        sub = await db.user_subscriptions.find_one(
-            {"user_id": u["id"]},
-            {
-                "_id": 0,
-                "plan_id": 1,
-                "plan_name": 1,
-                "billing_cycle": 1,
-                "status": 1,
-                "beta_plan": 1,
-            },
-        )
-        u["subscription"] = sub
+        u["subscription"] = subs_by_user.get(u["id"])
 
         # Surface dual-role estate owners (a user whose primary role is
         # beneficiary but who ALSO owns an estate and runs a Benefactor Portal)

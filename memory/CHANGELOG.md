@@ -1,5 +1,17 @@
 # CarryOn — Changelog
 
+## Jun 4, 2026 (perf) — /admin/users 9s → 0.2s (N+1 fix), zero UI changes
+
+The slow Admin → Users load (~9s, flagged during the dual-role filter verification) was NOT a payload-size problem — it was an N+1 query: `GET /admin/users` ran a separate `user_subscriptions.find_one` for EACH of the 512 users (up to 512 sequential DB round-trips). (`routes/admin/users.py`)
+
+Fix (pure backend, output byte-for-byte identical — cannot break the UI):
+- Batch-load all subscriptions in ONE `find({user_id: {$in: [...]}})` and map by user_id (first sub per user, same projected fields, None when absent) instead of per-user find_one.
+- Trimmed two large, 100%-internal user fields from the response projection that the frontend never reads: `onboarding_drip_state` (~40KB) and `username_lower` (~8KB).
+
+Verified via live curl (founder token): **HTTP 200 in 0.214s** (was ~9s), size 545KB (was ~611KB), 512 users, subscriptions attached with identical keys [beta_plan, billing_cycle, plan_id, plan_name, status], 388 users with estate_groups, all 21 dual-role flags intact, trimmed fields confirmed absent. Output shape unchanged → UsersTab (verified rendering in iter164) is unaffected. ruff clean. User noted they never demo the admin portal; done conservatively so nothing breaks.
+
+
+
 ## Jun 4, 2026 (UI) — Admin → Users "Dual-Role" filter chip
 
 Added a 4th filter chip ('All / Benefactors / Beneficiaries / **Dual-Role**') to the Admin Users tab (`UsersTab.js`). The 'Dual-Role' chip (`data-testid=admin-role-filter-dual_role`) narrows the list to only hybrid accounts (`is_also_benefactor && role !== 'benefactor'`) — reuses the same condition as the DUAL-ROLE badge and renders them through the existing benefactor-grouped tree, so no render-path changes were needed.
