@@ -89,6 +89,11 @@ Estate transition becomes the final, fully-rehearsed instance of something the f
 **Primary (use on the page + in the pitch):**
 > **The Family Continuity Platform** — *"Your family's continuity system."*
 
+> **ADOPTED Jun 2026 — Pillar labels = Set A: People · Access · Money · Action**
+> (Legacy→People, Vault→Access, Financial→Money, Preparedness→Action). Internal
+> keys, routes, and the nine canonical function names are unchanged. Umbrella
+> outcome phrase is now "Total Family Continuity" (was "Total Estate Readiness").
+
 Supporting descriptor lines (interchangeable in subheads / nav / meta):
 - "The operating system for family continuity."
 - "A complete continuity system for the people you love."

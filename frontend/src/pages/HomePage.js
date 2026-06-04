@@ -160,7 +160,7 @@ const HomePage = () => {
                     <div style={{ position: 'relative', paddingBottom: '177.78%', height: 0 }}>
                       <iframe
                         src={`https://www.youtube.com/embed/${activeVideoId}?rel=0&modestbranding=1&color=white`}
-                        title="CarryOn — Family Preparedness"
+                        title="CarryOn — The Family Continuity Platform (vertical)"
                         style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0 }}
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                         allowFullScreen
@@ -174,7 +174,7 @@ const HomePage = () => {
                     <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0 }}>
                       <iframe
                         src={`https://www.youtube.com/embed/${activeVideoId}?rel=0&modestbranding=1&color=white`}
-                        title="CarryOn — Estate Planning Made Simple"
+                        title="CarryOn — The Family Continuity Platform"
                         style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0 }}
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                         allowFullScreen

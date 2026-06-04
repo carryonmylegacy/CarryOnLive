@@ -54,7 +54,7 @@ const PILLARS = [
   {
     num: '01',
     icon: Heart,
-    title: 'Legacy',
+    title: 'People',
     abbr: 'Know who matters',
     color: '#3B82F6',
     blurb: 'Name your people, decide what each one sees and when, and make sure the right person can act \u2014 with a living record of every decision.',
@@ -69,7 +69,7 @@ const PILLARS = [
   {
     num: '02',
     icon: LockIcon,
-    title: 'Vault',
+    title: 'Access',
     abbr: 'Within reach, not a moment sooner',
     color: '#d4af37',
     blurb: 'Everything your family will need to act \u2014 documents, credentials, and an AI that reads your plan to catch what you missed \u2014 released only to the people you choose.',
@@ -82,7 +82,7 @@ const PILLARS = [
   {
     num: '03',
     icon: Landmark,
-    title: 'Financial',
+    title: 'Money',
     abbr: 'Clarity, not a mystery',
     color: '#22C993',
     blurb: 'The whole money picture and a visual map of every entity that holds it together \u2014 so nothing is lost and no one is left guessing.',
@@ -94,7 +94,7 @@ const PILLARS = [
   {
     num: '04',
     icon: Clock,
-    title: 'Preparedness',
+    title: 'Action',
     abbr: 'The playbook for the hardest days',
     color: '#B794F6',
     blurb: 'Step-by-step actions, pre-built response plans, and a private family channel that keeps working when nothing else does.',

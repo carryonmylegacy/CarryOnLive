@@ -1583,11 +1583,11 @@ const DashboardPage = () => {
             key: 'estate',
             chipColor: '#3B82F6',
             chipPercent: sectionPercents.estate,
-            chipLabel: 'Legacy',
+            chipLabel: 'People',
             tile: (
               <SectionStatCard
                 icon={Heart}
-                title="Legacy"
+                title="People"
                 accent="#3B82F6"
                 stats={buildStats([
                   { featureKey: 'beneficiaries', title: 'Beneficiaries', value: stats.beneficiaries },
@@ -1603,11 +1603,11 @@ const DashboardPage = () => {
             key: 'vault',
             chipColor: '#d4af37',
             chipPercent: sectionPercents.vault,
-            chipLabel: 'Vault',
+            chipLabel: 'Access',
             tile: (
               <SectionStatCard
                 icon={Lock}
-                title="Vault"
+                title="Access"
                 accent="#d4af37"
                 stats={buildStats([
                   { featureKey: 'sdv', title: 'Documents', value: stats.documents },
@@ -1622,11 +1622,11 @@ const DashboardPage = () => {
             key: 'financial',
             chipColor: '#22C993',
             chipPercent: sectionPercents.financial,
-            chipLabel: 'Financial',
+            chipLabel: 'Money',
             tile: (
               <SectionStatCard
                 icon={Landmark}
-                title="Financial"
+                title="Money"
                 accent="#22C993"
                 stats={buildStats([
                   { featureKey: 'cfp', title: 'Financials', value: cfpN },
@@ -1641,11 +1641,11 @@ const DashboardPage = () => {
             key: 'preparedness',
             chipColor: '#B794F6',
             chipPercent: sectionPercents.preparedness,
-            chipLabel: 'Preparedness',
+            chipLabel: 'Action',
             tile: (
               <SectionStatCard
                 icon={Clock}
-                title="Preparedness"
+                title="Action"
                 accent="#B794F6"
                 stats={buildStats([
                   { featureKey: 'iac', title: 'Checklist', value: totalTasks },
@@ -1725,7 +1725,7 @@ const DashboardPage = () => {
         const ReadinessCard = ({ keyChipsPosition = 'top-right', dense = false }) => (
           <div className={`glass-card relative ${dense ? 'p-4 lg:px-6 lg:py-4' : 'p-5 lg:p-8'} mb-4`} data-testid="readiness-card">
             <h2 className={`${dense ? 'text-lg sm:text-xl md:text-2xl lg:text-4xl xl:text-5xl 2xl:text-6xl mb-2 lg:mb-3' : 'text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl 2xl:text-5xl mb-4 lg:mb-5'} whitespace-nowrap font-bold text-[var(--t)] uppercase tracking-wider text-center`} style={{ fontFamily: 'var(--sans)' }}>
-              Total Estate Readiness
+              Total Family Continuity
             </h2>
             {keyChipsPosition === 'top-right' && !dense && (
               <div className="hidden lg:flex lg:justify-end lg:mb-4 lg:px-2">
@@ -1875,7 +1875,7 @@ const DashboardPage = () => {
                   className="text-3xl lg:text-4xl xl:text-5xl 2xl:text-6xl whitespace-nowrap font-semibold text-[var(--t)] mb-4 text-center tracking-tight"
                   style={{ fontFamily: 'var(--serif)' }}
                 >
-                  Total Estate Readiness
+                  Total Family Continuity
                 </h2>
                 <div className="flex-1 flex items-center justify-center">
                   <ReadinessDial score={readinessScore} id="readiness-side" labelText={scoreInfo.label} labelColor={scoreInfo.color} />

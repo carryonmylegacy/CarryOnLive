@@ -14,7 +14,7 @@ import { useAuth } from '../contexts/AuthContext';
  *     favicon `href` and the original document title so the next
  *     user on the same device gets the right brand.
  */
-const DEFAULT_TITLE_SUFFIX = 'CarryOn™ - Secure Family Preparedness & Estate Planning Platform';
+const DEFAULT_TITLE_SUFFIX = 'CarryOn™ — The Family Continuity Platform';
 
 export default function PartnerHeadBranding() {
   const { partnerBranding } = useAuth();

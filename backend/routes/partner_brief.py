@@ -237,7 +237,7 @@ DEFAULTS: dict[str, Any] = {
         "title": "CarryOn™ Partner Brief",
         "intro": (
             "A short overview of the platform — the AI-driven QuickStart that turns a 2-minute "
-            "conversation into a professional-prep checklist, the four pillars of Total Estate Readiness "
+            "conversation into a professional-prep checklist, the four pillars of Total Family Continuity "
             "that organize the family's full picture, the platform-wide capabilities (Estate Binder, "
             "Trustee Mode, offline-first PWA, white-label partner experiences), and how each one fits "
             "the kinds of businesses we partner with \u2014 life insurance, financial planning, funeral "
@@ -285,7 +285,7 @@ DEFAULTS: dict[str, Any] = {
         ),
     },
     "pillars": {
-        "title": "2. The Four Pillars of Total Estate Readiness",
+        "title": "2. The Four Pillars of Total Family Continuity",
         "intro": (
             "Four pillars hold up everything CarryOn does. Each one bundles a small set of focused "
             "functions that work together. Use the pillar name on a call, drop the function abbreviation "
@@ -295,8 +295,8 @@ DEFAULTS: dict[str, Any] = {
         "items": [
             {
                 "n": "01",
-                "name": "Legacy",
-                "abbr": "People & plan",
+                "name": "People",
+                "abbr": "Know who matters",
                 "desc": (
                     "The people who matter, the plan you leave them, and the audit trail of every "
                     "change along the way. Functions inside this pillar: Beneficiaries (name who "
@@ -310,8 +310,8 @@ DEFAULTS: dict[str, Any] = {
             },
             {
                 "n": "02",
-                "name": "Vault",
-                "abbr": "Documents & credentials",
+                "name": "Access",
+                "abbr": "Within reach, not a moment sooner",
                 "desc": (
                     "Every document and credential the family will actually need \u2014 encrypted, "
                     "organized, and surfaced by an AI that finds what was missed. Functions inside "
@@ -326,8 +326,8 @@ DEFAULTS: dict[str, Any] = {
             },
             {
                 "n": "03",
-                "name": "Financial",
-                "abbr": "Money & structure",
+                "name": "Money",
+                "abbr": "Clarity, not a mystery",
                 "desc": (
                     "The complete money picture and a visual map of every entity and structure that "
                     "holds it together. Functions inside this pillar: CarryOn Financial Picture (CFP "
@@ -341,8 +341,8 @@ DEFAULTS: dict[str, Any] = {
             },
             {
                 "n": "04",
-                "name": "Preparedness",
-                "abbr": "Crisis playbook",
+                "name": "Action",
+                "abbr": "The playbook for the hardest days",
                 "desc": (
                     "The playbook the family follows on the hardest days \u2014 step-by-step actions, "
                     "pre-built response plans, and a private channel to coordinate. Functions inside "

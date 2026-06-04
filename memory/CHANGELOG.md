@@ -1,6 +1,17 @@
 # CarryOn — Changelog
 
 
+## Jun 4, 2026 — Four pillars relabeled: People · Access · Money · Action (Set A)
+
+Founder-approved rename of the four pillar-GROUP **display labels** (internal data keys `estate`/`vault`/`financial`/`preparedness`, all routes, and the nine canonical function names per AGENT_RULES Rule -2 left untouched):
+
+- **Legacy → People · Vault → Access · Financial → Money · Preparedness → Action.**
+- Updated everywhere the pillars surface: `config/benefactorSections.js` (benefactor sidebar pills + mobile section nav + per-feature-page gradient headers via `PATH_TO_SECTION_META`), `components/landing/LandingContent.js` (homepage), `pages/LandingPage.js` (SEO page), `pages/DashboardPage.js` (Core Pillars card titles + readiness key-chips), and backend `routes/partner_brief.py` (B2B sales-brief API). Pillar `abbr` taglines aligned to the homepage outcome phrasing.
+- Umbrella phrase made consistent with the homepage: dashboard gauge headers + partner-brief section title "Total Estate Readiness" → **"Total Family Continuity."** Partner document-title suffix + 6 video iframe titles updated to "The Family Continuity Platform."
+- **Kept (correctly):** Secure Document **Vault** (SDV), Digital Access **Vault** (DAV), CarryOn **Financial** Picture (CFP), Estate **Plan** Timeline, checklist/vault category filters, Legacy-Trust entity name, and all internal keys/routes/testids.
+- **Verified**: lint clean (0 ESLint errors across src), housekeeping green (only the pre-existing user-directed iOS sub-11px WARN; 0 new issues), and live visual confirmation on the authenticated benefactor dashboard — sidebar reads PEOPLE · ACCESS · MONEY · ACTION, gauge reads "Total Family Continuity."
+
+
 ## Jun 4, 2026 — Homepage repositioned to "The Family Continuity Platform"
 
 Founder-approved strategic narrative rewrite of the public homepage and all aligned narrative copy. Elevated the category from "family-preparedness / estate-planning platform" to **The Family Continuity Platform** — leading with continuity, confidence, and *what to do next* rather than storage/vault/documents/estate. North Star: *"If something happens tomorrow, your family knows exactly what to do."*

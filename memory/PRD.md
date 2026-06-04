@@ -171,12 +171,12 @@ for the pillar grouping: `/app/frontend/src/config/benefactorSections.js`
 narrative). **Canonical names + abbreviations are platform law** — see
 `AGENT_RULES.md` Rule -2.
 
-### 🔵 Pillar 01 — Legacy *(people, plan, audit trail)*
+### 🔵 Pillar 01 — People *(who matters, the plan, the audit trail)*
 
 Internal data key: `estate` (route paths and config maps continue to use
-this stable identifier; only the user-visible label was renamed from
-"Estate" to "Legacy" on May 22, 2026 so the pillar reads as the broader
-*leaving-behind* concept rather than the legal-document narrow noun).
+this stable identifier; the user-visible label was renamed Estate → Legacy
+(May 22, 2026) → **People** (Jun 2026, Set A) so the pillar reads as the
+people you protect and who acts for them, not a legal-document noun).
 
 | Function | Abbr | Route | What it does |
 |---|---|---|---|
@@ -186,7 +186,10 @@ this stable identifier; only the user-visible label was renamed from
 | Designated Trustee Services | DTS | `/trustee` | Lets an attorney / advisor / family member act on the benefactor's behalf with a full audit trail. |
 | Estate Plan Timeline | EPT | `/timeline` | A living record of every edit, who made it, and when. |
 
-### 🟡 Pillar 02 — Vault *(documents, credentials, AI gap finder)*
+### 🟡 Pillar 02 — Access *(documents, credentials, AI gap finder)*
+
+Internal data key: `vault` (unchanged). User-visible label renamed
+Vault → **Access** (Jun 2026, Set A) — the outcome a vault delivers.
 
 | Function | Abbr | Route | What it does |
 |---|---|---|---|
@@ -194,14 +197,20 @@ this stable identifier; only the user-visible label was renamed from
 | Digital Access Vault | DAV | `/digital-wallet` | Passwords, bank logins, password-manager seeds, crypto keys — assigned to the right people. |
 | Estate Guardian™ AI | EGA | `/guardian` | AI estate-law analyst that reads inside the vault and flags gaps, contradictions, deadlines. |
 
-### 🟢 Pillar 03 — Financial *(money picture and entity structure)*
+### 🟢 Pillar 03 — Money *(the full picture and entity structure)*
+
+Internal data key: `financial` (unchanged). User-visible label renamed
+Financial → **Money** (Jun 2026, Set A).
 
 | Function | Abbr | Route | What it does |
 |---|---|---|---|
 | CarryOn Financial Picture | CFP | `/financial` | Encrypted view of accounts, investments, policies, bills, debts, properties. |
 | CarryOn Entities & Structures | CES | `/entities` | Visual, pan-and-zoom org chart of every trust, LLC, partnership, charitable entity, and the people connected to each. |
 
-### 🟣 Pillar 04 — Preparedness *(crisis playbook and family hotline)*
+### 🟣 Pillar 04 — Action *(crisis playbook and family channel)*
+
+Internal data key: `preparedness` (unchanged). User-visible label renamed
+Preparedness → **Action** (Jun 2026, Set A) — what the family does, first.
 
 | Function | Abbr | Route | What it does |
 |---|---|---|---|

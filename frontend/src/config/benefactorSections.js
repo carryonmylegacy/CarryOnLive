@@ -13,6 +13,7 @@
 //
 // Order preserved exactly as the user specified:
 //   ESTATE → VAULT → FINANCIAL → PREPAREDNESS
+//   (display labels: People → Access → Money → Action; internal keys unchanged)
 
 import {
   Landmark, Lock,
@@ -25,7 +26,7 @@ import {
 export const BENEFACTOR_SECTIONS = [
   {
     key: 'estate',
-    label: 'Legacy',
+    label: 'People',
     icon: Heart,
     color: '#3B82F6', // blue
     pill: {
@@ -47,7 +48,7 @@ export const BENEFACTOR_SECTIONS = [
   },
   {
     key: 'vault',
-    label: 'Vault',
+    label: 'Access',
     icon: Lock,
     color: '#d4af37', // brand gold
     pill: {
@@ -67,7 +68,7 @@ export const BENEFACTOR_SECTIONS = [
   },
   {
     key: 'financial',
-    label: 'Financial',
+    label: 'Money',
     icon: Landmark,
     color: '#22C993', // emerald
     pill: {
@@ -86,7 +87,7 @@ export const BENEFACTOR_SECTIONS = [
   },
   {
     key: 'preparedness',
-    label: 'Preparedness',
+    label: 'Action',
     icon: Clock,
     color: '#B794F6', // purple
     pill: {
