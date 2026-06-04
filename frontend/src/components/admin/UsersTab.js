@@ -304,13 +304,19 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
               {u.role}
             </span>
             {u.is_also_beneficiary && u.role !== 'beneficiary' && (
-              <span className="text-[11px] px-1.5 py-0.5 rounded-md font-bold" style={{ background: 'rgba(139,92,246,0.12)', color: '#a78bfa' }}>
+              <span className="text-[11px] px-1.5 py-0.5 rounded-md font-bold" style={{ background: 'rgba(139,92,246,0.12)', color: '#a78bfa' }}
+                data-testid={`admin-also-beneficiary-badge-${u.id}`}>
                 + Beneficiary
               </span>
             )}
             {u.is_also_benefactor && u.role !== 'benefactor' && (
-              <span className="text-[11px] px-1.5 py-0.5 rounded-md font-bold" style={{ background: 'rgba(37,99,235,0.12)', color: '#60a5fa' }}>
-                + Benefactor
+              <span
+                className="text-[11px] px-1.5 py-0.5 rounded-md font-bold"
+                style={{ background: 'rgba(212,175,55,0.16)', color: '#d4af37', border: '1px solid rgba(212,175,55,0.45)' }}
+                title="Dual-role: primary role is beneficiary, but this user also owns an estate and operates a Benefactor Portal."
+                data-testid={`admin-dualrole-badge-${u.id}`}
+              >
+                DUAL-ROLE
               </span>
             )}
             {billingStatus === 'grace_period' && (

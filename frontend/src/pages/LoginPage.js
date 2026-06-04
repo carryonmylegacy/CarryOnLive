@@ -964,7 +964,7 @@ const LoginPage = () => {
         <div className="absolute inset-0 z-[2]" style={{ background: 'radial-gradient(ellipse 70% 50% at 35% 50%, rgba(var(--gold-rgb), 0.04) 0%, transparent 70%)' }} />
 
         <div className="max-w-[1400px] mx-auto px-6 lg:px-10 w-full relative z-10">
-          <div className="grid lg:grid-cols-[1fr_350px] xl:grid-cols-[1fr_420px] gap-10 lg:gap-10 xl:gap-14 items-center">
+          <div className="grid lg:grid-cols-[1fr_350px] xl:grid-cols-[1fr_420px] gap-10 lg:gap-10 xl:gap-14 items-start">
 
             {/* Logo + Tagline — desktop: left side */}
             <RevealSection delay={0.1} className="hidden lg:block">

@@ -1,5 +1,4 @@
 import React from 'react';
-import { Gift } from 'lucide-react';
 
 // Single source of truth for the Free Mode messaging so the Subscription
 // page and the standalone paywall never drift apart. Copy intentionally
@@ -16,14 +15,20 @@ export const FreeModeBanner = ({ className = '', tone = 'auto', testId = 'free-m
   // light/dark theme. Default keeps the theme-aware colors used in-app.
   const onDark = tone === 'onDark';
   const headingColor = onDark ? '#FFFFFF' : 'var(--t)';
-  const bodyColor = onDark ? 'rgba(255,255,255,0.85)' : 'var(--t3)';
+  const bodyColor = onDark ? 'rgba(255,255,255,0.9)' : 'var(--t3)';
   return (
   <div
     className={`relative overflow-hidden rounded-2xl p-5 sm:p-6 ${className}`}
     style={{
-      background: 'linear-gradient(135deg, rgba(var(--gold-rgb), 0.16), rgba(var(--gold-rgb), 0.04))',
-      border: '1.5px solid rgba(var(--gold-rgb), 0.45)',
-      boxShadow: '0 12px 40px -12px rgba(var(--gold-rgb), 0.35)',
+      background: onDark
+        ? 'linear-gradient(135deg, rgba(18,26,42,0.9), rgba(11,18,33,0.94))'
+        : 'linear-gradient(135deg, rgba(var(--gold-rgb), 0.16), rgba(var(--gold-rgb), 0.04))',
+      border: '1.5px solid rgba(var(--gold-rgb), 0.5)',
+      boxShadow: onDark
+        ? '0 18px 50px -14px rgba(0,0,0,0.65)'
+        : '0 12px 40px -12px rgba(var(--gold-rgb), 0.35)',
+      backdropFilter: onDark ? 'blur(10px)' : undefined,
+      WebkitBackdropFilter: onDark ? 'blur(10px)' : undefined,
     }}
     data-testid={testId}
   >
@@ -32,29 +37,21 @@ export const FreeModeBanner = ({ className = '', tone = 'auto', testId = 'free-m
       className="absolute top-0 left-0 right-0 h-[2px]"
       style={{ background: 'linear-gradient(90deg, transparent, rgba(var(--gold-rgb), 0.7), transparent)' }}
     />
-    <div className="flex items-start gap-3.5">
-      <div
-        className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
-        style={{ background: 'rgba(var(--gold-rgb), 0.14)', border: '1px solid rgba(var(--gold-rgb), 0.3)' }}
-      >
-        <Gift className="w-5 h-5 text-[var(--gold)]" />
+    <div className="relative">
+      <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+        <h3 className="text-base sm:text-lg font-bold" style={{ fontFamily: 'var(--sans)', color: headingColor }}>
+          {FREE_MODE_HEADLINE}
+        </h3>
+        <span
+          className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
+          style={{ color: 'var(--bg2)', background: 'var(--gold)' }}
+        >
+          Active
+        </span>
       </div>
-      <div className="min-w-0">
-        <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-          <h3 className="text-base sm:text-lg font-bold" style={{ fontFamily: 'var(--sans)', color: headingColor }}>
-            {FREE_MODE_HEADLINE}
-          </h3>
-          <span
-            className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
-            style={{ color: 'var(--bg2)', background: 'var(--gold)' }}
-          >
-            Active
-          </span>
-        </div>
-        <p className="text-sm leading-relaxed" style={{ color: bodyColor }} data-testid={`${testId}-body`}>
-          {FREE_MODE_BODY}
-        </p>
-      </div>
+      <p className="text-sm leading-relaxed" style={{ color: bodyColor }} data-testid={`${testId}-body`}>
+        {FREE_MODE_BODY}
+      </p>
     </div>
   </div>
   );

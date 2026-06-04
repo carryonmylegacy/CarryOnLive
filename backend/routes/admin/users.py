@@ -69,6 +69,13 @@ async def get_all_users(current_user: dict = Depends(require_staff)):
         )
         u["subscription"] = sub
 
+        # Surface dual-role estate owners (a user whose primary role is
+        # beneficiary but who ALSO owns an estate and runs a Benefactor Portal)
+        # so the admin can spot them at a glance. Derived from ACTUAL estate
+        # ownership, so it's accurate even if the stored flag ever lags.
+        if u.get("id") in estates_by_owner and u.get("role") not in ("benefactor", "admin"):
+            u["is_also_benefactor"] = True
+
         # For benefactors (including multi-role users), attach their beneficiary list
         # across ALL their estates, grouped by estate for tree/graph views
         if u.get("role") == "benefactor" or u.get("is_also_benefactor"):
