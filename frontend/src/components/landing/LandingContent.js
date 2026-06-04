@@ -327,9 +327,9 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
                           </div>
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-baseline gap-3 mb-2">
+                          <div className="flex flex-col sm:flex-row sm:items-baseline gap-x-3 gap-y-1 mb-2">
                             <h4 className="text-white text-2xl font-semibold leading-tight tracking-tight" style={{ fontFamily: 'var(--serif)' }}>{title}</h4>
-                            <span className="text-[#8b97ab] text-xs font-semibold tracking-wider flex-shrink-0 uppercase">{abbr}</span>
+                            <span className="text-[#8b97ab] text-xs font-semibold tracking-wider uppercase break-words min-w-0">{abbr}</span>
                           </div>
                           <p className="text-sm font-medium leading-relaxed" style={{ color: '#e8c972' }}>{blurb}</p>
                         </div>

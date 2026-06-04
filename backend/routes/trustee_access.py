@@ -331,16 +331,18 @@ async def invite_trustee(data: TrusteeGrantInvite, current_user: dict = Depends(
 
     email_lower = data.email.lower().strip()
 
-    # Refuse collisions with an existing CarryOn user account (user choice 3a).
+    # An email that already has a CarryOn account CAN be designated as a
+    # trustee. Trustee credentials live in a separate `trustee_grants`
+    # namespace (the trustee sets their OWN username + password at claim,
+    # gated by the emailed claim token + a 6-digit email OTP, and the chosen
+    # username is still checked against existing users at claim time). The
+    # email overlapping a user account is therefore not a barrier — we only
+    # record it for audit visibility and never block. (Reverses prior 3a guard.)
     existing_user = await db.users.find_one(
         {"$or": [{"email": email_lower}, {"username_lower": email_lower}]},
         {"_id": 0, "id": 1},
     )
-    if existing_user:
-        raise HTTPException(
-            status_code=409,
-            detail="That email is already a CarryOn account. Use a different email for the trustee.",
-        )
+    has_user_account = existing_user is not None
 
     # Refuse if a non-revoked grant already exists for the same email + benefactor.
     existing_grant = await db.trustee_grants.find_one(
@@ -365,6 +367,7 @@ async def invite_trustee(data: TrusteeGrantInvite, current_user: dict = Depends(
         "trustee_username_lower": "",
         "trustee_display_name": data.trustee_display_name.strip(),
         "password_hash": "",  # set at claim
+        "has_user_account": has_user_account,  # audit: trustee email already has a CarryOn login
         "include_beneficiaries": bool(data.include_beneficiaries),
         "duration": data.duration,
         "custom_days": data.custom_days if data.duration == "custom" else None,
@@ -380,7 +383,9 @@ async def invite_trustee(data: TrusteeGrantInvite, current_user: dict = Depends(
         "created_at": _now_iso(),
     }
     await db.trustee_grants.insert_one(grant)
-    logger.info(f"[TMA] Invite created by benefactor={current_user['id']} email={email_lower}")
+    logger.info(
+        f"[TMA] Invite created by benefactor={current_user['id']} email={email_lower} has_user_account={has_user_account}"
+    )
 
     # Fire the invitation email. Best-effort — if Resend rejects the send
     # (test sandbox, unverified domain, rate-limit, recipient bounce, etc.)

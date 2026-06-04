@@ -1,6 +1,13 @@
 # CarryOn — Changelog
 
 
+## Jun 4, 2026 — Trustee-designation fix + mobile pillar-title wrap
+
+- **Critical fix (Designated Trustee):** Removed the invite-time guard in `routes/trustee_access.py` (`POST /trustee/grants`) that returned 409 "That email is already a CarryOn account." An existing CarryOn user can now be designated as a trustee. Safe because trustee credentials live in a separate `trustee_grants` namespace (own username + password set at claim, gated by emailed claim-token + 6-digit email OTP; the chosen trustee username is still collision-checked against `users` at claim). Reviewed by integration_expert (no account-takeover / privilege-escalation risk; user & trustee auth paths stay separate). Added non-blocking `has_user_account` audit flag on the grant + log line. Verified via API: inviting an existing-account email now returns 200/pending (was 409).
+- **Formatting fix (homepage pillars):** The pillar title taglines (e.g. "WITHIN REACH, NOT A MOMENT SOONER", "THE PLAYBOOK FOR THE HARDEST DAYS") were clipped off-screen in PWA/mobile. Changed the title row in `LandingContent.js` to stack on mobile (`flex-col sm:flex-row`, `break-words`, removed `flex-shrink-0`) so the tagline wraps fully below the title on narrow screens and stays inline on desktop.
+- Verified: backend ruff PASS, frontend ESLint PASS, housekeeping green (only the pre-existing user-directed iOS sub-11px WARN; 0 new issues).
+
+
 ## Jun 4, 2026 — Four pillars relabeled: People · Access · Money · Action (Set A)
 
 Founder-approved rename of the four pillar-GROUP **display labels** (internal data keys `estate`/`vault`/`financial`/`preparedness`, all routes, and the nine canonical function names per AGENT_RULES Rule -2 left untouched):
