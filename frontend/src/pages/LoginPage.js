@@ -973,12 +973,13 @@ const LoginPage = () => {
                   <img src="/carryon-logo.png" alt="CarryOn" className="w-[200px] xl:w-[260px] h-auto" />
                 </div>
                 <div className="text-center sm:text-left flex-1 sm:pt-2">
+                  <p className="text-[#d4af37] text-sm font-semibold uppercase tracking-[0.18em] mb-3" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>The Family Continuity Platform</p>
                   <h1 className="text-3xl sm:text-4xl xl:text-5xl font-semibold text-white leading-[1.08] mb-3 tracking-tight" style={{ fontFamily: 'var(--serif)', textShadow: '0 2px 12px rgba(0,0,0,0.7), 0 1px 4px rgba(0,0,0,0.5)' }}>
-                    Every American Family.
-                    <span className="block text-[#d4af37] mt-1 italic" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.7), 0 1px 4px rgba(0,0,0,0.5)' }}>Ready.</span>
+                    If something happens tomorrow, your family knows
+                    <span className="block text-[#d4af37] mt-1 italic" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.7), 0 1px 4px rgba(0,0,0,0.5)' }}>exactly what to do.</span>
                   </h1>
                   <p className="text-white/80 text-sm xl:text-base max-w-lg leading-relaxed mb-5" style={{ textShadow: '0 1px 8px rgba(0,0,0,0.6)' }}>
-                    The digital family preparedness platform that brings together every aspect of your life &mdash; so you and your loved ones can CarryOn through anything.
+                    CarryOn is the continuity system for your family &mdash; keeping everyone ready, connected, and clear through every disruption, from a hospital stay to the final day. Built calmly today; there the moment your family needs it.
                   </p>
                   <div className="flex items-center gap-5 justify-center sm:justify-start mb-5">
                     {['AES-256 Encrypted', 'Per-Estate Keys', '2FA Protected'].map(badge => (
@@ -1127,12 +1128,13 @@ const LoginPage = () => {
               <RevealSection delay={0.5}>
                 <div className="flex flex-col items-center text-center mt-2">
                   <img src="/carryon-logo.png" alt="CarryOn" className="w-[240px] h-auto mb-5" />
+                  <p className="text-[#d4af37] text-sm font-semibold uppercase tracking-[0.18em] mb-3" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>The Family Continuity Platform</p>
                   <h2 className="text-3xl sm:text-4xl font-semibold text-white leading-[1.08] mb-3 tracking-tight" style={{ fontFamily: 'var(--serif)', textShadow: '0 2px 12px rgba(0,0,0,0.7), 0 1px 4px rgba(0,0,0,0.5)' }}>
-                    Every American Family.
-                    <span className="block text-[#d4af37] mt-1 italic" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.7), 0 1px 4px rgba(0,0,0,0.5)' }}>Ready.</span>
+                    If something happens tomorrow, your family knows
+                    <span className="block text-[#d4af37] mt-1 italic" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.7), 0 1px 4px rgba(0,0,0,0.5)' }}>exactly what to do.</span>
                   </h2>
                   <p className="text-white/80 text-base max-w-sm leading-relaxed mb-5" style={{ textShadow: '0 1px 8px rgba(0,0,0,0.6)' }}>
-                    The digital family preparedness platform that brings together every aspect of your life &mdash; so you and your loved ones can CarryOn through anything.
+                    CarryOn is the continuity system for your family &mdash; ready, connected, and clear through every disruption, from a hospital stay to the final day.
                   </p>
                   <div className="flex items-center gap-4 justify-center mb-4">
                     {['AES-256 Encrypted', 'Per-Estate Keys', '2FA Protected'].map(badge => (

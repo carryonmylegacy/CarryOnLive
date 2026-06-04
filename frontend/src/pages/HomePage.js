@@ -95,12 +95,13 @@ const HomePage = () => {
         <div className="max-w-[900px] mx-auto px-6 w-full relative z-10 text-center">
           <RevealSection delay={0.1}>
             <img src="/carryon-logo.png" alt="CarryOn" className="w-[200px] lg:w-[260px] h-auto mx-auto mb-6" />
+            <p className="text-[#d4af37] text-sm font-semibold uppercase tracking-[0.18em] mb-4" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>The Family Continuity Platform</p>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-semibold text-white leading-[1.08] mb-4 tracking-tight" style={{ fontFamily: 'var(--serif)', textShadow: '0 2px 12px rgba(0,0,0,0.7), 0 1px 4px rgba(0,0,0,0.5)' }}>
-              Every American Family.
-              <span className="block text-[#d4af37] mt-1 italic" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.7), 0 1px 4px rgba(0,0,0,0.5)' }}>Ready.</span>
+              If something happens tomorrow,<br className="hidden sm:block" /> your family knows
+              <span className="block text-[#d4af37] mt-1 italic" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.7), 0 1px 4px rgba(0,0,0,0.5)' }}>exactly what to do.</span>
             </h1>
-            <p className="text-white/80 text-base lg:text-lg max-w-lg mx-auto leading-relaxed mb-8" style={{ textShadow: '0 1px 8px rgba(0,0,0,0.6)' }}>
-              The digital family preparedness platform that brings together every aspect of your life &mdash; so you and your loved ones can CarryOn through anything.
+            <p className="text-white/80 text-base lg:text-lg max-w-xl mx-auto leading-relaxed mb-8" style={{ textShadow: '0 1px 8px rgba(0,0,0,0.6)' }}>
+              CarryOn is the continuity system for your family &mdash; keeping everyone ready, connected, and clear through every disruption, from a hospital stay to the final day. You build it calmly. It&apos;s there the moment your family needs it.
             </p>
             <div className="flex items-center gap-4 justify-center flex-wrap mb-8">
               <button onClick={() => navigateWithFade('/signup')} className="gold-keep-dark inline-flex items-center gap-2 px-8 py-3.5 rounded-lg font-bold text-base transition-transform duration-150 active:scale-95" data-testid="home-get-started-hero"

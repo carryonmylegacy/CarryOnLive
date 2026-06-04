@@ -428,7 +428,7 @@ export const PartnersTab = ({ getAuthHeaders }) => {
               <div className="space-y-1 md:col-span-2 lg:col-span-3">
                 <Label className="text-xs text-[var(--t4)]">Landing Page Tagline</Label>
                 <Input value={newForm.tagline} onChange={e => setNewForm({ ...newForm, tagline: e.target.value })}
-                  placeholder="Acme Insurance members get the full CarryOn family preparedness platform — included with your policy."
+                  placeholder="Acme Insurance members get the full CarryOn family continuity platform — included with your policy."
                   className="input-field text-sm" maxLength={280} />
                 <p className="text-[11px] text-[var(--t5)]">Appears under the partner&apos;s logo on their landing page · 280 chars max</p>
               </div>

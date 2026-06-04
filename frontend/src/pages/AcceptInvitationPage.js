@@ -175,7 +175,7 @@ const AcceptInvitationPage = () => {
                 Someone special is<br />thinking of <span className="text-[#d4af37]">you</span>
               </h1>
               <p className="text-lg text-[#94a3b8] leading-relaxed mb-8">
-                <span className="text-[#d4af37] font-semibold">{invitationData?.benefactor_name}</span> has included you in their family preparedness plan on CarryOn™
+                <span className="text-[#d4af37] font-semibold">{invitationData?.benefactor_name}</span> has included you in their family continuity plan on CarryOn™
               </p>
 
               {/* Feature pills — desktop only */}

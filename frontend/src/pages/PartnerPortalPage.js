@@ -138,7 +138,7 @@ const PartnerPortalPage = () => {
   if (partner?.tagline) {
     heroSubtitle = partner.tagline;
   } else if (enabledLabels.length === 0) {
-    heroSubtitle = `${partner?.company_name} members get the CarryOn family preparedness platform.`;
+    heroSubtitle = `${partner?.company_name} members get the CarryOn family continuity platform.`;
   } else if (enabledLabels.length === 1) {
     heroSubtitle = `${partner?.company_name} members get ${enabledLabels[0]} from CarryOn.`;
   } else {

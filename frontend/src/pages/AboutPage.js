@@ -118,7 +118,7 @@ const AboutPage = () => {
             <RevealSection delay={0.35}>
               <div className="rounded-xl p-6 lg:p-8 transition-all duration-700 hover:border-l-[#d4af37]" style={{ borderLeft: '3px solid #d4af37', background: 'rgba(var(--gold-rgb), 0.04)' }}>
                 <p className="text-white text-base lg:text-lg italic leading-relaxed">
-                  We&apos;re not just an app. We build infrastructure for family preparedness &mdash; so that when the hardest day comes, your family isn&apos;t searching. They&apos;re ready.
+                  We&apos;re not just an app. We build infrastructure for family continuity &mdash; so that whatever life brings, your family isn&apos;t searching. They know exactly what to do.
                 </p>
               </div>
             </RevealSection>

@@ -284,7 +284,7 @@ export default function FoundersCircleCelebration({ firstName, tierName, estateN
         open={showShare}
         onClose={() => { setShowShare(false); setCard(null); setQuote(''); }}
         imageUrl={card?.image_url ? `${BASE_URL}${card.image_url}` : ''}
-        shareText={card?.share_text || `I just joined the CarryOn Founders Circle — lifetime access to the family preparedness platform that protects the people I love. https://carryon.us`}
+        shareText={card?.share_text || `I just joined the CarryOn Founders Circle — lifetime access to the family continuity platform that keeps the people I love ready for anything. https://carryon.us`}
         shareUrl="https://carryon.us"
         title="Share your Founding Member moment"
         accent="gold"
