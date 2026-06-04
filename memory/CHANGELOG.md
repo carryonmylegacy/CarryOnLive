@@ -1,6 +1,13 @@
 # CarryOn — Changelog
 
 
+## Jun 4, 2026 — Trustee "invite unavailable": root cause = Render backend cold start (infra), + claim-page resilience
+
+- **Root cause (diagnosed via live production probe):** The trustee claim failures on `app.carryon.us` are NOT a code/trustee bug. The production backend (`carryon-api-kacr.onrender.com`) is on a Render free/idle-spin-down instance; cold starts make the CORS preflight fail through Cloudflare ("preflight does not have HTTP ok status" / `net::ERR_FAILED`), which fails ALL API calls (observed `/api/public/site-content` failing too), so the claim page shows its generic fallback. Confirmed backend CORS is correct when warm: direct `GET` → 200 with `access-control-allow-origin: https://app.carryon.us`; `OPTIONS` preflight → 200 with full CORS headers.
+- **Permanent fix (infra, user action):** Move the Render backend web service to a paid always-on instance (free tier sleeps after 15 min). Free alternative: keep-warm pinger (UptimeRobot / Render Cron) hitting the backend every ~10 min.
+- **Defensive code (shipped to preview, needs deploy):** `TrusteeClaimPage.js` now retries the claim preview with backoff (~37s total) on transient/network/5xx/cold-start errors (but shows definitive 4xx `detail` immediately), plus a "Try again" button (`trustee-claim-retry`) on the error screen. Lint clean.
+
+
 ## Jun 4, 2026 — Trustee workflow: 4 fixes (username prefill, fast send, button layout, claim-link diagnosis)
 
 - **Issue 1 — wrong auto-filled username (FIXED):** The claim page suggested a generic handle (`trustee_<email>_<rand>`) instead of the benefactor-assigned Display name. Added `_suggest_username_from_display()` and used it in `GET /trustee/claim/{token}` so the suggestion is the sanitized display name (e.g. "MartyTrustee"). Verified via API.

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import apiClient from '../utils/apiClient';
 import { toast } from '../utils/toast';
@@ -34,20 +34,39 @@ const TrusteeClaimPage = () => {
   const [otpCode, setOtpCode] = useState('');
   const [busy, setBusy] = useState(false);
 
-  useEffect(() => {
+  const loadPreview = useCallback(async () => {
     if (!token) { setStage('invalid'); return; }
-    (async () => {
+    setStage('loading');
+    const maxAttempts = 6;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
         const r = await apiClient.get(`${API_URL}/trustee/claim/${token}`);
         setPreview(r.data);
         setUsername(r.data.suggested_username || '');
         setStage('form');
+        return;
       } catch (e) {
-        setError(e?.response?.data?.detail || 'We couldn\u2019t open this invite. The link may be invalid, already used, or replaced by a newer invite email.');
+        const status = e?.response?.status;
+        const detail = e?.response?.data?.detail;
+        // Definitive server rejection (invalid / expired / already used): show it now, no retry.
+        if (detail && status >= 400 && status < 500) {
+          setError(detail);
+          setStage('invalid');
+          return;
+        }
+        // Transient failure (network drop, CORS preflight, 5xx, or a cold backend
+        // waking up) — wait and retry with backoff before giving up.
+        if (attempt < maxAttempts) {
+          await new Promise((res) => setTimeout(res, attempt * 2500));
+          continue;
+        }
+        setError('We couldn\u2019t reach CarryOn just now. The server may be waking up — please tap "Try again" in a moment.');
         setStage('invalid');
       }
-    })();
+    }
   }, [token]);
+
+  useEffect(() => { loadPreview(); }, [loadPreview]);
 
   const handleStart = async (e) => {
     e.preventDefault();
@@ -130,6 +149,15 @@ const TrusteeClaimPage = () => {
                 <p className="text-[var(--t)] text-sm font-bold">Invite unavailable</p>
                 <p className="text-[var(--t4)] text-sm mt-1">{error}</p>
                 <p className="text-[var(--t5)] text-xs mt-2">Ask the benefactor to resend the invite from their Settings page.</p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={loadPreview}
+                  data-testid="trustee-claim-retry"
+                  className="mt-3 h-8 text-xs"
+                >
+                  Try again
+                </Button>
               </div>
             </div>
           )}
