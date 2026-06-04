@@ -20,7 +20,7 @@ services:
     runtime: docker
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend
-    plan: starter            # 512 MB RAM, $7/mo, always-on. Bump to "standard" if Playwright OOMs.
+    plan: standard           # 2 GB RAM / 1 CPU, always-on. Headroom for AI calls, PDF + image generation under live load. (Starter=512MB is the cheaper always-on floor; Pro=4GB only needed at high concurrency.)
     region: virginia         # East-Coast latency for US users. Other options: oregon, frankfurt, singapore.
     branch: main             # Match this to your Vercel-watched branch (likely `main` or `production`).
     autoDeploy: true         # Re-deploys on every push to `branch` — same UX as Railway.
