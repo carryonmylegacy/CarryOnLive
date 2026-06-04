@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import apiClient from '../utils/apiClient';
 import { toast } from '../utils/toast';
-import { ShieldCheck, Loader2, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { ShieldCheck, Loader2, AlertTriangle, CheckCircle2, Eye, EyeOff } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
@@ -29,6 +29,8 @@ const TrusteeClaimPage = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [passwordConfirm, setPasswordConfirm] = useState('');
+  const [showPw, setShowPw] = useState(false);
+  const [showPw2, setShowPw2] = useState(false);
   const [otpCode, setOtpCode] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -161,29 +163,53 @@ const TrusteeClaimPage = () => {
 
               <div>
                 <label htmlFor="tcl-pw" className="text-[var(--t)] text-sm font-bold">Choose your password</label>
-                <Input
-                  id="tcl-pw"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  data-testid="trustee-claim-password"
-                  autoComplete="new-password"
-                  required
-                />
+                <div className="relative">
+                  <Input
+                    id="tcl-pw"
+                    type={showPw ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    data-testid="trustee-claim-password"
+                    autoComplete="new-password"
+                    className="pr-10"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPw((v) => !v)}
+                    aria-label={showPw ? 'Hide password' : 'Show password'}
+                    data-testid="trustee-claim-password-toggle"
+                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-[var(--t5)] hover:text-[var(--t)] transition-colors"
+                  >
+                    {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
                 <p className="text-[var(--t5)] text-xs mt-1">Minimum 8 characters.</p>
               </div>
 
               <div>
                 <label htmlFor="tcl-pw2" className="text-[var(--t)] text-sm font-bold">Confirm password</label>
-                <Input
-                  id="tcl-pw2"
-                  type="password"
-                  value={passwordConfirm}
-                  onChange={(e) => setPasswordConfirm(e.target.value)}
-                  data-testid="trustee-claim-password-confirm"
-                  autoComplete="new-password"
-                  required
-                />
+                <div className="relative">
+                  <Input
+                    id="tcl-pw2"
+                    type={showPw2 ? 'text' : 'password'}
+                    value={passwordConfirm}
+                    onChange={(e) => setPasswordConfirm(e.target.value)}
+                    data-testid="trustee-claim-password-confirm"
+                    autoComplete="new-password"
+                    className="pr-10"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPw2((v) => !v)}
+                    aria-label={showPw2 ? 'Hide password' : 'Show password'}
+                    data-testid="trustee-claim-password-confirm-toggle"
+                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-[var(--t5)] hover:text-[var(--t)] transition-colors"
+                  >
+                    {showPw2 ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
 
               <Button type="submit" disabled={busy} className="w-full" data-testid="trustee-claim-start">
