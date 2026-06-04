@@ -661,9 +661,14 @@ export const SubscriptionManagement = ({
           </div>
         )}
 
-        {/* Auto-tier info banner */}
+        {/* Auto-tier info banner — dimmed/desaturated under Free Mode so it
+            doesn't stand out in orange while every plan below is paused. */}
         {autoTier && !isBeneficiary && (
-          <div className="mb-4 p-3 rounded-xl" style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.15)' }}>
+          <div
+            className={`mb-4 p-3 rounded-xl${platformFreeMode ? ' opacity-40 grayscale pointer-events-none select-none transition-opacity duration-300' : ''}`}
+            style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.15)' }}
+            aria-hidden={platformFreeMode ? 'true' : undefined}
+          >
             <p className="text-xs text-[var(--yw)] leading-relaxed">
               {isNewAdult
                 ? 'Based on your age (18–25), you qualify for the New Adult tier. A government-issued ID is required after subscribing.'
