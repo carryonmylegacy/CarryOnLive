@@ -1,5 +1,15 @@
 # CarryOn — Changelog
 
+## Jun 4, 2026 (CI) — N+1 query regression guard added to housekeeping
+
+Added a ratchet-style CI gate so the admin-portal slowdown class we just fixed can't silently creep back in. New scanner `scripts/check_route_nplus1.py` flags any `await db.<collection>.<find|find_one|count_documents|aggregate|distinct>(...)` issued INSIDE a for/while loop body in `backend/routes/`. Wired into `housekeeping.sh` as check **"3d. Route N+1 query guard"** (next to the TDZ / JSX-dup guards).
+
+Ratchet model (mirrors `check_route_policies.py`): today's 56 existing occurrences are grandfathered in `.nplus1_baseline.json`; only a NEW occurrence fails the gate, with the exact `file | loop header | db.coll.method` signature + a "batch it" hint. Signatures omit line numbers so they're stable across unrelated edits.
+
+Verified: baseline correctly EXCLUDES the three endpoints fixed today (admin/users, admin/grace_periods, the signup-trend range(30)). Negative test — dropped a temp route with an N+1 → guard failed (exit 1) and named it; removed it → exit 0. `housekeeping.sh --strict` shows "3d ... PASS"; the only remaining WARN is the pre-existing/out-of-scope sub-11px iOS font nit (unchanged).
+
+
+
 ## Jun 4, 2026 (perf) — Admin-portal N+1 sweep (grace-periods + analytics signup trend)
 
 Followed up the /admin/users N+1 fix with a sweep of the other admin-tab GET endpoints (scanner for `await db...find/find_one/count` inside loops).

@@ -166,6 +166,26 @@ else
   echo "$DUP_OUT" | sed 's/^/    /'
   ISSUES=$((ISSUES + 1))
 fi
+
+# ── 2d. Route N+1 query regression guard ─────────────────────────────
+# Catches the slowdown class fixed on /admin/users (9s→0.2s),
+# /admin/grace-periods and the Analytics signup trend: an
+# `await db.<collection>.<query>(...)` issued INSIDE a for/while loop body —
+# one DB round-trip per iteration, which turns a sub-second list endpoint
+# into a multi-second one at scale. Ratchet-style: today's occurrences are
+# grandfathered in .nplus1_baseline.json and only a NEW one fails the gate.
+# Scanner lives in /app/scripts/check_route_nplus1.py.
+echo -n "3d. Route N+1 query guard ......... "
+NPLUS1_OUT=$(python3 /app/scripts/check_route_nplus1.py 2>&1)
+NPLUS1_EXIT=$?
+if [ "$NPLUS1_EXIT" = "0" ]; then
+  echo -e "$PASS"
+else
+  echo -e "$FAIL"
+  echo "$NPLUS1_OUT" | sed 's/^/    /'
+  ISSUES=$((ISSUES + 1))
+fi
+
 cd /app/frontend
 
 # ── 3. Frontend Build ────────────────────────────────────────────────

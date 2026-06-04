@@ -16,9 +16,9 @@ router = APIRouter()
 @router.get("/admin/users")
 async def get_all_users(current_user: dict = Depends(require_staff)):
     """Get all users with subscription info and beneficiary tree — admin and operators"""
-    users = await db.users.find(
-        {}, {"_id": 0, "password": 0, "onboarding_drip_state": 0, "username_lower": 0}
-    ).to_list(1000)
+    users = await db.users.find({}, {"_id": 0, "password": 0, "onboarding_drip_state": 0, "username_lower": 0}).to_list(
+        1000
+    )
 
     # Build estate owner -> beneficiaries map (supports multiple estates per owner)
     estates = await db.estates.find({}, {"_id": 0, "id": 1, "owner_id": 1, "name": 1, "verified_tier": 1}).to_list(

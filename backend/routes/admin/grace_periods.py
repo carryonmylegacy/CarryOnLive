@@ -28,16 +28,14 @@ async def get_grace_periods(
     user_ids = list({p.get("user_id") for p in periods if p.get("user_id")})
     estate_ids = list({p.get("estate_id") for p in periods if p.get("estate_id")})
     users = (
-        await db.users.find(
-            {"id": {"$in": user_ids}}, {"_id": 0, "id": 1, "name": 1, "email": 1}
-        ).to_list(len(user_ids) + 1)
+        await db.users.find({"id": {"$in": user_ids}}, {"_id": 0, "id": 1, "name": 1, "email": 1}).to_list(
+            len(user_ids) + 1
+        )
         if user_ids
         else []
     )
     estates = (
-        await db.estates.find(
-            {"id": {"$in": estate_ids}}, {"_id": 0, "id": 1, "name": 1}
-        ).to_list(len(estate_ids) + 1)
+        await db.estates.find({"id": {"$in": estate_ids}}, {"_id": 0, "id": 1, "name": 1}).to_list(len(estate_ids) + 1)
         if estate_ids
         else []
     )
