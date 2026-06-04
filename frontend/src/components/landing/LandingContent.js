@@ -42,11 +42,10 @@ const DISRUPTIONS = [
 
 /* ── data: the questions every family hopes they never answer in a hurry ── */
 const QUESTIONS = [
-  { q: 'What happens if I\u2019m suddenly unavailable?', a: 'Your family opens one plan and knows exactly where to begin.' },
-  { q: 'Who needs to be contacted \u2014 and how?', a: 'A coordinated, dignified notification list, in the right order.' },
-  { q: 'What will they actually need?', a: 'Documents, accounts, and credentials \u2014 surfaced the moment they\u2019re needed, and no sooner.' },
-  { q: 'What should they do first?', a: 'A step-by-step action checklist, built from your plan and tailored to your state.' },
-  { q: 'What would I have wanted them to know?', a: 'Your words, delivered at the right moments \u2014 never lost in a drawer.' },
+  { q: 'Who needs to be reached \u2014 and who can act for me?', a: 'A coordinated, dignified notification list, and the right person already empowered to step in.', pillar: 'People', color: '#3B82F6' },
+  { q: 'What will they actually need \u2014 and where is it?', a: 'Documents, accounts, and credentials \u2014 surfaced the moment they\u2019re needed, and no sooner.', pillar: 'Access', color: '#d4af37' },
+  { q: 'Where\u2019s the money, and what\u2019s owed?', a: 'The full financial picture \u2014 accounts, policies, bills, and property \u2014 each with the right contact attached.', pillar: 'Money', color: '#22C993' },
+  { q: 'What should they do first?', a: 'A step-by-step checklist tailored to your state, with a private channel to keep everyone in sync.', pillar: 'Action', color: '#B794F6' },
 ];
 
 /* ── data: 4 pillars × their functions (names are platform law; framed as outcomes) ── */
@@ -256,18 +255,22 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold text-white mb-4 tracking-tight" style={{ fontFamily: 'var(--serif)' }}>
               The questions every family hopes<br className="hidden sm:block" /> they never answer in a hurry.
             </h2>
-            <p className="text-[#a0aec0] text-base max-w-[600px] mx-auto mb-14 leading-relaxed">
-              CarryOn answers them in advance &mdash; calmly, completely, and only for the people you choose.
+            <p className="text-[#a0aec0] text-base max-w-[640px] mx-auto mb-14 leading-relaxed">
+              It all comes down to one: <em className="text-white/90 not-italic font-medium">&ldquo;What happens if I&apos;m suddenly unavailable?&rdquo;</em> CarryOn answers it in advance &mdash; one clear answer for each part of your plan, and only for the people you choose.
             </p>
           </RevealSection>
           <div className="space-y-4" data-testid={`questions-list${testIdSuffix}`}>
-            {QUESTIONS.map(({ q, a }, i) => (
+            {QUESTIONS.map(({ q, a, pillar, color }, i) => (
               <RevealSection key={q} delay={i * 0.08}>
-                <div className="rounded-xl p-6 transition-all duration-500 hover:border-[#d4af37]/30"
-                  style={{ background: 'rgba(20,34,64,0.6)', border: '1px solid rgba(255,255,255,0.08)', backdropFilter: 'blur(6px)' }}>
-                  <p className="text-white text-base lg:text-lg font-medium mb-2" style={{ fontFamily: 'var(--serif)' }}>&ldquo;{q}&rdquo;</p>
+                <div className="rounded-xl p-6 transition-all duration-500"
+                  style={{ background: 'rgba(20,34,64,0.6)', border: `1px solid ${color}33`, backdropFilter: 'blur(6px)' }}>
+                  <div className="flex items-start justify-between gap-3 mb-2.5">
+                    <p className="text-white text-base lg:text-lg font-medium" style={{ fontFamily: 'var(--serif)' }}>&ldquo;{q}&rdquo;</p>
+                    <span className="flex-shrink-0 text-xs font-semibold uppercase tracking-wider px-2.5 py-1 rounded-full mt-0.5"
+                      style={{ color, background: `${color}1f`, border: `1px solid ${color}59` }}>{pillar}</span>
+                  </div>
                   <p className="text-[#9fb0c8] text-sm lg:text-base leading-relaxed flex items-start gap-2">
-                    <ChevronRight className="w-4 h-4 mt-1 flex-shrink-0 text-[#d4af37]" />
+                    <ChevronRight className="w-4 h-4 mt-1 flex-shrink-0" style={{ color }} />
                     <span>{a}</span>
                   </p>
                 </div>
