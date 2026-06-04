@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from config import db
 from models import ChecklistItem
 from utils import get_current_user, update_estate_readiness
+from guards import require_benefactor_role
 
 router = APIRouter()
 
@@ -862,8 +863,7 @@ async def get_scenario_templates(current_user: dict = Depends(get_current_user))
 @router.post("/templates/apply")
 async def apply_scenario_template(data: TemplateApplyRequest, current_user: dict = Depends(get_current_user)):
     """Apply a quick-start template to an estate's checklist."""
-    if current_user["role"] not in ("benefactor", "admin"):
-        raise HTTPException(status_code=403, detail="Only benefactors can apply templates")
+    await require_benefactor_role(current_user, "apply templates")
 
     template = SCENARIO_TEMPLATES.get(data.template_id)
     if not template:

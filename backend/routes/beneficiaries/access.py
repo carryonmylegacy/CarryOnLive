@@ -14,7 +14,7 @@ import uuid
 async def set_primary_beneficiary(beneficiary_id: str, current_user: dict = Depends(get_current_user)):
     """Designate a beneficiary as the primary beneficiary (trustee) of the estate.
     Also sets them as succession_order=0 in the succession hierarchy."""
-    require_benefactor_role(current_user, "designate a primary beneficiary")
+    await require_benefactor_role(current_user, "designate a primary beneficiary")
 
     # Find the beneficiary to get their estate_id
     ben = await db.beneficiaries.find_one({"id": beneficiary_id}, {"_id": 0, "id": 1, "estate_id": 1, "name": 1})

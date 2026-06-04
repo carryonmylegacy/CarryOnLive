@@ -861,7 +861,7 @@ async def add_beneficiary_link(data: AddBeneficiaryLinkRequest, current_user: di
 @router.post("/estates")
 async def create_estate(data: EstateCreate, current_user: dict = Depends(get_current_user)):
     """Create a new estate."""
-    require_benefactor_role(current_user, "create estates")
+    await require_benefactor_role(current_user, "create estates")
 
     estate = Estate(owner_id=current_user["id"], name=data.name)
     estate_dict = estate.model_dump()
@@ -887,7 +887,7 @@ async def create_estate(data: EstateCreate, current_user: dict = Depends(get_cur
 @router.patch("/estates/{estate_id}")
 async def update_estate(estate_id: str, data: EstateUpdate, current_user: dict = Depends(get_current_user)):
     """Update an existing estate."""
-    require_benefactor_role(current_user, "update estates")
+    await require_benefactor_role(current_user, "update estates")
 
     estate = await db.estates.find_one({"id": estate_id}, {"_id": 0})
     if not estate:
@@ -929,7 +929,7 @@ async def update_estate(estate_id: str, data: EstateUpdate, current_user: dict =
 @router.delete("/estates/{estate_id}")
 async def delete_estate(estate_id: str, current_user: dict = Depends(get_current_user)):
     """Delete an estate and all associated data."""
-    require_benefactor_role(current_user, "delete estates")
+    await require_benefactor_role(current_user, "delete estates")
 
     estate = await db.estates.find_one({"id": estate_id}, {"_id": 0})
     if not estate:

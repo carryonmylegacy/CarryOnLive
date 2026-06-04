@@ -47,7 +47,7 @@ class DTSQuoteCreate(BaseModel):
 @router.post("/dts/tasks")
 async def create_dts_task(data: DTSTaskCreate, current_user: dict = Depends(get_current_user)):
     """Benefactor creates a DTS request"""
-    require_benefactor_role(current_user, "create DTS tasks")
+    await require_benefactor_role(current_user, "create DTS tasks")
     task = {
         "id": str(uuid.uuid4()),
         "estate_id": data.estate_id,

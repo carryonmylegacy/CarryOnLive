@@ -72,7 +72,7 @@ async def get_beneficiaries(estate_id: str, request: Request = None, current_use
 @router.post("/beneficiaries")
 async def create_beneficiary(data: BeneficiaryCreate, current_user: dict = Depends(get_current_user)):
     """Add a new beneficiary to the estate."""
-    require_benefactor_role(current_user, "add beneficiaries")
+    await require_benefactor_role(current_user, "add beneficiaries")
 
     from guards import get_subscription_access
 
@@ -194,7 +194,7 @@ async def delete_beneficiary(
     """
     is_admin = current_user["role"] == "admin"
     if not is_admin:
-        require_benefactor_role(current_user, "remove beneficiaries")
+        await require_benefactor_role(current_user, "remove beneficiaries")
 
     ben = await db.beneficiaries.find_one({"id": beneficiary_id}, {"_id": 0})
     if not ben:
@@ -341,7 +341,7 @@ async def update_beneficiary(
     current_user: dict = Depends(get_current_user),
 ):
     """Update an existing beneficiary"""
-    require_benefactor_role(current_user, "update beneficiaries")
+    await require_benefactor_role(current_user, "update beneficiaries")
 
     beneficiary = await db.beneficiaries.find_one({"id": beneficiary_id}, {"_id": 0})
     if not beneficiary:
@@ -471,7 +471,7 @@ async def upload_beneficiary_photo(
     """Upload a profile photo for a beneficiary. Processes and stores in object storage."""
     from services.photo_storage import delete_photo, upload_photo
 
-    if not is_benefactor_or_admin(current_user):
+    if not await is_benefactor_or_admin(current_user):
         raise HTTPException(status_code=403, detail="Not authorized")
 
     beneficiary = await db.beneficiaries.find_one({"id": beneficiary_id}, {"_id": 0})
@@ -523,7 +523,7 @@ async def delete_beneficiary_photo(beneficiary_id: str, current_user: dict = Dep
     """Remove the profile photo for a beneficiary."""
     from services.photo_storage import delete_photo
 
-    if not is_benefactor_or_admin(current_user):
+    if not await is_benefactor_or_admin(current_user):
         raise HTTPException(status_code=403, detail="Not authorized")
 
     # Delete from storage if it's a stored key

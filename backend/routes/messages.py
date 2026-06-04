@@ -326,7 +326,7 @@ async def get_message_voice(voice_id: str, current_user: dict = Depends(get_curr
 @router.post("/messages")
 async def create_message(data: MessageCreate, current_user: dict = Depends(get_current_user)):
     """Create a new milestone message with encrypted content."""
-    require_benefactor_role(current_user, "create messages")
+    await require_benefactor_role(current_user, "create messages")
 
     # Enforce subscription requirement
     from guards import get_subscription_access
@@ -539,7 +539,7 @@ async def get_message_attachment(message_id: str, current_user: dict = Depends(g
 @router.put("/messages/{message_id}")
 async def update_message(message_id: str, data: MessageUpdate, current_user: dict = Depends(get_current_user)):
     """Edit an existing message (benefactor only, before transition)"""
-    require_benefactor_role(current_user, "edit messages")
+    await require_benefactor_role(current_user, "edit messages")
 
     existing = await db.messages.find_one({"id": message_id}, {"_id": 0})
     if not existing:
@@ -658,7 +658,7 @@ async def update_message(message_id: str, data: MessageUpdate, current_user: dic
 @router.delete("/messages/{message_id}")
 async def delete_message(message_id: str, current_user: dict = Depends(get_current_user)):
     """Delete a milestone message."""
-    require_benefactor_role(current_user, "delete messages")
+    await require_benefactor_role(current_user, "delete messages")
 
     message = await db.messages.find_one({"id": message_id}, {"_id": 0})
     if not message:

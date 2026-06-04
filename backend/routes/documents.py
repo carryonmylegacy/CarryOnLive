@@ -347,7 +347,7 @@ async def upload_document(
             status_code=403,
             detail="Your free trial has ended. Subscribe to continue uploading documents. Your existing documents are still accessible.",
         )
-    require_benefactor_role(current_user, "upload documents")
+    await require_benefactor_role(current_user, "upload documents")
 
     # Verify user owns this estate (or is admin)
     if current_user.get("role") == "admin":
@@ -924,7 +924,7 @@ async def preview_document(
 @router.delete("/documents/{document_id}")
 async def delete_document(document_id: str, current_user: dict = Depends(get_current_user)):
     """Delete a document from the vault."""
-    require_benefactor_role(current_user, "delete documents")
+    await require_benefactor_role(current_user, "delete documents")
 
     document = await db.documents.find_one({"id": document_id}, {"_id": 0})
     if not document:
@@ -969,7 +969,7 @@ async def update_document(
     notes: str = Form(None),
 ):
     """Update document metadata (name, category, notes)"""
-    require_benefactor_role(current_user, "update documents")
+    await require_benefactor_role(current_user, "update documents")
 
     doc = await db.documents.find_one({"id": document_id}, {"_id": 0})
     if not doc:

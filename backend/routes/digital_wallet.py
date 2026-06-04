@@ -162,7 +162,7 @@ async def get_digital_wallet(estate_id: str, request: Request = None, current_us
 @router.post("/digital-wallet")
 async def create_digital_wallet_entry(data: DigitalWalletCreate, current_user: dict = Depends(get_current_user)):
     """Create a new digital wallet entry."""
-    require_benefactor_role(current_user, "add digital wallet entries")
+    await require_benefactor_role(current_user, "add digital wallet entries")
 
     if current_user.get("role") == "admin":
         estates = await db.estates.find({}, {"_id": 0}).to_list(1)

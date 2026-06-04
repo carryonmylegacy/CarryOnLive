@@ -159,19 +159,38 @@ async def require_account_not_locked(
     return current_user
 
 
-def require_benefactor_role(current_user: dict, action: str = "perform this action"):
-    """Verify user is a benefactor, admin, or has is_also_benefactor flag.
+async def require_benefactor_role(current_user: dict, action: str = "perform this action"):
+    """Verify the caller may act as a benefactor (write access).
 
-    Used across all endpoints that restrict write access to benefactors.
-    Supports the cross-pollination model where beneficiaries can also be benefactors.
+    Allows: role benefactor/admin, the stored `is_also_benefactor` flag, OR
+    ACTUAL estate ownership (live lookup). The live-ownership fallback is the
+    authoritative signal and covers dual-role users who were invited as a
+    beneficiary first and later created their own estate: `get_current_user`
+    returns the RAW user doc, which NEVER carries the DERIVED
+    `is_also_benefactor` flag (login/`/auth/me` compute it on the fly as
+    `stored_flag OR owns_estate`), so the stored field can be False even
+    though they legitimately operate a Benefactor Portal. Trustee-acting-as
+    sessions resolve to the benefactor's own doc (role=benefactor) and pass
+    intentionally. Every such endpoint then scopes its mutation to the
+    caller's own estate, so this only ever grants access to the user's OWN
+    data — no cross-estate exposure.
     """
-    if current_user["role"] not in ("benefactor", "admin") and not current_user.get("is_also_benefactor"):
-        raise HTTPException(status_code=403, detail=f"Only benefactors can {action}")
+    if current_user.get("role") in ("benefactor", "admin") or current_user.get("is_also_benefactor"):
+        return
+    if await db.estates.find_one({"owner_id": current_user["id"]}, {"_id": 0, "id": 1}):
+        return
+    raise HTTPException(status_code=403, detail=f"Only benefactors can {action}")
 
 
-def is_benefactor_or_admin(current_user: dict):
-    """Check if user is a benefactor, is_also_benefactor, or admin. Returns bool."""
-    return current_user["role"] in ("benefactor", "admin") or current_user.get("is_also_benefactor")
+async def is_benefactor_or_admin(current_user: dict) -> bool:
+    """Bool form of `require_benefactor_role` (does not raise).
+
+    Recognizes role benefactor/admin, the stored `is_also_benefactor` flag, OR
+    live estate ownership — so dual-role estate owners are never wrongly denied.
+    """
+    if current_user.get("role") in ("benefactor", "admin") or current_user.get("is_also_benefactor"):
+        return True
+    return bool(await db.estates.find_one({"owner_id": current_user["id"]}, {"_id": 0, "id": 1}))
 
 
 async def require_admin(current_user: dict = Depends(get_current_user)):

@@ -25,7 +25,7 @@ from typing import Optional
 @router.post("/beneficiaries/{beneficiary_id}/invite")
 async def send_beneficiary_invitation(beneficiary_id: str, current_user: dict = Depends(get_current_user)):
     """Send invitation email to a beneficiary"""
-    require_benefactor_role(current_user, "send invitations")
+    await require_benefactor_role(current_user, "send invitations")
 
     beneficiary = await db.beneficiaries.find_one({"id": beneficiary_id}, {"_id": 0})
     if not beneficiary:

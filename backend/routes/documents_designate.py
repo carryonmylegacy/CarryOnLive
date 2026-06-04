@@ -153,7 +153,7 @@ async def designate_beneficiaries(
     Otherwise provide specific beneficiary record IDs.
     visibility_timing: optional dict mapping ben_id -> {"pre": bool, "post": bool}
     """
-    require_benefactor_role(current_user, "designate document beneficiaries")
+    await require_benefactor_role(current_user, "designate document beneficiaries")
 
     doc = await db.documents.find_one({"id": document_id}, {"_id": 0})
     if not doc:

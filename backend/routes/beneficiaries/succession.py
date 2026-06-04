@@ -91,7 +91,7 @@ async def reorder_beneficiaries(
 @router.put("/beneficiaries/{beneficiary_id}/toggle-succession")
 async def toggle_succession(beneficiary_id: str, current_user: dict = Depends(get_current_user)):
     """Toggle a beneficiary in/out of the succession hierarchy."""
-    require_benefactor_role(current_user, "modify succession hierarchy")
+    await require_benefactor_role(current_user, "modify succession hierarchy")
 
     ben = await db.beneficiaries.find_one(
         {"id": beneficiary_id, "deleted_at": None},
@@ -173,7 +173,7 @@ async def set_beneficiary_flags(
     Only the field(s) present in the body are written; omitted fields are left
     unchanged. The client always sends explicit booleans (no server-side guess).
     """
-    require_benefactor_role(current_user, "update beneficiary flags")
+    await require_benefactor_role(current_user, "update beneficiary flags")
 
     ben = await db.beneficiaries.find_one(
         {"id": beneficiary_id, "deleted_at": None},

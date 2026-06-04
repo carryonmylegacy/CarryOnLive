@@ -375,7 +375,7 @@ async def _finalize_document(metadata: dict, assembled_path: Path, record: dict,
     access = await get_subscription_access(user)
     if not access["has_access"]:
         raise HTTPException(status_code=403, detail="Subscription required to upload documents.")
-    require_benefactor_role(user, "upload documents")
+    await require_benefactor_role(user, "upload documents")
 
     # Ownership check (match documents.upload_document)
     if user.get("role") == "admin":
@@ -489,7 +489,7 @@ async def _finalize_milestone_media(metadata: dict, assembled_path: Path, record
     if not existing_id and not create_payload:
         raise HTTPException(status_code=400, detail="milestone finalizer needs message_id or message_create")
 
-    require_benefactor_role(user, "create messages")
+    await require_benefactor_role(user, "create messages")
     access = await get_subscription_access(user)
     if not access["has_access"]:
         raise HTTPException(status_code=403, detail="Subscription required to create milestone messages.")

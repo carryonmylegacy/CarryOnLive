@@ -140,7 +140,7 @@ async def verify_voice_passphrase(
 @router.post("/documents/{document_id}/voice/setup")
 async def setup_voice_passphrase(document_id: str, passphrase: str, current_user: dict = Depends(get_current_user)):
     """Set up voice verification passphrase for a document"""
-    require_benefactor_role(current_user, "set up voice verification")
+    await require_benefactor_role(current_user, "set up voice verification")
 
     document = await db.documents.find_one({"id": document_id}, {"_id": 0})
     if not document:
