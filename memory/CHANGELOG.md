@@ -1,5 +1,13 @@
 # CarryOn — Changelog
 
+## Jun 4, 2026 (UI) — Admin → Users "Dual-Role" filter chip
+
+Added a 4th filter chip ('All / Benefactors / Beneficiaries / **Dual-Role**') to the Admin Users tab (`UsersTab.js`). The 'Dual-Role' chip (`data-testid=admin-role-filter-dual_role`) narrows the list to only hybrid accounts (`is_also_benefactor && role !== 'benefactor'`) — reuses the same condition as the DUAL-ROLE badge and renders them through the existing benefactor-grouped tree, so no render-path changes were needed.
+
+Verified: testing agent iteration_164 — retest_needed False, no bugs. All 4 chips render; clicking Dual-Role sets the gold-pill active state uniquely and narrows to exactly 21 dual-role cards (each carrying the gold DUAL-ROLE badge); 'All' restores the full list with no crash. NOTE: the iter163 "blank tab" was confirmed to be the CRA dev-only `react-error-overlay` (stripped in production) plus a slow ~9s first paint (GET /api/admin/users returns ~611KB for 512 users) — NOT a product bug and not caused by this change. (Possible future perf win: paginate/slim the /admin/users payload.)
+
+
+
 ## Jun 4, 2026 (UI) — Free Mode hero tile polish + Admin dual-role badge
 
 Two founder asks.
