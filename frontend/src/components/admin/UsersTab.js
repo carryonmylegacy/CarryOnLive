@@ -129,7 +129,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
 
   const filteredUsers = users
     .filter(u => operatorMode ? (u.role !== 'admin' && u.role !== 'operator') : true)
-    .filter(u => roleFilter === 'all' || u.role === roleFilter || (roleFilter === 'benefactor' && u.is_also_benefactor) || (roleFilter === 'beneficiary' && u.is_also_beneficiary))
+    .filter(u => roleFilter === 'all' || u.role === roleFilter || (roleFilter === 'benefactor' && u.is_also_benefactor) || (roleFilter === 'beneficiary' && u.is_also_beneficiary) || (roleFilter === 'dual_role' && u.is_also_benefactor && u.role !== 'benefactor'))
     .filter(u => !searchQuery || u.name?.toLowerCase().includes(searchQuery.toLowerCase()) || u.email?.toLowerCase().includes(searchQuery.toLowerCase()))
     .sort((a, b) => {
       // Admins always on top in the All Estates view
@@ -1139,7 +1139,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
           <input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search..." className="flex-1 bg-transparent border-none text-[var(--t)] text-base outline-none placeholder:text-[var(--t5)]" data-testid="admin-users-search" />
         </div>
         <div className="flex gap-1.5 w-full">
-          {['all', 'benefactor', 'beneficiary'].map(r => (
+          {['all', 'benefactor', 'beneficiary', 'dual_role'].map(r => (
             <button key={r} onClick={() => {
               const mainEl = document.querySelector('.main-content');
               const savedPos = mainEl ? mainEl.scrollTop : 0;
@@ -1162,7 +1162,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
                   html.style.scrollBehavior = '';
                 }, 200);
               }
-            }} className={`flex-1 py-2 rounded-lg text-xs font-bold whitespace-nowrap text-center ${roleFilter === r ? 'gold-pill' : 'bg-[var(--s)] text-[var(--t4)]'}`} data-testid={`admin-role-filter-${r}`}>{r === 'all' ? 'All' : r === 'beneficiary' ? 'Beneficiaries' : 'Benefactors'}</button>
+            }} className={`flex-1 py-2 rounded-lg text-xs font-bold whitespace-nowrap text-center ${roleFilter === r ? 'gold-pill' : 'bg-[var(--s)] text-[var(--t4)]'}`} data-testid={`admin-role-filter-${r}`}>{r === 'all' ? 'All' : r === 'beneficiary' ? 'Beneficiaries' : r === 'dual_role' ? 'Dual-Role' : 'Benefactors'}</button>
           ))}
           <div className="w-px bg-[var(--b)]" />
           <button
