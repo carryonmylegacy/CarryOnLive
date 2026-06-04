@@ -1,5 +1,17 @@
 # CarryOn — Changelog
 
+
+## Jun 4, 2026 — Homepage repositioned to "The Family Continuity Platform"
+
+Founder-approved strategic narrative rewrite of the public homepage and all aligned narrative copy. Elevated the category from "family-preparedness / estate-planning platform" to **The Family Continuity Platform** — leading with continuity, confidence, and *what to do next* rather than storage/vault/documents/estate. North Star: *"If something happens tomorrow, your family knows exactly what to do."*
+
+- **Hero** (`HomePage.js`, `LoginPage.js` desktop + mobile): new eyebrow "The Family Continuity Platform", H1 = North Star promise, continuity-system subhead. Brand flag imagery retained.
+- **Shared sections** (`components/landing/LandingContent.js`, used by `/` and `/home`): 3 NEW sections added — *Reframe* ("It was never about finding the files."), *Continuity Timeline* (Before/During/After), *Breadth* (8-disruption grid), *The Questions* (anxiety→confidence). Four pillars reframed as outcomes (names kept = platform law). Five-steps, security, hospice/access leads, and final CTA reframed to continuity.
+- **SEO** (`public/index.html`): title, description, OG/Twitter cards, keywords, and both JSON-LD descriptions updated to the continuity category.
+- **Alignment**: AboutPage, GetStartedPage subhead, LandingPage eyebrow, PartnerPortalPage, AcceptInvitationPage, PartnersTab placeholder, and Subscriber/FoundersCircle share-card defaults all shifted "preparedness" → "continuity".
+- **Strategy doc**: full competitive analysis + copy-ready rewrite saved at `/app/memory/HOMEPAGE_POSITIONING_STRATEGY.md` (competitor analyzed internally only — never named on any public surface).
+- **Verification**: lint clean; housekeeping added 0 new WARN/FAIL (only the pre-existing, user-directed iOS sub-11px font WARN remains); frontend testing agent (iteration_165) passed 100% — all sections render, nav anchors scroll, login form intact, no console errors / no error-boundary.
+
 ## Jun 4, 2026 (CI) — N+1 query regression guard added to housekeeping
 
 Added a ratchet-style CI gate so the admin-portal slowdown class we just fixed can't silently creep back in. New scanner `scripts/check_route_nplus1.py` flags any `await db.<collection>.<find|find_one|count_documents|aggregate|distinct>(...)` issued INSIDE a for/while loop body in `backend/routes/`. Wired into `housekeeping.sh` as check **"3d. Route N+1 query guard"** (next to the TDZ / JSX-dup guards).

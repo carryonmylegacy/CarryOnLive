@@ -99,6 +99,24 @@ verified access** to everything they need to act — without a lawyer in
 the room, without a panic search through a filing cabinet, and without
 guessing what the deceased would have wanted.
 
+### Public positioning — *The Family Continuity Platform* (Jun 2026)
+
+The public-facing category was elevated (founder-approved, Jun 2026) from
+"family-preparedness / estate-planning platform" to **"The Family Continuity
+Platform."** The narrative leads with **continuity, confidence, and *what to
+do next*** — not storage/vault/documents/estate. North Star for all public
+copy: *"If something happens tomorrow, your family knows exactly what to do."*
+The homepage spine is the **continuity timeline — Before / During / After** —
+spanning every disruption (hospital stay, deployment, travel, disaster,
+incapacity, aging-parent care, *and* the final transition), not death alone.
+Pillar/function names (Legacy/Vault/Financial/Preparedness, MM/SDV/EGA, etc.)
+remain platform law — they are now *reframed as outcomes*, never renamed.
+Full strategy + copy: `/app/memory/HOMEPAGE_POSITIONING_STRATEGY.md`.
+Implemented in `components/landing/LandingContent.js` (shared by `/` LoginPage
+and `/home` HomePage), the hero in `LoginPage.js` + `HomePage.js`, SEO meta in
+`public/index.html`, and aligned across AboutPage, GetStartedPage, LandingPage,
+PartnerPortalPage, AcceptInvitationPage, PartnersTab, and the share-card defaults.
+
 ### The strategic promise (what's pitched, what's true)
 
 1. **The benefactor builds it once, while alive.** Documents, financial
