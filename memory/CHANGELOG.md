@@ -1,5 +1,30 @@
 # CarryOn — Changelog
 
+## Jun 4, 2026 (bug) — Lighthouse CI failing on every push: stale yarn.lock + hard perf gates
+
+Founder report (screenshot): the **Lighthouse (Performance)** GitHub Action failed on push (commit f300c8f, run #679). Expanded logs showed the failing step was **`Install deps`**, NOT Lighthouse: `yarn install --frozen-lockfile` errored "Your lockfile needs to be updated", then the `|| yarn install` fallback hit a transient registry error (`@firebase/auth-types` — "registry may be down") and exited 1.
+
+Root cause: `frontend/yarn.lock` was badly out of sync with `package.json` (the whole `@babel/*@^7.29.7` family + others were missing resolutions), so `--frozen-lockfile` failed on EVERY run and forced the slow, flaky non-frozen fallback. (Reproduced locally: `yarn install --frozen-lockfile` → exit 1.) Secondary issue: even once install/build succeed, `lhci autorun --assert.preset=lighthouse:no-pwa` exits 1 because best-practices (0.01) + SEO score below the preset's ≥0.9 gate — an SPA on a plain `serve` host legitimately scores low there.
+
+Fix (founder chose "make it pass cleanly"):
+- **`frontend/yarn.lock` regenerated** via `yarn install` so it's in sync with `package.json` (`--frozen-lockfile` now reports "Already up-to-date"). This is the real CI fix — install passes and the flaky fallback never runs. Verified the app still builds (`yarn build` OK, 37s) and the dev server compiles clean after the node_modules reinstall.
+- **`.github/workflows/lighthouse.yml`**: the Run-Lighthouse step now COLLECTS + UPLOADS the report only (dropped the `lighthouse:no-pwa` assert preset and all category gates) so it can't fail on advisory scores; kept the `|| true` safety net. Verified locally: `lhci autorun` (collect + upload, no assert) exits 0 cleanly and uploads both `/` and `/login` reports.
+
+Housekeeping's "yarn.lock unchanged" check is informational (prints the hash, never fails), so the lockfile regen is safe. NOT yet deployed — ships on the next Save-to-Github push.
+
+
+## Jun 4, 2026 (P1 security audit) — Dual-role estate owners no longer blocked from benefactor write endpoints
+
+Continued the trustee-grant dual-role fix across the rest of the API. Audited every benefactor-only backend gate for the same latent bug: `require_benefactor_role` / `is_benefactor_or_admin` (`guards.py`) allowed only role benefactor/admin OR the STORED `is_also_benefactor` flag — but `get_current_user` returns the RAW user doc, which NEVER carries the DERIVED flag (login/`/auth/me` compute it on the fly as `stored_flag OR owns_estate` and never persist it). So a user invited as a beneficiary who later created their own estate (stored flag False/absent) was wrongly 403'd from EVERY benefactor write: documents upload/delete/update, messages create/edit/delete, beneficiary add/remove/update + invitations + succession + access, estates create/update/delete, checklist, DTS, digital wallet, document designation, voice setup, onboarding template apply, chunked uploads.
+
+Fix (central, DRY): made `require_benefactor_role` + `is_benefactor_or_admin` **async with a live estate-ownership fallback** (`db.estates.find_one({"owner_id": user_id})`), matching `trustee_access._require_benefactor`. All 28 call sites updated to `await`. Mutations stay scoped to the caller's own estate, so no cross-estate exposure. Trustee-acting-as sessions resolve to the benefactor's own doc and pass intentionally. Also migrated `onboarding.py`'s strict `role not in (benefactor,admin)` check to the same guard.
+
+Audited-and-confirmed-SAFE (already estate-ownership based, dual-role correct, left untouched): `connected_protocol.py` (`is_estate_owner`), `financial_portal/entities_pdf.py` (`resolve_estate_actor`), `section_permissions.py` (`owner_id ==`).
+
+Verified: new `tests/test_dualrole_benefactor_guard_iter162.py` 4/4 pass (dual-role owner w/ unset flag ALLOWED — the exact missed scenario; pure beneficiary still BLOCKED; benefactor/admin short-circuit; stored flag still honored); `test_trustee_mode.py` 9/9 pass (no regression); ruff clean; backend boots clean. NOT yet deployed.
+
+
+
 ## Jun 3, 2026 (bug, deeper root cause) — Trustee create still denied: check now uses actual estate ownership
 
 Founder: still denied creating a trustee after the previous `_require_benefactor` fix.
