@@ -1,5 +1,19 @@
 # CarryOn — Changelog
 
+## Jun 4, 2026 (UI) — Free Mode hero tile polish + Admin dual-role badge
+
+Two founder asks.
+
+**1. Login hero Free Mode tile washed out the flag + had a pointless Gift icon.** (`FreeModeBanner.js`) The `tone="onDark"` variant used a translucent gold gradient (rgba gold 0.16→0.04) that read as a bright-yellow wash over the flag hero and gave weak text contrast. Changed onDark to a DARK, OPAQUE panel — `linear-gradient(135deg, rgba(18,26,42,0.9), rgba(11,18,33,0.94))` + gold border + `backdrop-filter: blur(10px)` — so the white headline/body sit at high contrast and the flag is no longer washed out. Removed the Gift icon (and its container + the lucide import); the tile is now just the headline + gold "Active" pill + paragraph. Default (in-app) tone unchanged.
+
+**2. Hero grouping top-aligned with the login card.** (`LoginPage.js`) Changed the hero grid from `items-center` to `items-start` so the left grouping (logo + "Every American Family. Ready." verbiage + Free Mode tile) top-aligns with the login card. Verified: logo top Y == login-card top Y == 225.17px (0px delta) at 1440×950.
+
+**3. NEW Admin → Users "DUAL-ROLE" badge.** (`UsersTab.js` + `routes/admin/users.py`) Upgraded the subtle "+ Benefactor" chip into a prominent gold **DUAL-ROLE** badge (`data-testid=admin-dualrole-badge-<id>`, tooltip "primary role is beneficiary, but this user also owns an estate and operates a Benefactor Portal") so these hybrid accounts — the category that caused the 403s — are visible at a glance and never silently regress. Backend `GET /admin/users` now enriches `is_also_benefactor` from LIVE estate ownership (accurate even if the stored flag ever lags). Added testids to the "+ Beneficiary" chip too.
+
+Verified: testing agent iteration_162 — both items 100% PASS (dark opaque tile, 0 gift icons, 0px top-align delta, 21 dual-role badges render with correct gold styling + tooltip; plain beneficiary shows none). ESLint + ruff clean. platform_free_mode toggled ON for the hero screenshot then RESTORED to FALSE. NOT yet deployed. (Headless screenshot tool can't get past this PWA's loading splash via full goto — a pre-existing artifact — so the testing agent was used for visual confirmation.)
+
+
+
 ## Jun 4, 2026 (P1 hardening, follow-up) — Persist dual-role flag + sweep ALL remaining 403 edge cases
 
 Founder pushed back (rightly): the flag should have been persisted in the first place, and asked to hunt down EVERY remaining path that could 403 a benefactor from designating a trustee / doing benefactor work. Did a full backend sweep of strict role gates (`role == "benefactor"`, `role not in (...)`, stored-flag-only checks).
