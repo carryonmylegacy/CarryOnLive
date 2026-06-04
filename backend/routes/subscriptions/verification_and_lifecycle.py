@@ -436,16 +436,28 @@ async def get_subscription_stats(current_user: dict = Depends(get_current_user))
         )
 
     # --- Signup trend (last 30 days) ---
+    # One query + in-memory bucketing instead of 30 sequential count_documents
+    # (the dominant N+1 on the Analytics tab). created_at is stored as an
+    # ISO-8601 string, so we bucket each user by the YYYY-MM-DD date prefix.
+    # Any rows fetched just outside the 30-day window are harmlessly ignored
+    # (the trend loop only reads the 30 in-range date keys). Output identical.
+    window_start = (now - timedelta(days=29)).replace(hour=0, minute=0, second=0, microsecond=0)
+    recent_signups = await db.users.find(
+        {"created_at": {"$gte": window_start.isoformat()}},
+        {"_id": 0, "created_at": 1},
+    ).to_list(100000)
+    counts_by_date = {}
+    for r in recent_signups:
+        ca = r.get("created_at")
+        if isinstance(ca, str) and len(ca) >= 10:
+            counts_by_date[ca[:10]] = counts_by_date.get(ca[:10], 0) + 1
     signup_trend = []
     for i in range(30):
         day = now - timedelta(days=29 - i)
-        day_start = day.replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
-        day_end = day.replace(hour=23, minute=59, second=59, microsecond=999999).isoformat()
-        count = await db.users.count_documents({"created_at": {"$gte": day_start, "$lte": day_end}})
         signup_trend.append(
             {
                 "date": day.strftime("%m/%d"),
-                "signups": count,
+                "signups": counts_by_date.get(day.strftime("%Y-%m-%d"), 0),
             }
         )
 

@@ -1,5 +1,19 @@
 # CarryOn — Changelog
 
+## Jun 4, 2026 (perf) — Admin-portal N+1 sweep (grace-periods + analytics signup trend)
+
+Followed up the /admin/users N+1 fix with a sweep of the other admin-tab GET endpoints (scanner for `await db...find/find_one/count` inside loops).
+
+Fixed (admin-facing GETs, output proven identical → no UI risk):
+- **`GET /admin/grace-periods`** (`admin/grace_periods.py`): was 2 `find_one` per grace period (up to 400 sequential round-trips). Now batch-loads the referenced users + estates in 2 queries and maps in memory. Verified by seeding a temp grace period: user_name/estate_name enrich identically.
+- **`GET /admin/subscription-stats`** signup-trend (`subscriptions/verification_and_lifecycle.py`, powers AnalyticsTab): was 30 sequential `count_documents` (one per day). Now 1 `find` for the 30-day window + in-memory date-prefix bucketing. Cross-checked against the old method: **OLD == NEW (byte-identical)**.
+
+Audited-and-LEFT-ALONE (deliberately, for safety / negligible benefit): `estate_health.py` ghost-estate batch DELETE (rare destructive action; delete_many calls dominate, not a tab load), `ip_whitelist.py` (loops a 4-item constant), and the cron/background jobs (`check_dob_subscription_events`, `trial_reminders`) + user-flow `checkout.py` (not admin tabs).
+
+Verified: both endpoints HTTP 200 in ~0.15s, ruff clean. User never demos admin; changes are pure backend with identical output so nothing in the UI changes. NOT yet deployed.
+
+
+
 ## Jun 4, 2026 (perf) — /admin/users 9s → 0.2s (N+1 fix), zero UI changes
 
 The slow Admin → Users load (~9s, flagged during the dual-role filter verification) was NOT a payload-size problem — it was an N+1 query: `GET /admin/users` ran a separate `user_subscriptions.find_one` for EACH of the 512 users (up to 512 sequential DB round-trips). (`routes/admin/users.py`)

@@ -21,12 +21,35 @@ async def get_grace_periods(
 
     periods = await db.grace_periods.find(query, {"_id": 0}).sort("created_at", -1).to_list(200)
 
+    # Batch-load referenced users/estates in two queries instead of an N+1
+    # (was 2 find_one per period = up to 400 sequential round-trips on the
+    # admin Grace Periods tab). Output is identical: same per-period
+    # user_name / user_email / estate_name fields.
+    user_ids = list({p.get("user_id") for p in periods if p.get("user_id")})
+    estate_ids = list({p.get("estate_id") for p in periods if p.get("estate_id")})
+    users = (
+        await db.users.find(
+            {"id": {"$in": user_ids}}, {"_id": 0, "id": 1, "name": 1, "email": 1}
+        ).to_list(len(user_ids) + 1)
+        if user_ids
+        else []
+    )
+    estates = (
+        await db.estates.find(
+            {"id": {"$in": estate_ids}}, {"_id": 0, "id": 1, "name": 1}
+        ).to_list(len(estate_ids) + 1)
+        if estate_ids
+        else []
+    )
+    users_by_id = {u["id"]: u for u in users}
+    estates_by_id = {e["id"]: e for e in estates}
+
     # Enrich with user/estate info
     for p in periods:
-        user = await db.users.find_one({"id": p["user_id"]}, {"_id": 0, "id": 1, "name": 1, "email": 1})
+        user = users_by_id.get(p.get("user_id"))
         p["user_name"] = (user or {}).get("name", "Unknown")
         p["user_email"] = (user or {}).get("email", "")
-        estate = await db.estates.find_one({"id": p["estate_id"]}, {"_id": 0, "id": 1, "name": 1})
+        estate = estates_by_id.get(p.get("estate_id"))
         p["estate_name"] = (estate or {}).get("name", "Unknown Estate")
 
     return periods
