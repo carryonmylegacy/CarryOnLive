@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from config import RESEND_API_KEY, SENDER_EMAIL, db, logger
 from services.readiness import calculate_estate_readiness
 from utils import get_current_user
+from guards import require_benefactor_role
 
 router = APIRouter()
 
@@ -425,8 +426,7 @@ async def trigger_weekly_digest(body: dict = None, current_user: dict = Depends(
 @router.post("/digest/preview")
 async def preview_digest(current_user: dict = Depends(get_current_user)):
     """Send a digest preview to the current user (for testing)."""
-    if current_user["role"] not in ("admin", "benefactor"):
-        raise HTTPException(status_code=403, detail="Not authorized")
+    await require_benefactor_role(current_user, "preview the digest")
     dashboard_url = "https://carryon.us/dashboard"
     ok = await send_digest_for_user(current_user, dashboard_url)
     if not ok:

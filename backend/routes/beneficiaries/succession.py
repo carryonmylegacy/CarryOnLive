@@ -39,17 +39,7 @@ async def reorder_beneficiaries(
     """Persist drag-and-drop beneficiary sort order AND succession hierarchy.
     Only beneficiaries with succession_order != null participate in the chain.
     Position 0 = Primary, 1 = Secondary, 2 = Tertiary, etc."""
-    if current_user["role"] not in ("benefactor", "admin") and not (
-        current_user["role"] == "beneficiary"
-        and (
-            await db.users.find_one(
-                {"id": current_user["id"]},
-                {"_id": 0, "id": 1, "is_also_benefactor": 1},
-            )
-            or {}
-        ).get("is_also_benefactor")
-    ):
-        raise HTTPException(status_code=403, detail="Not authorized")
+    await require_benefactor_role(current_user, "reorder beneficiaries")
 
     # Fetch current succession participation status for each beneficiary
     all_bens = await db.beneficiaries.find(

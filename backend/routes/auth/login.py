@@ -265,6 +265,17 @@ async def login(data: UserLogin, request: Request):
     ).to_list(10)
     owns_estate = len(_estate_list) > 0
 
+    # Persist the DERIVED dual-role flag so every raw user-doc read
+    # (get_current_user) reliably recognizes an estate-owning beneficiary as a
+    # benefactor — closes the class of 403s where a beneficiary who later
+    # created their own estate was blocked from benefactor write endpoints.
+    # Runs on every login attempt (before OTP is even sent), so it self-heals
+    # on the next sign-in even for accounts the migration hasn't reached.
+    # Idempotent — only writes when genuinely missing.
+    if owns_estate and user.get("role") not in ("benefactor", "admin") and not user.get("is_also_benefactor"):
+        await db.users.update_one({"id": user["id"]}, {"$set": {"is_also_benefactor": True}})
+        user["is_also_benefactor"] = True
+
     if user.get("role") == "benefactor":
         transitioned_estate = next((e for e in _estate_list if e.get("status") == "transitioned"), None)
         if transitioned_estate:

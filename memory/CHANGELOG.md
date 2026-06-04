@@ -1,5 +1,25 @@
 # CarryOn — Changelog
 
+## Jun 4, 2026 (P1 hardening, follow-up) — Persist dual-role flag + sweep ALL remaining 403 edge cases
+
+Founder pushed back (rightly): the flag should have been persisted in the first place, and asked to hunt down EVERY remaining path that could 403 a benefactor from designating a trustee / doing benefactor work. Did a full backend sweep of strict role gates (`role == "benefactor"`, `role not in (...)`, stored-flag-only checks).
+
+**Persistence (so the stored flag is finally authoritative):**
+- **NEW migration `0003_backfill_is_also_benefactor.py`** — idempotent backfill: sets `is_also_benefactor=True` on every current estate owner whose role isn't already benefactor/admin and whose flag is unset. Ran live on preview: **12/12 dual-role accounts backfilled, 0 missing**.
+- **`auth/login.py`** — on every login attempt (before OTP), if the user owns an estate and the flag is unset, persist it (+ update the in-memory doc). Self-heals any account the migration hasn't reached, on next sign-in.
+
+**Additional vulnerable gates fixed (were still strict-role / stored-flag-only, would 403 a dual-role owner even though the trustee endpoints were already fixed):**
+- `checklist.py` — removed 4 redundant strict `role not in (benefactor,admin)` checks on create/edit/delete/reorder; the `require_estate_owner(estate_id)` IDOR guard that follows each is the authoritative ownership gate (admits dual-role owners, still blocks non-owners).
+- `beneficiaries/succession.py` (reorder/hierarchy) — replaced the strict+stored-flag block with `await require_benefactor_role` (live-ownership fallback).
+- `digest.py` (`/digest/preview`) — replaced strict role check with `await require_benefactor_role`.
+- `estates.py` `GET /estates` — now ALWAYS fetches owner_id-scoped estates regardless of role/flag (a dual-role owner could previously not see their own estate in the list if the flag was unset). `GET /estates/rename-check` — dropped the role gate; the owner_id query is the real filter.
+
+Audited-and-confirmed-SAFE (left untouched): `connected_protocol` (`is_estate_owner`), `entities_pdf` (`resolve_estate_actor`), `section_permissions`/`estates` update/delete (`owner_id ==`), admin analytics/estate_health/dev_switcher (admin-only classification, not user 403s), and the various `role == "benefactor"` reads that are pure classification (invite collision, portal detection, sealed-estate check).
+
+Verified: `test_dualrole_benefactor_guard_iter162.py` now 5 tests incl. the migration backfill (estate-owning beneficiary flagged; pure beneficiary + plain benefactor untouched) — all pass; trustee suite 9/9; live preview DB shows 12/12 dual-role accounts flagged; benefactor e2e GET /estates + /trustee/grants = 200; ruff clean; `housekeeping.sh --strict` only the pre-existing sub-11px font WARN. NOT yet deployed.
+
+
+
 ## Jun 4, 2026 (bug) — Lighthouse CI failing on every push: stale yarn.lock + hard perf gates
 
 Founder report (screenshot): the **Lighthouse (Performance)** GitHub Action failed on push (commit f300c8f, run #679). Expanded logs showed the failing step was **`Install deps`**, NOT Lighthouse: `yarn install --frozen-lockfile` errored "Your lockfile needs to be updated", then the `|| yarn install` fallback hit a transient registry error (`@firebase/auth-types` — "registry may be down") and exited 1.

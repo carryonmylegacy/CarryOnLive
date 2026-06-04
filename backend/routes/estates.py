@@ -23,9 +23,6 @@ router = APIRouter()
 async def get_estates(current_user: dict = Depends(get_current_user)):
     """List all estates for the current user. Annotates each with `user_role_in_estate`
     so the frontend knows whether the user is 'owner' or 'beneficiary' in each estate."""
-    user = await db.users.find_one({"id": current_user["id"]}, {"_id": 0})
-    is_also_benefactor = (user or {}).get("is_also_benefactor", False)
-
     if current_user["role"] == "admin":
         estates = await db.estates.find({}, {"_id": 0}).to_list(100)
         return estates
@@ -33,13 +30,15 @@ async def get_estates(current_user: dict = Depends(get_current_user)):
     estates = []
     seen_ids = set()
 
-    # Always fetch estates the user OWNS (regardless of primary role)
-    if current_user["role"] == "benefactor" or is_also_benefactor:
-        owned = await db.estates.find({"owner_id": current_user["id"]}, {"_id": 0}).to_list(100)
-        for e in owned:
-            e["user_role_in_estate"] = "owner"
-            estates.append(e)
-            seen_ids.add(e["id"])
+    # Always fetch estates the user OWNS, regardless of primary role or the
+    # derived is_also_benefactor flag — a beneficiary who created their own
+    # estate must still see it. owner_id is the real scope; a pure beneficiary
+    # simply matches nothing here.
+    owned = await db.estates.find({"owner_id": current_user["id"]}, {"_id": 0}).to_list(100)
+    for e in owned:
+        e["user_role_in_estate"] = "owner"
+        estates.append(e)
+        seen_ids.add(e["id"])
 
     # Fetch estates they're a BENEFICIARY of (any role — covers both
     # explicit beneficiaries and benefactors who are also beneficiaries)
@@ -412,9 +411,6 @@ async def update_estate_photo(
 @router.get("/estates/rename-check")
 async def check_estate_rename(current_user: dict = Depends(get_current_user)):
     """Check if user has an estate with a default name that should be personalized."""
-    if current_user["role"] not in ("benefactor",) and not current_user.get("is_also_benefactor"):
-        return {"needs_rename": False}
-
     estate = await db.estates.find_one(
         {"owner_id": current_user["id"], "name_customized": {"$ne": True}},
         {"_id": 0, "id": 1, "name": 1},

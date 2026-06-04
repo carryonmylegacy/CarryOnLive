@@ -28,10 +28,8 @@ async def get_checklists(estate_id: str, current_user: dict = Depends(get_curren
 @router.post("/checklists")
 async def create_checklist_item(data: ChecklistItemCreate, current_user: dict = Depends(get_current_user)):
     """Benefactor creates a new IAC item."""
-    if current_user["role"] not in ("benefactor", "admin"):
-        raise HTTPException(status_code=403, detail="Only benefactors can create checklist items")
-
-    # IDOR guard — only the estate owner (or admin) can add items.
+    # IDOR guard — only the estate owner (or admin) can add items. This is the
+    # authoritative gate; it correctly admits dual-role beneficiary owners.
     await require_estate_owner(data.estate_id, current_user)
 
     # Enforce subscription requirement
@@ -77,9 +75,6 @@ async def update_checklist_item(
     current_user: dict = Depends(get_current_user),
 ):
     """Benefactor edits an existing IAC item."""
-    if current_user["role"] not in ("benefactor", "admin"):
-        raise HTTPException(status_code=403, detail="Only benefactors can edit checklist items")
-
     item = await db.checklists.find_one({"id": item_id}, {"_id": 0})
     if not item:
         raise HTTPException(status_code=404, detail="Checklist item not found")
@@ -101,9 +96,6 @@ async def update_checklist_item(
 @router.delete("/checklists/{item_id}")
 async def delete_checklist_item(item_id: str, current_user: dict = Depends(get_current_user)):
     """Benefactor deletes an IAC item."""
-    if current_user["role"] not in ("benefactor", "admin"):
-        raise HTTPException(status_code=403, detail="Only benefactors can delete checklist items")
-
     item = await db.checklists.find_one({"id": item_id}, {"_id": 0})
     if not item:
         raise HTTPException(status_code=404, detail="Checklist item not found")
@@ -168,11 +160,9 @@ async def toggle_checklist_item(item_id: str, current_user: dict = Depends(get_c
 @router.post("/checklists/reorder")
 async def reorder_checklists(data: dict, current_user: dict = Depends(get_current_user)):
     """Benefactor reorders IAC items. Expects: {item_ids: ["id1", "id2", ...]}"""
-    if current_user["role"] not in ("benefactor", "admin"):
-        raise HTTPException(status_code=403, detail="Only benefactors can reorder")
-
     item_ids = data.get("item_ids", [])
-    # IDOR guard — for each item, only allow if the estate owner.
+    # IDOR guard — for each item, only allow if the estate owner (or admin).
+    # This is the authoritative gate; it admits dual-role beneficiary owners.
     # We load all items in one query, then enforce per-estate ownership.
     if item_ids:
         existing = await db.checklists.find({"id": {"$in": item_ids}}, {"_id": 0, "id": 1, "estate_id": 1}).to_list(
