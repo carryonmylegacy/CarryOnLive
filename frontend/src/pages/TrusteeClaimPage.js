@@ -43,7 +43,7 @@ const TrusteeClaimPage = () => {
         setUsername(r.data.suggested_username || '');
         setStage('form');
       } catch (e) {
-        setError(e?.response?.data?.detail || 'This claim link is invalid or has expired.');
+        setError(e?.response?.data?.detail || 'We couldn\u2019t open this invite. The link may be invalid, already used, or replaced by a newer invite email.');
         setStage('invalid');
       }
     })();
