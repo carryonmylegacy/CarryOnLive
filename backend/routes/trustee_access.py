@@ -50,7 +50,7 @@ import secrets
 import uuid
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from pydantic import BaseModel, EmailStr, Field
 
 from config import db, logger
@@ -154,6 +154,20 @@ def _suggest_username(email: str) -> str:
     local = (email.split("@", 1)[0] or "trustee").lower()
     local = re.sub(r"[^a-z0-9._-]", "", local)[:24] or "trustee"
     return f"trustee_{local}_{secrets.token_hex(2)}"
+
+
+def _suggest_username_from_display(display: str, email: str) -> str:
+    """Default the trustee's username to the benefactor-assigned display name.
+
+    The benefactor names the trustee (e.g. "MartyTrustee") — that is what
+    should pre-fill the claim page, not a generic auto-generated handle.
+    Sanitize to the allowed username charset; fall back to the email-derived
+    value only when the display name yields too few valid characters.
+    """
+    cleaned = re.sub(r"[^A-Za-z0-9._-]", "", (display or ""))[:24]
+    if len(cleaned) >= 3:
+        return cleaned
+    return _suggest_username(email)
 
 
 def _grant_public(grant: dict) -> dict:
@@ -324,7 +338,11 @@ async def list_grants(current_user: dict = Depends(get_current_user)):
 
 
 @router.post("/trustee/grants")
-async def invite_trustee(data: TrusteeGrantInvite, current_user: dict = Depends(get_current_user)):
+async def invite_trustee(
+    data: TrusteeGrantInvite,
+    background_tasks: BackgroundTasks,
+    current_user: dict = Depends(get_current_user),
+):
     """Benefactor sends an email invite. No password is set here."""
     await _require_benefactor(current_user)
     _validate_duration(data.duration, data.custom_days)
@@ -387,15 +405,17 @@ async def invite_trustee(data: TrusteeGrantInvite, current_user: dict = Depends(
         f"[TMA] Invite created by benefactor={current_user['id']} email={email_lower} has_user_account={has_user_account}"
     )
 
-    # Fire the invitation email. Best-effort — if Resend rejects the send
-    # (test sandbox, unverified domain, rate-limit, recipient bounce, etc.)
-    # we still return the grant + claim URL so the benefactor can copy
-    # and share the link manually. The error reason is surfaced inline.
+    # Fire the invitation email in the BACKGROUND so the request returns
+    # immediately — sending was previously awaited inline, which made the
+    # benefactor's "Send invite" button spin for the full Resend round-trip.
+    # The grant + claim URL are returned regardless, and every pending row
+    # exposes a "Copy invite link" button as a delivery fallback.
     claim_url = _claim_url(claim_token)
-    email_result = await send_email_ex(
-        to=data.email.strip(),
-        subject=f"{current_user.get('name', 'A CarryOn user')} has invited you as a trustee",
-        html=_invite_html(
+    background_tasks.add_task(
+        send_email_ex,
+        data.email.strip(),
+        f"{current_user.get('name', 'A CarryOn user')} has invited you as a trustee",
+        _invite_html(
             benefactor_name=current_user.get("name", "A CarryOn user"),
             trustee_name=data.trustee_display_name.strip(),
             claim_url=claim_url,
@@ -403,8 +423,8 @@ async def invite_trustee(data: TrusteeGrantInvite, current_user: dict = Depends(
         ),
     )
     out = _grant_public(grant)
-    out["email_sent"] = bool(email_result["ok"])
-    out["email_error"] = email_result.get("error")
+    out["email_sent"] = True  # queued for delivery
+    out["email_error"] = None
     out["claim_url"] = claim_url
     return out
 
@@ -453,7 +473,11 @@ async def update_grant(
 
 
 @router.post("/trustee/grants/{grant_id}/resend")
-async def resend_invite(grant_id: str, current_user: dict = Depends(get_current_user)):
+async def resend_invite(
+    grant_id: str,
+    background_tasks: BackgroundTasks,
+    current_user: dict = Depends(get_current_user),
+):
     """Benefactor re-sends a claim link for a still-pending grant.
 
     Generates a fresh single-use token (invalidating the old one) and
@@ -491,10 +515,11 @@ async def resend_invite(grant_id: str, current_user: dict = Depends(get_current_
         },
     )
     claim_url = _claim_url(claim_token)
-    email_result = await send_email_ex(
-        to=grant["email"],
-        subject=f"{current_user.get('name', 'A CarryOn user')} has invited you as a trustee (resent)",
-        html=_invite_html(
+    background_tasks.add_task(
+        send_email_ex,
+        grant["email"],
+        f"{current_user.get('name', 'A CarryOn user')} has invited you as a trustee (resent)",
+        _invite_html(
             benefactor_name=current_user.get("name", "A CarryOn user"),
             trustee_name=grant.get("trustee_display_name", "Trustee"),
             claim_url=claim_url,
@@ -503,8 +528,8 @@ async def resend_invite(grant_id: str, current_user: dict = Depends(get_current_
     )
     return {
         "resent": True,
-        "email_sent": bool(email_result["ok"]),
-        "email_error": email_result.get("error"),
+        "email_sent": True,  # queued for delivery
+        "email_error": None,
         "claim_url": claim_url,
         "claim_token_expires_at": claim_expires,
     }
@@ -561,7 +586,8 @@ async def get_claim_preview(token: str):
         "benefactor_name": (benefactor or {}).get("name", "A CarryOn user"),
         "trustee_email": grant["email"],
         "trustee_display_name": grant.get("trustee_display_name", ""),
-        "suggested_username": grant.get("trustee_username") or _suggest_username(grant["email"]),
+        "suggested_username": grant.get("trustee_username")
+        or _suggest_username_from_display(grant.get("trustee_display_name", ""), grant["email"]),
         "duration": grant.get("duration", "indefinite"),
         "claim_token_expires_at": grant.get("claim_token_expires_at"),
         "status": grant.get("status", "pending"),

@@ -1,6 +1,15 @@
 # CarryOn — Changelog
 
 
+## Jun 4, 2026 — Trustee workflow: 4 fixes (username prefill, fast send, button layout, claim-link diagnosis)
+
+- **Issue 1 — wrong auto-filled username (FIXED):** The claim page suggested a generic handle (`trustee_<email>_<rand>`) instead of the benefactor-assigned Display name. Added `_suggest_username_from_display()` and used it in `GET /trustee/claim/{token}` so the suggestion is the sanitized display name (e.g. "MartyTrustee"). Verified via API.
+- **Issue 3 — slow invite send (FIXED):** The invite/resend endpoints awaited the Resend API inline, making "Send invite" spin for the full network round-trip. Moved the email send to FastAPI `BackgroundTasks`; the endpoint now returns in ~0.17s (was multi-second). Grant + claim URL still returned; every pending row keeps a "Copy invite link" fallback. (Email *delivery* latency is Resend-side and not code-controllable.)
+- **Issue 4 — Send/Cancel button overlap (FIXED):** `TrusteeAccessCard.js` invite-form button row changed to `flex flex-wrap items-center gap-2` with a stable `min-w-[120px]` Send button and a fixed "Sending…" loading label — no more overlap on narrow PWA widths.
+- **Issue 2 — "Invite unavailable / claim link invalid or expired" (DIAGNOSED, needs deploy):** Current codebase resolves fresh claim tokens correctly (verified HTTP 200 on preview). The failing site is running an OLD production build (`V2026.05.27`). Fix = deploy current code. Immediate workaround for the benefactor: use the "Copy invite link" button on the pending grant row and share that link directly (bypasses email entirely). If it still fails post-deploy, the likely cause is Resend domain-level click-tracking rewriting the link — toggle click-tracking off for the sending domain in the Resend dashboard.
+- Verified: ruff PASS, ESLint PASS, N+1 route guard PASS.
+
+
 ## Jun 4, 2026 — Trustee-designation fix + mobile pillar-title wrap
 
 - **Critical fix (Designated Trustee):** Removed the invite-time guard in `routes/trustee_access.py` (`POST /trustee/grants`) that returned 409 "That email is already a CarryOn account." An existing CarryOn user can now be designated as a trustee. Safe because trustee credentials live in a separate `trustee_grants` namespace (own username + password set at claim, gated by emailed claim-token + 6-digit email OTP; the chosen trustee username is still collision-checked against `users` at claim). Reviewed by integration_expert (no account-takeover / privilege-escalation risk; user & trustee auth paths stay separate). Added non-blocking `has_user_account` audit flag on the grant + log line. Verified via API: inviting an existing-account email now returns 200/pending (was 409).

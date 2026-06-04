@@ -433,10 +433,9 @@ const TrusteeAccessCard = () => {
                 />
               </div>
             )}
-            <div className="flex gap-2">
-              <Button type="submit" disabled={busy} data-testid="trustee-create-submit">
-                {busy ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                Send invite
+            <div className="flex flex-wrap items-center gap-2 pt-1">
+              <Button type="submit" disabled={busy} data-testid="trustee-create-submit" className="min-w-[120px] justify-center">
+                {busy ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Sending…</> : 'Send invite'}
               </Button>
               <Button type="button" variant="ghost" onClick={resetForm} disabled={busy}>Cancel</Button>
             </div>
