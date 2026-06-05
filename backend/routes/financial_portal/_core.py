@@ -8,7 +8,11 @@ from typing import List, Literal, Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from services.access_control import emergency_scope_allows, resolve_estate_actor
+from services.access_control import (
+    emergency_scope_allows,
+    require_beneficiary_section_access,
+    resolve_estate_actor,
+)
 
 router = APIRouter()
 
@@ -335,6 +339,9 @@ async def _resolve_financial_actor(estate_id: str, user: dict, require_owner: bo
         raise HTTPException(status_code=403, detail="Only the estate owner can perform this action")
     if not (is_owner or is_admin or is_beneficiary):
         raise HTTPException(status_code=403, detail="Not authorized")
+    # Section gate — a beneficiary whose "financial_portal" section was disabled
+    # is denied at the API for every CFP/CES surface (no-op for owner/admin).
+    await require_beneficiary_section_access(actor, "financial_portal")
     return actor
 
 

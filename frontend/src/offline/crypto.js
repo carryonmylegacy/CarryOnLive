@@ -220,9 +220,45 @@ export async function sealRecord(row, plainKeys = []) {
 }
 
 /**
- * Unseal a record retrieved from storage. Transparent passthrough when
- * the row isn't sealed. Returns the original merged object.
+ * Seal a binary Blob for at-rest storage in IndexedDB (used for pinned
+ * document blobs — PDFs/scans that must survive offline). Returns a
+ * descriptor with the raw AES-GCM ciphertext (ArrayBuffer) + IV so Dexie can
+ * store it directly without a base64 round-trip. When encryption is off or no
+ * key is available, returns a transparent passthrough `{ encrypted: false }`.
  */
+export async function sealBlob(blob) {
+  if (!blob) return { encrypted: false, blob };
+  if (!isEncryptionEnabled()) return { encrypted: false, blob };
+  const key = await ensureSessionKey();
+  if (!key) return { encrypted: false, blob };
+  try {
+    const iv = window.crypto.getRandomValues(new Uint8Array(12));
+    const buf = await blob.arrayBuffer();
+    const ct = await window.crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, buf);
+    return { encrypted: true, iv, ct, mime: blob.type || 'application/octet-stream' };
+  } catch (err) {
+    console.warn('[offline-enc] sealBlob fallback to plaintext:', err);
+    return { encrypted: false, blob };
+  }
+}
+
+/**
+ * Unseal a blob descriptor produced by sealBlob. Transparent passthrough for
+ * unencrypted descriptors (and legacy plaintext rows). Returns a Blob or null.
+ */
+export async function unsealBlob(sealed) {
+  if (!sealed) return null;
+  if (!sealed.encrypted) return sealed.blob || null;
+  const key = await ensureSessionKey();
+  if (!key) return null;
+  try {
+    const pt = await window.crypto.subtle.decrypt({ name: 'AES-GCM', iv: sealed.iv }, key, sealed.ct);
+    return new Blob([pt], { type: sealed.mime || 'application/octet-stream' });
+  } catch (err) {
+    console.warn('[offline-enc] unsealBlob failed:', err);
+    return null;
+  }
+}
 export async function unsealRecord(stored) {
   if (!stored || typeof stored !== 'object') return stored;
   if (!stored.__enc) return stored;

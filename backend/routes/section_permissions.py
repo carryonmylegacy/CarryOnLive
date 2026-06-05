@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from config import db
-from services.access_control import require_estate_actor
+from services.access_control import require_estate_actor, resolve_estate_actor
 from utils import get_current_user
 
 router = APIRouter()
@@ -62,13 +62,13 @@ async def get_estate_section_permissions(estate_id: str, current_user: dict = De
 @router.get("/beneficiary/my-permissions/{estate_id}")
 async def get_my_section_permissions(estate_id: str, current_user: dict = Depends(get_current_user)):
     """Get the current beneficiary's section permissions for an estate."""
-    # Find the beneficiary record for this user
-    beneficiary_link_or = [{"user_id": current_user["id"]}]
-    if current_user.get("email"):
-        beneficiary_link_or.append({"email": current_user["email"].lower().strip()})
-    ben = await db.beneficiaries.find_one({"estate_id": estate_id, "$or": beneficiary_link_or}, {"_id": 0})
-    if not ben:
+    # Resolve via the canonical estate actor so an UNVERIFIED / freshly-changed
+    # email can never be used to inherit a victim's beneficiary record
+    # (resolve_estate_actor only trusts current_user.email when email_verified).
+    actor = await resolve_estate_actor(estate_id, current_user)
+    if not actor["is_beneficiary"]:
         raise HTTPException(status_code=404, detail="Not a beneficiary of this estate")
+    ben = (actor.get("beneficiary_records") or [{}])[0]
 
     # Authoritative check: an approved death certificate MUST exist for transition access.
     # Never trust estate.status alone — it can get out of sync.
@@ -78,7 +78,7 @@ async def get_my_section_permissions(estate_id: str, current_user: dict = Depend
     )
     is_transitioned = bool(approved_cert)
 
-    perms = await db.section_permissions.find_one({"estate_id": estate_id, "beneficiary_id": ben["id"]}, {"_id": 0})
+    perms = await db.section_permissions.find_one({"estate_id": estate_id, "beneficiary_id": ben.get("id")}, {"_id": 0})
     sections = perms["sections"] if perms else {s: True for s in ALL_SECTIONS}
 
     # Tier inheritance rule (May 5, 2026, founder-mandated): the

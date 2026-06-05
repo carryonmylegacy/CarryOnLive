@@ -310,6 +310,48 @@ ROUTE_POLICIES: dict = {
     # ── Stripe / payments (public webhooks + authenticated) ─────────────────
     "POST /api/stripe/create-payment-intent": {"auth": "required"},
     "POST /api/stripe/create-setup-intent": {"auth": "required"},
+    # ── Registered June 2026 (closing the 22-route policy gap from the audit) ─
+    # Public verification / claim / marketing flows ──────────────────────────
+    "GET /api/verify/{verify_token}": {"auth": "public", "notes": "Email verification link — token-scoped"},
+    "GET /api/our-promise": {"auth": "public", "notes": "Public marketing content"},
+    "GET /api/trustee/claim/{token}": {"auth": "public", "notes": "Trustee claim preview — token-scoped"},
+    "POST /api/trustee/claim/{token}/start": {"auth": "public", "notes": "Trustee claim start — token-scoped"},
+    "POST /api/trustee/claim/{token}/complete": {"auth": "public", "notes": "Trustee claim complete — token-scoped"},
+    # Authenticated user-self flows ──────────────────────────────────────────
+    "PUT /api/auth/email": {"auth": "required", "roles": "self", "notes": "Changing email sets email_verified=False"},
+    "POST /api/onboarding/skip-step/{step_key}": {"auth": "required", "roles": "self"},
+    "POST /api/onboarding/mark-visited/{section}": {"auth": "required", "roles": "self"},
+    "POST /api/estate-binder/skip/{pdf_type}": {"auth": "required", "roles": "self"},
+    "DELETE /api/estate-binder/skip/{pdf_type}": {"auth": "required", "roles": "self"},
+    # Trustee grant management (benefactor-owned) ─────────────────────────────
+    "GET /api/trustee/grants": {"auth": "required", "roles": ["benefactor", "admin"]},
+    "POST /api/trustee/grants": {"auth": "required", "roles": ["benefactor", "admin"]},
+    "PATCH /api/trustee/grants/{grant_id}": {"auth": "required", "roles": ["benefactor", "admin"]},
+    "POST /api/trustee/grants/{grant_id}/resend": {"auth": "required", "roles": ["benefactor", "admin"]},
+    "DELETE /api/trustee/grants/{grant_id}": {"auth": "required", "roles": ["benefactor", "admin"]},
+    "POST /api/trustee/audit/{event_id}/undo": {"auth": "required", "notes": "Trustee mutation undo — handler verifies grant ownership"},
+    # Beneficiary flags (benefactor-owned) ────────────────────────────────────
+    "PUT /api/beneficiaries/{beneficiary_id}/flags": {
+        "auth": "required",
+        "roles": ["benefactor", "admin"],
+        "estate_access": "owner",
+        "estate_id_source": "path.beneficiary_id(beneficiaries)",
+    },
+    # Financial entities PDF/render (estate member) ───────────────────────────
+    "GET /api/financial/entities/{estate_id}/pdf": {
+        "auth": "required",
+        "estate_access": "member",
+        "estate_id_source": "path.estate_id",
+    },
+    "POST /api/financial/entities/{estate_id}/render-pdf": {
+        "auth": "required",
+        "estate_access": "member",
+        "estate_id_source": "path.estate_id",
+    },
+    # Admin compliance / platform-health evidence routes ──────────────────────
+    "GET /api/admin/audit-chain-status": {"auth": "required", "roles": ["admin"], "notes": "Compliance scope"},
+    "GET /api/admin/secrets-inventory": {"auth": "required", "roles": ["admin"], "notes": "Platform-health scope; redacted (name+presence only)"},
+    "POST /api/admin/secrets-self-test/{service_id}": {"auth": "required", "roles": ["admin"], "notes": "Platform-health scope; read-only provider self-test"},
 }
 
 

@@ -3,7 +3,9 @@
 Combines all admin sub-routers into a single `router` for server.py.
 """
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+
+from guards import require_scope
 
 from .analytics import router as analytics_router
 from .audit_chain_status import router as audit_chain_status_router
@@ -35,29 +37,34 @@ from .users import router as users_router
 
 router = APIRouter()
 
-router.include_router(dev_switcher_router)
+# ── Router-level admin scope enforcement (SOC2 CC6.1) ───────────────────────
+# Founder admins (and legacy admins with no scope) always pass; operators pass
+# through to their per-handler staff checks. Scoped admins are restricted to
+# their family. Families without an explicit scope below remain open to any
+# admin/operator (unchanged behavior).
+router.include_router(dev_switcher_router, dependencies=[Depends(require_scope("founder"))])
 router.include_router(users_router)
 router.include_router(analytics_router)
-router.include_router(platform_router)
-router.include_router(security_scan_router)
-router.include_router(estate_health_router)
-router.include_router(grace_periods_router)
-router.include_router(scoped_roles_router)
-router.include_router(ip_whitelist_router)
-router.include_router(bulk_ops_router)
+router.include_router(platform_router, dependencies=[Depends(require_scope("founder"))])
+router.include_router(security_scan_router, dependencies=[Depends(require_scope("compliance"))])
+router.include_router(estate_health_router, dependencies=[Depends(require_scope("compliance"))])
+router.include_router(grace_periods_router, dependencies=[Depends(require_scope("finance"))])
+router.include_router(scoped_roles_router, dependencies=[Depends(require_scope("founder"))])
+router.include_router(ip_whitelist_router, dependencies=[Depends(require_scope("founder"))])
+router.include_router(bulk_ops_router, dependencies=[Depends(require_scope("founder"))])
 router.include_router(canned_responses_router)
-router.include_router(maintenance_router)
+router.include_router(maintenance_router, dependencies=[Depends(require_scope("platform_health"))])
 router.include_router(partners_router)
 router.include_router(session_policy_router)
 router.include_router(task_management_router)
 router.include_router(launch_war_room_router)
-router.include_router(download_diagnostics_router)
-router.include_router(funnel_analytics_router)
-router.include_router(email_health_router)
-router.include_router(trial_policy_router)
-router.include_router(llm_cost_router)
-router.include_router(db_status_router)
-router.include_router(audit_chain_status_router)
+router.include_router(download_diagnostics_router, dependencies=[Depends(require_scope("platform_health"))])
+router.include_router(funnel_analytics_router, dependencies=[Depends(require_scope("marketing"))])
+router.include_router(email_health_router, dependencies=[Depends(require_scope("platform_health"))])
+router.include_router(trial_policy_router, dependencies=[Depends(require_scope("finance"))])
+router.include_router(llm_cost_router, dependencies=[Depends(require_scope("platform_health"))])
+router.include_router(db_status_router, dependencies=[Depends(require_scope("platform_health"))])
+router.include_router(audit_chain_status_router, dependencies=[Depends(require_scope("compliance"))])
 
 __all__ = [
     "router",

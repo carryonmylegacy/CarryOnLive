@@ -31,7 +31,7 @@ At no point is your document content stored in plaintext anywhere persistent exc
 | **Key management** | Per-estate keys; secrets never appear in source control or logs |
 | **Password hashing** | bcrypt with a per-user salt; passwords never recoverable in plaintext |
 | **Session integrity** | Single-active-session enforcement; token blacklisting on logout; offline-credential revocation |
-| **Account protection** | 5-attempt lockout with a 15-minute window; 10-minute OTP expiry |
+| **Account protection** | Login lockout after 25 failed attempts within a rolling 5-minute window (5-minute lock); 10-minute OTP expiry |
 | **Audit trail** | Every sensitive access is logged with a SHA-256 integrity hash to an append-only `audit_trail` collection (no `update`, no `delete`) |
 | **Database isolation** | Each estate has its own logical scope; cross-estate reads are blocked at the route handler |
 | **No customer secrets in logs** | Token-blacklist, OTP, password, and document content are never logged |
@@ -102,7 +102,7 @@ If you're handing this sheet to a sophisticated buyer, be ready to answer these 
 3. *Does your AI vendor train on my documents?* → No. Confirmed in the API terms (available under NDA).
 4. *How long does the AI vendor keep my documents?* → Only for the duration of the inference request itself.
 5. *What happens if I close my account?* → Hard delete of every encrypted record + all associated keys. Tombstones purged on a fixed schedule.
-6. *Are you SOC 2 ready?* → Yes — all five Trust Service Criteria are covered by automated controls enforced on every code change.
+6. *Are you SOC 2 ready?* → We have implemented SOC2-aligned technical controls across all five Trust Service Criteria (logical access, monitoring/audit, change management, availability, privacy), and evidence collection is in progress. We are **not** representing this as a completed SOC 2 certification; an independent auditor report has not yet been issued.
 
 ---
 

@@ -17,7 +17,7 @@ from config import db, logger
 from guards import require_benefactor_role
 from models import Document, DocumentUnlockRequest
 from services.audit import audit_log
-from services.access_control import can_access_document, filter_accessible_documents, require_estate_actor
+from services.access_control import can_access_document, filter_accessible_documents, require_beneficiary_section_access, require_estate_actor
 from services.encryption import (
     decrypt_aes256,
     encrypt_aes256,
@@ -112,7 +112,10 @@ async def _migrate_doc_to_cloud(doc_id: str, document: dict):
 async def get_documents(estate_id: str, current_user: dict = Depends(get_current_user)):
     """List all documents for an estate."""
     actor = await require_estate_actor(estate_id, current_user)
-
+    # Section gate — beneficiary "vault" section can be disabled by the
+    # benefactor. Essential pre-transition docs use a separate endpoint that
+    # keeps the emergency carve-out, so they are intentionally NOT gated here.
+    await require_beneficiary_section_access(actor, "vault")
     documents = await db.documents.find(
         {"estate_id": estate_id, "deleted_at": None},
         {"_id": 0, "file_data": 0, "lock_password_hash": 0, "backup_code": 0},

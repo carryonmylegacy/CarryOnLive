@@ -14,18 +14,42 @@ from config import db
 
 TOKEN_TTL_SECONDS = 300  # 5 minutes
 
+# Data minimization (SOC2 / privacy): a download token only needs the caller's
+# identity + role to re-authorize the download on consume. Never persist the
+# full user document (password hash, OTP state, offline-credential metadata,
+# etc.) into db.download_tokens.
+_TOKEN_USER_FIELDS = (
+    "id",
+    "email",
+    "email_verified",
+    "role",
+    "name",
+    "admin_scope",
+    "operator_role",
+    "is_also_benefactor",
+    "is_also_beneficiary",
+)
+
+
+def _minimal_user_snapshot(user: dict) -> dict:
+    return {k: user.get(k) for k in _TOKEN_USER_FIELDS if k in user}
+
 
 async def create_token(user: dict, action: str, params: dict, filename: str) -> str:
     """Create a short-lived download token in MongoDB."""
     token = str(uuid4())
+    now = datetime.now(timezone.utc)
     await db.download_tokens.insert_one(
         {
             "token": token,
-            "user": {k: v for k, v in user.items() if k != "_id"},
+            "user": _minimal_user_snapshot(user),
             "action": action,
             "params": params,
             "filename": filename,
-            "created_at": datetime.now(timezone.utc).isoformat(),
+            "created_at": now.isoformat(),
+            # Real BSON datetime so the Mongo TTL index can auto-expire rows even
+            # if the inline cleanup below never runs (multi-pod safety).
+            "expires_at": now,
         }
     )
     # Background cleanup of expired tokens

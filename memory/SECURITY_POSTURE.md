@@ -7,7 +7,7 @@
 
 | Pillar | Status | Where it's enforced |
 |--------|--------|---------------------|
-| Authorization-as-Data | ✅ 100% (629/629 routes registered, 628 with explicit policy) | `route_policies.py` + `check_route_policies.py` ratchet |
+| Authorization-as-Data | ✅ 100% (670/670 routes registered) | `route_policies.py` + `check_route_policies.py` (gate now requires full coverage) |
 | IDOR protection | ✅ 13 endpoints patched; 17 regression tests pin behaviour | `tests/test_idor_guards.py` (BLOCKING in CI) |
 | Test coverage gate | ✅ 34-test fast suite runs in <20s pre-push | `check_tests_fast.py` (BLOCKING) |
 | Dependency hygiene — backend | ✅ 42 → 5 CVEs (−88%); 5 remaining are emergentintegrations dep-pin trade-offs | `pip-audit` + ratchet (BLOCKING) |

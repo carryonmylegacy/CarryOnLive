@@ -5,8 +5,9 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, Request
 
 from config import db
-from guards import require_benefactor_role, require_estate_member, require_estate_owner
+from guards import require_benefactor_role, require_estate_owner
 from models import ChecklistItem, ChecklistItemCreate, ChecklistItemUpdate
+from services.access_control import require_beneficiary_section_access, require_estate_actor
 from utils import get_current_user, update_estate_readiness
 
 router = APIRouter()
@@ -18,7 +19,10 @@ router = APIRouter()
 async def get_checklists(estate_id: str, current_user: dict = Depends(get_current_user)):
     """Get all checklist items for an estate."""
     # IDOR guard — only estate members (owner/beneficiary/admin) can read.
-    await require_estate_member(estate_id, current_user)
+    actor = await require_estate_actor(estate_id, current_user, allow_staff=True)
+    # Section gate — a beneficiary whose "checklist" section was disabled by the
+    # benefactor/primary beneficiary is denied at the API, not just in the UI.
+    await require_beneficiary_section_access(actor, "checklist")
     checklists = (
         await db.checklists.find({"estate_id": estate_id, "deleted_at": None}, {"_id": 0}).sort("order", 1).to_list(200)
     )
@@ -122,7 +126,8 @@ async def toggle_checklist_item(item_id: str, current_user: dict = Depends(get_c
         raise HTTPException(status_code=404, detail="Checklist item not found")
 
     # IDOR guard — only estate members can toggle (beneficiaries CAN toggle).
-    await require_estate_member(item.get("estate_id"), current_user)
+    actor = await require_estate_actor(item.get("estate_id"), current_user, allow_staff=True)
+    await require_beneficiary_section_access(actor, "checklist")
 
     new_status = not item.get("is_completed", False)
     update_data = {

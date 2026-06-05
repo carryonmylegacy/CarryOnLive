@@ -79,6 +79,10 @@ async def ensure_indexes(db, logger):
         await db.chat_history.create_index([("user_id", 1), ("session_id", 1)])
         await db.token_blacklist.create_index("expires_at", expireAfterSeconds=0)
         await db.token_blacklist.create_index("jti")
+        # Universal download tokens — TTL auto-expire 5 min after creation.
+        # `expires_at` is a real BSON datetime; TTL_SECONDS lives in the service.
+        await db.download_tokens.create_index("token", unique=True)
+        await db.download_tokens.create_index("expires_at", expireAfterSeconds=300)
         await db.otps.create_index("user_id")
         await db.failed_logins.create_index("email")
         # Drop conflicting old indexes if they exist, then recreate with unique=True

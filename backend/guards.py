@@ -226,6 +226,38 @@ def require_admin_scope(current_user: dict, allowed_scopes: list[str]):
         )
 
 
+def require_scope(*allowed_scopes: str):
+    """FastAPI dependency FACTORY that enforces admin scope at the router level
+    (SOC2 CC6.1 — server-side least privilege, not UI-only).
+
+    Behavior (chosen to add enforcement WITHOUT breaking existing workflows):
+      • Operators pass through — their per-handler `require_staff` / role checks
+        still govern, so ops endpoints behave exactly as before.
+      • Admins must hold the 'founder' scope (god mode) OR one of
+        `allowed_scopes`.
+      • Legacy admins with NO `admin_scope` are treated as founder (default
+        ["founder"]) so no existing founder account is ever locked out.
+      • Non-admin / non-operator callers get 403.
+    """
+
+    async def _dep(current_user: dict = Depends(get_current_user)):
+        role = current_user.get("role")
+        if role == "operator":
+            return current_user
+        if role != "admin":
+            raise HTTPException(status_code=403, detail="Admin access required")
+        raw = current_user.get("admin_scope") or "founder"
+        scopes = raw if isinstance(raw, list) else [raw]
+        if "founder" in scopes or any(s in allowed_scopes for s in scopes):
+            return current_user
+        raise HTTPException(
+            status_code=403,
+            detail=f"This section requires one of: {', '.join(allowed_scopes)} access",
+        )
+
+    return _dep
+
+
 def check_staff_role(user: dict):
     """Inline staff role check — use when user is already resolved via get_current_user.
     Raises 403 if user is not admin or operator."""

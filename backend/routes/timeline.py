@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends
 
 from config import db
-from services.access_control import can_access_document, can_access_message, require_estate_actor
+from services.access_control import can_access_document, can_access_message, require_beneficiary_section_access, require_estate_actor
 from utils import get_current_user
 
 router = APIRouter()
@@ -15,6 +15,7 @@ router = APIRouter()
 async def get_legacy_timeline(estate_id: str, current_user: dict = Depends(get_current_user)):
     """Build a chronological timeline of all estate events."""
     actor = await require_estate_actor(estate_id, current_user, allow_staff=True)
+    await require_beneficiary_section_access(actor, "timeline")
     estate = actor["estate"]
     can_view_all = actor.get("is_owner") or actor.get("is_admin") or actor.get("is_operator")
 

@@ -16,6 +16,7 @@
  */
 
 import { getDB } from './db';
+import { sealBlob, unsealBlob } from './crypto';
 
 const TABLE = 'pinnedDoc';
 
@@ -61,10 +62,18 @@ export async function pinDocument(doc, fetchHeaders) {
   }
   if (!res.ok) throw new Error(`pinDocument: HTTP ${res.status}`);
   const blob = await res.blob();
+  // Encryption at rest: when offline encryption is enabled, the document bytes
+  // are sealed with the per-device AES-GCM key before they ever touch
+  // IndexedDB, so an attacker with raw disk/DevTools access to the device cannot
+  // read pinned legacy documents, wills, or credentials. Falls back to a
+  // plaintext blob only when encryption is disabled (transparent passthrough).
+  const sealed = await sealBlob(blob);
   await db[TABLE].put({
     cache_key: cacheKey(doc.id),
     doc_id: doc.id,
-    blob,
+    blob: sealed.encrypted ? null : blob,
+    enc: sealed.encrypted ? { iv: sealed.iv, ct: sealed.ct, mime: sealed.mime } : null,
+    encrypted: !!sealed.encrypted,
     mime_type: blob.type || doc.mime_type || 'application/octet-stream',
     size_bytes: blob.size,
     // Vault documents carry their display label on `name` (see
@@ -85,7 +94,13 @@ export async function unpinDocument(docId) {
 export async function getPinnedBlob(docId) {
   const db = getDB();
   const row = await db[TABLE].get(cacheKey(docId));
-  return row?.blob || null;
+  if (!row) return null;
+  // Encrypted-at-rest rows (June 2026+) carry an `enc` descriptor; legacy rows
+  // stored the raw blob directly. Handle both for backward compatibility.
+  if (row.encrypted && row.enc) {
+    return unsealBlob({ encrypted: true, iv: row.enc.iv, ct: row.enc.ct, mime: row.enc.mime });
+  }
+  return row.blob || null;
 }
 
 export async function isPinnedLocally(docId) {

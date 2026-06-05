@@ -39,6 +39,7 @@ from pydantic import BaseModel, Field
 
 from config import db
 from services.access_control import can_access_document
+from services.encryption import decrypt_field, get_estate_salt
 from services.photo_urls import resolve_photo_url
 from utils import get_current_user
 
@@ -124,6 +125,14 @@ async def patch_entities_share(
 # ===================== BENEFICIARY READ-ONLY VIEW =====================
 
 
+def _entry_assigned_to_actor(cred: dict, actor: dict) -> bool:
+    """A linked credential is only releasable to a beneficiary it was assigned
+    to. Mirrors digital_wallet._entry_assigned_to_actor so the Entities chart
+    can never hand out credentials the DAV itself would withhold."""
+    assigned = (cred or {}).get("assigned_beneficiary_id")
+    return bool(assigned and assigned in (actor.get("release_ids") or set()))
+
+
 def _credential_is_visible(cred: dict, *, is_transitioned: bool, beneficiary_can_see_now: bool) -> bool:
     vis = (cred or {}).get("beneficiary_visibility") or "private"
     if vis == "private":
@@ -135,14 +144,28 @@ def _credential_is_visible(cred: dict, *, is_transitioned: bool, beneficiary_can
     return False
 
 
-def _credential_for_beneficiary(cred: dict) -> dict:
-    """Strip the credential to only the fields a beneficiary should see."""
+def _credential_view(cred: dict, estate_salt: bytes) -> dict:
+    """Strip the credential to the beneficiary-facing fields, decrypting the
+    encrypted secret fields ONLY after assignment + visibility have passed.
+    Falls back to any legacy plaintext field when no encrypted blob exists."""
+    password = cred.get("password") or ""
+    if cred.get("encrypted_password"):
+        try:
+            password = decrypt_field(cred["encrypted_password"], estate_salt)
+        except Exception:
+            password = ""
+    additional = cred.get("additional_access") or ""
+    if cred.get("encrypted_additional"):
+        try:
+            additional = decrypt_field(cred["encrypted_additional"], estate_salt)
+        except Exception:
+            additional = ""
     return {
         "id": cred.get("id"),
         "account_name": cred.get("account_name"),
         "login_username": cred.get("login_username"),
-        "password": cred.get("password"),
-        "additional_access": cred.get("additional_access"),
+        "password": password,
+        "additional_access": additional,
         "notes": cred.get("notes"),
         "linked_entity_id": cred.get("linked_entity_id"),
     }
@@ -220,7 +243,11 @@ async def get_entities_beneficiary_view(estate_id: str, current_user: dict = Dep
             phase = "post" if is_transitioned else "pre"
             documents = [doc for doc in documents if can_access_document(doc, actor, phase=phase)]
 
-    # Credentials — filtered by visibility + transition state.
+    # Credentials — owner/admin see every linked credential; a beneficiary
+    # receives a linked credential ONLY when it is assigned to them AND its
+    # visibility timing allows it. (Before June 2026 the assignment check was
+    # missing, so any beneficiary who could see the entities chart received
+    # every linked credential marked show_now / posthumous_only — fixed here.)
     cred_cursor = db.digital_wallet.find(
         {
             "estate_id": estate_id,
@@ -230,10 +257,17 @@ async def get_entities_beneficiary_view(estate_id: str, current_user: dict = Dep
         {"_id": 0},
     )
     raw_creds = await cred_cursor.to_list(5000)
+    estate_salt = await get_estate_salt(estate_id)
     visible_creds: List[dict] = []
     for c in raw_creds:
-        if _credential_is_visible(c, is_transitioned=is_transitioned, beneficiary_can_see_now=beneficiary_can_see_now):
-            visible_creds.append(_credential_for_beneficiary(c))
+        if is_owner or is_admin:
+            allowed = True
+        else:
+            allowed = _entry_assigned_to_actor(c, actor) and _credential_is_visible(
+                c, is_transitioned=is_transitioned, beneficiary_can_see_now=beneficiary_can_see_now
+            )
+        if allowed:
+            visible_creds.append(_credential_view(c, estate_salt))
 
     return {
         "visible": True,

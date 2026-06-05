@@ -16,7 +16,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, Query as QueryParam
 from config import db, logger
 from guards import require_benefactor_role, require_estate_owner
 from models import Message, MessageCreate, MessageUpdate
-from services.access_control import can_access_message, require_estate_actor
+from services.access_control import can_access_message, require_beneficiary_section_access, require_estate_actor
 from services.audit import audit_log
 from services.encryption import (
     decrypt_aes256,
@@ -111,6 +111,7 @@ async def get_messages(estate_id: str, current_user: dict = Depends(get_current_
     estate_salt = await get_estate_salt(estate_id)
 
     actor = await require_estate_actor(estate_id, current_user, allow_staff=True)
+    await require_beneficiary_section_access(actor, "messages")
     messages = await db.messages.find({"estate_id": estate_id, "deleted_at": None}, {"_id": 0}).to_list(100)
     if not (actor["is_owner"] or actor["is_admin"] or actor["is_operator"]):
         messages = [msg for msg in messages if can_access_message(msg, actor)]

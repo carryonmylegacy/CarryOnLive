@@ -200,6 +200,60 @@ def emergency_scope_allows(actor: dict[str, Any], scope: str) -> bool:
     return scope in scopes or "*" in scopes
 
 
+# ── Beneficiary section permissions (server-side enforcement) ────────────────
+# The benefactor / primary beneficiary can disable whole sections for a
+# beneficiary (db.section_permissions.sections[key]). Historically that toggle
+# was only honored by the frontend (Sidebar / TransitionGate). These helpers
+# make the decision authoritative on the backend so a disabled section can no
+# longer be reached by calling the data API directly.
+#
+# Keys mirror routes/section_permissions.ALL_SECTIONS.
+SECTION_KEYS = {
+    "vault",
+    "messages",
+    "checklist",
+    "guardian",
+    "digital_wallet",
+    "timeline",
+    "financial_portal",
+}
+
+
+async def beneficiary_section_enabled(actor: dict[str, Any], section_key: str) -> bool:
+    """True when this actor may access the given estate section.
+
+    Owner / admin / operator always bypass section gating. A beneficiary is
+    allowed UNLESS one of their beneficiary records has the section explicitly
+    set to False (most-restrictive wins, fail-safe to "enabled" when no
+    override row exists — matching the product default that all sections are
+    visible until the benefactor turns one off).
+    """
+    if actor.get("is_owner") or actor.get("is_admin") or actor.get("is_operator"):
+        return True
+    if not actor.get("is_beneficiary"):
+        return False
+    record_ids = list(actor.get("beneficiary_record_ids") or [])
+    if not record_ids:
+        # Recognized as a beneficiary via estate.beneficiaries (user_id) with no
+        # standalone record — no per-section override can exist. Default enabled.
+        return True
+    perms_docs = await db.section_permissions.find(
+        {"estate_id": actor.get("estate_id"), "beneficiary_id": {"$in": record_ids}},
+        {"_id": 0, "sections": 1},
+    ).to_list(20)
+    for perms in perms_docs:
+        sections = perms.get("sections") or {}
+        if sections.get(section_key) is False:
+            return False
+    return True
+
+
+async def require_beneficiary_section_access(actor: dict[str, Any], section_key: str) -> None:
+    """Raise 403 when a beneficiary's section is disabled. No-op for owner/admin."""
+    if not await beneficiary_section_enabled(actor, section_key):
+        raise HTTPException(status_code=403, detail="This section is not available to you.")
+
+
 def can_access_document(document: dict[str, Any], actor: dict[str, Any], *, phase: str | None = None) -> bool:
     """True when the actor can access this SDV document."""
     if actor.get("is_owner") or actor.get("is_admin"):

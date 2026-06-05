@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 from config import db
 from guards import require_benefactor_role
 from services.audit import audit_log, log_audit_event, get_client_ip
-from services.access_control import emergency_scope_allows, require_estate_actor
+from services.access_control import emergency_scope_allows, require_beneficiary_section_access, require_estate_actor
 from services.encryption import decrypt_field, encrypt_field, get_estate_salt
 from utils import get_current_user
 
@@ -92,6 +92,7 @@ class DigitalWalletUpdate(BaseModel):
 async def get_digital_wallet(estate_id: str, request: Request = None, current_user: dict = Depends(get_current_user)):
     """List all digital wallet entries for an estate."""
     actor = await require_estate_actor(estate_id, current_user)
+    await require_beneficiary_section_access(actor, "digital_wallet")
     is_owner = actor["is_owner"]
     is_admin = actor["is_admin"]
 

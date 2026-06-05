@@ -27,7 +27,7 @@ async def run_security_scan(current_user: dict = Depends(require_admin)):
     failed = 0
     warnings = 0
 
-    def add_check(category, name, status, detail=""):
+    def add_check(category, name, status, detail="", check_type="config"):
         nonlocal passed, failed, warnings
         if status == "PASS":
             passed += 1
@@ -41,6 +41,10 @@ async def run_security_scan(current_user: dict = Depends(require_admin)):
                 "check": name,
                 "status": status,
                 "detail": detail,
+                # "live"   → measured against runtime state / live provider call
+                # "config" → asserted from the codebase architecture (not probed)
+                # "manual" → requires human evidence (collected out of band)
+                "type": check_type,
             }
         )
 
@@ -52,6 +56,7 @@ async def run_security_scan(current_user: dict = Depends(require_admin)):
         "OTP Two-Factor Authentication",
         "PASS" if otp_enabled else "WARN",
         "OTP is enabled for all logins" if otp_enabled else "OTP is currently DISABLED platform-wide",
+        check_type="live",
     )
 
     add_check(
@@ -59,6 +64,7 @@ async def run_security_scan(current_user: dict = Depends(require_admin)):
         "JWT Secret Configured",
         "PASS" if JWT_SECRET and len(JWT_SECRET) >= 32 else "FAIL",
         f"JWT secret is set ({len(JWT_SECRET)} chars)" if JWT_SECRET else "JWT_SECRET is missing",
+        check_type="live",
     )
 
     add_check(
@@ -76,12 +82,13 @@ async def run_security_scan(current_user: dict = Depends(require_admin)):
         "Non-admin users are limited to one active session at a time",
     )
 
-    # Account lockout
+    # Account lockout — values mirror routes/auth/login.py (25 failures within a
+    # rolling 5-minute window → 5-minute lock). Asserted from code, not probed.
     add_check(
         "Authentication",
         "Account Lockout Policy",
         "PASS",
-        "Accounts locked after 5 failed attempts within 15 minutes",
+        "Accounts locked after 25 failed attempts within a rolling 5-minute window (5-minute lock)",
     )
 
     # --- 2. Encryption ---
@@ -92,6 +99,7 @@ async def run_security_scan(current_user: dict = Depends(require_admin)):
         "AES-256 encryption key is set (no fallback — server fails fast if missing)"
         if ENCRYPTION_KEY
         else "ENCRYPTION_KEY is missing",
+        check_type="live",
     )
 
     add_check(
@@ -187,6 +195,7 @@ async def run_security_scan(current_user: dict = Depends(require_admin)):
         "Allowed Origins Configured",
         "PASS" if cors_origins else "WARN",
         f"CORS origins: {cors_origins}" if cors_origins else "Using default origins",
+        check_type="live",
     )
 
     # --- 6. File Upload Security ---
@@ -251,6 +260,7 @@ async def run_security_scan(current_user: dict = Depends(require_admin)):
                 f"Index: {coll}.{field}",
                 "PASS" if has_index else "WARN",
                 f"Index exists on {coll}.{field}" if has_index else f"Missing index on {coll}.{field}",
+                check_type="live",
             )
         except Exception:
             add_check(
@@ -258,6 +268,7 @@ async def run_security_scan(current_user: dict = Depends(require_admin)):
                 f"Index: {coll}.{field}",
                 "WARN",
                 f"Could not verify index on {coll}.{field}",
+                check_type="live",
             )
 
     # --- 9. External Services ---
@@ -268,6 +279,7 @@ async def run_security_scan(current_user: dict = Depends(require_admin)):
         "Resend API key configured for OTP delivery"
         if RESEND_API_KEY
         else "Resend API key missing — OTP emails will not send",
+        check_type="live",
     )
 
     add_check(
@@ -277,6 +289,7 @@ async def run_security_scan(current_user: dict = Depends(require_admin)):
         "VAPID keys configured for web push"
         if VAPID_PRIVATE_KEY_INLINE
         else "VAPID private key not found — push notifications disabled",
+        check_type="live",
     )
 
     stripe_key = os.environ.get("STRIPE_API_KEY", "")
@@ -285,6 +298,7 @@ async def run_security_scan(current_user: dict = Depends(require_admin)):
         "Payment Processing (Stripe)",
         "PASS" if stripe_key else "WARN",
         "Stripe API key configured" if stripe_key else "Stripe API key missing — payment processing unavailable",
+        check_type="live",
     )
 
     # --- 10. Compliance ---
@@ -341,6 +355,8 @@ async def run_security_scan(current_user: dict = Depends(require_admin)):
     # --- Summary ---
     total = passed + failed + warnings
     grade = "A" if failed == 0 and warnings <= 2 else "B" if failed == 0 else "C" if failed <= 2 else "F"
+    live_count = sum(1 for c in checks if c.get("type") == "live")
+    config_count = sum(1 for c in checks if c.get("type") == "config")
 
     return {
         "scan_timestamp": now,
@@ -350,9 +366,17 @@ async def run_security_scan(current_user: dict = Depends(require_admin)):
             "passed": passed,
             "failed": failed,
             "warnings": warnings,
+            "live_measured": live_count,
+            "config_asserted": config_count,
         },
+        "evidence_note": (
+            "Checks of type 'live' are measured against runtime state or a live "
+            "provider call. Checks of type 'config' are asserted from the codebase "
+            "architecture and are NOT probed at scan time — treat them as design "
+            "evidence, not a runtime guarantee."
+        ),
         "checks": checks,
-        "report_version": "1.0.0",
+        "report_version": "1.1.0",
         "platform": "CarryOn Estate Planning",
     }
 
