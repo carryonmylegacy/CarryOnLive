@@ -31,6 +31,39 @@ _SENSITIVE_USER_FIELDS = (
 )
 _SAFE_PROFILE_PROJECTION = {"_id": 0, **{f: 0 for f in _SENSITIVE_USER_FIELDS}}
 
+# Defense-in-depth (audit 18a9d44 F-18-11): rather than relying solely on the
+# denylist above (which a developer must remember to extend for every new
+# sensitive field), also strip any key whose NAME matches a sensitive pattern.
+# This auto-excludes future fields like `*_secret`, `*_token`, `*_hash`, etc.
+# from the profile responses even if nobody updates _SENSITIVE_USER_FIELDS.
+_PROFILE_SENSITIVE_PATTERNS = (
+    "password",
+    "secret",
+    "token",
+    "otp",
+    "_hash",
+    "security_answer",
+    "offline_credential",
+    "private_key",
+    "recovery_code",
+    "backup_code",
+)
+
+
+def _project_profile(doc: dict | None) -> dict | None:
+    """Return a copy of a user doc with sensitive fields removed — both the
+    explicit denylist AND any key matching a sensitive name pattern."""
+    if not doc:
+        return doc
+    out = {}
+    for k, v in doc.items():
+        if k == "_id" or k in _SENSITIVE_USER_FIELDS:
+            continue
+        if any(p in k.lower() for p in _PROFILE_SENSITIVE_PATTERNS):
+            continue
+        out[k] = v
+    return out
+
 
 @router.get("/auth/me")
 async def get_me(current_user: dict = Depends(get_current_user)):
@@ -162,9 +195,10 @@ async def get_profile(current_user: dict = Depends(get_current_user)):
     so offline relaunches show a Camera placeholder where the
     avatar should be (founder report May 3 2026).
     """
-    user = await db.users.find_one({"id": current_user["id"]}, _SAFE_PROFILE_PROJECTION)
+    user = await db.users.find_one({"id": current_user["id"]}, {"_id": 0})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    user = _project_profile(user)
 
     if current_user.get("role") == "beneficiary":
         ben_rec = await db.beneficiaries.find_one({"user_id": current_user["id"]}, {"_id": 0})
@@ -273,8 +307,8 @@ async def update_profile(body: dict, current_user: dict = Depends(get_current_us
         except Exception as e:
             logger.warning(f"Failed to send beneficiary update notification: {e}")
 
-    user = await db.users.find_one({"id": current_user["id"]}, _SAFE_PROFILE_PROJECTION)
-    return user
+    user = await db.users.find_one({"id": current_user["id"]}, {"_id": 0})
+    return _project_profile(user)
 
 
 class ProfilePhotoUpdate(BaseModel):

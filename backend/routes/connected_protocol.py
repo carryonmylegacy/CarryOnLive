@@ -1082,8 +1082,11 @@ async def get_linked_resources(estate_id: str, current_user: dict = Depends(get_
 
 @router.get("/ccp/history/{estate_id}")
 async def get_activation_history(estate_id: str, current_user: dict = Depends(get_current_user)):
-    """Get past activations for an estate."""
-    if not await _is_estate_member(current_user["id"], estate_id):
+    """Get past activations for an estate. Beneficiaries only see activations
+    assigned to them (or to all), with linked-resource references redacted —
+    the same actor model the active route uses (audit 18a9d44 F-18-03)."""
+    actor = await resolve_estate_actor(estate_id, current_user)
+    if not actor.get("is_estate_member") and not actor.get("is_staff"):
         raise HTTPException(status_code=403, detail="Not a member of this estate")
     activations = (
         await db.emergency_activations.find(
@@ -1093,7 +1096,21 @@ async def get_activation_history(estate_id: str, current_user: dict = Depends(ge
         .sort("activated_at", -1)
         .to_list(50)
     )
-    return activations
+    if actor.get("is_owner") or actor.get("is_admin") or actor.get("is_operator"):
+        return activations
+
+    visible = []
+    for act in activations:
+        snap = act.get("plan_snapshot")
+        if not _active_plan_assigned_to_actor(snap, actor):
+            # Not assigned to this beneficiary (or legacy snapshot missing the
+            # assignment key) — omit entirely.
+            continue
+        if isinstance(snap, dict):
+            snap = (await _redact_plan_links_for_actor([snap], actor))[0]
+            act["plan_snapshot"] = snap
+        visible.append(act)
+    return visible
 
 
 # ===================== MEMBER CHECK-IN =====================

@@ -14,6 +14,24 @@ export const AuthProvider = ({ children }) => {
   const [pendingEmail, setPendingEmail] = useState(null);
   const [subscriptionStatus, setSubscriptionStatus] = useState(null);
   const [enabledFeatures, setEnabledFeatures] = useState(null);
+
+  // audit 18a9d44 F-18-01 — establish (and re-establish on SW takeover) the
+  // signed-in user's partitioned service-worker API cache namespace so cached
+  // authenticated responses are never readable by a later user on the device.
+  useEffect(() => {
+    const uid = user?.id;
+    if (!uid || !('serviceWorker' in navigator)) return;
+    const send = () => {
+      if (navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({ type: 'SET_CACHE_ID', cacheId: uid });
+      }
+    };
+    send();
+    navigator.serviceWorker.ready.then(send).catch(() => {});
+    navigator.serviceWorker.addEventListener('controllerchange', send);
+    return () => navigator.serviceWorker.removeEventListener('controllerchange', send);
+  }, [user?.id]);
+
   // ── Partner co-branding ──────────────────────────────────────────
   // When the signed-in user redeemed a B2B/Enterprise code, this
   // holds their partner's logo (as a base64 data URL) + company name

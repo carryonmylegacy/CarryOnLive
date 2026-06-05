@@ -5,6 +5,8 @@ from ._core import (
     _get_user_estate_ids,
     _ensure_circle,
     _enrich_channel,
+    _require_estate_chat_access,
+    _estate_chat_section_enabled,
     CreateChannelRequest,
     UpdateMembersRequest,
 )
@@ -21,6 +23,11 @@ from services.estate_auth import is_estate_member as _is_estate_member, is_estat
 async def get_channels(current_user: dict = Depends(get_current_user)):
     """Get all chat channels the current user belongs to, across all estates."""
     estate_ids = await _get_user_estate_ids(current_user["id"])
+    if not estate_ids:
+        return []
+    # Drop estates whose Messages section is disabled for this beneficiary
+    # (audit 18a9d44 F-18-05) — owner/admin always pass.
+    estate_ids = [eid for eid in estate_ids if await _estate_chat_section_enabled(eid, current_user)]
     if not estate_ids:
         return []
     # Ensure circles exist for each estate
@@ -73,8 +80,7 @@ async def create_channel(
     current_user: dict = Depends(get_current_user),
 ):
     """Create a group or direct message channel."""
-    if not await _is_estate_member(current_user["id"], data.estate_id):
-        raise HTTPException(status_code=403, detail="Not a member of this estate")
+    await _require_estate_chat_access(data.estate_id, current_user)
     if data.channel_type == "group":
         if not await _is_estate_owner(current_user["id"], data.estate_id):
             raise HTTPException(status_code=403, detail="Only the benefactor can create group channels")
@@ -170,20 +176,15 @@ async def delete_channel(
         raise HTTPException(status_code=403, detail="Not authorized to delete this channel")
     now = datetime.now(timezone.utc).isoformat()
     if is_owner or is_admin:
-        # Benefactor/admin: hard-delete channel and all messages for everyone
+        # Benefactor/admin: hard-delete channel and all messages for everyone.
+        # Collect message ids BEFORE deleting messages so reactions are cleaned
+        # up too (audit 18a9d44 F-18-13 — deleting messages first orphaned them).
         if channel.get("type") != "circle":
+            msg_ids = [m["id"] async for m in db.estate_messages.find({"channel_id": channel_id}, {"id": 1, "_id": 0})]
             await db.estate_channels.delete_one({"id": channel_id})
+            if msg_ids:
+                await db.estate_reactions.delete_many({"message_id": {"$in": msg_ids}})
             await db.estate_messages.delete_many({"channel_id": channel_id})
-            await db.estate_reactions.delete_many(
-                {
-                    "message_id": {
-                        "$in": [
-                            m["id"]
-                            async for m in db.estate_messages.find({"channel_id": channel_id}, {"id": 1, "_id": 0})
-                        ]
-                    }
-                }
-            )
         else:
             # Circle: dismiss for all members
             for mid in channel.get("members", []):

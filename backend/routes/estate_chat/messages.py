@@ -3,6 +3,7 @@
 from ._core import (
     router,
     _deliver_to_ffn,
+    _require_estate_chat_access,
     SendMessageRequest,
     EditMessageRequest,
     ReactRequest,
@@ -28,6 +29,7 @@ async def get_messages(
         raise HTTPException(status_code=404, detail="Channel not found")
     if current_user["id"] not in channel.get("members", []):
         raise HTTPException(status_code=403, detail="Not a member of this channel")
+    await _require_estate_chat_access(channel["estate_id"], current_user)
     query = {"channel_id": channel_id, "deleted_at": {"$exists": False}}
     if before:
         query["created_at"] = {"$lt": before}
@@ -147,6 +149,7 @@ async def send_message(
         raise HTTPException(status_code=404, detail="Channel not found")
     if current_user["id"] not in channel.get("members", []):
         raise HTTPException(status_code=403, detail="Not a member of this channel")
+    await _require_estate_chat_access(channel["estate_id"], current_user)
     now = datetime.now(timezone.utc).isoformat()
     msg_id = str(uuid4())
     message = {

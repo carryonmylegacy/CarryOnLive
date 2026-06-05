@@ -167,6 +167,33 @@ async def _get_user_estate_ids(user_id: str) -> list[str]:
     return list(estate_ids)
 
 
+async def _require_estate_chat_access(estate_id: str, current_user: dict) -> dict:
+    """Resolve the canonical actor for an estate-chat estate and enforce BOTH
+    membership and the Messages beneficiary-section gate. Estate Chat follows the
+    existing 'messages' section permission, so a beneficiary whose Messages
+    section is disabled cannot reach chat APIs directly even though the UI hides
+    them (audit 18a9d44 F-18-05 / F-18-08). Owner/admin/operator bypass the gate.
+    Returns the resolved actor."""
+    from fastapi import HTTPException
+    from services.access_control import resolve_estate_actor, require_beneficiary_section_access
+
+    actor = await resolve_estate_actor(estate_id, current_user)
+    if not actor.get("is_estate_member") and not actor.get("is_staff"):
+        raise HTTPException(status_code=403, detail="Not a member of this estate")
+    await require_beneficiary_section_access(actor, "messages")
+    return actor
+
+
+async def _estate_chat_section_enabled(estate_id: str, current_user: dict) -> bool:
+    """Non-raising variant for list/directory endpoints that span estates."""
+    from services.access_control import resolve_estate_actor, beneficiary_section_enabled
+
+    actor = await resolve_estate_actor(estate_id, current_user)
+    if not actor.get("is_estate_member") and not actor.get("is_staff"):
+        return False
+    return await beneficiary_section_enabled(actor, "messages")
+
+
 async def _ensure_circle(estate_id: str) -> dict:
     """Ensure a Circle channel exists for this estate; create if not."""
     circle = await db.estate_channels.find_one({"estate_id": estate_id, "type": "circle"}, {"_id": 0})

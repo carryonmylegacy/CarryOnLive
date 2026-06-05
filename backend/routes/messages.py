@@ -58,6 +58,7 @@ async def create_download_token(message_id: str, current_user: dict = Depends(ge
     actor = await require_estate_actor(msg["estate_id"], current_user, allow_staff=True)
     if not can_access_message(msg, actor):
         raise HTTPException(status_code=403, detail="Access denied")
+    await require_beneficiary_section_access(actor, "messages")
 
     token = str(uuid.uuid4())
     now = datetime.now(timezone.utc)
@@ -134,6 +135,7 @@ async def get_message_video(video_id: str, current_user: dict = Depends(get_curr
     actor = await require_estate_actor(message["estate_id"], current_user, allow_staff=True)
     if not can_access_message(message, actor):
         raise HTTPException(status_code=403, detail="Access denied")
+    await require_beneficiary_section_access(actor, "messages")
 
     # Try cloud storage first
     video_storage_key = f"estates/{message['estate_id']}/{video_id}"
@@ -310,6 +312,7 @@ async def get_message_voice(voice_id: str, current_user: dict = Depends(get_curr
     actor = await require_estate_actor(message["estate_id"], current_user, allow_staff=True)
     if not can_access_message(message, actor):
         raise HTTPException(status_code=403, detail="Access denied")
+    await require_beneficiary_section_access(actor, "messages")
 
     voice_storage_key = f"voices/{voice_id}"
     try:

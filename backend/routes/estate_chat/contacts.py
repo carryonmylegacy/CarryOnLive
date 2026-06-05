@@ -1,6 +1,6 @@
 """Estate Chat — contacts directory."""
 
-from ._core import router, _get_user_estate_ids
+from ._core import router, _get_user_estate_ids, _estate_chat_section_enabled
 from fastapi import Depends
 from utils import get_current_user
 from config import db
@@ -16,6 +16,10 @@ async def get_contacts(current_user: dict = Depends(get_current_user)):
         return []
     result = []
     for eid in estate_ids:
+        # Skip estates whose Messages section is disabled for this beneficiary
+        # (audit 18a9d44 F-18-05). Owner/admin always pass.
+        if not await _estate_chat_section_enabled(eid, current_user):
+            continue
         estate = await db.estates.find_one(
             {"id": eid}, {"_id": 0, "id": 1, "name": 1, "owner_id": 1, "beneficiaries": 1}
         )

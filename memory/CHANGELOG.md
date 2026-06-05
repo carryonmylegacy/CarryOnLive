@@ -1,6 +1,25 @@
 # CarryOn — Changelog
 
 
+## Jun 6, 2026 — Round-5 audit (GitHub `18a9d44`): 13 residual findings, ALL fixed (no P0)
+
+Auditor confirmed no P0 and that round-4 landed. Fixed all 13 residuals:
+- **F-18-01 (P1)** SW API cache now partitioned per signed-in user (`SET_CACHE_ID` on login; logout wipes only that user's cache). `sw-push.js` + `AuthContext.js`.
+- **F-18-02 (P1)** Audit chain: timestamp/stored_at recomputed inside retry; exhausted retries → durable `audit_repair_queue` + CRITICAL (no silent drop); startup index health-check.
+- **F-18-03 (P1/P2)** `GET /ccp/history` now actor-filtered + redacted for beneficiaries.
+- **F-18-04 (P2)** message media/token routes gated by Messages section.
+- **F-18-05 (P2)** Estate Chat routes section-gated via new `_require_estate_chat_access` (follows `messages` permission).
+- **F-18-06 (P2)** FFN `any()`→`all()` (explicit deny wins).
+- **F-18-07 (P2)** essential doc carve-out limited to pre-transition.
+- **F-18-08 (P2)** CCP history + chat migrated to `resolve_estate_actor`.
+- **F-18-09 (P3)** broadcast `"all"` delivery state completes.
+- **F-18-10 (P2/P3)** access-request: 24h post-denial cooldown + 5/day cap + audit event.
+- **F-18-11 (P3)** profile responses use pattern-defended strip (future sensitive fields auto-excluded).
+- **F-18-12 (P3)** timeline summary counts `is_completed`.
+- **F-18-13 (P3)** channel delete cleans up reactions (collect ids first).
+- **Tests:** 42/42 in `test_audit_live_avb.py`; `housekeeping.sh --strict` EXIT 0; route policy 670/670.
+
+
 ## Jun 6, 2026 — Round-4 audit (GitHub `05c1776`): 14 new residual findings, ALL fixed
 
 Re-audit of commit `05c1776` confirmed rounds 1-3 landed and found 14 new residual items (6×P1, 8×P2). All remediated:

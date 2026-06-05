@@ -377,7 +377,13 @@ def build_message_delivery_update(
     current_delivered = _id_set(message.get("delivered_recipient_ids") or [])
     next_delivered = current_delivered | delivered_ids
     intended = _id_set(message.get("recipients") or [])
-    all_intended_delivered = bool(intended) and intended.issubset(next_delivered)
+    # A broadcast ("all") can never be a literal subset of resolved beneficiary
+    # ids, so treat any actual delivery as completing the broadcast while still
+    # recording per-recipient detail (audit 18a9d44 F-18-09).
+    if "all" in intended:
+        all_intended_delivered = bool(next_delivered)
+    else:
+        all_intended_delivered = bool(intended) and intended.issubset(next_delivered)
 
     set_doc: dict[str, Any] = {
         "delivery_state": "delivered" if all_intended_delivered else "partial",
@@ -420,7 +426,9 @@ def beneficiary_can_view_ffn(actor: dict[str, Any]) -> bool:
         # Recognized as a beneficiary via estate.beneficiaries with no standalone
         # record — no per-record override can exist; allow post-transition.
         return True
-    return any(r.get("ffn_access") is not False for r in records)
+    # Most-restrictive wins: an explicit ffn_access=False on ANY of the actor's
+    # (possibly duplicate/legacy) records denies access (audit 18a9d44 F-18-06).
+    return all(r.get("ffn_access") is not False for r in records)
 
 
 async def require_document_surface_access(actor: dict[str, Any], document: dict[str, Any]) -> None:
@@ -435,6 +443,14 @@ async def require_document_surface_access(actor: dict[str, Any], document: dict[
     if await beneficiary_section_enabled(actor, "vault"):
         return
     category = document.get("category") or ""
-    if category in ESSENTIAL_PRE_TRANSITION_DOCUMENT_CATEGORIES and can_access_document(document, actor, phase="pre"):
+    # Essential carve-out applies ONLY pre-transition — emergency access to
+    # critical paperwork before death must not be severed by a disabled Vault,
+    # but a post-transition beneficiary whose Vault is disabled gets no bypass
+    # (audit 18a9d44 F-18-07).
+    if (
+        not actor.get("is_transitioned")
+        and category in ESSENTIAL_PRE_TRANSITION_DOCUMENT_CATEGORIES
+        and can_access_document(document, actor, phase="pre")
+    ):
         return
     raise HTTPException(status_code=403, detail="This section is not available to you.")

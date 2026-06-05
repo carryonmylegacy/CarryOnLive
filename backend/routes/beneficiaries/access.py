@@ -111,21 +111,52 @@ async def request_estate_access(data: BeneficiaryAccessRequest, current_user: di
     if existing:
         raise HTTPException(status_code=400, detail="You already have a pending access request")
 
-    # Throttle: prevent a requester from spamming an estate with repeated
-    # requests (e.g. re-submitting immediately after a denial). audit 05c1776 P2.7.
+    # Abuse controls (audit 18a9d44 F-18-10): a short cooldown, a longer cooldown
+    # after a denial, and a hard daily cap per requester+estate. Repeated attempts
+    # are recorded as security audit events so spam is visible in compliance logs.
     from datetime import timedelta
 
-    cooldown_cutoff = (datetime.now(timezone.utc) - timedelta(seconds=60)).isoformat()
-    recent = await db.access_requests.find_one(
-        {
-            "estate_id": data.estate_id,
-            "requester_id": current_user["id"],
-            "created_at": {"$gt": cooldown_cutoff},
-        },
+    now_dt = datetime.now(timezone.utc)
+    base = {"estate_id": data.estate_id, "requester_id": current_user["id"]}
+
+    async def _deny(detail: str):
+        try:
+            from services.audit import log_audit_event
+
+            await log_audit_event(
+                actor_id=current_user["id"],
+                actor_email=current_user.get("email", ""),
+                actor_role=current_user.get("role", ""),
+                action="beneficiary.access_request.throttled",
+                category="security",
+                resource_type="estate",
+                resource_id=data.estate_id,
+                details={"reason": detail},
+                severity="warning",
+            )
+        except Exception:
+            pass
+        raise HTTPException(status_code=429, detail=detail)
+
+    # 1) 60-second rapid-fire cooldown (any status).
+    if await db.access_requests.find_one(
+        {**base, "created_at": {"$gt": (now_dt - timedelta(seconds=60)).isoformat()}}, {"_id": 0, "id": 1}
+    ):
+        await _deny("Please wait a moment before requesting access again.")
+
+    # 2) After a denial, a 24-hour cooldown before re-requesting the same estate.
+    if await db.access_requests.find_one(
+        {**base, "status": "denied", "acted_at": {"$gt": (now_dt - timedelta(hours=24)).isoformat()}},
         {"_id": 0, "id": 1},
+    ):
+        await _deny("This request was recently declined. Please try again later or contact the family directly.")
+
+    # 3) Hard daily cap per requester+estate.
+    day_count = await db.access_requests.count_documents(
+        {**base, "created_at": {"$gt": (now_dt - timedelta(hours=24)).isoformat()}}
     )
-    if recent:
-        raise HTTPException(status_code=429, detail="Please wait a moment before requesting access again.")
+    if day_count >= 5:
+        await _deny("Daily access-request limit reached for this estate.")
 
     request_doc = {
         "id": str(uuid.uuid4()),

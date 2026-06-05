@@ -264,7 +264,7 @@ async def get_legacy_timeline(estate_id: str, current_user: dict = Depends(get_c
         "documents": len(docs),
         "beneficiaries": len(bens),
         "messages": len(msgs),
-        "checklist_completed": sum(1 for c in checklists if c.get("completed")),
+        "checklist_completed": sum(1 for c in checklists if c.get("is_completed") or c.get("completed")),
         "estate_name": estate.get("name", "Estate"),
         "created_at": estate.get("created_at", ""),
     }

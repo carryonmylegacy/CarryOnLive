@@ -71,10 +71,7 @@ async def log_audit_event(
     session_id: str = "",
 ):
     """Append an immutable, hash-chained audit log entry."""
-    now = datetime.now(timezone.utc)
-
     entry = {
-        "timestamp": now.isoformat(),
         "actor_id": actor_id,
         "actor_email": actor_email,
         "actor_role": actor_role,
@@ -93,9 +90,15 @@ async def log_audit_event(
     # the unique partial index on `prev_hash` (db_indexes) makes the insert the
     # serialization point: if another instance chained off the same prev_hash
     # first, our insert raises DuplicateKeyError and we recompute against the new
-    # head and retry (audit 05c1776 P2.5).
+    # head and retry. timestamp/stored_at are (re)computed INSIDE the loop so a
+    # retry that chains to a newer head also carries a monotonically newer
+    # stored_at — keeping `_latest_chain_hash()` head selection correct
+    # (audit 18a9d44 F-18-02).
+    inserted = False
     async with _chain_lock:
-        for _attempt in range(8):
+        for _attempt in range(12):
+            now = datetime.now(timezone.utc)
+            entry["timestamp"] = now.isoformat()
             entry.pop("integrity_hash", None)
             entry.pop("stored_at", None)
             entry["prev_hash"] = await _latest_chain_hash()
@@ -106,11 +109,26 @@ async def log_audit_event(
 
             try:
                 await db.audit_trail.insert_one(entry)
+                inserted = True
                 break
             except DuplicateKeyError:
                 continue
-        else:
-            logger.error("AUDIT chain append failed after retries (prev_hash contention)")
+
+    if not inserted:
+        # Do NOT silently drop a compliance event. Persist it to a durable repair
+        # queue for out-of-band re-chaining and surface a critical log so the gap
+        # is visible (audit 18a9d44 F-18-02).
+        try:
+            entry.pop("stored_at", None)
+            await db.audit_repair_queue.insert_one(
+                {**entry, "queued_at": datetime.now(timezone.utc), "reason": "chain_contention_retries_exhausted"}
+            )
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"AUDIT chain append AND repair-queue write failed: {e}")
+        logger.error(
+            f"AUDIT chain append failed after retries; event queued for repair "
+            f"(actor={actor_email} action={action} {resource_type}:{resource_id})"
+        )
 
     if severity == "critical":
         logger.warning(f"AUDIT[{severity}] {actor_email} {action} {resource_type}:{resource_id}")

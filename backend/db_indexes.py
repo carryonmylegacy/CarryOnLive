@@ -156,6 +156,19 @@ async def ensure_indexes(db, logger):
             )
         except Exception as _e:
             logger.warning(f"audit_trail prev_hash unique index not created: {_e}")
+        # Loud health check (audit 18a9d44 F-18-02): if the cross-pod chain guard
+        # is absent, multi-instance audit writes can fork/drop silently. Surface
+        # it as CRITICAL so it can't pass unnoticed during high-concurrency ops.
+        try:
+            _idx = await db.audit_trail.index_information()
+            if "prev_hash_unique" not in _idx:
+                logger.critical(
+                    "AUDIT INTEGRITY: prev_hash_unique index MISSING — cross-pod "
+                    "chain protection is NOT active. Resolve any historical fork "
+                    "and recreate the index to restore SOC2-grade evidence."
+                )
+        except Exception as _e:
+            logger.warning(f"audit_trail index health check failed: {_e}")
         # Performance indexes for frequently-queried collections
         await db.user_subscriptions.create_index("user_id")
         await db.user_subscriptions.create_index("status")

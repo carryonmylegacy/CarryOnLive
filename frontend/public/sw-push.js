@@ -15,12 +15,24 @@
 // ── Versioning ──────────────────────────────────────────────────────────────
 // Bump SHELL_VERSION whenever the list of precached shell assets or the
 // caching strategy changes — triggers a cache purge on next SW activation.
-const SHELL_VERSION = 'build-2026-06-05-mq1dny6u';
+const SHELL_VERSION = 'build-2026-06-05-mq1f1syc';
 const SHELL_CACHE = `carryon-shell-${SHELL_VERSION}`;
 const RUNTIME_CACHE = `carryon-runtime-${SHELL_VERSION}`;
 const API_CACHE = `carryon-api-${SHELL_VERSION}`;
 const IMAGE_CACHE = `carryon-images-${SHELL_VERSION}`;
 
+// audit 18a9d44 F-18-01 — authenticated API responses are cached in a cache
+// PARTITIONED BY SIGNED-IN USER. The app posts SET_CACHE_ID after login; until
+// it does, the SW refuses to cache API GETs at all (network-only). On logout we
+// delete only the active user's API/image cache and clear the namespace so a
+// later user on the same device can never read a previous user's cached PII.
+let apiCacheId = '';
+function apiCacheName() {
+  return apiCacheId ? `${API_CACHE}-${apiCacheId}` : null;
+}
+function userImageCacheName() {
+  return apiCacheId ? `${IMAGE_CACHE}-${apiCacheId}` : IMAGE_CACHE;
+}
 // The "app shell" — static files the PWA needs to render the first frame
 // with chrome + branding. These all come from /public/ so their URLs are
 // stable across deploys. The login-page brand logo MUST be here — if it's
@@ -422,9 +434,15 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 4) Cacheable API GETs → stale-while-revalidate.
+  // 4) Cacheable API GETs → stale-while-revalidate, but ONLY within the
+  // signed-in user's partitioned cache. Without an established cache identity
+  // we go network-only so authenticated data is never cached unattributed
+  // (audit 18a9d44 F-18-01).
   if (isCacheableApiRequest(url)) {
-    event.respondWith(staleWhileRevalidate(request, API_CACHE));
+    const name = apiCacheName();
+    if (name) {
+      event.respondWith(staleWhileRevalidate(request, name));
+    }
     return;
   }
 
@@ -440,12 +458,23 @@ self.addEventListener('message', (event) => {
     const count = event.data.count || 0;
     if (count > 0 && navigator.setAppBadge) navigator.setAppBadge(count);
     else if (navigator.clearAppBadge) navigator.clearAppBadge();
+  } else if (event.data.type === 'SET_CACHE_ID') {
+    // App establishes the signed-in user's cache namespace after login so
+    // authenticated API GETs are cached per-user (audit 18a9d44 F-18-01).
+    apiCacheId = String(event.data.cacheId || '');
   } else if (event.data.type === 'CLEAR_APP_CACHES') {
-    // Called by the app on logout — wipes per-user API cache so the next
-    // user doesn't see stale data from the previous session.
+    // Called by the app on logout — wipes the CURRENT user's partitioned API
+    // and image caches, then clears the namespace so the next user starts clean
+    // and can never read the previous user's cached data.
     event.waitUntil((async () => {
+      const apiName = apiCacheName();
+      if (apiName) await caches.delete(apiName);
+      const imgName = userImageCacheName();
+      if (imgName) await caches.delete(imgName);
+      // Also purge any legacy/unpartitioned caches from older builds.
       await caches.delete(API_CACHE);
       await caches.delete(IMAGE_CACHE);
+      apiCacheId = '';
     })());
   } else if (event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();

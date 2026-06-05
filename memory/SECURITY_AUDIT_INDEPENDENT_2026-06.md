@@ -381,3 +381,30 @@ confirmed the prior 11 fixes landed and surfaced **14 new residual findings**
 **CI:** `housekeeping.sh --strict` → EXIT 0 (Zero-WARN); route policy 670/670.
 **Bottom line:** every `05c1776` finding is resolved on `/app` (P2.8 accepted-risk). Needs GitHub push + redeploy to clear the live audit.
 
+
+---
+
+## ROUND-5 — GitHub `18a9d44` audit (Jun 2026) — 13 residual findings, ALL fixed
+
+Auditor confirmed **no P0** and that all round-4 fixes landed. 13 new residual
+findings (2×P1, 6×P2, 5×P3) — all addressed:
+
+| ID | Sev | Fix |
+|----|-----|-----|
+| F-18-01 | P1 | SW now partitions authenticated API cache **per user**. `sw-push.js`: `apiCacheName()` = `carryon-api-${ver}-${cacheId}`; refuses to cache API GETs until the app posts `SET_CACHE_ID`; logout deletes only that user's API/image cache + legacy caches and clears the namespace. `AuthContext` posts `SET_CACHE_ID` on login + SW takeover. SHELL_VERSION bumped |
+| F-18-02 | P1 | Audit chain: `timestamp`/`stored_at` now recomputed **inside** each retry (monotonic head selection); on exhausted retries the event is written to a durable `audit_repair_queue` + CRITICAL log (no silent drop); startup CRITICAL health-check if `prev_hash_unique` index missing |
+| F-18-03 | P1/P2 | `GET /ccp/history/{id}` now uses `resolve_estate_actor` + `_active_plan_assigned_to_actor` (fail-closed on missing assignment) + `_redact_plan_links_for_actor` — beneficiaries only see activations assigned to them, redacted |
+| F-18-04 | P2 | Message media/token routes (`download-token`, `video`, `voice`) now call `require_beneficiary_section_access(actor, "messages")` |
+| F-18-05 | P2 | New `_require_estate_chat_access` / `_estate_chat_section_enabled` in `_core.py` gate chat read/write (messages get/send, channel list/create, contacts) on the Messages section. **Product decision: Estate Chat follows the `messages` section permission** |
+| F-18-06 | P2 | `beneficiary_can_view_ffn` changed `any()` → `all()` — explicit `ffn_access=False` on ANY duplicate record now denies |
+| F-18-07 | P2 | `require_document_surface_access` essential carve-out now requires `not is_transitioned` |
+| F-18-08 | P2 | CCP history + estate-chat create/list/messages migrated to `resolve_estate_actor`. Remaining legacy owner-checks (plan CRUD, channel delete) are correct owner-gating — full migration is a backlog refactor |
+| F-18-09 | P3 | `build_message_delivery_update` treats `"all"` broadcasts as delivered once any recipient is delivered |
+| F-18-10 | P2/P3 | Access-request: 60s cooldown + 24h post-denial cooldown + 5/day hard cap + security audit event on throttle |
+| F-18-11 | P3 | `/auth/profile` + update response now use `_project_profile()` — denylist PLUS sensitive-name pattern stripping (auto-excludes future `*_secret/*_token/*_hash` fields). `/auth/me` was already a hand-built allowlist |
+| F-18-12 | P3 | Timeline summary `checklist_completed` uses `is_completed or completed` |
+| F-18-13 | P3 | `delete_channel` collects message ids BEFORE deleting messages, so reactions are cleaned up (no orphans) |
+
+**Tests:** `tests/test_audit_live_avb.py` → **42/42 green** (added FFN-most-restrictive, essential-carveout-post-transition, broadcast-delivery, CCP-history-filter). `housekeeping.sh --strict` EXIT 0; route policy 670/670; backend health 200; `node --check sw-push.js` OK.
+**Bottom line:** all 13 `18a9d44` findings resolved on `/app`. Needs GitHub push + redeploy.
+
