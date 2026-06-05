@@ -169,6 +169,7 @@ async def delete_channel(
     if not channel:
         raise HTTPException(status_code=404, detail="Channel not found")
     user_id = current_user["id"]
+    await _require_estate_chat_access(channel["estate_id"], current_user)
     is_owner = await _is_estate_owner(user_id, channel["estate_id"])
     is_admin = current_user.get("role") == "admin"
     is_member = user_id in channel.get("members", [])
@@ -227,6 +228,9 @@ async def batch_delete_channels(
             failed.append({"id": ch_id, "reason": "Not found"})
             continue
         user_id = current_user["id"]
+        if not await _estate_chat_section_enabled(channel["estate_id"], current_user):
+            failed.append({"id": ch_id, "reason": "Messages section not available"})
+            continue
         is_owner = await _is_estate_owner(user_id, channel["estate_id"])
         is_admin = current_user.get("role") == "admin"
         is_member = user_id in channel.get("members", [])
@@ -244,7 +248,12 @@ async def batch_delete_channels(
         # any member could wipe a shared DM/group for all participants
         # (audit 05c1776 P2.2).
         if (is_owner or is_admin) and channel.get("type") != "circle":
+            # Collect message ids BEFORE deleting so reactions are cleaned up
+            # too (audit 512bd5c F-18-09 — batch path orphaned reactions).
+            msg_ids = [m["id"] async for m in db.estate_messages.find({"channel_id": ch_id}, {"id": 1, "_id": 0})]
             await db.estate_channels.delete_one({"id": ch_id})
+            if msg_ids:
+                await db.estate_reactions.delete_many({"message_id": {"$in": msg_ids}})
             await db.estate_messages.delete_many({"channel_id": ch_id})
             await db.estate_channel_reads.delete_many({"channel_id": ch_id})
         deleted.append(ch_id)

@@ -4,6 +4,7 @@ from ._core import (
     router,
     _deliver_to_ffn,
     _require_estate_chat_access,
+    _estate_chat_section_enabled,
     SendMessageRequest,
     EditMessageRequest,
     ReactRequest,
@@ -76,6 +77,7 @@ async def get_read_status(
         raise HTTPException(status_code=404, detail="Channel not found")
     if current_user["id"] not in channel.get("members", []):
         raise HTTPException(status_code=403, detail="Not a member of this channel")
+    await _require_estate_chat_access(channel["estate_id"], current_user)
     reads = await db.estate_channel_reads.find({"channel_id": channel_id}, {"_id": 0}).to_list(100)
     read_map = {r["user_id"]: r.get("last_read_at", "") for r in reads}
     # Enrich with member names
@@ -99,9 +101,11 @@ async def send_typing(
     current_user: dict = Depends(get_current_user),
 ):
     """Signal that the user is typing in a channel. Heartbeat — call every ~3s."""
-    channel = await db.estate_channels.find_one({"id": channel_id}, {"_id": 0, "id": 1, "members": 1})
+    channel = await db.estate_channels.find_one({"id": channel_id}, {"_id": 0, "id": 1, "members": 1, "estate_id": 1})
     if not channel or current_user["id"] not in channel.get("members", []):
         return {"ok": True}  # Silently ignore — no error for typing heartbeat
+    if not await _estate_chat_section_enabled(channel.get("estate_id", ""), current_user):
+        return {"ok": True}
     now = datetime.now(timezone.utc).isoformat()
     await db.estate_typing.update_one(
         {"channel_id": channel_id, "user_id": current_user["id"]},
@@ -120,8 +124,10 @@ async def get_typing(
     from datetime import timedelta
 
     # Membership check — typing presence is channel-private (audit 05c1776 P2.3).
-    channel = await db.estate_channels.find_one({"id": channel_id}, {"_id": 0, "id": 1, "members": 1})
+    channel = await db.estate_channels.find_one({"id": channel_id}, {"_id": 0, "id": 1, "members": 1, "estate_id": 1})
     if not channel or current_user["id"] not in channel.get("members", []):
+        return []
+    if not await _estate_chat_section_enabled(channel.get("estate_id", ""), current_user):
         return []
 
     cutoff = (datetime.now(timezone.utc) - timedelta(seconds=5)).isoformat()
@@ -237,6 +243,8 @@ async def edit_message(
     msg = await db.estate_messages.find_one({"id": message_id}, {"_id": 0})
     if not msg:
         raise HTTPException(status_code=404, detail="Message not found")
+    if msg.get("estate_id"):
+        await _require_estate_chat_access(msg["estate_id"], current_user)
     if msg["sender_id"] != current_user["id"]:
         raise HTTPException(status_code=403, detail="You can only edit your own messages")
     now = datetime.now(timezone.utc).isoformat()
@@ -256,6 +264,8 @@ async def delete_message(
     msg = await db.estate_messages.find_one({"id": message_id}, {"_id": 0})
     if not msg:
         raise HTTPException(status_code=404, detail="Message not found")
+    if msg.get("estate_id"):
+        await _require_estate_chat_access(msg["estate_id"], current_user)
     is_sender = msg["sender_id"] == current_user["id"]
     is_estate_owner = False
     if not is_sender and msg.get("estate_id"):
@@ -286,9 +296,12 @@ async def toggle_reaction(
     msg = await db.estate_messages.find_one({"id": message_id}, {"_id": 0, "id": 1, "channel_id": 1})
     if not msg:
         raise HTTPException(status_code=404, detail="Message not found")
-    channel = await db.estate_channels.find_one({"id": msg["channel_id"]}, {"_id": 0, "id": 1, "members": 1})
+    channel = await db.estate_channels.find_one(
+        {"id": msg["channel_id"]}, {"_id": 0, "id": 1, "members": 1, "estate_id": 1}
+    )
     if not channel or current_user["id"] not in channel.get("members", []):
         raise HTTPException(status_code=403, detail="Not a member of this channel")
+    await _require_estate_chat_access(channel["estate_id"], current_user)
     # Check if already reacted with this emoji
     existing = await db.estate_reactions.find_one(
         {"message_id": message_id, "user_id": current_user["id"], "emoji": data.emoji},
@@ -326,6 +339,7 @@ async def toggle_pin(
     )
     if not channel or current_user["id"] not in channel.get("members", []):
         raise HTTPException(status_code=403, detail="Not a member of this channel")
+    await _require_estate_chat_access(channel["estate_id"], current_user)
     # Any channel member can pin — no estate ownership check needed
     is_pinned = msg.get("pinned", False)
     now = datetime.now(timezone.utc).isoformat()
@@ -348,9 +362,10 @@ async def get_pinned(
     current_user: dict = Depends(get_current_user),
 ):
     """Get all pinned messages in a channel."""
-    channel = await db.estate_channels.find_one({"id": channel_id}, {"_id": 0, "id": 1, "members": 1})
+    channel = await db.estate_channels.find_one({"id": channel_id}, {"_id": 0, "id": 1, "members": 1, "estate_id": 1})
     if not channel or current_user["id"] not in channel.get("members", []):
         raise HTTPException(status_code=403, detail="Not a member of this channel")
+    await _require_estate_chat_access(channel["estate_id"], current_user)
     pinned = (
         await db.estate_messages.find(
             {"channel_id": channel_id, "pinned": True, "deleted_at": {"$exists": False}}, {"_id": 0}

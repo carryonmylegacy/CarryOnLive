@@ -1,6 +1,13 @@
 """Estate Chat — file upload and media serving."""
 
-from ._core import router, ALLOWED_FILE_TYPES, MAX_FILE_SIZE, MAX_VIDEO_SIZE, MAX_BATCH_FILES
+from ._core import (
+    router,
+    _require_estate_chat_access,
+    ALLOWED_FILE_TYPES,
+    MAX_FILE_SIZE,
+    MAX_VIDEO_SIZE,
+    MAX_BATCH_FILES,
+)
 from fastapi import Depends, File, HTTPException, UploadFile
 from utils import get_current_user, send_push_notification
 from config import db
@@ -20,6 +27,7 @@ async def upload_attachment(
         raise HTTPException(status_code=404, detail="Channel not found")
     if current_user["id"] not in channel.get("members", []):
         raise HTTPException(status_code=403, detail="Not a member of this channel")
+    await _require_estate_chat_access(channel.get("estate_id", ""), current_user)
     if file.content_type not in ALLOWED_FILE_TYPES:
         # Also allow by checking the base MIME type (e.g. "audio/mp4" from "audio/mp4;codecs=...")
         base_type = (file.content_type or "").split(";")[0].strip()
@@ -108,6 +116,7 @@ async def upload_multi_attachment(
         raise HTTPException(status_code=404, detail="Channel not found")
     if current_user["id"] not in channel.get("members", []):
         raise HTTPException(status_code=403, detail="Not a member of this channel")
+    await _require_estate_chat_access(channel.get("estate_id", ""), current_user)
     if len(files) > MAX_BATCH_FILES:
         raise HTTPException(status_code=400, detail=f"Maximum {MAX_BATCH_FILES} files at once")
 
@@ -219,20 +228,27 @@ async def serve_chat_file(
     from services.storage import storage
 
     # Search both single 'attachment' and multi 'attachments' array
+    # Exclude soft-deleted messages so a deleted attachment can't be served
+    # (audit 512bd5c F-18-04).
     msg = await db.estate_messages.find_one(
         {
+            "deleted_at": {"$exists": False},
             "$or": [
                 {"attachment.file_id": file_id},
                 {"attachments.file_id": file_id},
-            ]
+            ],
         },
-        {"_id": 0, "id": 1, "channel_id": 1, "attachment": 1, "attachments": 1},
+        {"_id": 0, "id": 1, "channel_id": 1, "estate_id": 1, "attachment": 1, "attachments": 1},
     )
     if not msg:
         raise HTTPException(status_code=404, detail="File not found")
-    channel = await db.estate_channels.find_one({"id": msg["channel_id"]}, {"_id": 0, "id": 1, "members": 1})
+    channel = await db.estate_channels.find_one(
+        {"id": msg["channel_id"]}, {"_id": 0, "id": 1, "members": 1, "estate_id": 1}
+    )
     if not channel or current_user["id"] not in channel.get("members", []):
         raise HTTPException(status_code=403, detail="Access denied")
+    # Enforce the Messages section gate on file serving too (audit 512bd5c F-18-04).
+    await _require_estate_chat_access(channel.get("estate_id") or msg.get("estate_id") or "", current_user)
     # Find the matching attachment
     att = None
     if msg.get("attachment", {}).get("file_id") == file_id:
@@ -289,9 +305,10 @@ async def serve_chat_file(
                 media_type="image/jpeg",
                 headers={
                     "Content-Disposition": f'inline; filename="thumb-{att.get("file_name", "file")}.jpg"',
-                    # Chat file IDs are UUIDs → content is immutable → safe to
-                    # cache for a year. Browser + Cache API hit rates spike.
-                    "Cache-Control": "private, max-age=31536000, immutable",
+                    # Authenticated chat media must NOT be cached by the SW/browser:
+                    # access can be revoked by deletion, section-disable, or
+                    # transition changes (audit 512bd5c F-18-01/F-18-04).
+                    "Cache-Control": "no-store",
                 },
             )
         except Exception:
@@ -304,7 +321,7 @@ async def serve_chat_file(
         media_type=file_type,
         headers={
             "Content-Disposition": f'inline; filename="{att.get("file_name", "file")}"',
-            # Content-addressable UUIDs → safe to cache for a year.
-            "Cache-Control": "private, max-age=31536000, immutable",
+            # Authenticated chat media is never-cache (audit 512bd5c F-18-01/F-18-04).
+            "Cache-Control": "no-store",
         },
     )

@@ -169,7 +169,10 @@ async def get_message_video(video_id: str, current_user: dict = Depends(get_curr
         return Response(
             content=decrypted,
             media_type=video_mime,
-            headers={"Content-Disposition": f'inline; filename="{video_id}.{video_ext}"'},
+            headers={
+                "Content-Disposition": f'inline; filename="{video_id}.{video_ext}"',
+                "Cache-Control": "no-store",
+            },
         )
     except FileNotFoundError:
         pass
@@ -186,7 +189,10 @@ async def get_message_video(video_id: str, current_user: dict = Depends(get_curr
         return Response(
             content=video_bytes,
             media_type=video_mime,
-            headers={"Content-Disposition": f'inline; filename="{video_id}.{video_ext}"'},
+            headers={
+                "Content-Disposition": f'inline; filename="{video_id}.{video_ext}"',
+                "Cache-Control": "no-store",
+            },
         )
     except Exception as e:
         logger.error(f"Video decode error: {e}")
@@ -331,7 +337,10 @@ async def get_message_voice(voice_id: str, current_user: dict = Depends(get_curr
         return Response(
             content=decrypted,
             media_type="audio/webm",
-            headers={"Content-Disposition": f'inline; filename="{voice_id}.webm"'},
+            headers={
+                "Content-Disposition": f'inline; filename="{voice_id}.webm"',
+                "Cache-Control": "no-store",
+            },
         )
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail="Voice recording not found")
@@ -547,6 +556,7 @@ async def get_message_attachment(message_id: str, current_user: dict = Depends(g
     actor = await require_estate_actor(message.get("estate_id"), current_user, allow_staff=True)
     if not can_access_message(message, actor):
         raise HTTPException(status_code=403, detail="Access denied")
+    await require_beneficiary_section_access(actor, "messages")
 
     attachment_url = message.get("attachment_url")
     if not attachment_url:
@@ -565,7 +575,11 @@ async def get_message_attachment(message_id: str, current_user: dict = Depends(g
     return Response(
         content=decrypted,
         media_type=content_type,
-        headers={"Content-Disposition": f'attachment; filename="{file_name}"'},
+        headers={
+            "Content-Disposition": f'attachment; filename="{file_name}"',
+            # Decrypted message attachment must never be cached (audit 512bd5c F-18-01).
+            "Cache-Control": "no-store",
+        },
     )
 
 
@@ -754,6 +768,7 @@ async def download_message(message_id: str, current_user: dict = Depends(get_cur
     estate = actor["estate"]
     if not can_access_message(message, actor):
         raise HTTPException(status_code=403, detail="Access denied")
+    await require_beneficiary_section_access(actor, "messages")
 
     estate_salt = await get_estate_salt(message["estate_id"])
     decrypted = await _decrypt_message(message, estate_salt)
@@ -790,7 +805,11 @@ async def download_message(message_id: str, current_user: dict = Depends(get_cur
     return Response(
         content=pdf_bytes,
         media_type="application/pdf",
-        headers={"Content-Disposition": f'attachment; filename="{safe_title}.pdf"'},
+        headers={
+            "Content-Disposition": f'attachment; filename="{safe_title}.pdf"',
+            # Decrypted milestone content must never be cached (audit 512bd5c F-18-01).
+            "Cache-Control": "no-store",
+        },
     )
 
 

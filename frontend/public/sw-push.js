@@ -15,7 +15,7 @@
 // ── Versioning ──────────────────────────────────────────────────────────────
 // Bump SHELL_VERSION whenever the list of precached shell assets or the
 // caching strategy changes — triggers a cache purge on next SW activation.
-const SHELL_VERSION = 'build-2026-06-05-mq1f1syc';
+const SHELL_VERSION = 'build-2026-06-05-mq1ko7wx';
 const SHELL_CACHE = `carryon-shell-${SHELL_VERSION}`;
 const RUNTIME_CACHE = `carryon-runtime-${SHELL_VERSION}`;
 const API_CACHE = `carryon-api-${SHELL_VERSION}`;
@@ -145,6 +145,26 @@ const API_NEVER_CACHE = [
   '/api/admin/',
 ];
 
+// Sensitive API SUBPATHS that must NEVER be cached even though their parent
+// prefix is cacheable — decrypted documents, message media, and chat files.
+// The Cache API ignores Cache-Control, so the SW itself must refuse to cache
+// (and refuse to image-cache) these. Backend also sends Cache-Control: no-store
+// on the responses (audit 512bd5c F-18-01).
+const API_NEVER_CACHE_PATTERNS = [
+  /^\/api\/documents\/[^/]+\/download/,
+  /^\/api\/documents\/[^/]+\/preview/,
+  /^\/api\/messages\/video\//,
+  /^\/api\/messages\/voice\//,
+  /^\/api\/messages\/[^/]+\/attachment/,
+  /^\/api\/messages\/[^/]+\/download/,
+  /^\/api\/estate-chat\/files\//,
+];
+
+function isNeverCacheApi(url) {
+  if (API_NEVER_CACHE.some((p) => url.pathname.startsWith(p))) return true;
+  return API_NEVER_CACHE_PATTERNS.some((re) => re.test(url.pathname));
+}
+
 // ── Install: precache the shell ─────────────────────────────────────────────
 self.addEventListener('install', (event) => {
   console.log('[SW] Installing', SHELL_VERSION);
@@ -244,7 +264,7 @@ self.addEventListener('activate', (event) => {
 // ── Helpers ─────────────────────────────────────────────────────────────────
 function isCacheableApiRequest(url) {
   if (!url.pathname.startsWith('/api/')) return false;
-  if (API_NEVER_CACHE.some((p) => url.pathname.startsWith(p))) return false;
+  if (isNeverCacheApi(url)) return false;
   return CACHEABLE_API_PREFIXES.some((p) => url.pathname.startsWith(p));
 }
 
@@ -298,8 +318,8 @@ async function cacheFirst(request, cacheName, ignoreSearch = false) {
     // match regardless of signature.
     const cached = await cache.match(request, { ignoreSearch });
     if (cached) return cached;
-    const anyCached = await caches.match(request, { ignoreSearch });
-    if (anyCached) return anyCached;
+    // NOTE: no global caches.match() fallback here — matching across all caches
+    // could surface a different user's cached image/file (audit 512bd5c F-18-05).
     const response = await fetch(request);
     // Cache `ok` responses AND opaque cross-origin responses (S3-presigned
     // image URLs, CDN no-cors fetches). Opaque responses have status=0 and
@@ -397,6 +417,11 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') return;
 
   const url = new URL(request.url);
+  // Sensitive authenticated media (decrypted docs, message video/voice/
+  // attachments, chat files) is NEVER cached by the SW — access can be revoked
+  // by deletion, section-disable, or transition. Let it go straight to network
+  // so the server's auth + Cache-Control: no-store govern it (audit 512bd5c F-18-01).
+  if (url.origin === self.location.origin && isNeverCacheApi(url)) return;
   // Same-origin requests: run the full router below.
   // Cross-origin requests: only intercept IMAGE GETs so S3-presigned
   // profile photos / beneficiary avatars / estate photos are cache-first
@@ -404,7 +429,7 @@ self.addEventListener('fetch', (event) => {
   // (Stripe, Google Fonts, Analytics) still bypasses the SW entirely.
   if (url.origin !== self.location.origin) {
     if (isImageRequest(url, request)) {
-      event.respondWith(cacheFirst(request, IMAGE_CACHE, true));
+      event.respondWith(cacheFirst(request, userImageCacheName(), true));
     }
     return;
   }
@@ -430,7 +455,7 @@ self.addEventListener('fetch', (event) => {
   // 3) Images (PNG/JPG/etc. + chat/share-card image endpoints + avatar
   //    endpoints) → cache-first.
   if (isImageRequest(url, request)) {
-    event.respondWith(cacheFirst(request, IMAGE_CACHE, true));
+    event.respondWith(cacheFirst(request, userImageCacheName(), true));
     return;
   }
 

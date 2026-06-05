@@ -21,6 +21,19 @@ from utils import get_current_user
 router = APIRouter()
 
 
+async def _broadcast_recipient_ids(message: dict) -> set[str] | None:
+    """For a broadcast ('all') message, return the authoritative set of current
+    beneficiary record ids so delivery is only marked complete once every
+    beneficiary has been delivered (audit 512bd5c F-18-07). None for non-broadcast."""
+    if "all" not in (message.get("recipients") or []):
+        return None
+    recs = await db.beneficiaries.find(
+        {"estate_id": message.get("estate_id"), "deleted_at": None},
+        {"_id": 0, "id": 1},
+    ).to_list(500)
+    return {r["id"] for r in recs if r.get("id")}
+
+
 @router.get("/milestones/deliveries")
 async def get_pending_deliveries(
     status: str = Query("pending_review"),
@@ -234,6 +247,7 @@ async def review_delivery(
                 delivered_via="milestone_review",
                 milestone_report_id=delivery["milestone_report_id"],
                 delivered_by=current_user["id"],
+                all_recipient_ids=await _broadcast_recipient_ids(message),
             ),
         )
 
@@ -342,6 +356,7 @@ async def process_scheduled_deliveries(current_user: dict = Depends(get_current_
                 delivered_via="scheduled_milestone",
                 milestone_report_id=delivery["milestone_report_id"],
                 delivered_by=delivery.get("reviewed_by", "system"),
+                all_recipient_ids=await _broadcast_recipient_ids(message),
             ),
         )
 

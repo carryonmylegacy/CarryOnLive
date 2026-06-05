@@ -31,38 +31,55 @@ _SENSITIVE_USER_FIELDS = (
 )
 _SAFE_PROFILE_PROJECTION = {"_id": 0, **{f: 0 for f in _SENSITIVE_USER_FIELDS}}
 
-# Defense-in-depth (audit 18a9d44 F-18-11): rather than relying solely on the
-# denylist above (which a developer must remember to extend for every new
-# sensitive field), also strip any key whose NAME matches a sensitive pattern.
-# This auto-excludes future fields like `*_secret`, `*_token`, `*_hash`, etc.
-# from the profile responses even if nobody updates _SENSITIVE_USER_FIELDS.
-_PROFILE_SENSITIVE_PATTERNS = (
-    "password",
-    "secret",
-    "token",
-    "otp",
-    "_hash",
-    "security_answer",
-    "offline_credential",
-    "private_key",
-    "recovery_code",
-    "backup_code",
+# Explicit ALLOWLIST of user fields safe to return from /auth/profile and the
+# profile-update response (audit 512bd5c F-18-08). Any field not listed here is
+# never returned, so future sensitive columns (ssn, tax_id, risk_score,
+# admin_notes, *_secret, etc.) cannot leak by default. Computed/derived fields
+# (e.g. resolved photo_url, beneficiary fallbacks) are added by the handlers.
+_PROFILE_ALLOWED_FIELDS = frozenset(
+    {
+        "id",
+        "email",
+        "email_verified",
+        "name",
+        "first_name",
+        "middle_name",
+        "last_name",
+        "suffix",
+        "role",
+        "operator_role",
+        "admin_scope",
+        "created_at",
+        "photo_url",
+        "phone",
+        "gender",
+        "date_of_birth",
+        "marital_status",
+        "address_street",
+        "address_line2",
+        "address_city",
+        "address_state",
+        "address_zip",
+        "username",
+        "needs_username_review",
+        "is_beta_tester",
+        "beta_accepted_at",
+        "hide_benefactor_reminder",
+        "otp_enabled",
+        "primary_estate_id",
+        "is_also_benefactor",
+        "is_also_beneficiary",
+        "partner_slug",
+        "partner_company",
+    }
 )
 
 
 def _project_profile(doc: dict | None) -> dict | None:
-    """Return a copy of a user doc with sensitive fields removed — both the
-    explicit denylist AND any key matching a sensitive name pattern."""
+    """Return only allowlisted, non-sensitive profile fields from a user doc."""
     if not doc:
         return doc
-    out = {}
-    for k, v in doc.items():
-        if k == "_id" or k in _SENSITIVE_USER_FIELDS:
-            continue
-        if any(p in k.lower() for p in _PROFILE_SENSITIVE_PATTERNS):
-            continue
-        out[k] = v
-    return out
+    return {k: v for k, v in doc.items() if k in _PROFILE_ALLOWED_FIELDS}
 
 
 @router.get("/auth/me")

@@ -1,6 +1,6 @@
 """Estate Chat — unread badge count and full-text search."""
 
-from ._core import router, _get_user_estate_ids
+from ._core import router, _get_user_estate_ids, _estate_chat_section_enabled
 from fastapi import Depends, Query
 from utils import get_current_user
 from config import db
@@ -10,6 +10,10 @@ from config import db
 async def get_unread_total(current_user: dict = Depends(get_current_user)):
     """Get total unread message count across all estate channels for badge display."""
     estate_ids = await _get_user_estate_ids(current_user["id"])
+    if not estate_ids:
+        return {"total": 0}
+    # Drop estates whose Messages section is disabled (audit 512bd5c F-18-03).
+    estate_ids = [eid for eid in estate_ids if await _estate_chat_section_enabled(eid, current_user)]
     if not estate_ids:
         return {"total": 0}
     channels = await db.estate_channels.find(
@@ -45,6 +49,10 @@ async def search_messages(
 ):
     """Search messages across all user's estate channels by keyword."""
     estate_ids = await _get_user_estate_ids(current_user["id"])
+    if not estate_ids:
+        return []
+    # Drop estates whose Messages section is disabled (audit 512bd5c F-18-03).
+    estate_ids = [eid for eid in estate_ids if await _estate_chat_section_enabled(eid, current_user)]
     if not estate_ids:
         return []
     channels = await db.estate_channels.find(

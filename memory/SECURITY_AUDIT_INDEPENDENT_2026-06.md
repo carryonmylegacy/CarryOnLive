@@ -408,3 +408,22 @@ findings (2×P1, 6×P2, 5×P3) — all addressed:
 **Tests:** `tests/test_audit_live_avb.py` → **42/42 green** (added FFN-most-restrictive, essential-carveout-post-transition, broadcast-delivery, CCP-history-filter). `housekeeping.sh --strict` EXIT 0; route policy 670/670; backend health 200; `node --check sw-push.js` OK.
 **Bottom line:** all 13 `18a9d44` findings resolved on `/app`. Needs GitHub push + redeploy.
 
+
+---
+
+## ROUND-6 — GitHub `512bd5c` audit (Jun 2026) — 9 findings, ALL fixed (surgical, no broad refactor)
+
+| # | Sev | Fix |
+|---|-----|-----|
+| 1 | P1 | SW never-cache: added `API_NEVER_CACHE_PATTERNS` (documents `/download` `/preview`, messages `/video/` `/voice/` `/*/attachment` `/*/download`, `/estate-chat/files/`) checked in fetch router (network-only) BEFORE image/api caching. Backend sends `Cache-Control: no-store` on all decrypted document/message/attachment/voice/video and chat-file responses |
+| 2 | P1/P2 | Messages section gate added to `GET /messages/{id}/attachment` + `/download` (now all media routes gated) |
+| 3 | P2 | Estate Chat `_require_estate_chat_access` applied to read-status, typing (get/post via `_estate_chat_section_enabled`), edit/delete/react/pin/get-pinned, upload/upload-multi, file-serve, delete, batch-delete; cross-estate `unread-total` + `search` filtered through `_estate_chat_section_enabled` |
+| 4 | P2 | `GET /estate-chat/files/{id}` now excludes soft-deleted messages, resolves channel estate_id, calls `_require_estate_chat_access`, returns `Cache-Control: no-store` |
+| 5 | P2 | SW image path uses partitioned `userImageCacheName()`; removed global `caches.match()` cross-cache fallback in `cacheFirst`; never-cache media bypasses SW entirely |
+| 6 | P2 | `audit_repair_queue` indexed (queued_at/reason/action/resource_id); `verify_audit_chain` now returns `repair_queue_backlog` + `prev_hash_index_present` and `ok` is False when backlog>0; admin `audit-chain-status` surfaces both |
+| 7 | P2/P3 | `build_message_delivery_update` no longer marks "all" delivered off one recipient — caller passes authoritative `all_recipient_ids` (current beneficiary set); fail-safe to "partial" without it |
+| 8 | P3 | `/auth/profile` + update response now use explicit `_PROFILE_ALLOWED_FIELDS` allowlist (replaces pattern-strip) |
+| 9 | P3 | Batch channel delete owner/admin branch collects message ids first, deletes reactions, then messages+reads (no orphans) |
+
+**Tests:** `test_audit_live_avb.py` → **43/43 green** (broadcast-requires-all-recipients, audit repair-backlog). `housekeeping.sh --strict` EXIT 0; route policy 670/670; backend 200; `node --check sw-push.js` OK; preview app renders.
+**Bottom line:** all 9 `512bd5c` findings resolved on `/app`. Needs GitHub push + redeploy.

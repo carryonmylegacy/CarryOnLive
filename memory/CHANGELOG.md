@@ -1,6 +1,20 @@
 # CarryOn — Changelog
 
 
+## Jun 6, 2026 — Round-6 audit (GitHub `512bd5c`): 9 findings, ALL fixed (surgical)
+
+- **#1 (P1)** SW never-caches decrypted doc/message/chat-file routes (`API_NEVER_CACHE_PATTERNS`, network-only); backend sends `Cache-Control: no-store` on all such responses.
+- **#2 (P1/P2)** Messages section gate added to `/messages/{id}/attachment` + `/download`.
+- **#3 (P2)** Estate Chat `_require_estate_chat_access` applied to read-status/typing/edit/delete/react/pin/pinned/upload/upload-multi/file/delete/batch-delete; unread-total + search filtered per estate.
+- **#4 (P2)** `/estate-chat/files/{id}` excludes deleted messages, section-gated, `no-store`.
+- **#5 (P2)** SW image cache partitioned per user; removed global cross-cache `caches.match()` fallback.
+- **#6 (P2)** `audit_repair_queue` indexed; `verify_audit_chain` reports `repair_queue_backlog` (ok=False when >0) + `prev_hash_index_present`; admin chain-status surfaces both.
+- **#7 (P2/P3)** Broadcast "all" only marked delivered once all current beneficiaries delivered (caller passes `all_recipient_ids`); fail-safe partial otherwise.
+- **#8 (P3)** `/auth/profile` now explicit allowlist (`_PROFILE_ALLOWED_FIELDS`).
+- **#9 (P3)** Batch channel delete cleans reactions (collect ids first).
+- **Tests:** 43/43 `test_audit_live_avb.py`; `housekeeping.sh --strict` EXIT 0; route 670/670; preview renders.
+
+
 ## Jun 6, 2026 — Round-5 audit (GitHub `18a9d44`): 13 residual findings, ALL fixed (no P0)
 
 Auditor confirmed no P0 and that round-4 landed. Fixed all 13 residuals:

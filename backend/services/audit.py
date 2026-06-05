@@ -201,12 +201,27 @@ async def verify_audit_chain(limit: int = 10000) -> dict:
             expected_prev = entry["integrity_hash"]
         checked += 1
 
+    # SOC2 evidence completeness: a nonzero repair-queue backlog means some
+    # compliance events failed to chain and are awaiting reconciliation, so the
+    # chain is NOT fully authoritative even when every existing link verifies
+    # (audit 512bd5c F-18-06).
+    repair_queue_backlog = await db.audit_repair_queue.count_documents({})
+    # Whether the cross-pod chain guard index is currently active.
+    try:
+        _idx = await db.audit_trail.index_information()
+        prev_hash_index_present = "prev_hash_unique" in _idx
+    except Exception:
+        prev_hash_index_present = False
+
     return {
-        "ok": first_break_at is None,
+        "ok": first_break_at is None and repair_queue_backlog == 0,
+        "chain_links_ok": first_break_at is None,
         "entries_checked": checked,
         "first_break_at": first_break_at,
         "first_break_id": first_break_id,
         "skipped_legacy": skipped_legacy,
+        "repair_queue_backlog": repair_queue_backlog,
+        "prev_hash_index_present": prev_hash_index_present,
     }
 
 

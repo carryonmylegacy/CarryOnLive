@@ -169,6 +169,12 @@ async def ensure_indexes(db, logger):
                 )
         except Exception as _e:
             logger.warning(f"audit_trail index health check failed: {_e}")
+        # audit 512bd5c F-18-06 — index the repair queue so reconciliation /
+        # admin evidence queries are fast and ordered.
+        await db.audit_repair_queue.create_index([("queued_at", 1)])
+        await db.audit_repair_queue.create_index("reason")
+        await db.audit_repair_queue.create_index("action")
+        await db.audit_repair_queue.create_index("resource_id")
         # Performance indexes for frequently-queried collections
         await db.user_subscriptions.create_index("user_id")
         await db.user_subscriptions.create_index("status")

@@ -41,10 +41,14 @@ async def get_audit_chain_status(_admin: dict = Depends(require_admin)):
     return {
         "checked_at": datetime.now(timezone.utc).isoformat(),
         "ok": result["ok"],
+        "chain_links_ok": result.get("chain_links_ok", result["ok"]),
         "entries_checked": result["entries_checked"],
         "skipped_legacy": result["skipped_legacy"],
         "first_break_at": result["first_break_at"],
         "first_break_id": result["first_break_id"],
+        # SOC2 evidence-completeness signals (audit 512bd5c F-18-06).
+        "repair_queue_backlog": result.get("repair_queue_backlog", 0),
+        "prev_hash_index_present": result.get("prev_hash_index_present", False),
         "limit": 10000,
         "genesis_created_now": genesis["created"],
     }

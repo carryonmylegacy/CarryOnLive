@@ -868,6 +868,9 @@ async def download_document(
         headers={
             "Content-Disposition": f'attachment; filename="{doc_name}"',
             "Content-Length": str(len(decrypted_data)),
+            # Decrypted vault document must never be cached by SW/browser — access
+            # can be revoked by deletion/section-disable/transition (audit 512bd5c F-18-01).
+            "Cache-Control": "no-store",
         },
     )
 
@@ -971,7 +974,11 @@ async def preview_document(
     return Response(
         content=decrypted_data,
         media_type=document.get("file_type", "application/octet-stream"),
-        headers={"Content-Disposition": f'inline; filename="{document["name"]}"'},
+        headers={
+            "Content-Disposition": f'inline; filename="{document["name"]}"',
+            # Decrypted preview must never be cached (audit 512bd5c F-18-01).
+            "Cache-Control": "no-store",
+        },
     )
 
 

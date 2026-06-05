@@ -373,15 +373,21 @@ def build_message_delivery_update(
     delivered_via: str,
     delivered_by: str | None,
     milestone_report_id: str | None = None,
+    all_recipient_ids: set[str] | None = None,
 ) -> dict[str, Any]:
     current_delivered = _id_set(message.get("delivered_recipient_ids") or [])
     next_delivered = current_delivered | delivered_ids
     intended = _id_set(message.get("recipients") or [])
-    # A broadcast ("all") can never be a literal subset of resolved beneficiary
-    # ids, so treat any actual delivery as completing the broadcast while still
-    # recording per-recipient detail (audit 18a9d44 F-18-09).
+    # A broadcast ("all") is only fully delivered once EVERY current beneficiary
+    # has been delivered. The caller passes the authoritative set of current
+    # beneficiary ids via all_recipient_ids; without it we fail-safe to "partial"
+    # rather than marking a broadcast delivered off a single recipient
+    # (audit 512bd5c F-18-07, correcting the 18a9d44 over-correction).
     if "all" in intended:
-        all_intended_delivered = bool(next_delivered)
+        if all_recipient_ids:
+            all_intended_delivered = all_recipient_ids.issubset(next_delivered)
+        else:
+            all_intended_delivered = False
     else:
         all_intended_delivered = bool(intended) and intended.issubset(next_delivered)
 
