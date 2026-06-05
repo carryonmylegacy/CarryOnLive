@@ -1,6 +1,23 @@
 # CarryOn — Changelog
 
 
+## Jun 5, 2026 (round 2) — Post-fix audit reconciliation + financial fail-closed + GDPR + deploy hygiene
+
+A 2nd "post-fix" audit PDF reported the round-1 fixes as still missing AND flagged already-fail-closed code as fail-open. Verified line-by-line: that audit ran against a checkout WITHOUT the fixes (GitHub/production — never pushed/redeployed). Current `/app` already has: fail-closed `_designation_matches`/`message_recipient_matches`, `email_verified` gating, CES assignment, 670/670 route policy, minimal download tokens, admin `require_scope`. Proof saved in `memory/SECURITY_AUDIT_INDEPENDENT_2026-06.md`.
+
+Genuine items it caught (now fixed):
+- **Audit-log retention mismatch** — scan advertised "7yr" but `db_indexes.py` had a **1-year** TTL deleting compliance evidence. Fixed → TTL = **7 years** (drop-and-recreate; verified live `stored_at_ttl`=7.0yr); retention check now live-measured.
+- **CFP financial fail-closed (per user decree):** financial items (`bills`/`debts`/`financial_accounts`/`property_assets`) are now shared with beneficiaries ONLY when the benefactor explicitly designates them (specific beneficiaries or explicit `["all"]`), with now/posthumous timing — mirroring documents. Create-model defaults `["all"]`→`[]`; bill-reminder + readiness defaults updated. One-time idempotent migration `cfp_failclosed_designation_v1` reset **418** legacy blanket-`["all"]` items to private. Owner/admin always bypass (verified owner still sees all). Proven over real HTTP: owner=3, benA=2 (assigned+all), benB=1 (all only) visible accounts.
+- **GDPR beneficiary export:** `compliance.export_user_data` now returns `beneficiary_memberships` (the personal data CarryOn holds about the user as a beneficiary in others' estates — no benefactor secrets, batched lookup no N+1). Also stripped `offline_credentials`/salts from the export (least-data).
+
+Deploy hygiene:
+- `memory/test_credentials.md` was **tracked in git** (would push prod creds to GitHub) → untracked (`git rm --cached`, local copy kept) + added to `.gitignore`. **Recommend rotating any creds already in GitHub history.**
+- Deployment-readiness check run: the only "critical" (commit `.env`) is a FALSE POSITIVE for this Render/Vercel model — `.env` correctly stays out of git; secrets live in Render/Vercel env. CORS already includes `app.carryon.us`.
+- Fixed the 3 pre-existing sub-11px iOS font WARNs (bumped to 11px) → `housekeeping.sh --strict` now genuinely EXIT 0. (Note: round-1's "EXIT 0" was a false reading — housekeeping was piped into `tail`, so `$?` captured tail.)
+
+Tests: `test_audit_live_avb.py` now 15 live-HTTP tests (section 403/200, CES A-vs-B, financial fail-closed A-vs-B, no-store invariants, GDPR). 44 audit tests green, route policy 670/670, regression iteration_168 clean (40/40).
+
+
 ## Jun 5, 2026 — Independent SOC2/beneficiary-security audit: ALL confirmed findings fixed + live-proven
 
 Verified every finding in the external beneficiary-security/SOC2 audit against the live codebase, then fixed all 12 confirmed gaps (extreme-caution, no architecture disruption). Two findings were worse than the PDF stated (admin scope was UI-only; SOC2 docs misstated lockout as 5/15-min when reality is 25/5-min).

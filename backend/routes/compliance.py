@@ -38,6 +38,11 @@ async def export_user_data(current_user: dict = Depends(get_current_user)):
             "backup_codes": 0,
             "vault_master_key_hash": 0,
             "security_answers": 0,
+            # Per-device offline-login material (salts/credential ids). Not a
+            # data-subject "personal data" item and pointless to hand back —
+            # excluded to keep the export minimal (least-data principle).
+            "offline_credentials": 0,
+            "offline_credential": 0,
         },
     )
 
