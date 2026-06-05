@@ -9,6 +9,14 @@ User pushed round-2 fixes to GitHub and re-audited commit `8900682` (now live on
 - **Tests:** +4 live A-vs-B tests in `tests/test_audit_live_avb.py` (27/27 green) proving benB cannot see benA's DAV cred or FFN contacts. `housekeeping.sh --strict` → EXIT 0; route policy 670/670.
 - Open (non-security): P2.2 in-memory message download tokens (multi-pod reliability), P2.3 write-time ID estate-validation (defensive).
 
+## Jun 6, 2026 (round 3b) — P2.2 + P2.3 closed (full audit clearance)
+
+Completed the last two audit items so **every** GitHub-`8900682` finding is now resolved:
+- **P2.2** (message download tokens): confirmed already Mongo-backed (`message_download_tokens`, single-use `find_one_and_delete`) with TTL index (`expires_at` expireAfterSeconds=300, db_indexes.py:112-113). Added an inline 5-minute expiry guard on the `video-dl` consume path so a token can't survive past its window between TTL sweeps.
+- **P2.3** (write-time ID estate-validation): `digital_wallet.py` create + update now reject `assigned_beneficiary_id` / `linked_entity_id` that don't belong to the estate (400) instead of silently storing them. The other write paths (documents_designate, entities, entities_share) already validated.
+- **Tests:** +3 P2.3 live tests (`tests/test_audit_live_avb.py`, now **30/30 green**). `housekeeping.sh --strict` → EXIT 0; route policy 670/670.
+
+
 
 ## Jun 5, 2026 (round 2) — Post-fix audit reconciliation + financial fail-closed + GDPR + deploy hygiene
 

@@ -175,15 +175,29 @@ async def create_digital_wallet_entry(data: DigitalWalletCreate, current_user: d
     estate_id = estates[0]["id"]
     estate_salt = await get_estate_salt(estate_id)
 
-    # Get beneficiary name if assigned
+    # Get beneficiary name if assigned. audit P2.3 — the assigned beneficiary
+    # and any linked entity MUST belong to THIS estate; reject foreign/stale ids
+    # rather than silently storing them (downstream release logic trusts them).
     ben_name = None
     if data.assigned_beneficiary_id:
         ben = await db.beneficiaries.find_one(
-            {"id": data.assigned_beneficiary_id},
+            {
+                "estate_id": estate_id,
+                "deleted_at": None,
+                "$or": [{"id": data.assigned_beneficiary_id}, {"user_id": data.assigned_beneficiary_id}],
+            },
             {"_id": 0, "id": 1, "first_name": 1, "last_name": 1},
         )
-        if ben:
-            ben_name = f"{ben.get('first_name', '')} {ben.get('last_name', '')}".strip()
+        if not ben:
+            raise HTTPException(status_code=400, detail="Assigned beneficiary is not part of this estate.")
+        ben_name = f"{ben.get('first_name', '')} {ben.get('last_name', '')}".strip()
+    if data.linked_entity_id:
+        ent = await db.cfp_entities.find_one(
+            {"id": data.linked_entity_id, "estate_id": estate_id, "deleted_at": None},
+            {"_id": 0, "id": 1},
+        )
+        if not ent:
+            raise HTTPException(status_code=400, detail="Linked entity is not part of this estate.")
 
     entry = DigitalWalletEntry(
         estate_id=estate_id,
@@ -250,21 +264,34 @@ async def update_digital_wallet_entry(
     if data.category is not None:
         update["category"] = data.category
     if data.assigned_beneficiary_id is not None:
-        update["assigned_beneficiary_id"] = data.assigned_beneficiary_id
+        update["assigned_beneficiary_id"] = data.assigned_beneficiary_id or None
         if data.assigned_beneficiary_id:
+            # audit P2.3 — the assigned beneficiary must belong to this estate.
             ben = await db.beneficiaries.find_one(
-                {"id": data.assigned_beneficiary_id},
+                {
+                    "estate_id": entry["estate_id"],
+                    "deleted_at": None,
+                    "$or": [{"id": data.assigned_beneficiary_id}, {"user_id": data.assigned_beneficiary_id}],
+                },
                 {"_id": 0, "id": 1, "first_name": 1, "last_name": 1},
             )
-            update["assigned_beneficiary_name"] = (
-                f"{ben.get('first_name', '')} {ben.get('last_name', '')}".strip() if ben else None
-            )
+            if not ben:
+                raise HTTPException(status_code=400, detail="Assigned beneficiary is not part of this estate.")
+            update["assigned_beneficiary_name"] = f"{ben.get('first_name', '')} {ben.get('last_name', '')}".strip()
         else:
             update["assigned_beneficiary_name"] = None
     if data.linked_entity_id is not None:
         # Allow attaching this DAV credential to a CFP entity (LLC,
         # trust, etc.) — surfaced when the entity wizard's
-        # duplicate-login hint is accepted.
+        # duplicate-login hint is accepted. audit P2.3 — the entity must
+        # belong to this estate; reject foreign/stale ids.
+        if data.linked_entity_id:
+            ent = await db.cfp_entities.find_one(
+                {"id": data.linked_entity_id, "estate_id": entry["estate_id"], "deleted_at": None},
+                {"_id": 0, "id": 1},
+            )
+            if not ent:
+                raise HTTPException(status_code=400, detail="Linked entity is not part of this estate.")
         update["linked_entity_id"] = data.linked_entity_id or None
     if data.beneficiary_visibility is not None:
         # 'private' (default), 'posthumous_only', or 'show_now'. Drives

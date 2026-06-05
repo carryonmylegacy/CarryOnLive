@@ -199,6 +199,15 @@ async def download_video_direct(video_id: str, dt: str = QueryParam(...)):
     token_data = await db.message_download_tokens.find_one_and_delete({"token": dt})
     if not token_data:
         raise HTTPException(status_code=401, detail="Invalid or expired download token")
+    # Defense-in-depth: enforce the 5-minute lifetime inline. The Mongo TTL index
+    # only sweeps periodically, so a token could otherwise survive slightly past
+    # its window (audit P2.2 — token store is Mongo-backed + single-use + TTL).
+    try:
+        _created = datetime.fromisoformat(str(token_data.get("created_at")).replace("Z", "+00:00"))
+        if (datetime.now(timezone.utc) - _created).total_seconds() > 300:
+            raise HTTPException(status_code=401, detail="Download token expired")
+    except (ValueError, TypeError):
+        pass
     if token_data.get("video_url") != video_id:
         raise HTTPException(status_code=403, detail="Token does not match video")
 

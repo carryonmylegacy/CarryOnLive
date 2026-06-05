@@ -325,8 +325,8 @@ finding line-by-line against the current `/app` tree:
 | P2.1 | Offline pin global per-document | **ALREADY FIXED** — per-user `document_pins` collection |
 | P2.4 | GDPR `relationship` vs `relation` | **ALREADY FIXED** — projects both |
 | P2.6 | Admin scope partially deployed | **ALREADY FIXED** — every admin router family wrapped in `require_scope` (admin/__init__.py) |
-| P2.2 | Message download tokens in-memory | OPEN (reliability, not security) — multi-pod token miss risk |
-| P2.3 | Some write paths don't estate-validate IDs | OPEN (defensive) — cross-estate already blocked by estate filters |
+| P2.2 | Message download tokens in-memory | **FIXED** — Mongo-backed `message_download_tokens` (single-use `find_one_and_delete`) + TTL index `expires_at` expireAfterSeconds=300 (db_indexes.py:112-113) + inline 5-min expiry guard on consume |
+| P2.3 | Some write paths don't estate-validate IDs | **FIXED** — `digital_wallet.py` create+update now reject `assigned_beneficiary_id`/`linked_entity_id` not in the estate (400). documents_designate/entities/entities_share already validated |
 | P2.5 | Route-policy ≠ handler enforcement | Mitigated — semantic A-vs-B tests now cover the high-risk routes |
 
 ### P1.1 — THE ONE GENUINE GAP — FIXED
