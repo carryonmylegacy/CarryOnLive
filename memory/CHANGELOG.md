@@ -1,6 +1,26 @@
 # CarryOn — Changelog
 
 
+## Jun 5, 2026 — Independent SOC2/beneficiary-security audit: ALL confirmed findings fixed + live-proven
+
+Verified every finding in the external beneficiary-security/SOC2 audit against the live codebase, then fixed all 12 confirmed gaps (extreme-caution, no architecture disruption). Two findings were worse than the PDF stated (admin scope was UI-only; SOC2 docs misstated lockout as 5/15-min when reality is 25/5-min).
+
+- **P1-1 Section enforcement (server-side):** new `require_beneficiary_section_access()` + `beneficiary_section_enabled()` + `SECTION_KEYS` in `services/access_control.py`. Applied to `checklist.py`, `documents.py` (vault), `messages.py`, `digital_wallet.py`, `timeline.py`, and `financial_portal/_core.py` (financial_portal). Owner/admin/operator bypass; default-enabled when no override row; most-restrictive-wins. A disabled section now returns 403 at the API, not just hidden in the UI.
+- **P1-2 CES credential leak (top data-safety fix):** `entities_share.py` now requires `_entry_assigned_to_actor` AND visibility before returning a linked credential; secrets decrypted only after authorization. Previously any beneficiary who could see the entities chart received every linked credential.
+- **P1-3 Pentest suite:** `tests/test_audit_fixes_jun2026.py` (pure-fn locks), `tests/test_audit_live_avb.py` (seeds a real 2-beneficiary estate, mints dev tokens, drives live HTTP — proves benB cannot see benA's credential + section 403/200 matrix + no-store invariants), `tests/test_audit_jun2026_e2e.py` (preview e2e). 36+ tests green.
+- **P2-4 Download token minimization:** `download_tokens.create_token` stores `_minimal_user_snapshot` (no password hash/OTP/offline-cred) + real `expires_at` BSON datetime with a Mongo TTL index (300s) added in `db_indexes.py`.
+- **P2-5 Route policies:** registered the 22 unregistered routes (trustee grant/claim flow, `PUT /auth/email`, beneficiary flags, admin audit-chain/secrets, financial entities PDF, verify/our-promise/onboarding). Now **670/670 (100%)**; baseline bumped; strict gate passes.
+- **P2-6 section_permissions verified-email:** `get_my_section_permissions` now resolves via `resolve_estate_actor` (only trusts verified email) — closes the impersonation inconsistency.
+- **P2-7 Admin scope enforcement:** new `require_scope()` dependency factory in `guards.py`, wired at the admin router-include level (`routes/admin/__init__.py`) per family (finance/compliance/marketing/platform_health/founder). Founder bypass + operator pass-through → zero regression for existing admin/ops accounts; scoped admins now restricted server-side.
+- **P2-8 Emergency CCP scope:** documented design decision — CCP is membership-based preparedness open to all estate members; the `connected_protocol` emergency scope is reserved (not used to restrict). No code change (broadening/restricting judged riskier).
+- **P2-9 SOC2 docs accuracy:** `SECURITY_POSTURE.md` route count → 670; `data-handling.md` lockout copy → "25 failed attempts within a rolling 5-minute window"; "SOC2-ready / all five criteria" softened to "controls implemented, evidence in progress".
+- **P3-10 SW cache safety:** invariant tests assert sensitive API GETs stay `no-store` (the only thing keeping `CACHEABLE_API_PREFIXES` safe).
+- **P3-11 Pinned-doc encryption-at-rest:** new `sealBlob`/`unsealBlob` (AES-GCM) in `offline/crypto.js`; `pinnedDocsRepo.js` encrypts pinned blobs at rest, with back-compat read for legacy plaintext rows.
+- **P3-12 Security scan honesty:** `security_scan.py` add_check now stamps per-check `type` (live/config/manual) + top-level `evidence_note`; corrected the false lockout string. 13 live-measured vs 28 config-asserted.
+
+CI: `housekeeping.sh --strict` → EXIT 0 (Zero-WARN held). Lint clean. Owner/admin/benefactor flows verified non-regressed (curl + testing-agent iteration_167). Full analysis in `memory/SECURITY_AUDIT_INDEPENDENT_2026-06.md`; re-derived product model in `memory/CODEBASE_CONCEPTUAL_MODEL.md`.
+
+
 ## Jun 4, 2026 — Trustee "invite unavailable": root cause = Render backend cold start (infra), + claim-page resilience
 
 - **Root cause (diagnosed via live production probe):** The trustee claim failures on `app.carryon.us` are NOT a code/trustee bug. The production backend (`carryon-api-kacr.onrender.com`) is on a Render free/idle-spin-down instance; cold starts make the CORS preflight fail through Cloudflare ("preflight does not have HTTP ok status" / `net::ERR_FAILED`), which fails ALL API calls (observed `/api/public/site-content` failing too), so the claim page shows its generic fallback. Confirmed backend CORS is correct when warm: direct `GET` → 200 with `access-control-allow-origin: https://app.carryon.us`; `OPTIONS` preflight → 200 with full CORS headers.

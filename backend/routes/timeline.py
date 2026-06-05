@@ -5,7 +5,12 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends
 
 from config import db
-from services.access_control import can_access_document, can_access_message, require_beneficiary_section_access, require_estate_actor
+from services.access_control import (
+    can_access_document,
+    can_access_message,
+    require_beneficiary_section_access,
+    require_estate_actor,
+)
 from utils import get_current_user
 
 router = APIRouter()

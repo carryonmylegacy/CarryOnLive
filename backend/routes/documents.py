@@ -17,7 +17,12 @@ from config import db, logger
 from guards import require_benefactor_role
 from models import Document, DocumentUnlockRequest
 from services.audit import audit_log
-from services.access_control import can_access_document, filter_accessible_documents, require_beneficiary_section_access, require_estate_actor
+from services.access_control import (
+    can_access_document,
+    filter_accessible_documents,
+    require_beneficiary_section_access,
+    require_estate_actor,
+)
 from services.encryption import (
     decrypt_aes256,
     encrypt_aes256,

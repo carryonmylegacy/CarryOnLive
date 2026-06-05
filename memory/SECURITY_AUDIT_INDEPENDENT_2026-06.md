@@ -247,3 +247,25 @@ against the current codebase, and two (admin scope, SOC2 doc accuracy) are
 paywall, white-label, offline, admin, or AI architecture. The single most
 important data-safety fix is **P1-2 (CES credential assignment)**; the single
 most important credibility fix is **P2-9 (lockout copy + SOC2 claim wording)**.
+
+---
+
+## RESOLUTION STATUS — Jun 5, 2026 (all confirmed findings fixed)
+
+| # | Finding | Status | Proof |
+|---|---------|--------|-------|
+| P1-1 | Section enforcement server-side | ✅ FIXED | `require_beneficiary_section_access` applied to checklist/vault/messages/digital_wallet/timeline/financial. Live test: benA checklist→403, vault→200, benB→200, owner→200 |
+| P1-2 | CES credential assignment | ✅ FIXED | assignment-then-visibility gate in `entities_share.py`. Live A-vs-B: benA sees cred, benB does NOT, owner sees all |
+| P1-3 | Beneficiary pentest suite | ✅ FIXED | `test_audit_fixes_jun2026.py` (8) + `test_audit_live_avb.py` (14 incl. seeded A-vs-B) + `test_audit_jun2026_e2e.py` |
+| P2-4 | Download token minimization | ✅ FIXED | `_minimal_user_snapshot` + `expires_at` TTL index (verified in Mongo: `expires_at_1` ttl=300) |
+| P2-5 | Route policy coverage | ✅ FIXED | 670/670 (100%), strict gate passes, baseline updated to 670 |
+| P2-6 | section_permissions verified email | ✅ FIXED | now via `resolve_estate_actor`. Live: non-beneficiary→404, beneficiary reflects disabled checklist |
+| P2-7 | Admin scope enforcement | ✅ FIXED | `require_scope()` factory wired at admin router-include level; founder bypass + operator pass-through. Founder still 200 on all admin endpoints |
+| P2-8 | Emergency CCP scope coverage | ✅ ADDRESSED (design decision) | CCP/connected_protocol is membership-based **preparedness** open to all estate members BY DESIGN — restricting it would block legitimate emergency access. The `connected_protocol` emergency scope is reserved (not used to *restrict*). Document/message/DAV/financial scopes ARE consumed correctly (verified). No code change — broadening or restricting CCP access was judged riskier than the documented status quo. |
+| P2-9 | SOC2 docs accuracy | ✅ FIXED | route count 670, lockout copy corrected to 25/5-min, "SOC2-ready/all five criteria" softened to "controls implemented, evidence in progress" |
+| P3-10 | SW sensitive-API cache | ✅ FIXED | invariant test asserts documents/messages/digital_wallet/financial GETs are `no-store` (5 tests) |
+| P3-11 | Pinned-doc data-at-rest | ✅ FIXED | `sealBlob`/`unsealBlob` AES-GCM; pinned blobs encrypted at rest, back-compat read for legacy plaintext rows |
+| P3-12 | Security scan honesty | ✅ FIXED | per-check `type` (live/config/manual), top-level `evidence_note`, lockout detail corrected. Live: 13 live-measured vs 28 config-asserted |
+
+**CI:** `housekeeping.sh --strict` → EXIT 0 (Zero-WARN held). All audit tests green (36+ passing). No regressions to owner/admin/benefactor flows (verified live + via testing agent iteration_167).
+

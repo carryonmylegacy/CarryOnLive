@@ -329,7 +329,10 @@ ROUTE_POLICIES: dict = {
     "PATCH /api/trustee/grants/{grant_id}": {"auth": "required", "roles": ["benefactor", "admin"]},
     "POST /api/trustee/grants/{grant_id}/resend": {"auth": "required", "roles": ["benefactor", "admin"]},
     "DELETE /api/trustee/grants/{grant_id}": {"auth": "required", "roles": ["benefactor", "admin"]},
-    "POST /api/trustee/audit/{event_id}/undo": {"auth": "required", "notes": "Trustee mutation undo — handler verifies grant ownership"},
+    "POST /api/trustee/audit/{event_id}/undo": {
+        "auth": "required",
+        "notes": "Trustee mutation undo — handler verifies grant ownership",
+    },
     # Beneficiary flags (benefactor-owned) ────────────────────────────────────
     "PUT /api/beneficiaries/{beneficiary_id}/flags": {
         "auth": "required",
@@ -350,8 +353,16 @@ ROUTE_POLICIES: dict = {
     },
     # Admin compliance / platform-health evidence routes ──────────────────────
     "GET /api/admin/audit-chain-status": {"auth": "required", "roles": ["admin"], "notes": "Compliance scope"},
-    "GET /api/admin/secrets-inventory": {"auth": "required", "roles": ["admin"], "notes": "Platform-health scope; redacted (name+presence only)"},
-    "POST /api/admin/secrets-self-test/{service_id}": {"auth": "required", "roles": ["admin"], "notes": "Platform-health scope; read-only provider self-test"},
+    "GET /api/admin/secrets-inventory": {
+        "auth": "required",
+        "roles": ["admin"],
+        "notes": "Platform-health scope; redacted (name+presence only)",
+    },
+    "POST /api/admin/secrets-self-test/{service_id}": {
+        "auth": "required",
+        "roles": ["admin"],
+        "notes": "Platform-health scope; read-only provider self-test",
+    },
 }
 
 
