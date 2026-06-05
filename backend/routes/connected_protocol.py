@@ -22,8 +22,52 @@ from config import db, xai_client, XAI_MODEL, XAI_MODEL_LIGHT, logger
 from services.ai_burn_guard import require_ai_burn_budget
 from services.ai_safety import hardened_system_prompt
 from services.estate_auth import is_estate_member as _is_estate_member, is_estate_owner as _is_estate_owner
+from services.access_control import can_access_document, resolve_estate_actor
 from utils import get_current_user
 from services.photo_urls import resolve_photo_url
+
+
+async def _redact_plan_links_for_actor(plans: list, actor: dict) -> list:
+    """For a non-owner beneficiary, strip linked SDV documents / DAV credentials
+    from CCP plans down to only the ones that beneficiary can actually access
+    (can_access_document + DAV assignment/visibility). Plans themselves are
+    already assignment-filtered; this prevents the plan from leaking references
+    to documents/credentials the beneficiary isn't entitled to (audit P1.1)."""
+    if not plans:
+        return plans
+    doc_ids: set[str] = set()
+    dav_ids: set[str] = set()
+    for p in plans:
+        doc_ids.update(p.get("linked_document_ids") or [])
+        dav_ids.update(p.get("linked_dav_entry_ids") or [])
+
+    accessible_docs: set[str] = set()
+    if doc_ids:
+        docs = await db.documents.find({"id": {"$in": list(doc_ids)}, "deleted_at": None}, {"_id": 0}).to_list(2000)
+        accessible_docs = {d["id"] for d in docs if can_access_document(d, actor)}
+
+    accessible_dav: set[str] = set()
+    if dav_ids:
+        is_transitioned = bool(actor.get("is_transitioned"))
+        release_ids = actor.get("release_ids") or set()
+        entries = await db.digital_wallet.find({"id": {"$in": list(dav_ids)}, "deleted_at": None}, {"_id": 0}).to_list(
+            2000
+        )
+        for e in entries:
+            assigned = e.get("assigned_beneficiary_id")
+            if not (assigned and assigned in release_ids):
+                continue
+            vis = e.get("beneficiary_visibility") or "private"
+            if vis == "show_now" or (vis == "posthumous_only" and is_transitioned):
+                accessible_dav.add(e["id"])
+
+    for p in plans:
+        if p.get("linked_document_ids"):
+            p["linked_document_ids"] = [i for i in p["linked_document_ids"] if i in accessible_docs]
+        if p.get("linked_dav_entry_ids"):
+            p["linked_dav_entry_ids"] = [i for i in p["linked_dav_entry_ids"] if i in accessible_dav]
+    return plans
+
 
 router = APIRouter()
 
@@ -630,6 +674,14 @@ async def get_my_plans(current_user: dict = Depends(get_current_user)):
             p["estate_name"] = estate.get("name", "Unknown Estate")
             p["benefactor_name"] = owner["name"] if owner else "Unknown"
             result.append(p)
+    # Redact linked docs/credentials per estate (this user is a beneficiary in
+    # every one of these estates, never the owner).
+    by_estate: dict[str, list] = {}
+    for p in result:
+        by_estate.setdefault(p["estate_id"], []).append(p)
+    for eid, eplans in by_estate.items():
+        actor = await resolve_estate_actor(eid, current_user)
+        await _redact_plan_links_for_actor(eplans, actor)
     return result
 
 
@@ -657,6 +709,9 @@ async def get_plans(estate_id: str, current_user: dict = Depends(get_current_use
             for p in plans
             if p.get("assigned_beneficiary_ids") is None or current_user["id"] in p["assigned_beneficiary_ids"]
         ]
+        # Redact linked docs/credentials down to what this beneficiary can access.
+        actor = await resolve_estate_actor(estate_id, current_user)
+        plans = await _redact_plan_links_for_actor(plans, actor)
     # Attach drill_count via a single aggregation rather than N round-trips.
     if plans:
         plan_ids = [p["id"] for p in plans if p.get("id")]

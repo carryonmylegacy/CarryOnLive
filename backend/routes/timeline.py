@@ -60,24 +60,27 @@ async def get_legacy_timeline(estate_id: str, current_user: dict = Depends(get_c
             }
         )
 
-    # 3. Beneficiaries added
-    bens = await db.beneficiaries.find({"estate_id": estate_id}, {"_id": 0}).to_list(100)
-    for ben in bens:
-        ben_user = await db.users.find_one({"id": ben.get("user_id")}, {"_id": 0, "id": 1, "name": 1})
-        name = ben_user.get("name", ben.get("email", "Someone")) if ben_user else ben.get("email", "Someone")
-        status = ben.get("status", "invited")
-        events.append(
-            {
-                "type": "beneficiary_added",
-                "category": "family",
-                "title": "Beneficiary Invited" if status == "invited" else "Beneficiary Joined",
-                "description": name,
-                "date": ben.get("created_at", ben.get("invited_at", "")),
-                "icon": "users",
-                "link": "/beneficiaries",
-                "metadata": {"status": status},
-            }
-        )
+    # 3. Beneficiaries added — roster events are owner/admin only (a beneficiary
+    # must not learn the full co-beneficiary roster via the timeline).
+    bens = []
+    if can_view_all:
+        bens = await db.beneficiaries.find({"estate_id": estate_id}, {"_id": 0}).to_list(100)
+        for ben in bens:
+            ben_user = await db.users.find_one({"id": ben.get("user_id")}, {"_id": 0, "id": 1, "name": 1})
+            name = ben_user.get("name", ben.get("email", "Someone")) if ben_user else ben.get("email", "Someone")
+            status = ben.get("status", "invited")
+            events.append(
+                {
+                    "type": "beneficiary_added",
+                    "category": "family",
+                    "title": "Beneficiary Invited" if status == "invited" else "Beneficiary Joined",
+                    "description": name,
+                    "date": ben.get("created_at", ben.get("invited_at", "")),
+                    "icon": "users",
+                    "link": "/beneficiaries",
+                    "metadata": {"status": status},
+                }
+            )
 
     # 4. Messages created
     msgs = await db.messages.find({"estate_id": estate_id, "deleted_at": None}, {"_id": 0}).to_list(500)
@@ -120,8 +123,12 @@ async def get_legacy_timeline(estate_id: str, current_user: dict = Depends(get_c
                 }
             )
 
-    # 6. Edit history (message edits, document edits, etc.)
-    edits = await db.edit_history.find({"estate_id": estate_id}, {"_id": 0}).sort("created_at", -1).to_list(500)
+    # 6. Edit history — owner/admin only. Edit metadata (editor names, wallet /
+    # beneficiary / document change details) must never be exposed to a
+    # beneficiary through the timeline.
+    edits = []
+    if can_view_all:
+        edits = await db.edit_history.find({"estate_id": estate_id}, {"_id": 0}).sort("created_at", -1).to_list(500)
     for edit in edits:
         item_type = edit.get("item_type", "item")
         changed = edit.get("changed_fields", [])
@@ -199,8 +206,12 @@ async def get_legacy_timeline(estate_id: str, current_user: dict = Depends(get_c
                 }
             )
 
-    # 7. Activity log entries (catch-all)
-    activities = await db.activity_log.find({"estate_id": estate_id}, {"_id": 0}).sort("created_at", -1).to_list(200)
+    # 7. Activity log entries (catch-all) — owner/admin only.
+    activities = []
+    if can_view_all:
+        activities = (
+            await db.activity_log.find({"estate_id": estate_id}, {"_id": 0}).sort("created_at", -1).to_list(200)
+        )
     seen_actions = set()
     for act in activities:
         key = f"{act.get('action')}_{act.get('description', '')}"

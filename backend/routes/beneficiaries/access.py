@@ -4,7 +4,8 @@ from ._core import router
 from fastapi import Depends, HTTPException
 from pydantic import BaseModel
 from config import db
-from guards import require_benefactor_role
+from guards import require_benefactor_role, require_estate_owner
+from services.access_control import require_estate_actor
 from utils import get_current_user, send_push_notification
 from datetime import datetime, timezone
 import uuid
@@ -22,6 +23,8 @@ async def set_primary_beneficiary(beneficiary_id: str, current_user: dict = Depe
         raise HTTPException(status_code=404, detail="Beneficiary not found")
 
     estate_id = ben["estate_id"]
+    # IDOR guard — only the estate owner (or admin) can set the primary.
+    await require_estate_owner(estate_id, current_user)
 
     # Clear any existing primary designation for this estate
     await db.beneficiaries.update_many(
@@ -49,8 +52,13 @@ async def set_primary_beneficiary(beneficiary_id: str, current_user: dict = Depe
 
 @router.get("/beneficiaries/{estate_id}/primary")
 async def get_primary_beneficiary(estate_id: str, current_user: dict = Depends(get_current_user)):
-    """Get the primary beneficiary for an estate."""
+    """Get the primary beneficiary for an estate (estate members only).
+    Owner/admin get the full record; beneficiaries get a sanitized view."""
+    actor = await require_estate_actor(estate_id, current_user, allow_staff=True)
     primary = await db.beneficiaries.find_one({"estate_id": estate_id, "is_primary": True}, {"_id": 0})
+    if primary and not (actor.get("is_owner") or actor.get("is_admin") or actor.get("is_operator")):
+        safe = {"id", "name", "first_name", "last_name", "relation", "is_primary", "photo_url"}
+        primary = {k: v for k, v in primary.items() if k in safe}
     return {"primary": primary}
 
 

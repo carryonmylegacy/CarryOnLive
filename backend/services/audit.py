@@ -21,12 +21,20 @@ Logs are:
 
 import hashlib
 import json
+import asyncio
 from datetime import datetime, timezone
 
 from config import db, logger
 
 # Sentinel for the first entry in the chain.
 _GENESIS_HASH = "0" * 64
+
+# Single-writer lock for chain appends. The read-prev-hash → compute → insert
+# sequence is NOT atomic; without serialization two concurrent appends can read
+# the same prev_hash and FORK the chain (audit P1.6). This lock serializes
+# appends within the process (the dominant concurrency source for a single
+# backend instance).
+_chain_lock = asyncio.Lock()
 
 
 async def _latest_chain_hash() -> str:
@@ -78,15 +86,16 @@ async def log_audit_event(
         "session_id": session_id,
     }
 
-    # Bind this entry to the prior entry's hash. Tampering with any earlier
-    # entry invalidates every hash from that point forward.
-    entry["prev_hash"] = await _latest_chain_hash()
+    # Bind this entry to the prior entry's hash under the single-writer lock so
+    # concurrent appends cannot read the same prev_hash and fork the chain.
+    async with _chain_lock:
+        entry["prev_hash"] = await _latest_chain_hash()
 
-    canonical = json.dumps(entry, sort_keys=True)
-    entry["integrity_hash"] = hashlib.sha256(canonical.encode()).hexdigest()
-    entry["stored_at"] = now  # datetime for MongoDB TTL index (added after hash)
+        canonical = json.dumps(entry, sort_keys=True)
+        entry["integrity_hash"] = hashlib.sha256(canonical.encode()).hexdigest()
+        entry["stored_at"] = now  # datetime for MongoDB TTL index (added after hash)
 
-    await db.audit_trail.insert_one(entry)
+        await db.audit_trail.insert_one(entry)
 
     if severity == "critical":
         logger.warning(f"AUDIT[{severity}] {actor_email} {action} {resource_type}:{resource_id}")

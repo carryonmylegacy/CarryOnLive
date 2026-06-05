@@ -47,13 +47,15 @@ async def get_estates(current_user: dict = Depends(get_current_user)):
     ben_estate_ids = {be["id"] for be in ben_estates}
 
     # Fallback: also check beneficiary records that link to this user
-    # (handles cases where the estate array wasn't updated)
+    # (handles cases where the estate array wasn't updated). Email is only
+    # trusted when VERIFIED — otherwise an attacker could point an unverified
+    # email at a victim's beneficiary record to inherit their estate access.
     beneficiary_link_or = [{"user_id": current_user["id"]}]
-    if current_user.get("email"):
+    if current_user.get("email_verified") and current_user.get("email"):
         beneficiary_link_or.append({"email": current_user["email"].lower().strip()})
     linked_records = await db.beneficiaries.find(
         {"$or": beneficiary_link_or},
-        {"_id": 0, "id": 1, "estate_id": 1},
+        {"_id": 0, "id": 1, "estate_id": 1, "user_id": 1},
     ).to_list(200)
     missing_ids = [
         r["estate_id"]
@@ -63,9 +65,14 @@ async def get_estates(current_user: dict = Depends(get_current_user)):
     if missing_ids:
         extra = await db.estates.find({"id": {"$in": missing_ids}}, {"_id": 0}).to_list(100)
         ben_estates.extend(extra)
-        # Repair: add user_id to the estate's beneficiaries array for future queries.
-        # Best-effort — failure here must NOT block the estates response.
+        # Repair the estate.beneficiaries array ONLY for records already linked to
+        # this user by user_id (an explicit, durable identity link). Never mutate
+        # estate membership off an email match (even a verified one) here — that
+        # is done at invitation-accept time, not on a read.
+        repair_ids = {r["estate_id"] for r in linked_records if r.get("user_id") == current_user["id"]}
         for eid in missing_ids:
+            if eid not in repair_ids:
+                continue
             try:
                 await db.estates.update_one({"id": eid}, {"$addToSet": {"beneficiaries": current_user["id"]}})
             except Exception as _e:
@@ -143,9 +150,10 @@ async def get_estates(current_user: dict = Depends(get_current_user)):
 @router.get("/beneficiary/family-connections")
 async def get_family_connections(current_user: dict = Depends(get_current_user)):
     """Get all family connections for a beneficiary with relationship data for orbit visualization"""
-    # Allow both beneficiaries and benefactors who are also beneficiaries
+    # Allow both beneficiaries and benefactors who are also beneficiaries.
+    # Email is only trusted when verified (anti-impersonation).
     beneficiary_link_or = [{"user_id": current_user["id"]}]
-    if current_user.get("email"):
+    if current_user.get("email_verified") and current_user.get("email"):
         beneficiary_link_or.append({"email": current_user["email"].lower().strip()})
     ben_records = await db.beneficiaries.find({"$or": beneficiary_link_or}, {"_id": 0}).to_list(100)
     if not ben_records:

@@ -108,6 +108,12 @@ async def ensure_indexes(db, logger):
         # `expires_at` is a real BSON datetime; TTL_SECONDS lives in the service.
         await db.download_tokens.create_index("token", unique=True)
         await db.download_tokens.create_index("expires_at", expireAfterSeconds=300)
+        # Message direct-download tokens (iOS Safari) — Mongo-backed, TTL 5 min.
+        await db.message_download_tokens.create_index("token", unique=True)
+        await db.message_download_tokens.create_index("expires_at", expireAfterSeconds=300)
+        # Per-user offline document pins (audit P2.1) — one pin row per user+doc.
+        await db.document_pins.create_index([("user_id", 1), ("document_id", 1)], unique=True)
+        await db.document_pins.create_index("estate_id")
         await db.otps.create_index("user_id")
         await db.failed_logins.create_index("email")
         # Drop conflicting old indexes if they exist, then recreate with unique=True

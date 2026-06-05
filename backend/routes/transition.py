@@ -29,7 +29,29 @@ async def upload_death_certificate(
     actor = await require_estate_actor(estate_id, current_user, allow_staff=True)
     estate = actor["estate"]
 
+    # File-type + size guard (audit P1.7). Death certs are scans/PDFs only.
+    _ALLOWED_CERT_TYPES = {
+        "application/pdf",
+        "image/jpeg",
+        "image/jpg",
+        "image/png",
+        "image/webp",
+        "image/heic",
+        "image/heif",
+        "image/tiff",
+    }
+    _MAX_CERT_BYTES = 25 * 1024 * 1024  # 25 MB
+    if file.content_type and file.content_type.lower() not in _ALLOWED_CERT_TYPES:
+        raise HTTPException(
+            status_code=400,
+            detail="Death certificate must be a PDF or image (PDF/JPEG/PNG/WEBP/HEIC/TIFF).",
+        )
+
     content = await file.read()
+    if len(content) == 0:
+        raise HTTPException(status_code=400, detail="Uploaded file is empty.")
+    if len(content) > _MAX_CERT_BYTES:
+        raise HTTPException(status_code=413, detail="Death certificate exceeds the 25 MB limit.")
 
     # Encrypt the death certificate with the estate's encryption key
     estate_salt = await get_estate_salt(estate_id)

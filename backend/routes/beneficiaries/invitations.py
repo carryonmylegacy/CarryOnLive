@@ -4,7 +4,7 @@ from ._core import router, _grant_fc_free_access_if_applicable
 from fastapi import Depends, HTTPException
 from pydantic import BaseModel
 from config import RESEND_API_KEY, SENDER_EMAIL, db, logger
-from guards import require_benefactor_role
+from guards import require_benefactor_role, require_estate_owner
 from routes.auth import generate_unique_username, validate_username
 from utils import (
     create_token,
@@ -30,6 +30,9 @@ async def send_beneficiary_invitation(beneficiary_id: str, current_user: dict = 
     beneficiary = await db.beneficiaries.find_one({"id": beneficiary_id}, {"_id": 0})
     if not beneficiary:
         raise HTTPException(status_code=404, detail="Beneficiary not found")
+
+    # IDOR guard — only the estate owner (or admin) can send invitations.
+    await require_estate_owner(beneficiary.get("estate_id"), current_user)
 
     if beneficiary.get("invitation_status") == "accepted":
         raise HTTPException(status_code=400, detail="Beneficiary has already accepted the invitation")

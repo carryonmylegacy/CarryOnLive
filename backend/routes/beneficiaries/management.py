@@ -3,8 +3,9 @@
 from ._core import router
 from fastapi import Depends, File, HTTPException, Request, UploadFile
 from config import db, logger
-from guards import is_benefactor_or_admin, require_benefactor_role, require_estate_member, require_estate_owner
+from guards import is_benefactor_or_admin, require_benefactor_role, require_estate_owner
 from models import Beneficiary, BeneficiaryCreate
+from services.access_control import require_estate_actor
 from utils import (
     get_current_user,
     log_activity,
@@ -17,11 +18,38 @@ import uuid
 from datetime import datetime, timezone
 
 
+# Fields a fellow BENEFICIARY may see about co-beneficiaries (family-connection
+# display only). Everything else — email, phone, DOB, address, SSN, notes,
+# medical/emergency data, classification + notification flags — is owner/admin
+# only. (SOC2 PI1.1 / audit P0.2: beneficiary roster must be sanitized.)
+_BEN_SAFE_FIELDS = {
+    "id",
+    "estate_id",
+    "name",
+    "first_name",
+    "last_name",
+    "relation",
+    "initials",
+    "avatar_color",
+    "photo_url",
+    "is_primary",
+    "succession_order",
+    "sort_order",
+    "invitation_status",
+}
+
+
+def _sanitize_beneficiary_for_peer(ben: dict) -> dict:
+    return {k: v for k, v in ben.items() if k in _BEN_SAFE_FIELDS}
+
+
 @router.get("/beneficiaries/{estate_id}")
 async def get_beneficiaries(estate_id: str, request: Request = None, current_user: dict = Depends(get_current_user)):
-    """List all beneficiaries for an estate, sorted by sort_order."""
+    """List beneficiaries for an estate. Owner/admin get the full management
+    roster (PII); a fellow beneficiary gets a sanitized display-only roster."""
     # IDOR guard — reject any caller who isn't the owner/beneficiary/admin
-    await require_estate_member(estate_id, current_user)
+    actor = await require_estate_actor(estate_id, current_user, allow_staff=True)
+    full_access = bool(actor.get("is_owner") or actor.get("is_admin") or actor.get("is_operator"))
     beneficiaries = await db.beneficiaries.find({"estate_id": estate_id, "deleted_at": None}, {"_id": 0}).to_list(100)
     # Normalize dob → date_of_birth for legacy records
     for b in beneficiaries:
@@ -54,6 +82,10 @@ async def get_beneficiaries(estate_id: str, request: Request = None, current_use
     for b in beneficiaries:
         if b.get("photo_url"):
             b["photo_url"] = resolve_photo_url(b["photo_url"])
+    # Sanitize for fellow beneficiaries — strip PII the benefactor didn't intend
+    # to share peer-to-peer.
+    if not full_access:
+        beneficiaries = [_sanitize_beneficiary_for_peer(b) for b in beneficiaries]
     # SOC 2 CC6.1: Audit sensitive data access
     await log_audit_event(
         actor_id=current_user["id"],
@@ -73,6 +105,8 @@ async def get_beneficiaries(estate_id: str, request: Request = None, current_use
 async def create_beneficiary(data: BeneficiaryCreate, current_user: dict = Depends(get_current_user)):
     """Add a new beneficiary to the estate."""
     await require_benefactor_role(current_user, "add beneficiaries")
+    # IDOR guard — caller must own (or admin) the target estate.
+    await require_estate_owner(data.estate_id, current_user)
 
     from guards import get_subscription_access
 

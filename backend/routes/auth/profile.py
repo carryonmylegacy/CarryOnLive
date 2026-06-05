@@ -10,6 +10,28 @@ from services.photo_urls import resolve_photo_url
 from ._core import router, validate_username
 
 
+# Sensitive auth/security fields that must never be returned by the profile API
+# (SOC2 / data-minimization — audit P1.3). Excluded via a Mongo projection.
+_SENSITIVE_USER_FIELDS = (
+    "password",
+    "otp_secret",
+    "otp_code",
+    "totp_secret",
+    "two_factor_secret",
+    "offline_credentials",
+    "offline_credential",
+    "vault_master_key_hash",
+    "security_answers",
+    "reset_token",
+    "reset_token_expires",
+    "password_reset_token",
+    "verify_token",
+    "verification_token",
+    "email_verification_token",
+)
+_SAFE_PROFILE_PROJECTION = {"_id": 0, **{f: 0 for f in _SENSITIVE_USER_FIELDS}}
+
+
 @router.get("/auth/me")
 async def get_me(current_user: dict = Depends(get_current_user)):
     """Get the current authenticated user's profile with multi-role flags."""
@@ -140,7 +162,7 @@ async def get_profile(current_user: dict = Depends(get_current_user)):
     so offline relaunches show a Camera placeholder where the
     avatar should be (founder report May 3 2026).
     """
-    user = await db.users.find_one({"id": current_user["id"]}, {"_id": 0, "password": 0})
+    user = await db.users.find_one({"id": current_user["id"]}, _SAFE_PROFILE_PROJECTION)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 

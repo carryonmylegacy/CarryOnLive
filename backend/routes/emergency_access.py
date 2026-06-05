@@ -12,6 +12,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from config import db
+from guards import require_admin_scope
 from services.audit import audit_log
 from services.access_control import require_estate_actor
 from utils import get_current_user, send_push_notification
@@ -209,8 +210,7 @@ async def get_active_emergency_access(current_user: dict = Depends(get_current_u
 @router.get("/admin/emergency-access")
 async def get_all_emergency_requests(current_user: dict = Depends(get_current_user)):
     """Admin: Get all emergency access requests."""
-    if current_user["role"] != "admin":
-        raise HTTPException(status_code=403, detail="Admin access required")
+    require_admin_scope(current_user, ["compliance"])
 
     requests = await db.emergency_access.find({}, {"_id": 0}).sort("created_at", -1).to_list(200)
     return requests
@@ -218,15 +218,13 @@ async def get_all_emergency_requests(current_user: dict = Depends(get_current_us
 
 @router.get("/admin/emergency-access-policy")
 async def get_emergency_access_policy(current_user: dict = Depends(get_current_user)):
-    if current_user["role"] != "admin":
-        raise HTTPException(status_code=403, detail="Admin access required")
+    require_admin_scope(current_user, ["compliance"])
     return await _get_emergency_policy()
 
 
 @router.put("/admin/emergency-access-policy")
 async def update_emergency_access_policy(data: EmergencyAccessPolicy, current_user: dict = Depends(get_current_user)):
-    if current_user["role"] != "admin":
-        raise HTTPException(status_code=403, detail="Admin access required")
+    require_admin_scope(current_user, ["compliance"])
     payload = data.model_dump()
     payload["default_duration_hours"] = max(1, min(int(payload["default_duration_hours"]), 168))
     payload["max_duration_hours"] = max(payload["default_duration_hours"], min(int(payload["max_duration_hours"]), 720))
@@ -243,8 +241,7 @@ async def review_emergency_access(
     current_user: dict = Depends(get_current_user),
 ):
     """Admin: Approve, deny, or request more info on an emergency access request."""
-    if current_user["role"] != "admin":
-        raise HTTPException(status_code=403, detail="Admin access required")
+    require_admin_scope(current_user, ["compliance"])
 
     if data.action not in ("approve", "deny", "request_more_info"):
         raise HTTPException(status_code=400, detail="Action must be approve, deny, or request_more_info")

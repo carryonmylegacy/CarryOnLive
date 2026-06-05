@@ -158,15 +158,11 @@ async def update_section_permissions(
     is_admin = current_user.get("role") == "admin"
 
     if is_transitioned:
-        # Post-transition: only primary beneficiary or admin
-        beneficiary_link_or = [{"user_id": current_user["id"]}]
-        if current_user.get("email"):
-            beneficiary_link_or.append({"email": current_user["email"].lower().strip()})
-        primary_ben = await db.beneficiaries.find_one(
-            {"estate_id": estate_id, "is_primary": True, "$or": beneficiary_link_or},
-            {"_id": 0},
-        )
-        if not primary_ben and not is_admin:
+        # Post-transition: only the primary beneficiary or admin. Resolve via the
+        # canonical actor so an UNVERIFIED email can never be used to impersonate
+        # the primary beneficiary.
+        actor = await resolve_estate_actor(estate_id, current_user)
+        if not actor.get("is_primary_beneficiary") and not is_admin:
             raise HTTPException(
                 status_code=403,
                 detail="Only the primary beneficiary can manage permissions after transition",
@@ -175,6 +171,12 @@ async def update_section_permissions(
         # Pre-transition: only owner or admin
         if not is_owner and not is_admin:
             raise HTTPException(status_code=403, detail="Only the estate owner can set permissions")
+
+    # Validate that the target beneficiary actually belongs to THIS estate
+    # (prevents writing a permission row for an unrelated beneficiary id).
+    target = await db.beneficiaries.find_one({"id": data.beneficiary_id, "estate_id": estate_id}, {"_id": 0, "id": 1})
+    if not target:
+        raise HTTPException(status_code=404, detail="Beneficiary not found in this estate")
 
     # Validate sections
     clean_sections = {s: bool(data.sections.get(s, True)) for s in ALL_SECTIONS}

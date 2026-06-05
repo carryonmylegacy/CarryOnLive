@@ -156,6 +156,15 @@ async def get_documents(estate_id: str, current_user: dict = Depends(get_current
         doc["encryption_version"] = doc.get("encryption_version", "aes-256-gcm")
         doc["storage_type"] = "cloud" if doc.get("storage_key") else "legacy"
 
+    # Per-user offline pin state (audit P2.1 — pins are now isolated per user,
+    # not a global flag on the shared document). One batched query, no N+1.
+    pin_rows = await db.document_pins.find(
+        {"user_id": current_user["id"], "estate_id": estate_id}, {"_id": 0, "document_id": 1, "id": 1}
+    ).to_list(5000)
+    my_pins = {r["document_id"] for r in pin_rows}
+    for doc in documents:
+        doc["pinned_offline"] = doc["id"] in my_pins
+
     return documents
 
 
@@ -316,6 +325,14 @@ async def get_beneficiary_essential_docs(estate_id: str, current_user: dict = De
             d["encryption_version"] = d.get("encryption_version", "aes-256-gcm")
             d["storage_type"] = "cloud" if d.get("storage_key") else "legacy"
             by_cat[slot_cat] = d
+
+    # Per-user pin state (audit P2.1) — never expose another user's pin flag.
+    pin_rows = await db.document_pins.find(
+        {"user_id": current_user["id"], "estate_id": estate_id}, {"_id": 0, "document_id": 1, "id": 1}
+    ).to_list(5000)
+    my_pins = {r["document_id"] for r in pin_rows}
+    for d in by_cat.values():
+        d["pinned_offline"] = d["id"] in my_pins
 
     out = []
     for slot in ESSENTIAL_SLOT_DEFINITIONS:
@@ -499,7 +516,10 @@ async def upload_document(
         },
     )
 
-    # NOTIFICATION: Notify beneficiaries that a new document was uploaded
+    # NOTIFICATION: Notify ONLY beneficiaries who can actually access this
+    # document (designation + timing via can_access_document). Previously every
+    # linked beneficiary was told the name + category of every upload, leaking
+    # metadata about documents not designated to them (audit P1.2).
     import asyncio
     from services.notifications import notify as _notify
 
@@ -507,17 +527,40 @@ async def upload_document(
         {"estate_id": estate_id, "user_id": {"$exists": True, "$ne": None}},
         {"_id": 0, "id": 1, "user_id": 1},
     ).to_list(100)
+    # Single query for transition state (no per-beneficiary DB calls → no N+1).
+    _cert = await db.death_certificates.find_one(
+        {"estate_id": estate_id, "status": {"$in": ["approved", "authenticated"]}},
+        {"_id": 0, "id": 1},
+    )
+    _is_transitioned = bool(_cert)
+    _doc_for_check = {
+        "designated_beneficiaries": doc_dict.get("designated_beneficiaries") or [],
+        "category": category,
+        "visibility_timing": doc_dict.get("visibility_timing", {}),
+        "deleted_at": None,
+    }
     category_label = category.replace("_", " ").title()
     for ben in beneficiaries:
-        if ben.get("user_id"):
-            asyncio.create_task(
-                _notify.beneficiary(
-                    ben["user_id"],
-                    f"New {category_label} Document",
-                    f"A new {category_label.lower()} document '{name}' has been uploaded to the vault.",
-                    url="/beneficiary/vault",
-                )
+        if not ben.get("user_id"):
+            continue
+        _actor = {
+            "is_owner": False,
+            "is_admin": False,
+            "is_beneficiary": True,
+            "release_ids": {ben["id"], ben.get("user_id")} - {None},
+            "is_transitioned": _is_transitioned,
+            "emergency_scopes": set(),
+        }
+        if not can_access_document(_doc_for_check, _actor):
+            continue
+        asyncio.create_task(
+            _notify.beneficiary(
+                ben["user_id"],
+                f"New {category_label} Document",
+                f"A new {category_label.lower()} document '{name}' has been uploaded to the vault.",
+                url="/beneficiary/vault",
             )
+        )
 
     response = {
         "id": document.id,
@@ -1059,17 +1102,24 @@ async def set_document_pinned_offline(
             detail="Locked documents cannot be pinned for offline access",
         )
 
-    await db.documents.update_one(
-        {"id": document_id},
-        {
-            "$set": {
-                "pinned_offline": bool(pinned),
-                "pinned_offline_at": datetime.now(timezone.utc).isoformat() if pinned else None,
-                "pinned_offline_by": current_user["id"] if pinned else None,
-                "updated_at": datetime.now(timezone.utc).isoformat(),
-            }
-        },
-    )
+    # Per-user pin state (audit P2.1) — stored in db.document_pins keyed by
+    # (user_id, document_id), NOT as a global flag on the shared document, so
+    # one beneficiary's pin can never surface on another user's device.
+    if pinned:
+        await db.document_pins.update_one(
+            {"user_id": current_user["id"], "document_id": document_id},
+            {
+                "$set": {
+                    "user_id": current_user["id"],
+                    "document_id": document_id,
+                    "estate_id": doc["estate_id"],
+                    "pinned_at": datetime.now(timezone.utc).isoformat(),
+                }
+            },
+            upsert=True,
+        )
+    else:
+        await db.document_pins.delete_one({"user_id": current_user["id"], "document_id": document_id})
 
     await audit_log(
         action="document.pin_offline" if pinned else "document.unpin_offline",

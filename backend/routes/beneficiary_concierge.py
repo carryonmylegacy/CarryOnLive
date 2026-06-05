@@ -50,18 +50,12 @@ router = APIRouter()
 @router.get("/beneficiary/concierge/diagnose")
 async def concierge_diagnose(current_user: dict = Depends(get_current_user)) -> dict[str, Any]:
     """Diagnostic endpoint — reports the actual xAI status this pod sees.
-
-    Curl this from production to find out *exactly* what's happening
-    when the AI fails. It's auth-gated so it's safe to leave on. Tells
-    you:
-      • whether xai_client constructed at all (key present?)
-      • base_url + masked key prefix
-      • a 1-token live ping per model (grok-3-mini, grok-3, grok-4)
-      • the exact error message + type if any model fails
-
-    Use:  curl -H "Authorization: Bearer <token>" \\
-            https://app.carryon.us/api/beneficiary/concierge/diagnose
+    ADMIN ONLY (audit P1.4): exposes AI infrastructure details, so it must not
+    be reachable by ordinary authenticated users / beneficiaries.
     """
+    # Restrict to platform admins only.
+    if current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
     import asyncio
     from config import xai_client as _xc, XAI_MODEL, XAI_MODEL_LIGHT  # noqa
 
@@ -69,7 +63,6 @@ async def concierge_diagnose(current_user: dict = Depends(get_current_user)) -> 
         "xai_client_constructed": bool(_xc),
         "configured_models": {"heavy": XAI_MODEL, "light": XAI_MODEL_LIGHT},
         "key_present": bool(os.environ.get("XAI_API_KEY")),
-        "key_prefix": (os.environ.get("XAI_API_KEY") or "")[:8] + "…",
         "base_url": getattr(getattr(_xc, "_client", None), "base_url", None) and str(_xc._client.base_url),
         "models": {},
     }

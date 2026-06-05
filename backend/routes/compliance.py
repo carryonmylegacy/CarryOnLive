@@ -111,6 +111,7 @@ async def export_user_data(current_user: dict = Depends(get_current_user)):
             "email": 1,
             "phone": 1,
             "relationship": 1,
+            "relation": 1,
             "is_primary": 1,
             "status": 1,
             "created_at": 1,

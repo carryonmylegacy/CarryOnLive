@@ -166,6 +166,22 @@ async def designate_beneficiaries(
     if not estate:
         raise HTTPException(status_code=403, detail="Access denied")
 
+    # Validate that every supplied beneficiary id actually belongs to THIS
+    # estate (audit P2.3 — prevent writing foreign/garbage ids into the
+    # designation, which downstream access checks would then trust).
+    requested = [b for b in (data.beneficiary_ids or []) if b != "all"]
+    if requested:
+        valid_ids: set[str] = set()
+        async for b in db.beneficiaries.find(
+            {"estate_id": doc["estate_id"], "deleted_at": None}, {"_id": 0, "id": 1, "user_id": 1}
+        ):
+            valid_ids.add(b["id"])
+            if b.get("user_id"):
+                valid_ids.add(b["user_id"])
+        invalid = [b for b in requested if b not in valid_ids]
+        if invalid:
+            raise HTTPException(status_code=400, detail="One or more beneficiary ids are not part of this estate.")
+
     # Snapshot pre-state for the share-notification diff before we
     # mutate so we can fire a "[Benefactor] just shared … with you"
     # ping to any beneficiary who gains pre-transition visibility on

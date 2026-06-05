@@ -30,8 +30,9 @@ from utils import get_current_user, log_activity, update_estate_readiness
 
 router = APIRouter()
 
-# Temporary download tokens (in-memory, short-lived)
-_download_tokens: dict[str, dict] = {}
+# Message direct-download tokens are persisted in MongoDB (db.message_download_tokens)
+# with a TTL index so they survive across worker processes / pods and auto-expire
+# (audit P2.2 — an in-memory dict broke on multi-pod and leaked memory).
 
 
 @router.post("/messages/{message_id}/download-token")
@@ -59,20 +60,19 @@ async def create_download_token(message_id: str, current_user: dict = Depends(ge
         raise HTTPException(status_code=403, detail="Access denied")
 
     token = str(uuid.uuid4())
-    _download_tokens[token] = {
-        "message_id": message_id,
-        "user_id": current_user["id"],
-        "created_at": datetime.now(timezone.utc),
-        "video_url": msg.get("video_url"),
-        "voice_url": msg.get("voice_url"),
-        "estate_id": msg["estate_id"],
-    }
-    # Clean up old tokens (older than 5 minutes)
-    cutoff = datetime.now(timezone.utc).timestamp() - 300
-    expired = [k for k, v in _download_tokens.items() if v["created_at"].timestamp() < cutoff]
-    for k in expired:
-        del _download_tokens[k]
-
+    now = datetime.now(timezone.utc)
+    await db.message_download_tokens.insert_one(
+        {
+            "token": token,
+            "message_id": message_id,
+            "user_id": current_user["id"],
+            "created_at": now.isoformat(),
+            "expires_at": now,  # BSON datetime → TTL index auto-expires after 5 min
+            "video_url": msg.get("video_url"),
+            "voice_url": msg.get("voice_url"),
+            "estate_id": msg["estate_id"],
+        }
+    )
     return {"token": token}
 
 
@@ -195,7 +195,8 @@ async def get_message_video(video_id: str, current_user: dict = Depends(get_curr
 async def download_video_direct(video_id: str, dt: str = QueryParam(...)):
     """Direct video download using a short-lived download token.
     Used by iOS Safari to enable native 'Save Video' to Photos."""
-    token_data = _download_tokens.pop(dt, None)
+    # Atomic consume (single-use) from the Mongo-backed token store.
+    token_data = await db.message_download_tokens.find_one_and_delete({"token": dt})
     if not token_data:
         raise HTTPException(status_code=401, detail="Invalid or expired download token")
     if token_data.get("video_url") != video_id:
@@ -328,6 +329,8 @@ async def get_message_voice(voice_id: str, current_user: dict = Depends(get_curr
 async def create_message(data: MessageCreate, current_user: dict = Depends(get_current_user)):
     """Create a new milestone message with encrypted content."""
     await require_benefactor_role(current_user, "create messages")
+    # IDOR guard — caller must own (or admin) the target estate.
+    await require_estate_owner(data.estate_id, current_user)
 
     # Enforce subscription requirement
     from guards import get_subscription_access
@@ -338,6 +341,23 @@ async def create_message(data: MessageCreate, current_user: dict = Depends(get_c
             status_code=403,
             detail="Your free trial has ended. Subscribe to continue creating messages.",
         )
+
+    # Validate every recipient belongs to THIS estate (by beneficiary record id
+    # or linked user_id). Prevents cross-estate recipient injection / leakage.
+    if data.recipients:
+        valid_ids: set[str] = set()
+        async for b in db.beneficiaries.find(
+            {"estate_id": data.estate_id, "deleted_at": None}, {"_id": 0, "id": 1, "user_id": 1}
+        ):
+            valid_ids.add(b["id"])
+            if b.get("user_id"):
+                valid_ids.add(b["user_id"])
+        invalid = [r for r in data.recipients if r not in valid_ids and r != "all"]
+        if invalid:
+            raise HTTPException(
+                status_code=400,
+                detail="One or more recipients are not beneficiaries of this estate.",
+            )
 
     estate_salt = await get_estate_salt(data.estate_id)
 

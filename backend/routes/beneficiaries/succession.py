@@ -5,6 +5,7 @@ from fastapi import Depends, HTTPException
 from pydantic import BaseModel
 from config import db, logger
 from guards import require_benefactor_role, require_estate_owner
+from services.access_control import require_estate_actor
 from utils import get_current_user
 
 
@@ -40,6 +41,8 @@ async def reorder_beneficiaries(
     Only beneficiaries with succession_order != null participate in the chain.
     Position 0 = Primary, 1 = Secondary, 2 = Tertiary, etc."""
     await require_benefactor_role(current_user, "reorder beneficiaries")
+    # IDOR guard — only the estate owner (or admin) can reorder succession.
+    await require_estate_owner(estate_id, current_user)
 
     # Fetch current succession participation status for each beneficiary
     all_bens = await db.beneficiaries.find(
@@ -98,6 +101,8 @@ async def toggle_succession(beneficiary_id: str, current_user: dict = Depends(ge
         raise HTTPException(status_code=404, detail="Beneficiary not found")
 
     estate_id = ben["estate_id"]
+    # IDOR guard — only the estate owner (or admin) can modify succession.
+    await require_estate_owner(estate_id, current_user)
     currently_in = ben.get("succession_order") is not None
 
     if currently_in:
@@ -189,6 +194,8 @@ async def set_beneficiary_flags(
 @router.get("/beneficiaries/{estate_id}/succession")
 async def get_succession_order(estate_id: str, current_user: dict = Depends(get_current_user)):
     """Get the succession hierarchy for an estate, ordered by succession_order."""
+    # IDOR guard — estate members only (display-safe fields only).
+    await require_estate_actor(estate_id, current_user, allow_staff=True)
     beneficiaries = await db.beneficiaries.find(
         {"estate_id": estate_id, "deleted_at": None},
         {
