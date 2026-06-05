@@ -316,8 +316,10 @@ async def bill_reminder_scheduler():
                     if notes:
                         body += f" Note: {notes[:80]}"
 
-                    # Find designated beneficiaries
-                    designated = bill.get("designated_beneficiaries", ["all"])
+                    # Find designated beneficiaries. Fail-closed: an undesignated
+                    # bill notifies NOBODY (financial items are private until the
+                    # benefactor explicitly decrees who may see them).
+                    designated = bill.get("designated_beneficiaries") or []
                     ben_user_ids = []
                     if "all" in designated:
                         # All beneficiaries of this estate

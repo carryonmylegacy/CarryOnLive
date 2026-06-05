@@ -250,12 +250,13 @@ async def get_financial_coverage_score(estate_id: str, current_user: dict = Depe
             detail_filled += 1
     detail_score = round((detail_filled / detail_total) * 20) if detail_total > 0 else 0
 
-    # 3. Beneficiary Designations (25 pts): % of items with customized designations
+    # 3. Beneficiary Designations (25 pts): % of items the benefactor has
+    #    actually decreed who/when (financial items are private by default now).
     designation_count = 0
     for item in all_items:
-        designated = item.get("designated_beneficiaries", ["all"])
+        designated = item.get("designated_beneficiaries") or []
         timing = item.get("visibility_timing", {})
-        if designated != ["all"] or len(timing) > 0:
+        if designated or len(timing) > 0:
             designation_count += 1
     designation_score = round((designation_count / total_items) * 25) if total_items > 0 else 0
 

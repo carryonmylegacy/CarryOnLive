@@ -48,6 +48,31 @@ async def run_migrations(db, logger):
     except Exception as e:
         logger.warning(f"Username migration warning: {e}")
 
+    # ── CFP fail-closed designation migration (Jun 5, 2026) ──────────────────
+    # Financial items historically defaulted to designated_beneficiaries=["all"]
+    # (a silent model default, NOT an explicit benefactor decree). Product rule
+    # is now: financial items are shared ONLY with beneficiaries the benefactor
+    # explicitly designates (now or posthumously). Convert legacy blanket
+    # ["all"] rows to [] (private until decreed). Owner/admin always retain full
+    # visibility; this only changes what BENEFICIARIES can see. Idempotent.
+    try:
+        migration_done = await db.migrations.find_one({"_id": "cfp_failclosed_designation_v1"})
+        if not migration_done:
+            total = 0
+            for coll in ("bills", "debts", "financial_accounts", "property_assets"):
+                res = await db[coll].update_many(
+                    {"designated_beneficiaries": ["all"]},
+                    {"$set": {"designated_beneficiaries": []}},
+                )
+                total += res.modified_count
+            await db.migrations.insert_one({"_id": "cfp_failclosed_designation_v1", "rows_made_private": total})
+            logger.info(
+                f"CFP fail-closed migration complete: {total} financial items reset to "
+                "private (benefactor must re-designate to share)."
+            )
+    except Exception as e:
+        logger.warning(f"CFP fail-closed migration warning: {e}")
+
 
 async def ensure_indexes(db, logger):
     """Create all security-critical and performance database indexes."""
@@ -140,18 +165,14 @@ async def ensure_indexes(db, logger):
         # ("stored_at_1") already exists in the database.
         AUDIT_TTL_SECONDS = 7 * 365 * 24 * 3600  # 7 years
         try:
-            await db.audit_trail.create_index(
-                "stored_at", expireAfterSeconds=AUDIT_TTL_SECONDS, name="stored_at_ttl"
-            )
+            await db.audit_trail.create_index("stored_at", expireAfterSeconds=AUDIT_TTL_SECONDS, name="stored_at_ttl")
         except Exception:
             for stale in ("stored_at_1", "stored_at_ttl"):
                 try:
                     await db.audit_trail.drop_index(stale)
                 except Exception:
                     pass
-            await db.audit_trail.create_index(
-                "stored_at", expireAfterSeconds=AUDIT_TTL_SECONDS, name="stored_at_ttl"
-            )
+            await db.audit_trail.create_index("stored_at", expireAfterSeconds=AUDIT_TTL_SECONDS, name="stored_at_ttl")
         await db.audit_trail.create_index("timestamp")
         await db.audit_trail.create_index("actor_id")
         await db.audit_trail.create_index("category")

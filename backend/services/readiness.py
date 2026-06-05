@@ -592,11 +592,13 @@ async def calculate_financial_score(estate_id: str) -> dict:
             detail_filled += 1
     detail = round((detail_filled / detail_total) * 25) if detail_total > 0 else 0
 
-    # Designations (25 pts): % of items with beneficiary designations
+    # Designations (25 pts): % of items the benefactor has decreed (financial
+    # items are private by default — a non-empty designation or any timing rule
+    # means the benefactor made a sharing decision).
     designated_count = sum(
         1
         for item in all_items
-        if item.get("designated_beneficiaries", ["all"]) != ["all"] or len(item.get("visibility_timing", {})) > 0
+        if (item.get("designated_beneficiaries") or []) or len(item.get("visibility_timing", {})) > 0
     )
     designations = round((designated_count / total_items) * 25)
 

@@ -89,6 +89,36 @@ async def export_user_data(current_user: dict = Depends(get_current_user)):
 
     user_consent = await db.user_consent.find_one({"user_id": user_id}, {"_id": 0})
 
+    # GDPR Article 15: a data subject can also be a BENEFICIARY in other people's
+    # estates. Export the personal data CarryOn stores ABOUT this user in those
+    # beneficiary records (name/email/phone/relationship/status) — but NEVER the
+    # benefactor's estate contents (documents, messages, financials, secrets).
+    ben_match: list = [{"user_id": user_id}]
+    if current_user.get("email_verified") and current_user.get("email"):
+        ben_match.append({"email": current_user["email"].lower().strip()})
+    ben_records = await db.beneficiaries.find(
+        {"$or": ben_match, "estate_id": {"$nin": estate_ids}, "deleted_at": None},
+        {
+            "_id": 0,
+            "id": 1,
+            "estate_id": 1,
+            "name": 1,
+            "email": 1,
+            "phone": 1,
+            "relationship": 1,
+            "is_primary": 1,
+            "status": 1,
+            "created_at": 1,
+            "user_id": 1,
+        },
+    ).to_list(500)
+    beneficiary_memberships: list = []
+    if ben_records:
+        ben_estate_ids = list({b.get("estate_id") for b in ben_records if b.get("estate_id")})
+        est_rows = await db.estates.find({"id": {"$in": ben_estate_ids}}, {"_id": 0, "id": 1, "name": 1}).to_list(500)
+        est_name_by_id = {e["id"]: e.get("name") for e in est_rows}
+        beneficiary_memberships = [{**b, "estate_name": est_name_by_id.get(b.get("estate_id"))} for b in ben_records]
+
     # Log sensitive data access for SOC 2 audit trail
     await log_sensitive_access(
         user_id=user_id,
@@ -124,6 +154,7 @@ async def export_user_data(current_user: dict = Depends(get_current_user)):
             "documents_metadata": documents_meta,
             "messages_metadata": messages,
             "beneficiaries": beneficiaries,
+            "beneficiary_memberships": beneficiary_memberships,
             "checklists": checklists,
             "digital_wallet_entries": digital_wallet,
             "trustee_service_tasks": dts_tasks,
@@ -131,7 +162,7 @@ async def export_user_data(current_user: dict = Depends(get_current_user)):
             "subscription": subscriptions,
             "consent_preferences": user_consent,
             "consent_history": consent_history,
-            "note": "Encrypted document content, message bodies, credential secrets, OTP secrets, and password hashes are excluded from this export.",
+            "note": "Encrypted document content, message bodies, credential secrets, OTP secrets, and password hashes are excluded from this export. 'beneficiary_memberships' lists estates where you are a named beneficiary; only your own personal data is included, never the estate owner's private contents.",
         }
     )
 

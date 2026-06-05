@@ -43,7 +43,7 @@ export const FreeModeBanner = ({ className = '', tone = 'auto', testId = 'free-m
           {FREE_MODE_HEADLINE}
         </h3>
         <span
-          className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
+          className="text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
           style={{ color: 'var(--bg2)', background: 'var(--gold)' }}
         >
           Active

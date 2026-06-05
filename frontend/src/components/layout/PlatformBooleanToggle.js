@@ -77,7 +77,7 @@ const PlatformBooleanToggle = ({
         </span>
         {on && activeBadge && (
           <span
-            className="text-[9px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded-full"
+            className="text-[11px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded-full"
             style={{ color: '#0b1120', background: activeColor }}
             data-testid={`${testId}-badge`}
           >
@@ -119,7 +119,7 @@ const PlatformBooleanToggle = ({
         <span className="text-xs font-bold text-[var(--t)]">{label}</span>
         {on && activeBadge && (
           <span
-            className="text-[9px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded-full"
+            className="text-[11px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded-full"
             style={{ color: '#0b1120', background: activeColor }}
             data-testid={`${testId}-badge`}
           >

@@ -86,7 +86,7 @@ class BillCreate(BaseModel):
     notes_gotchas: Optional[str] = None  # "What's tricky / non-obvious?"
     notes_who_to_call: Optional[str] = None  # "Who else can help / co-signs?"
     status: BillStatus = "active"
-    designated_beneficiaries: List[str] = ["all"]
+    designated_beneficiaries: List[str] = []
     visibility_timing: dict = {}
 
 
@@ -151,7 +151,7 @@ class DebtCreate(BaseModel):
     notes_gotchas: Optional[str] = None
     notes_who_to_call: Optional[str] = None
     status: DebtStatus = "active"
-    designated_beneficiaries: List[str] = ["all"]
+    designated_beneficiaries: List[str] = []
     visibility_timing: dict = {}
 
 
@@ -211,7 +211,7 @@ class AccountCreate(BaseModel):
     notes_gotchas: Optional[str] = None
     notes_who_to_call: Optional[str] = None
     status: AccountStatus = "active"
-    designated_beneficiaries: List[str] = ["all"]
+    designated_beneficiaries: List[str] = []
     visibility_timing: dict = {}
 
 
@@ -268,7 +268,7 @@ class PropertyAssetCreate(BaseModel):
     notes_gotchas: Optional[str] = None
     notes_who_to_call: Optional[str] = None
     status: AssetStatus = "active"
-    designated_beneficiaries: List[str] = ["all"]
+    designated_beneficiaries: List[str] = []
     visibility_timing: dict = {}
 
 
