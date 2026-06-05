@@ -111,6 +111,22 @@ async def request_estate_access(data: BeneficiaryAccessRequest, current_user: di
     if existing:
         raise HTTPException(status_code=400, detail="You already have a pending access request")
 
+    # Throttle: prevent a requester from spamming an estate with repeated
+    # requests (e.g. re-submitting immediately after a denial). audit 05c1776 P2.7.
+    from datetime import timedelta
+
+    cooldown_cutoff = (datetime.now(timezone.utc) - timedelta(seconds=60)).isoformat()
+    recent = await db.access_requests.find_one(
+        {
+            "estate_id": data.estate_id,
+            "requester_id": current_user["id"],
+            "created_at": {"$gt": cooldown_cutoff},
+        },
+        {"_id": 0, "id": 1},
+    )
+    if recent:
+        raise HTTPException(status_code=429, detail="Please wait a moment before requesting access again.")
+
     request_doc = {
         "id": str(uuid.uuid4()),
         "estate_id": data.estate_id,

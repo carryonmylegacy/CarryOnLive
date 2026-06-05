@@ -117,6 +117,11 @@ async def get_typing(
     """Get who is currently typing in a channel (active within last 5 seconds)."""
     from datetime import timedelta
 
+    # Membership check — typing presence is channel-private (audit 05c1776 P2.3).
+    channel = await db.estate_channels.find_one({"id": channel_id}, {"_id": 0, "id": 1, "members": 1})
+    if not channel or current_user["id"] not in channel.get("members", []):
+        return []
+
     cutoff = (datetime.now(timezone.utc) - timedelta(seconds=5)).isoformat()
     typers = await db.estate_typing.find(
         {"channel_id": channel_id, "updated_at": {"$gt": cutoff}, "user_id": {"$ne": current_user["id"]}},

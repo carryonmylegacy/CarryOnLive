@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends
 
 from config import db
 from services.access_control import (
+    beneficiary_section_enabled,
     can_access_document,
     can_access_message,
     require_beneficiary_section_access,
@@ -23,6 +24,12 @@ async def get_legacy_timeline(estate_id: str, current_user: dict = Depends(get_c
     await require_beneficiary_section_access(actor, "timeline")
     estate = actor["estate"]
     can_view_all = actor.get("is_owner") or actor.get("is_admin") or actor.get("is_operator")
+    # Per-section gates — a beneficiary whose Vault / Messages / Checklist section
+    # is disabled must not learn anything about those sections via the timeline
+    # (audit 05c1776 P1.5).
+    vault_ok = bool(can_view_all) or await beneficiary_section_enabled(actor, "vault")
+    messages_ok = bool(can_view_all) or await beneficiary_section_enabled(actor, "messages")
+    checklist_ok = bool(can_view_all) or await beneficiary_section_enabled(actor, "checklist")
 
     events = []
 
@@ -40,9 +47,11 @@ async def get_legacy_timeline(estate_id: str, current_user: dict = Depends(get_c
     )
 
     # 2. Documents uploaded
-    docs = await db.documents.find({"estate_id": estate_id, "deleted_at": None}, {"_id": 0}).to_list(500)
-    if not can_view_all:
-        docs = [doc for doc in docs if can_access_document(doc, actor)]
+    docs = []
+    if vault_ok:
+        docs = await db.documents.find({"estate_id": estate_id, "deleted_at": None}, {"_id": 0}).to_list(500)
+        if not can_view_all:
+            docs = [doc for doc in docs if can_access_document(doc, actor)]
     for doc in docs:
         events.append(
             {
@@ -83,9 +92,11 @@ async def get_legacy_timeline(estate_id: str, current_user: dict = Depends(get_c
             )
 
     # 4. Messages created
-    msgs = await db.messages.find({"estate_id": estate_id, "deleted_at": None}, {"_id": 0}).to_list(500)
-    if not can_view_all:
-        msgs = [msg for msg in msgs if can_access_message(msg, actor)]
+    msgs = []
+    if messages_ok:
+        msgs = await db.messages.find({"estate_id": estate_id, "deleted_at": None}, {"_id": 0}).to_list(500)
+        if not can_view_all:
+            msgs = [msg for msg in msgs if can_access_message(msg, actor)]
     for msg in msgs:
         events.append(
             {
@@ -105,9 +116,11 @@ async def get_legacy_timeline(estate_id: str, current_user: dict = Depends(get_c
         )
 
     # 5. Checklist items completed
-    checklists = await db.checklists.find({"estate_id": estate_id}, {"_id": 0}).to_list(500)
+    checklists = []
+    if checklist_ok:
+        checklists = await db.checklists.find({"estate_id": estate_id}, {"_id": 0}).to_list(500)
     for item in checklists:
-        if item.get("completed"):
+        if item.get("is_completed") or item.get("completed"):
             events.append(
                 {
                     "type": "checklist_completed",

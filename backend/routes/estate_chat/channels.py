@@ -238,10 +238,13 @@ async def batch_delete_channels(
             {"$set": {"user_id": user_id, "channel_id": ch_id, "dismissed_at": now}},
             upsert=True,
         )
-        # For non-circle channels, also hard-delete from DB
-        if channel.get("type") != "circle":
+        # Only the benefactor/admin may HARD-delete a channel for everyone. A
+        # regular member can only dismiss (hide) it for themselves — otherwise
+        # any member could wipe a shared DM/group for all participants
+        # (audit 05c1776 P2.2).
+        if (is_owner or is_admin) and channel.get("type") != "circle":
             await db.estate_channels.delete_one({"id": ch_id})
             await db.estate_messages.delete_many({"channel_id": ch_id})
-        await db.estate_channel_reads.delete_many({"channel_id": ch_id})
+            await db.estate_channel_reads.delete_many({"channel_id": ch_id})
         deleted.append(ch_id)
     return {"deleted": deleted, "failed": failed}

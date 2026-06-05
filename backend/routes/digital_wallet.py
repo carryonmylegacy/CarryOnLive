@@ -104,7 +104,7 @@ async def get_digital_wallet(estate_id: str, request: Request = None, current_us
     linked_ids = [e["linked_entity_id"] for e in entries if e.get("linked_entity_id")]
     if linked_ids:
         ent_rows = await db.cfp_entities.find(
-            {"id": {"$in": list(set(linked_ids))}, "deleted_at": None},
+            {"id": {"$in": list(set(linked_ids))}, "estate_id": estate_id, "deleted_at": None},
             {"_id": 0, "id": 1, "name": 1},
         ).to_list(500)
         ent_name = {r["id"]: r.get("name") for r in ent_rows}

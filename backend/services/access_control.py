@@ -304,6 +304,11 @@ def message_recipient_matches(message: dict[str, Any], actor: dict[str, Any]) ->
         # beneficiary. Owner/admin/operator are already handled in
         # can_access_message before this check.
         return False
+    if "all" in recipients:
+        # "all" is an explicit broadcast to every beneficiary of the estate
+        # (audit 05c1776 P2.1 — without this, broadcast messages matched nobody
+        # and silently failed delivery).
+        return True
     return bool(recipients & recipient_ids_for_actor(actor))
 
 
@@ -390,3 +395,46 @@ def build_message_delivery_update(
         "$addToSet": {"delivered_recipient_ids": {"$each": sorted(next_delivered)}},
         "$set": set_doc,
     }
+
+
+# ── FFN (Friends & Family Notification) visibility ───────────────────────────
+def beneficiary_can_view_ffn(actor: dict[str, Any]) -> bool:
+    """True when the actor may view the estate's FFN contacts.
+
+    FFN is the benefactor's "who should my beneficiaries notify upon my
+    passing" list — inherently post-transition information. Owner / admin /
+    operator always pass. A beneficiary may view it ONLY after the estate has
+    transitioned AND when none of their beneficiary records explicitly disable
+    ffn_access (default-enabled, most-restrictive wins). Fail-closed
+    pre-transition so a contact roster (names, phones, emails) is never exposed
+    to beneficiaries while the benefactor is alive (audit 05c1776 P1.1).
+    """
+    if actor.get("is_owner") or actor.get("is_admin") or actor.get("is_operator"):
+        return True
+    if not actor.get("is_beneficiary"):
+        return False
+    if not actor.get("is_transitioned"):
+        return False
+    records = actor.get("beneficiary_records") or []
+    if not records:
+        # Recognized as a beneficiary via estate.beneficiaries with no standalone
+        # record — no per-record override can exist; allow post-transition.
+        return True
+    return any(r.get("ffn_access") is not False for r in records)
+
+
+async def require_document_surface_access(actor: dict[str, Any], document: dict[str, Any]) -> None:
+    """Enforce the Vault section gate on direct document actions (download /
+    preview / pin-offline). Owner/admin/operator bypass. A beneficiary whose
+    Vault section is disabled is blocked UNLESS the document is an essential,
+    pre-transition category they can already read — so emergency access to
+    critical paperwork isn't accidentally severed by a disabled Vault toggle
+    (audit 05c1776 P1.4)."""
+    if actor.get("is_owner") or actor.get("is_admin") or actor.get("is_operator"):
+        return
+    if await beneficiary_section_enabled(actor, "vault"):
+        return
+    category = document.get("category") or ""
+    if category in ESSENTIAL_PRE_TRANSITION_DOCUMENT_CATEGORIES and can_access_document(document, actor, phase="pre"):
+        return
+    raise HTTPException(status_code=403, detail="This section is not available to you.")

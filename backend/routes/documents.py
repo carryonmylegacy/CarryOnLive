@@ -21,6 +21,7 @@ from services.access_control import (
     can_access_document,
     filter_accessible_documents,
     require_beneficiary_section_access,
+    require_document_surface_access,
     require_estate_actor,
 )
 from services.encryption import (
@@ -753,6 +754,7 @@ async def download_document(
     estate = actor["estate"]
     if not can_access_document(document, actor):
         raise HTTPException(status_code=403, detail="Access denied")
+    await require_document_surface_access(actor, document)
 
     # SOC 2: Log sensitive data access
     from routes.compliance import log_sensitive_access
@@ -886,6 +888,7 @@ async def preview_document(
     estate = actor["estate"]
     if not can_access_document(document, actor):
         raise HTTPException(status_code=403, detail="Access denied")
+    await require_document_surface_access(actor, document)
 
     # Check section-level lock (triple lock) — block preview when SDV is locked
     section_lock = await db.section_security.find_one(
@@ -1095,6 +1098,7 @@ async def set_document_pinned_offline(
     actor = await require_estate_actor(doc["estate_id"], current_user)
     if not can_access_document(doc, actor):
         raise HTTPException(status_code=403, detail="Access denied")
+    await require_document_surface_access(actor, doc)
 
     if pinned and doc.get("is_locked"):
         raise HTTPException(

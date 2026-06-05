@@ -142,6 +142,20 @@ async def ensure_indexes(db, logger):
         await db.audit_trail.create_index([("timestamp", -1)])
         await db.audit_trail.create_index("actor_id")
         await db.audit_trail.create_index("category")
+        # audit 05c1776 P2.5 — unique partial index on the chain pointer makes the
+        # insert the cross-pod serialization point: two instances cannot both
+        # chain off the same prev_hash (the second insert fails and retries).
+        # Guarded: if pre-existing data already contains a fork, index creation
+        # fails — the in-process lock still protects single-instance writes.
+        try:
+            await db.audit_trail.create_index(
+                "prev_hash",
+                unique=True,
+                name="prev_hash_unique",
+                partialFilterExpression={"prev_hash": {"$exists": True}},
+            )
+        except Exception as _e:
+            logger.warning(f"audit_trail prev_hash unique index not created: {_e}")
         # Performance indexes for frequently-queried collections
         await db.user_subscriptions.create_index("user_id")
         await db.user_subscriptions.create_index("status")

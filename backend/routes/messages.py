@@ -586,6 +586,21 @@ async def update_message(message_id: str, data: MessageUpdate, current_user: dic
     estate_salt = await get_estate_salt(existing["estate_id"])
     update_fields = {}
 
+    # Re-validate recipients on edit so an update can't smuggle in non-beneficiary
+    # ids that the create path rejects (audit 05c1776 P2.1).
+    if getattr(data, "recipients", None) is not None:
+        valid = await db.beneficiaries.find(
+            {"estate_id": existing["estate_id"], "deleted_at": None},
+            {"_id": 0, "id": 1, "user_id": 1},
+        ).to_list(500)
+        valid_ids = {b.get("id") for b in valid} | {b.get("user_id") for b in valid if b.get("user_id")}
+        invalid = [r for r in data.recipients if r not in valid_ids and r != "all"]
+        if invalid:
+            raise HTTPException(
+                status_code=400,
+                detail="One or more recipients are not beneficiaries of this estate.",
+            )
+
     for field in [
         "title",
         "content",

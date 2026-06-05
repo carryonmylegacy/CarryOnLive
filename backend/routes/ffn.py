@@ -10,6 +10,7 @@ from pydantic import BaseModel
 
 from config import db
 from utils import get_current_user
+from services.access_control import resolve_estate_actor, beneficiary_can_view_ffn
 
 router = APIRouter()
 
@@ -34,17 +35,19 @@ class FFNContactUpdate(BaseModel):
 
 @router.get("/ffn/{estate_id}")
 async def get_ffn_contacts(estate_id: str, current_user: dict = Depends(get_current_user)):
-    """Get all FFN contacts for an estate."""
-    estate = await db.estates.find_one({"id": estate_id}, {"_id": 0, "id": 1, "owner_id": 1})
-    if not estate:
-        raise HTTPException(status_code=404, detail="Estate not found")
+    """Get all FFN contacts for an estate.
 
-    is_owner = estate["owner_id"] == current_user["id"]
-    is_beneficiary = current_user["id"] in (
-        await db.estates.find_one({"id": estate_id}, {"_id": 0, "id": 1, "beneficiaries": 1}) or {}
-    ).get("beneficiaries", [])
-    if not is_owner and not is_beneficiary and current_user["role"] not in ("admin", "operator"):
+    The roster (names, phones, emails) is benefactor-owned post-transition
+    notification data — it is NOT visible to beneficiaries while the benefactor
+    is alive (audit 05c1776 P1.1)."""
+    actor = await resolve_estate_actor(estate_id, current_user)
+    if not actor.get("is_estate_member") and not actor.get("is_staff"):
         raise HTTPException(status_code=403, detail="Access denied")
+    if not beneficiary_can_view_ffn(actor):
+        # A recognized estate member who isn't yet entitled to the FFN roster
+        # (e.g. a pre-transition beneficiary) gets an empty list rather than a
+        # hard 403, so the portal renders cleanly without leaking the roster.
+        return []
 
     contacts = (
         await db.ffn_contacts.find({"estate_id": estate_id, "deleted_at": None}, {"_id": 0})

@@ -1,6 +1,25 @@
 # CarryOn — Changelog
 
 
+## Jun 6, 2026 — Round-4 audit (GitHub `05c1776`): 14 new residual findings, ALL fixed
+
+Re-audit of commit `05c1776` confirmed rounds 1-3 landed and found 14 new residual items (6×P1, 8×P2). All remediated:
+- **P1.1** FFN roster no longer exposed to pre-transition beneficiaries — new `beneficiary_can_view_ffn` gate on `GET /ffn/{id}` + `/estate-chat/contacts` (post-transition + `ffn_access` required).
+- **P1.2** CCP `activate_plan` now persists `assigned_beneficiary_ids`; `_active_plan_assigned_to_actor` is fail-closed when the key is absent (fixes a gap in the round-3 fix).
+- **P1.3** `PUT /auth/profile` now uses `_SAFE_PROFILE_PROJECTION` (no sensitive echo).
+- **P1.4** Vault section-disable now enforced on `/download` `/preview` `/pin-offline` via `require_document_surface_access` (essential-doc carve-out).
+- **P1.5** Timeline gates vault/messages/checklist events by section; fixed `is_completed` read.
+- **P1.6** Already handled (logout fires `CLEAR_APP_CACHES`).
+- **P2.1** `"all"` broadcast now matches recipients; `PUT /messages` re-validates recipients.
+- **P2.2** Batch-delete: only owner/admin hard-delete (members dismiss only).
+- **P2.3** Typing presence requires channel membership.
+- **P2.4** DAV linked-entity name lookup now estate-scoped.
+- **P2.5** Audit chain: unique partial index on `prev_hash` + retry-on-DuplicateKeyError (multi-pod safe).
+- **P2.7** Access-request 60s cooldown (429).
+- **P2.8** Accepted-risk (OTP-verified email + explicit benefactor designation).
+- **Tests:** 38/38 in `test_audit_live_avb.py` (added FFN/profile/timeline/message-all/typing). `housekeeping.sh --strict` EXIT 0; route policy 670/670.
+
+
 ## Jun 6, 2026 — Round-3 audit (GitHub `8900682`) reconciliation + P1.1 CCP fix
 
 User pushed round-2 fixes to GitHub and re-audited commit `8900682` (now live on carryon.us via Render/Vercel). The new PDF listed 20 findings; verified each line-by-line against current `/app`:

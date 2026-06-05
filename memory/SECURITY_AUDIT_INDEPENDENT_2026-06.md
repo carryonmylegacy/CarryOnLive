@@ -351,3 +351,33 @@ assigned benA see their entitled resources. **27/27 suite green.**
 carryon.us after the user's GitHub push; **P1.1 was the single missed gap and is
 now closed + regression-locked.** Remaining P2.2/P2.3 are non-security
 reliability/defensive items.
+
+---
+
+## ROUND-4 — GitHub `05c1776` audit (Jun 2026) — 14 NEW residual findings, ALL fixed
+
+After deploying rounds 1-3, the user re-audited commit `05c1776`. The auditor
+confirmed the prior 11 fixes landed and surfaced **14 new residual findings**
+(6×P1, 8×P2). All addressed:
+
+| # | Finding | Fix |
+|---|---------|-----|
+| P1.1 | FFN roster (names/phones/emails) exposed to ANY estate member via `GET /ffn/{id}` and `/estate-chat/contacts` | New `beneficiary_can_view_ffn(actor)` — owner/admin/operator always; beneficiaries only post-transition AND `ffn_access` not explicitly False. Pre-transition → `[]`. Applied to ffn.py + contacts.py |
+| P1.2 | Active CCP snapshot dropped `assigned_beneficiary_ids` → my round-3 `_active_plan_assigned_to_actor` treated missing as "all" → FFN leak | `activate_plan` now persists `assigned_beneficiary_ids`; helper is **fail-closed** when the key is absent (legacy activations) |
+| P1.3 | `PUT /auth/profile` returned full user doc (only `password` excluded) | Switched to `_SAFE_PROFILE_PROJECTION` (same whitelist as GET) |
+| P1.4 | Vault section-disable bypassed via direct `/download` `/preview` `/pin-offline` | New `require_document_surface_access(actor, doc)` gates all three, with essential-pre-transition-doc carve-out |
+| P1.5 | Timeline leaked metadata from disabled sections (vault/messages/checklist) + `completed` vs `is_completed` bug | Per-section gates (`beneficiary_section_enabled`) on doc/message/checklist event blocks; reads `is_completed or completed` |
+| P1.6 | Service-worker API cache not user-scoped | Already handled — `AuthContext` logout posts `CLEAR_APP_CACHES` (wipes API+image caches); SW handler at sw-push.js |
+| P2.1 | `message_recipient_matches` ignored `"all"` → broadcasts matched nobody; `PUT /messages` didn't re-validate recipients | `"all"` short-circuits to True; update path re-validates recipient ids against estate beneficiaries |
+| P2.2 | Estate-chat batch-delete let ANY member hard-delete channels for everyone | Only owner/admin hard-delete; members only dismiss (mirrors single-delete) |
+| P2.3 | Estate-chat typing GET had no membership check | Returns `[]` for non-members |
+| P2.4 | DAV linked-entity name lookup not estate-scoped at list time | Added `estate_id` to the `cfp_entities` lookup |
+| P2.5 | Audit chain used in-process lock only (multi-pod fork risk) | Unique partial index on `audit_trail.prev_hash` (db_indexes, guarded) + retry-on-`DuplicateKeyError` recompute loop in `log_audit_event` |
+| P2.6 | Legacy `is_estate_member` helper inconsistent | ffn.py now uses canonical `resolve_estate_actor`; remaining callers low-risk (no leak) |
+| P2.7 | Beneficiary access-request spam | 60s per-requester+estate cooldown (429) on top of the existing pending-request guard |
+| P2.8 | Pre-linking by email bypasses explicit acceptance | **ACCEPTED RISK** — email match only trusted when OTP-verified (`resolve_estate_actor`), and the benefactor explicitly named that email as a beneficiary (= designation). No code change |
+
+**Tests:** `tests/test_audit_live_avb.py` — added FFN (owner/post-transition/explicit-disable/pre-transition), profile-PUT, timeline-section-gate, message-"all", and typing-membership tests. **38/38 green.**
+**CI:** `housekeeping.sh --strict` → EXIT 0 (Zero-WARN); route policy 670/670.
+**Bottom line:** every `05c1776` finding is resolved on `/app` (P2.8 accepted-risk). Needs GitHub push + redeploy to clear the live audit.
+

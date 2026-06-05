@@ -5,6 +5,7 @@ from fastapi import Depends
 from utils import get_current_user
 from config import db
 from services.photo_urls import resolve_photo_url
+from services.access_control import resolve_estate_actor, beneficiary_can_view_ffn
 
 
 @router.get("/estate-chat/contacts")
@@ -56,7 +57,12 @@ async def get_contacts(current_user: dict = Depends(get_current_user)):
                 "members": members,
             }
         )
-        # Include FFN contacts as external members
+        # Include FFN contacts as external members — only for actors entitled to
+        # the FFN roster (post-transition + ffn_access). Pre-transition
+        # beneficiaries never see the external contact roster (audit 05c1776 P1.1).
+        actor = await resolve_estate_actor(eid, current_user)
+        if not beneficiary_can_view_ffn(actor):
+            continue
         ffn_contacts = await db.ffn_contacts.find(
             {"estate_id": eid, "deleted_at": None},
             {"_id": 0, "id": 1, "name": 1, "email": 1, "phone": 1, "relationship": 1},

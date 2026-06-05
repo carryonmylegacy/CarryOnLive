@@ -24,6 +24,8 @@ import json
 import asyncio
 from datetime import datetime, timezone
 
+from pymongo.errors import DuplicateKeyError
+
 from config import db, logger
 
 # Sentinel for the first entry in the chain.
@@ -87,15 +89,28 @@ async def log_audit_event(
     }
 
     # Bind this entry to the prior entry's hash under the single-writer lock so
-    # concurrent appends cannot read the same prev_hash and fork the chain.
+    # concurrent appends within THIS process cannot fork the chain. Across pods
+    # the unique partial index on `prev_hash` (db_indexes) makes the insert the
+    # serialization point: if another instance chained off the same prev_hash
+    # first, our insert raises DuplicateKeyError and we recompute against the new
+    # head and retry (audit 05c1776 P2.5).
     async with _chain_lock:
-        entry["prev_hash"] = await _latest_chain_hash()
+        for _attempt in range(8):
+            entry.pop("integrity_hash", None)
+            entry.pop("stored_at", None)
+            entry["prev_hash"] = await _latest_chain_hash()
 
-        canonical = json.dumps(entry, sort_keys=True)
-        entry["integrity_hash"] = hashlib.sha256(canonical.encode()).hexdigest()
-        entry["stored_at"] = now  # datetime for MongoDB TTL index (added after hash)
+            canonical = json.dumps(entry, sort_keys=True)
+            entry["integrity_hash"] = hashlib.sha256(canonical.encode()).hexdigest()
+            entry["stored_at"] = now  # datetime for MongoDB TTL index (added after hash)
 
-        await db.audit_trail.insert_one(entry)
+            try:
+                await db.audit_trail.insert_one(entry)
+                break
+            except DuplicateKeyError:
+                continue
+        else:
+            logger.error("AUDIT chain append failed after retries (prev_hash contention)")
 
     if severity == "critical":
         logger.warning(f"AUDIT[{severity}] {actor_email} {action} {resource_type}:{resource_id}")

@@ -71,11 +71,17 @@ async def _redact_plan_links_for_actor(plans: list, actor: dict) -> list:
 
 def _active_plan_assigned_to_actor(snapshot: dict, actor: dict) -> bool:
     """True if the active plan is assigned to this actor (or to 'all' members).
-    Owners/admins/operators always pass; a beneficiary only passes when the
-    plan's assigned_beneficiary_ids is None (= all) or intersects release_ids."""
+    Owners/admins/operators always pass. A beneficiary passes only when the
+    snapshot explicitly carries assigned_beneficiary_ids = None (= all) or a
+    list intersecting release_ids. A snapshot MISSING the key (legacy activation
+    that dropped assignment) is fail-closed for beneficiaries — assignment
+    intent is unknown, so do not expose assignment-gated resources like FFN
+    (audit 05c1776 P1.2)."""
     if actor.get("is_owner") or actor.get("is_admin") or actor.get("is_operator"):
         return True
-    assigned = (snapshot or {}).get("assigned_beneficiary_ids")
+    if not isinstance(snapshot, dict) or "assigned_beneficiary_ids" not in snapshot:
+        return False  # fail-closed: assignment intent unknown
+    assigned = snapshot.get("assigned_beneficiary_ids")
     if assigned is None:  # None = all estate members
         return True
     return bool(set(assigned) & (actor.get("release_ids") or set()))
@@ -864,6 +870,9 @@ async def activate_plan(data: ActivatePlanRequest, current_user: dict = Depends(
             "linked_document_ids": plan.get("linked_document_ids", []),
             "linked_ffn_contact_ids": plan.get("linked_ffn_contact_ids", []),
             "linked_dav_entry_ids": plan.get("linked_dav_entry_ids", []),
+            # Carry the plan's assignment forward so beneficiary gating survives
+            # activation. None = assigned to all members (audit 05c1776 P1.2).
+            "assigned_beneficiary_ids": plan.get("assigned_beneficiary_ids"),
         },
     }
     await db.emergency_activations.insert_one({k: v for k, v in activation.items()})

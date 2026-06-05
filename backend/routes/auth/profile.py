@@ -273,7 +273,7 @@ async def update_profile(body: dict, current_user: dict = Depends(get_current_us
         except Exception as e:
             logger.warning(f"Failed to send beneficiary update notification: {e}")
 
-    user = await db.users.find_one({"id": current_user["id"]}, {"_id": 0, "password": 0})
+    user = await db.users.find_one({"id": current_user["id"]}, _SAFE_PROFILE_PROJECTION)
     return user
 
 
