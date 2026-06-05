@@ -7693,3 +7693,6 @@ credentials.json
 *.pem
 *.key
 .credentials
+
+# Production test/login credentials — never push to GitHub
+memory/test_credentials.md
