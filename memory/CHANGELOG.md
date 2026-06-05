@@ -1925,7 +1925,7 @@ Not a pillar (beneficiary-side, mentioned as a transition footnote): **BEC** (Be
 - **Attribute-selector safety net** added: `[data-theme="light"] button[style*="background: var(--gold)"]` (plus `#d4af37` / `#daa520` variants) re-style any remaining call-site that still uses inline gold backgrounds. Marketing surfaces (HomePage, FounderAboutPage, LoginPage install banner, LandingContent) tag their buttons with `.gold-keep-dark` so they keep the dark-hero treatment.
 - **Light-mode glow neutralized on `.gold-pill`** so the cream background blends correctly (the original dark-mode gold halo would've washed out on the cream surface).
 
-**Verified visually** on `https://pitch-prep-stable.preview.emergentagent.com/financial` in light mode: "+ Add Bill", "Quick Add", "All" filter pill, "Map your entities & trusts", sidebar portal switchers, and the Public Device Mode pill all render identically. Build tag bumped to `V2026.05.21.6`.
+**Verified visually** on `https://trustee-platform.preview.emergentagent.com/financial` in light mode: "+ Add Bill", "Quick Add", "All" filter pill, "Map your entities & trusts", sidebar portal switchers, and the Public Device Mode pill all render identically. Build tag bumped to `V2026.05.21.6`.
 
 **Housekeeping**: `bash /app/housekeeping.sh --strict` → **ALL CHECKS PASSED** (0 WARN / 0 FAIL).
 
@@ -6640,7 +6640,7 @@ User was mid-pitch and reported four embarrassing regressions. All four root-cau
 
 ## Feb 2026 — Offline Avatar Caching: Final Fix (S3 Regional URLs)
 
-iteration_123 testing-agent run identified that the JS-side fixes alone weren't enough — the S3 presigned URLs were 307-redirecting from the legacy global hostname to the regional one, and the redirect response was dropping CORS headers. The bucket CORS policy itself was correctly configured all along (`https://pitch-prep-stable.preview.emergentagent.com`, `https://carryon.us`, `https://www.carryon.us` — verified live via `s3.get_bucket_cors`).
+iteration_123 testing-agent run identified that the JS-side fixes alone weren't enough — the S3 presigned URLs were 307-redirecting from the legacy global hostname to the regional one, and the redirect response was dropping CORS headers. The bucket CORS policy itself was correctly configured all along (`https://trustee-platform.preview.emergentagent.com`, `https://carryon.us`, `https://www.carryon.us` — verified live via `s3.get_bucket_cors`).
 
 **Root cause:** `services/photo_urls.py` was instantiating boto3 without forcing SigV4 + virtual-hosted-style addressing. Default behaviour for non-`us-east-1` regions is to emit `<bucket>.s3.amazonaws.com` (the legacy global host). For an actual us-east-2 bucket, AWS responds with HTTP 307 → `<bucket>.s3.us-east-2.amazonaws.com`. The 307 carries no CORS headers, so browser-side `fetch()` rejects with a CORS preflight failure even though the destination would have served correctly.
 
@@ -8205,7 +8205,7 @@ Upgraded the existing push-only service worker into a full App Shell service wor
 
 **Test fix:** three test files (`smoke.spec.js`, `scrollbar.spec.js`) used `waitForLoadState('networkidle')` which never fires when a SW is running background stale-while-revalidate refreshes. Swapped to `'load'` — a more correct and less brittle assertion regardless.
 
-**Live verified:** served `https://pitch-prep-stable.preview.emergentagent.com/` in Playwright — SW state `activated`, 4 cache buckets populated (shell has index+splash+icons; images has logos+textures; runtime+api populate on usage). Playwright smoke + scrollbar + toggle_state 11/11 passed, housekeeping 65/65 PASS, ESLint clean.
+**Live verified:** served `https://trustee-platform.preview.emergentagent.com/` in Playwright — SW state `activated`, 4 cache buckets populated (shell has index+splash+icons; images has logos+textures; runtime+api populate on usage). Playwright smoke + scrollbar + toggle_state 11/11 passed, housekeeping 65/65 PASS, ESLint clean.
 
 **Expected user impact:** first load same as before; second load from home-screen icon paints the shell in ~100 ms (vs 1-3 s before); offline: basic navigation and cached tiles still render; logout → login on same device: fresh state guaranteed.
 
