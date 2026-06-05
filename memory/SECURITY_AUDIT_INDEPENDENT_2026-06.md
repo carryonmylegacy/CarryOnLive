@@ -297,3 +297,57 @@ Evidence (current `/app`):
 - CFP financial items default `designated_beneficiaries=["all"]` (intentional "financial picture shared with all beneficiaries" default, unlike fail-closed documents). Design decision — left unchanged (changing it would hide existing financial data on live estates).
 
 
+
+
+---
+
+## ROUND-3 RECONCILIATION — GitHub `8900682` audit (Jun 2026)
+
+The user pushed local fixes to GitHub and re-ran the auditor against commit
+`8900682`. The PDF lists 20 findings (5×P0, 8×P1, 7×P2). Re-checked **every**
+finding line-by-line against the current `/app` tree:
+
+| # | Finding | Verdict on current `/app` |
+|---|---------|---------------------------|
+| P0.1 | `/estates` unverified-email durable membership | **ALREADY FIXED** — email used only when `email_verified`; repair only via `user_id` link (estates.py L54-79) |
+| P0.2 | Beneficiary-mgmt over-broad/missing owner checks | **ALREADY FIXED** — `require_estate_owner` on POST/set-primary/reorder/toggle-succession/invite; `GET /beneficiaries/{id}` sanitizes for peers; primary/succession reads gated by `require_estate_actor` |
+| P0.3 | section-perms PUT trusts unverified email | **ALREADY FIXED** — uses `resolve_estate_actor` (section_permissions.py L164) |
+| P0.4 | `POST /messages` no owner enforcement | **ALREADY FIXED** — `require_estate_owner` (messages.py L333) |
+| P0.5 | Timeline metadata leak | **ALREADY FIXED** — roster/edit-history/wallet/activity events gated `can_view_all`; docs/messages item-filtered |
+| P1.1 | **CCP active/linked-resources not assignment-filtered** | **🔴 GENUINE GAP → FIXED THIS PASS** (see below) |
+| P1.2 | Doc-upload notification leak | **ALREADY FIXED** — `can_access_document` gate before notify (documents.py L554) |
+| P1.3 | `/auth/profile` full-doc | **ALREADY FIXED** — `_SAFE_PROFILE_PROJECTION` whitelist |
+| P1.4 | BEC diagnose leaks AI infra | **ALREADY FIXED** — admin-only + no key prefix |
+| P1.5 | Emergency-access admin routes unscoped | **ALREADY FIXED** — `require_admin_scope([compliance])` |
+| P1.6 | Audit-chain fork under concurrency | **ALREADY FIXED** — `_chain_lock` single-writer |
+| P1.7 | Cert upload no size/type guard | **ALREADY FIXED** — `_ALLOWED_CERT_TYPES` + 25MB cap |
+| P1.8 | Bill-linked DAV cred not auto-visible | **NOT A LEAK** — fail-closed *under*-share; explicit-by-design (matches CES/DAV "release is explicit" philosophy) |
+| P2.1 | Offline pin global per-document | **ALREADY FIXED** — per-user `document_pins` collection |
+| P2.4 | GDPR `relationship` vs `relation` | **ALREADY FIXED** — projects both |
+| P2.6 | Admin scope partially deployed | **ALREADY FIXED** — every admin router family wrapped in `require_scope` (admin/__init__.py) |
+| P2.2 | Message download tokens in-memory | OPEN (reliability, not security) — multi-pod token miss risk |
+| P2.3 | Some write paths don't estate-validate IDs | OPEN (defensive) — cross-estate already blocked by estate filters |
+| P2.5 | Route-policy ≠ handler enforcement | Mitigated — semantic A-vs-B tests now cover the high-risk routes |
+
+### P1.1 — THE ONE GENUINE GAP — FIXED
+`routes/connected_protocol.py`: `GET /ccp/active/{estate_id}` and
+`/ccp/active/{estate_id}/linked-resources` only checked `_is_estate_member`,
+returning the plan snapshot + linked **SDV doc metadata, DAV credential
+metadata (incl. login_username), and FFN contacts** to *any* estate member
+regardless of designation/assignment.
+**Fix:** both endpoints now `resolve_estate_actor`; for non-owner beneficiaries:
+documents filtered via `can_access_document`, DAV via assignment+visibility
+(release_ids + show_now/posthumous-while-transitioned), FFN only when the active
+plan is assigned to the caller; `get_active_emergency` redacts the plan snapshot's
+linked-resource references via `_redact_plan_links_for_actor` +
+`_active_plan_assigned_to_actor`. Safety check-in board stays shared (by design).
+**Tests:** `tests/test_audit_live_avb.py` — 4 new live A-vs-B tests prove benB
+gets the all-designated doc but NOT benA's DAV cred or the FFN contacts; owner &
+assigned benA see their entitled resources. **27/27 suite green.**
+
+**CI:** `housekeeping.sh --strict` → EXIT 0 (Zero-WARN held); route policy 670/670.
+
+**Bottom line:** 19/20 findings were already remediated and are now live on
+carryon.us after the user's GitHub push; **P1.1 was the single missed gap and is
+now closed + regression-locked.** Remaining P2.2/P2.3 are non-security
+reliability/defensive items.

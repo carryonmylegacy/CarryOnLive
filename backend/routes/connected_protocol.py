@@ -69,6 +69,18 @@ async def _redact_plan_links_for_actor(plans: list, actor: dict) -> list:
     return plans
 
 
+def _active_plan_assigned_to_actor(snapshot: dict, actor: dict) -> bool:
+    """True if the active plan is assigned to this actor (or to 'all' members).
+    Owners/admins/operators always pass; a beneficiary only passes when the
+    plan's assigned_beneficiary_ids is None (= all) or intersects release_ids."""
+    if actor.get("is_owner") or actor.get("is_admin") or actor.get("is_operator"):
+        return True
+    assigned = (snapshot or {}).get("assigned_beneficiary_ids")
+    if assigned is None:  # None = all estate members
+        return True
+    return bool(set(assigned) & (actor.get("release_ids") or set()))
+
+
 router = APIRouter()
 
 PLAN_TYPES = ["natural_disaster", "national_emergency", "medical_emergency", "infrastructure_failure", "custom"]
@@ -926,7 +938,8 @@ async def deactivate(
 @router.get("/ccp/active/{estate_id}")
 async def get_active_emergency(estate_id: str, current_user: dict = Depends(get_current_user)):
     """Check if there's an active emergency for an estate."""
-    if not await _is_estate_member(current_user["id"], estate_id):
+    actor = await resolve_estate_actor(estate_id, current_user)
+    if not actor.get("is_estate_member"):
         raise HTTPException(status_code=403, detail="Not a member of this estate")
     activation = await db.emergency_activations.find_one({"estate_id": estate_id, "status": "active"}, {"_id": 0})
     if not activation:
@@ -960,6 +973,17 @@ async def get_active_emergency(estate_id: str, current_user: dict = Depends(get_
                 "checked_in_at": ci["created_at"] if ci else None,
             }
         )
+    # Redact linked-resource references from the plan snapshot for beneficiaries
+    # who aren't entitled to them (audit P1.1). The safety check-in board stays
+    # visible to all members — that is the whole point of an active-emergency board.
+    if not (actor.get("is_owner") or actor.get("is_admin") or actor.get("is_operator")):
+        snap = activation.get("plan_snapshot")
+        if isinstance(snap, dict):
+            snap = (await _redact_plan_links_for_actor([snap], actor))[0]
+            if not _active_plan_assigned_to_actor(snap, actor):
+                snap["linked_ffn_contact_ids"] = []
+                snap["assigned_beneficiary_ids"] = None
+            activation["plan_snapshot"] = snap
     return {
         "active": True,
         "activation": activation,
@@ -969,40 +993,81 @@ async def get_active_emergency(estate_id: str, current_user: dict = Depends(get_
 
 @router.get("/ccp/active/{estate_id}/linked-resources")
 async def get_linked_resources(estate_id: str, current_user: dict = Depends(get_current_user)):
-    """Get resolved linked SDV documents, FFN contacts, and DAV entries for the active emergency."""
-    if not await _is_estate_member(current_user["id"], estate_id):
+    """Get resolved linked SDV documents, FFN contacts, and DAV entries for the
+    active emergency. Beneficiaries only receive resources they are individually
+    entitled to: documents via can_access_document, DAV via assignment+visibility,
+    and FFN contacts only when the active plan is assigned to them (audit P1.1)."""
+    actor = await resolve_estate_actor(estate_id, current_user)
+    if not actor.get("is_estate_member"):
         raise HTTPException(status_code=403, detail="Not a member of this estate")
     activation = await db.emergency_activations.find_one({"estate_id": estate_id, "status": "active"}, {"_id": 0})
     if not activation:
         return {"documents": [], "ffn_contacts": [], "dav_entries": []}
     snap = activation.get("plan_snapshot", {})
-    # Resolve SDV documents
+    full = bool(actor.get("is_owner") or actor.get("is_admin") or actor.get("is_operator"))
+    plan_assigned = _active_plan_assigned_to_actor(snap, actor)
+
+    # Resolve SDV documents — beneficiaries only see designated, in-phase docs.
     doc_ids = snap.get("linked_document_ids", [])
     documents = []
     if doc_ids:
         docs = await db.documents.find(
-            {"id": {"$in": doc_ids}, "estate_id": estate_id},
-            {"_id": 0, "id": 1, "name": 1, "category": 1, "file_type": 1, "file_size": 1},
+            {"id": {"$in": doc_ids}, "estate_id": estate_id, "deleted_at": None},
+            {"_id": 0},
         ).to_list(50)
-        documents = docs
-    # Resolve FFN contacts
-    ffn_ids = snap.get("linked_ffn_contact_ids", [])
-    ffn_contacts = []
-    if ffn_ids:
-        contacts = await db.ffn_contacts.find(
-            {"id": {"$in": ffn_ids}, "estate_id": estate_id, "deleted_at": None},
-            {"_id": 0, "id": 1, "name": 1, "phone": 1, "email": 1, "relationship": 1, "address": 1},
-        ).to_list(50)
-        ffn_contacts = contacts
-    # Resolve DAV entries
+        if not full:
+            docs = [d for d in docs if can_access_document(d, actor)]
+        documents = [
+            {
+                "id": d.get("id"),
+                "name": d.get("name"),
+                "category": d.get("category"),
+                "file_type": d.get("file_type"),
+                "file_size": d.get("file_size"),
+            }
+            for d in docs
+        ]
+
+    # Resolve DAV entries — assignment + visibility gated (mirrors digital_wallet).
     dav_ids = snap.get("linked_dav_entry_ids", [])
     dav_entries = []
     if dav_ids:
         entries = await db.digital_wallet.find(
-            {"id": {"$in": dav_ids}, "estate_id": estate_id},
-            {"_id": 0, "id": 1, "account_name": 1, "login_username": 1, "category": 1, "notes": 1},
+            {"id": {"$in": dav_ids}, "estate_id": estate_id, "deleted_at": None},
+            {"_id": 0},
         ).to_list(50)
-        dav_entries = entries
+        if not full:
+            is_transitioned = bool(actor.get("is_transitioned"))
+            release_ids = actor.get("release_ids") or set()
+            visible = []
+            for e in entries:
+                assigned = e.get("assigned_beneficiary_id")
+                if not (assigned and assigned in release_ids):
+                    continue
+                vis = e.get("beneficiary_visibility") or "private"
+                if vis == "show_now" or (vis == "posthumous_only" and is_transitioned):
+                    visible.append(e)
+            entries = visible
+        dav_entries = [
+            {
+                "id": e.get("id"),
+                "account_name": e.get("account_name"),
+                "login_username": e.get("login_username"),
+                "category": e.get("category"),
+                "notes": e.get("notes"),
+            }
+            for e in entries
+        ]
+
+    # Resolve FFN contacts — owner/admin always; beneficiaries only when the
+    # active plan is explicitly assigned to them.
+    ffn_ids = snap.get("linked_ffn_contact_ids", [])
+    ffn_contacts = []
+    if ffn_ids and (full or plan_assigned):
+        ffn_contacts = await db.ffn_contacts.find(
+            {"id": {"$in": ffn_ids}, "estate_id": estate_id, "deleted_at": None},
+            {"_id": 0, "id": 1, "name": 1, "phone": 1, "email": 1, "relationship": 1, "address": 1},
+        ).to_list(50)
     return {"documents": documents, "ffn_contacts": ffn_contacts, "dav_entries": dav_entries}
 
 

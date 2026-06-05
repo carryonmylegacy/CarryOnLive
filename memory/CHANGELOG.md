@@ -1,6 +1,15 @@
 # CarryOn — Changelog
 
 
+## Jun 6, 2026 — Round-3 audit (GitHub `8900682`) reconciliation + P1.1 CCP fix
+
+User pushed round-2 fixes to GitHub and re-audited commit `8900682` (now live on carryon.us via Render/Vercel). The new PDF listed 20 findings; verified each line-by-line against current `/app`:
+- **19/20 already remediated** (P0.1-P0.5, P1.2-P1.7, P2.1, P2.4, P2.6) — these were the pushed round-2 fixes; audit reproduced them only on the stale GitHub snapshot. P1.8 is a fail-closed under-share (explicit-by-design, not a leak).
+- **P1.1 — the single genuine gap — FIXED:** `GET /ccp/active/{estate_id}` and `/ccp/active/{estate_id}/linked-resources` (`routes/connected_protocol.py`) returned plan snapshot + linked SDV/DAV/FFN metadata to any estate member. Now resolve `actor` and filter: documents via `can_access_document`, DAV via assignment+visibility, FFN only when the active plan is assigned to the caller; active snapshot redacts unentitled linked-resource references. Safety check-in board stays shared by design.
+- **Tests:** +4 live A-vs-B tests in `tests/test_audit_live_avb.py` (27/27 green) proving benB cannot see benA's DAV cred or FFN contacts. `housekeeping.sh --strict` → EXIT 0; route policy 670/670.
+- Open (non-security): P2.2 in-memory message download tokens (multi-pod reliability), P2.3 write-time ID estate-validation (defensive).
+
+
 ## Jun 5, 2026 (round 2) — Post-fix audit reconciliation + financial fail-closed + GDPR + deploy hygiene
 
 A 2nd "post-fix" audit PDF reported the round-1 fixes as still missing AND flagged already-fail-closed code as fail-open. Verified line-by-line: that audit ran against a checkout WITHOUT the fixes (GitHub/production — never pushed/redeployed). Current `/app` already has: fail-closed `_designation_matches`/`message_recipient_matches`, `email_verified` gating, CES assignment, 670/670 route policy, minimal download tokens, admin `require_scope`. Proof saved in `memory/SECURITY_AUDIT_INDEPENDENT_2026-06.md`.
