@@ -132,8 +132,26 @@ async def ensure_indexes(db, logger):
         await db.activity_log.create_index("user_id")
         await db.notifications.create_index("user_id")
         await db.notifications.create_index([("user_id", 1), ("read", 1)])
-        # SOC 2: TTL index for 1-year audit log retention
-        await db.audit_trail.create_index("stored_at", expireAfterSeconds=365 * 24 * 3600)
+        # SOC 2: audit-log retention. The compliance policy + admin security
+        # scan advertise a 7-YEAR retention window; the TTL must match the
+        # claim (a shorter TTL would silently delete compliance evidence and
+        # make the documented policy false). Drop-and-recreate so a changed
+        # expireAfterSeconds takes effect even when an older 1-year index
+        # ("stored_at_1") already exists in the database.
+        AUDIT_TTL_SECONDS = 7 * 365 * 24 * 3600  # 7 years
+        try:
+            await db.audit_trail.create_index(
+                "stored_at", expireAfterSeconds=AUDIT_TTL_SECONDS, name="stored_at_ttl"
+            )
+        except Exception:
+            for stale in ("stored_at_1", "stored_at_ttl"):
+                try:
+                    await db.audit_trail.drop_index(stale)
+                except Exception:
+                    pass
+            await db.audit_trail.create_index(
+                "stored_at", expireAfterSeconds=AUDIT_TTL_SECONDS, name="stored_at_ttl"
+            )
         await db.audit_trail.create_index("timestamp")
         await db.audit_trail.create_index("actor_id")
         await db.audit_trail.create_index("category")

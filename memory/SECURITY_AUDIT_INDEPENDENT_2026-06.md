@@ -269,3 +269,31 @@ most important credibility fix is **P2-9 (lockout copy + SOC2 claim wording)**.
 
 **CI:** `housekeeping.sh --strict` → EXIT 0 (Zero-WARN held). All audit tests green (36+ passing). No regressions to owner/admin/benefactor flows (verified live + via testing agent iteration_167).
 
+---
+
+## POST-FIX AUDIT RECONCILIATION — Jun 5, 2026 (2nd audit PDF)
+
+A second "post-fix" audit PDF reported most fixes as still missing **and** flagged
+`_designation_matches` / `message_recipient_matches` / `email_verified` as
+fail-open. Verified line-by-line against the **current `/app` code**: those
+claims do **not** match this codebase. The 2nd audit was run against a checkout
+WITHOUT these fixes (almost certainly the **GitHub repo / production
+deployment**, which were never pushed/redeployed — Emergent auto-commits to the
+local workspace only; "Save to GitHub" + Render/Vercel deploy are separate
+manual steps that had not been done).
+
+Evidence (current `/app`):
+- `access_control.py:176-185` `_designation_matches` → empty/None = **False** (fail-closed); `:265` passes the RAW list (no `or ["all"]` coercion). (Audit claimed fail-open.)
+- `access_control.py:300-307` `message_recipient_matches` → empty recipients = **False** (fail-closed). (Audit claimed fail-open.)
+- `access_control.py:70-71` actor resolution trusts email only when `email_verified`. `auth/profile.py:383` `PUT /auth/email` sets `email_verified=False`. (Audit claimed neither.)
+- `entities_share.py:128-133,266` CES requires assignment. (Audit claimed missing.)
+- route policy **670/670**; download tokens minimal; admin `require_scope` wired. (Audit claimed 648/670, full-user tokens, UI-only scope.)
+
+**One finding was genuinely valid on current code (caught by neither the 1st audit nor me):**
+- **Audit-log retention mismatch:** `security_scan.py` advertised "audit logs (7yr)" but `db_indexes.py` set a **1-year** TTL on `audit_trail.stored_at` that would silently delete compliance evidence. ✅ **FIXED** — TTL raised to **7 years** (drop-and-recreate handled), verified live (`stored_at_ttl` ttl=7.0yr), and the security-scan retention check is now **live-measured** against the actual index.
+
+**Legitimate items surfaced, pending product decision (NOT security holes):**
+- Beneficiary-centric GDPR export — `compliance.export_user_data` is owner-centric; a beneficiary cannot export the personal data CarryOn holds about them in others' estates. Enhancement, offered.
+- CFP financial items default `designated_beneficiaries=["all"]` (intentional "financial picture shared with all beneficiaries" default, unlike fail-closed documents). Design decision — left unchanged (changing it would hide existing financial data on live estates).
+
+

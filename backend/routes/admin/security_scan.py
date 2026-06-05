@@ -330,11 +330,26 @@ async def run_security_scan(current_user: dict = Depends(require_admin)):
         "All sensitive actions logged to security_audit_log with timestamps",
     )
 
+    # Data retention — verify the audit_trail TTL index actually matches the
+    # advertised 7-year window (measured, not asserted).
+    audit_ttl_ok = False
+    audit_ttl_detail = "audit_trail TTL index not found"
+    try:
+        ainfo = await db.audit_trail.index_information()
+        for _name, _meta in ainfo.items():
+            if _meta.get("expireAfterSeconds") and "stored_at" in str(_meta.get("key", "")):
+                yrs = round(_meta["expireAfterSeconds"] / (365 * 24 * 3600), 1)
+                audit_ttl_ok = _meta["expireAfterSeconds"] >= 7 * 365 * 24 * 3600
+                audit_ttl_detail = f"audit_trail.stored_at TTL = {yrs}yr"
+                break
+    except Exception as e:
+        audit_ttl_detail = f"could not verify audit TTL: {str(e)[:80]}"
     add_check(
         "Compliance",
         "Data Retention Policy",
-        "PASS",
-        "Defined retention periods: OTPs (15min), failed logins (1hr), tokens (9hr), audit logs (7yr)",
+        "PASS" if audit_ttl_ok else "WARN",
+        f"OTPs (15min), failed logins (1hr), download tokens (5min), audit logs 7yr. Measured: {audit_ttl_detail}",
+        check_type="live",
     )
 
     # --- 11. Production Readiness ---
