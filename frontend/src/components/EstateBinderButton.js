@@ -218,18 +218,23 @@ const EstateBinderButton = ({ lastGeneratedAt: lastGeneratedAtProp } = {}) => {
         )}
         <span className="text-[11px] font-bold tracking-wider leading-none">BNDR</span>
       </button>
-        {lastGeneratedAt && (
-          <span
-            className="mt-1 text-[11px] font-medium leading-none whitespace-nowrap"
-            style={{
-              color: 'rgba(96,165,250,0.85)',
-              textShadow: '0 0 6px rgba(96,165,250,0.35)',
-            }}
-            data-testid="readiness-estate-binder-stamp"
-          >
-            {`Built ${formatAgo(lastGeneratedAt)}`}
-          </span>
-        )}
+        {/* Always render the freshness line — muted "Not built" placeholder
+            when no binder exists yet — so this pill matches the EGA pill's
+            height and the two corners stay vertically symmetric. */}
+        <span
+          className="mt-1 text-[11px] font-medium leading-none whitespace-nowrap"
+          style={
+            lastGeneratedAt
+              ? {
+                  color: 'rgba(96,165,250,0.85)',
+                  textShadow: '0 0 6px rgba(96,165,250,0.35)',
+                }
+              : { color: 'rgba(96,165,250,0.45)' }
+          }
+          data-testid="readiness-estate-binder-stamp"
+        >
+          {lastGeneratedAt ? `Built ${formatAgo(lastGeneratedAt)}` : 'Not built'}
+        </span>
       </div>
 
       {emptyState && (

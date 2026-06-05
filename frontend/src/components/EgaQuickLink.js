@@ -92,18 +92,25 @@ const EgaQuickLink = ({ testId = 'readiness-ega-quicklink', lastAnalyzedAt: last
         <Sparkles className="w-4 h-4 lg:w-5 lg:h-5" />
         <span className="text-[11px] font-bold tracking-wider leading-none">EGA</span>
       </button>
-      {lastAnalyzedAt && (
-        <span
-          className="mt-1 text-[11px] font-medium leading-none whitespace-nowrap"
-          style={{
-            color: 'rgba(var(--gold-rgb), 0.85)',
-            textShadow: '0 0 6px rgba(var(--gold-rgb), 0.35)',
-          }}
-          data-testid="readiness-ega-stamp"
-        >
-          {`Analyzed ${fmt(lastAnalyzedAt)}`}
-        </span>
-      )}
+      {/* Always render the freshness line — when EGA has never run we
+          show a muted "Not run yet" placeholder so this pill stays the
+          same overall height as the BNDR pill (which renders a "Built
+          Xd" stamp). Keeps the two corner pills vertically symmetric
+          regardless of analysis history. */}
+      <span
+        className="mt-1 text-[11px] font-medium leading-none whitespace-nowrap"
+        style={
+          lastAnalyzedAt
+            ? {
+                color: 'rgba(var(--gold-rgb), 0.85)',
+                textShadow: '0 0 6px rgba(var(--gold-rgb), 0.35)',
+              }
+            : { color: 'rgba(var(--gold-rgb), 0.45)' }
+        }
+        data-testid="readiness-ega-stamp"
+      >
+        {lastAnalyzedAt ? `Analyzed ${fmt(lastAnalyzedAt)}` : 'Not run yet'}
+      </span>
     </div>
   );
 };
