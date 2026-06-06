@@ -41,6 +41,17 @@ async function loginAsAdmin(page) {
     '[data-testid="login-submit-pwa"], [data-testid="login-submit"], button[type="submit"]'
   ).first();
   await submit.click();
+  // Single-session enforcement: if this account is already signed in on another
+  // device (the norm in CI — the same account is used by humans/prior runs), the
+  // form shows a "Signed in elsewhere" takeover prompt INSTEAD of navigating.
+  // Click "Sign In Here Instead" (3 layout variants) to end the other session.
+  const forceLogin = page.locator(
+    '[data-testid="force-login-btn"], [data-testid="force-login-pwa"], [data-testid="force-login-btn-desktop"]'
+  ).first();
+  try {
+    await forceLogin.waitFor({ state: 'visible', timeout: 5000 });
+    await forceLogin.click();
+  } catch { /* no takeover prompt — a normal first-device login proceeded */ }
   // Admins land on /admin; benefactors on /dashboard; onboarding may redirect too.
   await page.waitForURL(/\/(admin|dashboard|home|onboarding|estate|get-started)/, { timeout: 20_000 });
 }
