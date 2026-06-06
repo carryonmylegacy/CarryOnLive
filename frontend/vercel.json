@@ -1,6 +1,6 @@
 {
   "ignoreCommand": "git diff --quiet $VERCEL_GIT_PREVIOUS_SHA HEAD -- ./ 2>/dev/null || exit 1",
-  "installCommand": "yarn install",
+  "installCommand": "bash vercel-install.sh",
   "buildCommand": "chmod +x build-prod.sh && bash build-prod.sh",
   "outputDirectory": "build",
   "rewrites": [
