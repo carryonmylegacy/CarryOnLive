@@ -1710,6 +1710,34 @@ cp_check "CP3g BEC distinct from EGA in section_permissions" \
   "/app/backend/routes/section_permissions.py" \
   "bec_access"
 
+# CP4 — Logout cleanup invariant (audit 4fcd843 #1)
+# Every automatic logout path (signed-in-elsewhere, midnight, server-idle,
+# instant-on-leave, background-timer) MUST route through
+# performLocalLogoutCleanup() so it purges Dexie + list caches + the AES key +
+# SW caches — never a token-only sign-out that strands the previous user's
+# estate data on a shared device. The ONLY direct removeItem('carryon_token')
+# allowed in AuthContext.js lives inside that single helper; any extra one means
+# a new logout branch skipped the purge.
+AC_FILE="/app/frontend/src/contexts/AuthContext.js"
+if [ ! -f "$AC_FILE" ]; then
+  echo -e "CP. CP4a AuthContext present ......... ${RED}FAIL${NC} (file missing)"
+  CP_FAIL=$((CP_FAIL + 1))
+else
+  if grep -q "async function performLocalLogoutCleanup" "$AC_FILE"; then
+    echo -e "CP. CP4a performLocalLogoutCleanup helper exists ......... ${GREEN}PASS${NC}"
+  else
+    echo -e "CP. CP4a performLocalLogoutCleanup helper exists ......... ${RED}FAIL${NC} (central logout-cleanup helper missing)"
+    CP_FAIL=$((CP_FAIL + 1))
+  fi
+  TOKEN_RM_COUNT=$(grep -c "removeItem('carryon_token')" "$AC_FILE")
+  if [ "$TOKEN_RM_COUNT" -eq 1 ]; then
+    echo -e "CP. CP4b No token-only auto-logout branch ......... ${GREEN}PASS${NC}"
+  else
+    echo -e "CP. CP4b No token-only auto-logout branch ......... ${RED}FAIL${NC} (found ${TOKEN_RM_COUNT} direct carryon_token removals in AuthContext.js; expected exactly 1 inside performLocalLogoutCleanup. A new logout path must call performLocalLogoutCleanup() instead of removing the token directly — audit 4fcd843 #1.)"
+    CP_FAIL=$((CP_FAIL + 1))
+  fi
+fi
+
 if [ "$CP_FAIL" -gt 0 ]; then
   FAILS=$((FAILS + CP_FAIL))
   echo -e "${RED}CRITICAL PATHWAY FAILURE${NC}: $CP_FAIL invariant(s) broken."
