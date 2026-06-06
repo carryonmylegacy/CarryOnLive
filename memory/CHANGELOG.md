@@ -1,6 +1,21 @@
 # CarryOn — Changelog
 
 
+## Jun 6, 2026 — Audit d5a54f5e: DAV plaintext-leak fix + bi-directional CFP↔DAV sync (P0/P1)
+
+Remediated the high-severity findings from the latest fix prompt. Backend verified by pytest (`tests/test_dav_sync_estate_scope_jun2026.py` — 9 passed) + curl; frontend verified by testing agent (iteration_170, 7/7 scenarios PASS incl. the localStorage security check). `housekeeping.sh --strict` EXIT 0.
+
+- **P0 — Stop persisting decrypted DAV secrets in plaintext localStorage.** New `frontend/src/utils/sanitizeDavForCache.js` strips `password`/`additional_access`/`encrypted_*` from any DAV payload before `saveList`. Wired into `DigitalWalletPage.js`, `FinancialPortalPage.js` (financial:dav + financial:portal blob), and `offline/warmup.js`. One-time, self-healing boot purge (`purgeLeakedDavSecrets`) added to `index.js` to scrub old leaked caches. Testing agent confirmed 0 secret fields remain in `carryon_list_cache:financial:dav:*` / `financial:portal:*`.
+- **P0 — Bi-directional CFP↔DAV credential sync.** Generic `_upsert_dav_for_cfp_item` + `_require_dav_entry_in_estate` added to `financial_portal/_core.py`. Accounts/Debts/Property create+update now materialise OR update-in-place a linked DAV row (preserving beneficiary assignments) when login creds are supplied — mirroring existing Bill behaviour. New shared `DavCredentialFields.js` adds the login/password block to AccountForm/DebtForm/PropertyAssetForm. Added `dav_login_username`/`dav_login_password` to the three Create+Update models.
+- **P1 — Estate-scope every DAV link.** `_require_dav_entry_in_estate` enforced on bills/accounts/debts/property create+update; bills' existing-DAV lookup is now estate-scoped. Foreign/stale `dav_entry_id` → 400.
+- **P1 — Sanitize Entity Wizard drafts.** `EntityWizard.js` now strips `password`/`additional_access` from each credential row before writing the `cfp:entityWizard:draft:*` localStorage draft.
+- **P1 — Clear all draft namespaces on logout/revocation.** New `frontend/src/utils/clearLocalDrafts.js` (clears `cfp:entityWizard:draft:*`, `carryon_draft:*`, `carryon_dav_popup_shown`), called from `AuthContext.performLocalLogoutCleanup` and the `AUTHZ_REVOKED` handler in `index.js`.
+- **P1 — Direct Digital Wallet create missing estate_id.** `WalletEntryPanel` POST body now includes `estate_id` (from `entry.estate_id` or `selected_estate_id`); optimistic row carries it too. Backend already required it.
+
+Remaining from this audit (P2/P3, not yet started): remove hardcoded E2E password fallback + harden seed prod-deny (auth — needs integration_expert); explicit local-logout reliability warning on pending offline work; CI/SOC2 (gitleaks `continue-on-error`, `--frozen-lockfile`); audit-chain `repair_queue_backlog` alerting; `persistEntityCredentials` partial-failure toast; offline partitioned-cache diagnostics.
+
+
+
 ## Jun 6, 2026 — PROD incident fix: audit-chain fatal alert (`prev_hash_unique` missing)
 
 Production Sentry `fatal` (PYTHON-296): the round-5 unique-index cross-pod guard couldn't be created because prod `audit_trail` held a historical fork (dup prev_hash); the startup health-check logged CRITICAL.
