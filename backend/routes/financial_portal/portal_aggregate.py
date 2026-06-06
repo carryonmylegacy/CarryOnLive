@@ -77,6 +77,15 @@ async def get_financial_portal(estate_id: str, current_user: dict = Depends(get_
         accounts = _filter_for_actor(accounts, actor, is_transitioned, cfp_pre_transition_visible=cfp_pre)
         property_assets = _filter_for_actor(property_assets, actor, is_transitioned, cfp_pre_transition_visible=cfp_pre)
         dav_entries = [entry for entry in dav_entries if _dav_visible_for_actor(entry, actor)]
+        # Only surface custom-category labels actually attached to an item this
+        # beneficiary can see — hidden owner-created labels must not leak via the
+        # estate-level category list (audit fa1ad83 #9).
+        used_categories = {
+            item.get("category")
+            for item in (bills + debts + accounts + property_assets)
+            if item.get("category")
+        }
+        custom_categories = [c for c in custom_categories if c.get("name") in used_categories or c.get("id") in used_categories]
 
     return {
         "bills": bills,
@@ -681,5 +690,11 @@ async def export_handoff_package(estate_id: str, current_user: dict = Depends(ge
     return Response(
         content=pdf_bytes,
         media_type="application/pdf",
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            # Highly sensitive financial dossier — never cache (audit fa1ad83 #6).
+            "Cache-Control": "no-store",
+            "Pragma": "no-cache",
+            "Expires": "0",
+        },
     )

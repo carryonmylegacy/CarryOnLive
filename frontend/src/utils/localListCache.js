@@ -43,3 +43,21 @@ export function readList(key) {
 export function clearList(key) {
   try { localStorage.removeItem(PREFIX + key); } catch {}
 }
+
+/**
+ * Remove EVERY `carryon_list_cache:*` entry. Called on logout so a shared
+ * device retains no prior user's financial / DAV / FFN / checklist / list
+ * payloads in localStorage (audit fa1ad83 #2).
+ */
+export function clearAllLists() {
+  try {
+    const keys = [];
+    for (let i = 0; i < localStorage.length; i += 1) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith(PREFIX)) keys.push(k);
+    }
+    keys.forEach((k) => {
+      try { localStorage.removeItem(k); } catch {}
+    });
+  } catch {}
+}

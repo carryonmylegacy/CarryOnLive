@@ -565,11 +565,24 @@ export const AuthProvider = ({ children }) => {
       }
     } catch (_e) { /* proceed with client-side logout even if server call fails */ }
     clearCache();
-    // Phase 7: clear the in-memory offline encryption key so the next user
-    // on this device derives their own key and cannot decrypt the previous
-    // user's sealed IndexedDB rows.
+    // Phase 7 / audit fa1ad83 #2: clear the in-memory offline encryption key
+    // AND purge all persistent local data mirrors so the next user on this
+    // device cannot read the previous user's estate data. This runs regardless
+    // of whether offline mode was ever enabled (warmup can populate stores
+    // even when the toggle is off).
     try {
       import('../offline/crypto').then((m) => m.clearSessionKey()).catch(() => {});
+    } catch {}
+    try {
+      import('../offline/db').then((m) => m.purgeLocalData()).catch(() => {});
+    } catch {}
+    try {
+      import('../utils/localListCache').then((m) => m.clearAllLists()).catch(() => {});
+    } catch {}
+    // Clear estate-context selectors so the next user doesn't inherit them.
+    try {
+      localStorage.removeItem('selected_estate_id');
+      localStorage.removeItem('beneficiary_estate_id');
     } catch {}
     // Purge the service worker's per-user API + image caches so the next
     // user to log in on this device doesn't see a flash of the previous

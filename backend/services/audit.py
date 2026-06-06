@@ -79,6 +79,20 @@ async def _ensure_head_hash() -> str:
     return (doc or {}).get("hash") or seed
 
 
+async def _enqueue_audit_repair(entry: dict, prev_hash: str, new_hash: str, reason: str) -> None:
+    """Durably capture a compliance event that could not be chained/inserted so a
+    reconciler can re-insert it later WITHOUT rewriting history (audit fa1ad83 #1)."""
+    try:
+        doc = {k: v for k, v in entry.items() if k not in ("_id", "stored_at")}
+        doc["prev_hash"] = prev_hash
+        doc["integrity_hash"] = new_hash
+        doc["queued_at"] = datetime.now(timezone.utc)
+        doc["reason"] = reason
+        await db.audit_repair_queue.insert_one(doc)
+    except Exception as e:  # noqa: BLE001
+        logger.error(f"AUDIT repair-queue write failed ({reason}): {e}")
+
+
 async def log_audit_event(
     actor_id: str,
     actor_email: str,
@@ -109,11 +123,14 @@ async def log_audit_event(
 
     # Append via compare-and-swap on the singleton head pointer. We reserve the
     # next slot by atomically advancing the head from prev → our hash FIRST, then
-    # insert the entry. Only the CAS winner proceeds to insert; losers recompute
-    # against the new head and retry. This prevents cross-pod forks with no
-    # dependency on a unique index over historical data, and keeps audit_trail
-    # strictly APPEND-ONLY (no updates/deletes — SOC2 CC7.2 immutability).
+    # insert the entry (append-only — no updates/deletes on audit_trail, SOC2
+    # CC7.2). The CAS-first ordering means the head can advance before the row is
+    # durably inserted; if the insert then fails we capture the FULL event
+    # (incl. prev_hash + new_hash) in a durable repair queue so a reconciler can
+    # re-insert it without rewriting history, and verify_audit_chain() reports
+    # the head/last-event mismatch as NOT ok (audit fa1ad83 #1/#8).
     inserted = False
+    cas_won = False
     async with _chain_lock:
         for _attempt in range(16):
             now = datetime.now(timezone.utc)
@@ -136,25 +153,23 @@ async def log_audit_event(
                 # inserted, so simply recompute against the new head and retry.
                 continue
 
-            # Won the slot: persist the entry (append-only insert).
+            cas_won = True
             entry["integrity_hash"] = new_hash
             entry["stored_at"] = now  # datetime for MongoDB TTL index
-            await db.audit_trail.insert_one(entry)
-            inserted = True
+            try:
+                await db.audit_trail.insert_one(entry)
+                inserted = True
+            except Exception as insert_err:  # noqa: BLE001
+                # Head advanced but the evidence row failed to persist — durable
+                # repair capture; do NOT delete from audit_trail.
+                await _enqueue_audit_repair(entry, prev, new_hash, "insert_failed_after_head_advance")
+                logger.error(f"AUDIT insert failed after head advance: {insert_err}")
             break
 
-    if not inserted:
-        # Do NOT silently drop a compliance event. Persist it to a durable repair
-        # queue for out-of-band re-chaining and surface a log so the gap is
-        # visible (audit 18a9d44 F-18-02).
-        try:
-            entry.pop("_id", None)
-            entry.pop("stored_at", None)
-            await db.audit_repair_queue.insert_one(
-                {**entry, "queued_at": datetime.now(timezone.utc), "reason": "chain_cas_retries_exhausted"}
-            )
-        except Exception as e:  # noqa: BLE001
-            logger.error(f"AUDIT chain append AND repair-queue write failed: {e}")
+    if not cas_won and not inserted:
+        # Never won the head slot after retries (extreme contention) — capture for
+        # repair so the compliance event is not silently dropped.
+        await _enqueue_audit_repair(entry, entry.get("prev_hash", ""), entry.get("integrity_hash", ""), "chain_cas_retries_exhausted")
         logger.error(
             f"AUDIT chain append failed after retries; event queued for repair "
             f"(actor={actor_email} action={action} {resource_type}:{resource_id})"
@@ -236,13 +251,28 @@ async def verify_audit_chain(limit: int = 10000) -> dict:
     # chain is NOT fully authoritative even when every existing link verifies
     # (audit 512bd5c F-18-06).
     repair_queue_backlog = await db.audit_repair_queue.count_documents({})
-    # The cross-pod chain guard is now the singleton head pointer (CAS), not a
-    # unique index — report whether it is initialized.
+    # The cross-pod chain guard is the singleton head pointer (CAS). For evidence
+    # to be authoritative the head must (a) exist and (b) equal the integrity_hash
+    # of the most recently inserted chained event — otherwise the head advanced
+    # past a row that never durably landed (audit fa1ad83 #8).
     head_doc = await db.audit_chain_state.find_one({"key": "chain_head"}, {"_id": 0, "hash": 1})
     chain_head_present = bool(head_doc and head_doc.get("hash"))
+    last_event = await db.audit_trail.find_one(
+        {"prev_hash": {"$exists": True}, "integrity_hash": {"$exists": True}},
+        sort=[("stored_at", -1)],
+        projection={"_id": 0, "integrity_hash": 1},
+    )
+    chain_head_matches_last_event = bool(
+        chain_head_present and last_event and head_doc.get("hash") == last_event.get("integrity_hash")
+    )
 
     return {
-        "ok": first_break_at is None and repair_queue_backlog == 0,
+        "ok": (
+            first_break_at is None
+            and repair_queue_backlog == 0
+            and chain_head_present
+            and chain_head_matches_last_event
+        ),
         "chain_links_ok": first_break_at is None,
         "entries_checked": checked,
         "first_break_at": first_break_at,
@@ -250,6 +280,7 @@ async def verify_audit_chain(limit: int = 10000) -> dict:
         "skipped_legacy": skipped_legacy,
         "repair_queue_backlog": repair_queue_backlog,
         "chain_head_present": chain_head_present,
+        "chain_head_matches_last_event": chain_head_matches_last_event,
     }
 
 

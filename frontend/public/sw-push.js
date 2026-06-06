@@ -158,11 +158,32 @@ const API_NEVER_CACHE_PATTERNS = [
   /^\/api\/messages\/[^/]+\/attachment/,
   /^\/api\/messages\/[^/]+\/download/,
   /^\/api\/estate-chat\/files\//,
+  // Generated, highly sensitive financial dossier / exports (audit fa1ad83 #6).
+  /^\/api\/financial\/handoff-package\//,
 ];
 
 function isNeverCacheApi(url) {
   if (API_NEVER_CACHE.some((p) => url.pathname.startsWith(p))) return true;
   return API_NEVER_CACHE_PATTERNS.some((re) => re.test(url.pathname));
+}
+
+// Authorization-sensitive API routes whose access can be REVOKED. These must be
+// network-first so a revoked beneficiary never sees stale section data while
+// online; on 401/403 we drop the cached copy and tell clients to purge local
+// mirrors. Cache is only a fallback for true offline (audit fa1ad83 #5).
+const AUTHZ_SENSITIVE_API_PREFIXES = [
+  '/api/documents/',
+  '/api/messages/',
+  '/api/checklists/',
+  '/api/financial/',
+  '/api/estate-chat/contacts',
+  '/api/ccp/',
+  '/api/guardian/',
+  '/api/beneficiaries/',
+];
+
+function isAuthzSensitiveApi(url) {
+  return AUTHZ_SENSITIVE_API_PREFIXES.some((p) => url.pathname.startsWith(p));
 }
 
 // ── Install: precache the shell ─────────────────────────────────────────────
@@ -289,6 +310,39 @@ function isBundleAsset(url) {
 }
 
 // Stale-while-revalidate: return cache (if any), then update in background.
+
+// Network-first for authorization-sensitive API routes (audit fa1ad83 #5).
+// While online, ALWAYS hit the network so revocation is respected immediately.
+// On 401/403 we delete any cached copy and notify clients to purge local
+// mirrors. Cache is used only when the network actually fails (offline).
+async function networkFirstApi(request, cacheName) {
+  const cache = cacheName ? await caches.open(cacheName) : null;
+  try {
+    const response = await fetch(request);
+    if (response && (response.status === 401 || response.status === 403)) {
+      if (cache) await cache.delete(request).catch(() => {});
+      try {
+        const clientsList = await self.clients.matchAll();
+        for (const c of clientsList) {
+          c.postMessage({ type: 'AUTHZ_REVOKED', url: request.url, status: response.status });
+        }
+      } catch (e) { /* no clients */ }
+      return response;
+    }
+    if (cache && response && response.ok) {
+      const cc = response.headers.get('Cache-Control') || '';
+      if (!cc.includes('no-store')) cache.put(request, response.clone()).catch(() => {});
+    }
+    return response;
+  } catch (err) {
+    if (cache) {
+      const cached = await cache.match(request);
+      if (cached) return cached;
+    }
+    throw err;
+  }
+}
+
 // Produces instant paint with eventual consistency.
 async function staleWhileRevalidate(request, cacheName) {
   const cache = await caches.open(cacheName);
@@ -459,7 +513,15 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 4) Cacheable API GETs → stale-while-revalidate, but ONLY within the
+  // 4) Authorization-sensitive API GETs → NETWORK-FIRST so revocation is
+  // respected immediately while online; cache is an offline-only fallback
+  // (audit fa1ad83 #5).
+  if (isAuthzSensitiveApi(url)) {
+    event.respondWith(networkFirstApi(request, apiCacheName()));
+    return;
+  }
+
+  // 5) Other cacheable API GETs → stale-while-revalidate, but ONLY within the
   // signed-in user's partitioned cache. Without an established cache identity
   // we go network-only so authenticated data is never cached unattributed
   // (audit 18a9d44 F-18-01).
@@ -488,17 +550,17 @@ self.addEventListener('message', (event) => {
     // authenticated API GETs are cached per-user (audit 18a9d44 F-18-01).
     apiCacheId = String(event.data.cacheId || '');
   } else if (event.data.type === 'CLEAR_APP_CACHES') {
-    // Called by the app on logout — wipes the CURRENT user's partitioned API
-    // and image caches, then clears the namespace so the next user starts clean
-    // and can never read the previous user's cached data.
+    // Called by the app on logout — wipes ALL partitioned authenticated API and
+    // image caches (every `carryon-api-*` / `carryon-images-*`, not just the
+    // active namespace), so no prior user's data survives on a shared device.
+    // App-shell/static caches are preserved for PWA launch (audit fa1ad83 #7).
     event.waitUntil((async () => {
-      const apiName = apiCacheName();
-      if (apiName) await caches.delete(apiName);
-      const imgName = userImageCacheName();
-      if (imgName) await caches.delete(imgName);
-      // Also purge any legacy/unpartitioned caches from older builds.
-      await caches.delete(API_CACHE);
-      await caches.delete(IMAGE_CACHE);
+      const keys = await caches.keys();
+      await Promise.all(
+        keys
+          .filter((k) => k.startsWith('carryon-api-') || k.startsWith('carryon-images-'))
+          .map((k) => caches.delete(k).catch(() => {})),
+      );
       apiCacheId = '';
     })());
   } else if (event.data.type === 'SKIP_WAITING') {
