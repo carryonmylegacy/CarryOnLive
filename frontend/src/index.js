@@ -388,6 +388,19 @@ const IS_HEADLESS = (() => {
 
 if ('serviceWorker' in navigator && window.location.protocol !== 'file:' && !IS_HEADLESS) {
   window.addEventListener('load', () => {
+    // audit 4fcd843 #3 — when the SW detects a 401/403 on an authorization-
+    // sensitive API it posts AUTHZ_REVOKED. The SW already dropped its HTTP
+    // cache entry, but Dexie/localStorage mirrors can still hold the now-
+    // unauthorized data and would reappear offline. Security-first: purge ALL
+    // local app mirrors so revoked data cannot resurface.
+    navigator.serviceWorker.addEventListener('message', (event) => {
+      const data = event.data;
+      if (!data || data.type !== 'AUTHZ_REVOKED') return;
+      Promise.allSettled([
+        import('./offline/db').then((m) => m.purgeLocalData()),
+        import('./utils/localListCache').then((m) => m.clearAllLists()),
+      ]).catch(() => {});
+    });
     navigator.serviceWorker.register('/sw-push.js', { scope: '/' })
       .then((reg) => {
         // If a new SW is waiting, prompt it to take over on next navigation.

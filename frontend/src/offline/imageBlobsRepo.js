@@ -21,17 +21,30 @@
 
 import { getDB } from './db';
 import { API_URL } from '../config';
+import { sealBlob, unsealBlob } from './crypto';
+
+// Authenticated, sensitive blob kinds (SDV document previews, Milestone
+// Message media) are fetched with a Bearer token and MUST be encrypted at
+// rest. Plain photos (avatars/covers, served via the public photo proxy) stay
+// raw so the family tree still paints offline (audit 4fcd843 #4).
+const AUTHED_BLOB_KINDS = new Set(['doc_thumb', 'milestone_media']);
 
 /** Persist a blob under a stable cache key. Replaces any existing entry. */
 export async function putImageBlob(cacheKey, blob, kind = 'photo') {
   if (!cacheKey || !blob) return;
   try {
-    await getDB().imageBlob.put({
-      cache_key: cacheKey,
-      blob,
-      kind,
-      fetched_at: Date.now(),
-    });
+    let row;
+    if (AUTHED_BLOB_KINDS.has(kind)) {
+      // Encrypt before storage. FAIL CLOSED: if no session key is available
+      // (offline encryption not active) do NOT persist raw authenticated
+      // bytes — skip caching rather than leak plaintext (audit 4fcd843 #4).
+      const sealed = await sealBlob(blob);
+      if (!sealed || !sealed.encrypted) return;
+      row = { cache_key: cacheKey, sealed, kind, fetched_at: Date.now() };
+    } else {
+      row = { cache_key: cacheKey, blob, kind, fetched_at: Date.now() };
+    }
+    await getDB().imageBlob.put(row);
     // Notify any truthful "Saved offline" indicators that a real blob just
     // landed locally so they can re-check and flip on without a reload.
     try {
@@ -49,7 +62,11 @@ export async function getImageBlob(cacheKey) {
   if (!cacheKey) return null;
   try {
     const row = await getDB().imageBlob.get(cacheKey);
-    return row?.blob || null;
+    if (!row) return null;
+    // Encrypted authenticated blob → decrypt on read (audit 4fcd843 #4).
+    // Returns null if the session key is gone (logged out) — fail closed.
+    if (row.sealed) return await unsealBlob(row.sealed);
+    return row.blob || null;
   } catch {
     return null;
   }

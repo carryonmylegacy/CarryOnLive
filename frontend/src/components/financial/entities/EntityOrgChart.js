@@ -501,7 +501,11 @@ export default function EntityOrgChart({
   // coordinates remain relative to the natural canvas (so saved
   // overrides keep working unchanged); the margin is purely a render
   // wrapper.
-  const PAN_MARGIN = 700;
+  // audit 4fcd843 — work area enlarged 4× (was 700) so a growing tree never
+  // runs into a pan border that is smaller than the screen and clips the chart.
+  // 2800 exceeds any realistic PWA/desktop scroll-viewport, so any tile can
+  // always be panned to screen-center with breathing room on every side.
+  const PAN_MARGIN = 2800;
   const { canvasW, canvasH } = useMemo(() => {
     let w = initialW;
     let h = initialH;

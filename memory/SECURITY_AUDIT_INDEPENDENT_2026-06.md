@@ -489,3 +489,35 @@ against the live `/app` tree (no re-implementation needed — handoff was stale)
 670/670, `[CC7.2] Audit immutability PASS (append-only)`, dependency no
 regression vs baseline); preview app renders. **Bottom line:** all 10 `fa1ad83`
 findings resolved on `/app` — needs GitHub push + redeploy to clear the live audit.
+
+---
+
+## ROUND-8 — Targeted Regression `4fcd843` (cache lifecycle / offline) — Jun 6, 2026
+
+Auditor verified the backend beneficiary-access model is materially stronger (no
+fresh direct-API bypass found) and concentrated remaining risk in the
+offline/local-cache lifecycle. 7 open findings; **High/Med batch fixed this pass,
+#5 deferred by founder decision (recorded in PRD backlog).**
+
+| # | Sev | Fix |
+|---|-----|-----|
+| 1 | High | `AuthContext.js`: new module-level `performLocalLogoutCleanup()` (API cache, AES key, Dexie `purgeLocalData`, `clearAllLists`, estate selectors, SW `CLEAR_APP_CACHES`, auth/switcher keys). Wired into EVERY automatic logout path — signed-in-elsewhere interceptor, midnight, server-idle inactivity, instant-on-leave, background-timer — not just manual logout |
+| 2 | Med-High | Manual `logout()` now **awaits** `performLocalLogoutCleanup()` before clearing React state (token removed synchronously up-front) so a PWA closed right after logout still completes the wipe |
+| 3 | High | `index.js`: global `navigator.serviceWorker` `message` listener — on `AUTHZ_REVOKED` (SW posts it after a 401/403 on auth-sensitive routes) purges ALL local mirrors (`purgeLocalData` + `clearAllLists`), security-first, so revoked data can't resurface offline |
+| 4 | High | `imageBlobsRepo.js`: authenticated blob kinds (`doc_thumb`, `milestone_media`) are `sealBlob()`-encrypted before IndexedDB storage and `unsealBlob()`-decrypted on read; **fail-closed** — raw authenticated bytes are never persisted when no session key is available. Plain photos stay raw (family-tree offline paint) |
+| 5 | Med-High | **DEFERRED** (founder, Jun 6) — encrypt-at-rest for offline JSON/list mirrors (`localListCache`/`beneficiaryOfflineCache`/`warmup`). Recorded as a dedicated future task in `PRD.md` backlog. (Authenticated blobs already covered by #4.) |
+| 6 | Med | `wipePublicDeviceSession.js`: `pagehide` sync path switched from `sendBeacon` (can't attach auth header) to `fetch(..., { keepalive: true, headers: { Authorization } })` so the server logout actually authenticates + terminates the session |
+| 7 | Low-Med | `digital_wallet.py`: `POST /digital-wallet` now **requires** `estate_id` (400 if omitted) — no silent first-estate fallback. Frontend `persistEntityCredentials.js` now sends the selected `estate_id` (callers `EntityDetailPanel`/`EntityWizard` pass `ent.estate_id`/`estateId`) |
+
+Plus founder UI request: **CES work area enlarged 4×** — `EntityOrgChart.js`
+`PAN_MARGIN` 700 → 2800, so a growing entities tree never hits a pan border
+smaller than the screen on any PWA/desktop viewport (all fit/center/scroll math
+already references the constant).
+
+**Verification (Jun 6, 2026):** `test_audit_live_avb.py` **45/45 green** (added
+`test_4fcd843_7_dav_create_requires_estate_id`); backend health 200; frontend
+`Compiled successfully`; ESLint + ruff clean on touched files; `node --check
+sw-push.js` OK; `housekeeping.sh --strict` **EXIT 0** (route policy 670/670,
+`[CC7.2] Audit immutability PASS`); preview app boots. **Bottom line:** #1–#4,
+#6, #7 + CES resolved on `/app`; #5 deferred to backlog — needs GitHub push +
+redeploy to clear the live audit.

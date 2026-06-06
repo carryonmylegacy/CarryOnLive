@@ -208,6 +208,7 @@ export default function EntityDetailPanel({
       await persistEntityCredentials({
         credentials,
         entityId: ent.id,
+        estateId: ent.estate_id,
         authHeaders: getAuthHeaders(),
       });
       // If the user filled in the "Add a connection" form but never

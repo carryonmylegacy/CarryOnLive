@@ -494,6 +494,20 @@ bug — fix it in the preview DB immediately (snippet in
 - **iOS Share Extension**: pending App Store build.
 
 ### Backlog (P2 — pull when calm, do NOT pre-empt the founder)
+- **[SECURITY — audit `4fcd843` #5] Encrypt-at-rest for offline JSON/list
+  mirrors.** Today `warmup.js` writes financial/beneficiary/message/checklist
+  metadata to `localStorage` (`carryon_list_cache:*` via `localListCache.js` +
+  `beneficiaryOfflineCache.js`) and Dexie for EVERY user (airplane-mode
+  survival), but encryption-at-rest only activates when offline mode is toggled
+  ON. So a user who never opted into offline mode still has sensitive metadata
+  cached in plaintext. **Decision deferred (founder, Jun 6 2026): ship the
+  High-severity batch first, then do #5 as its own focused pass.** Two candidate
+  rules: (a) encrypt all sensitive local mirrors whenever warmup writes them
+  (strongest; requires reworking the synchronous list-cache read path to async
+  WebCrypto), or (b) only persist sensitive mirrors when offline mode is
+  explicitly enabled (simplest; loses airplane-mode survival for non-opt-in
+  users). Authenticated BLOBS (doc previews, MM media) are already encrypted +
+  fail-closed as of #4 — this item is specifically the JSON/list caches.
 - Abandoned-checkout tracking surfaced on Marketing tab.
 - Coverage extension for `middleware_trustee_audit.py` if new
   mutation endpoints are added that lack "Undo" support.

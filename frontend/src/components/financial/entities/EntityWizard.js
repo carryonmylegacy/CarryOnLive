@@ -428,6 +428,7 @@ export default function EntityWizard({
         await persistEntityCredentials({
           credentials,
           entityId: newEntity.id,
+          estateId,
           authHeaders: getAuthHeaders(),
         });
       }

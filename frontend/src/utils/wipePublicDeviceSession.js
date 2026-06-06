@@ -70,10 +70,16 @@ export async function wipePublicDeviceSession({ token } = {}) {
 export function wipePublicDeviceSessionSync({ token } = {}) {
   if (token) {
     try {
-      // sendBeacon is the canonical "send a request from pagehide" API.
-      // It's queued by the browser and survives the page going away.
-      const blob = new Blob([JSON.stringify({})], { type: 'application/json' });
-      navigator.sendBeacon?.(`${API_URL}/auth/logout`, blob);
+      // audit 4fcd843 #6 — sendBeacon cannot attach the Bearer auth header, so
+      // the server could never actually invalidate the session (weak SOC2
+      // termination evidence). fetch(..., { keepalive: true }) carries the
+      // Authorization header AND survives the page going away on pagehide.
+      fetch(`${API_URL}/auth/logout`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: '{}',
+        keepalive: true,
+      }).catch(() => {});
     } catch { /* ignore */ }
   }
   try { Dexie.delete(DB_NAME); } catch { /* ignore */ }

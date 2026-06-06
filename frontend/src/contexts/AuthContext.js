@@ -7,6 +7,38 @@ import { isAutoLogoutSuspended, suspendAutoLogout } from '../utils/autoLogoutSus
 
 const AuthContext = createContext(null);
 
+// audit 4fcd843 #1/#2 — single source of truth for wiping ALL local session
+// data on logout. Awaited by manual logout AND invoked by every AUTOMATIC
+// logout path (signed-in-elsewhere, midnight, idle timeout, background) so a
+// user signed out without tapping "Log out" never leaves estate data (Dexie
+// mirrors, list caches, the AES decryption key, SW caches) on a shared device.
+async function performLocalLogoutCleanup() {
+  try { clearCache(); } catch { /* no-op */ }
+  // Kick off the async purges (dynamic imports) up front; await them at the end.
+  const purges = [
+    import('../offline/crypto').then((m) => m.clearSessionKey()).catch(() => {}),
+    import('../offline/db').then((m) => m.purgeLocalData()).catch(() => {}),
+    import('../utils/localListCache').then((m) => m.clearAllLists()).catch(() => {}),
+  ];
+  // Synchronous storage + SW-cache wipe — token removed IMMEDIATELY (before any
+  // await) so the dead session can't be reused even if a purge below stalls.
+  try {
+    localStorage.removeItem('carryon_token');
+    localStorage.removeItem('dev_switcher_admin_session');
+    localStorage.removeItem('dev_switcher_admin_token');
+    localStorage.removeItem('dev_switcher_active_role');
+    localStorage.removeItem('selected_estate_id');
+    localStorage.removeItem('beneficiary_estate_id');
+    sessionStorage.removeItem('trial_banner_dismissed');
+  } catch { /* private mode */ }
+  try {
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({ type: 'CLEAR_APP_CACHES' });
+    }
+  } catch { /* no SW */ }
+  await Promise.allSettled(purges);
+}
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('carryon_token'));
@@ -120,12 +152,14 @@ export const AuthProvider = ({ children }) => {
       res => res,
       err => {
         if (err.response?.status === 401 && err.response?.data?.detail === 'signed_in_elsewhere') {
-          localStorage.removeItem('carryon_token');
-          sessionStorage.removeItem('trial_banner_dismissed');
-          setToken(null);
-          setUser(null);
-          alert('Your session ended because you signed in on another device.');
-          window.location.href = '/login';
+          // audit 4fcd843 #1 — run the FULL local purge (Dexie, list caches,
+          // AES key, SW caches), not just token removal, before redirecting.
+          performLocalLogoutCleanup().finally(() => {
+            setToken(null);
+            setUser(null);
+            alert('Your session ended because you signed in on another device.');
+            window.location.href = '/login';
+          });
         }
         return Promise.reject(err);
       }
@@ -564,39 +598,11 @@ export const AuthProvider = ({ children }) => {
         });
       }
     } catch (_e) { /* proceed with client-side logout even if server call fails */ }
-    clearCache();
-    // Phase 7 / audit fa1ad83 #2: clear the in-memory offline encryption key
-    // AND purge all persistent local data mirrors so the next user on this
-    // device cannot read the previous user's estate data. This runs regardless
-    // of whether offline mode was ever enabled (warmup can populate stores
-    // even when the toggle is off).
-    try {
-      import('../offline/crypto').then((m) => m.clearSessionKey()).catch(() => {});
-    } catch {}
-    try {
-      import('../offline/db').then((m) => m.purgeLocalData()).catch(() => {});
-    } catch {}
-    try {
-      import('../utils/localListCache').then((m) => m.clearAllLists()).catch(() => {});
-    } catch {}
-    // Clear estate-context selectors so the next user doesn't inherit them.
-    try {
-      localStorage.removeItem('selected_estate_id');
-      localStorage.removeItem('beneficiary_estate_id');
-    } catch {}
-    // Purge the service worker's per-user API + image caches so the next
-    // user to log in on this device doesn't see a flash of the previous
-    // user's dashboard data.
-    try {
-      if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-        navigator.serviceWorker.controller.postMessage({ type: 'CLEAR_APP_CACHES' });
-      }
-    } catch {}
-    localStorage.removeItem('carryon_token');
-    localStorage.removeItem('dev_switcher_admin_session');
-    localStorage.removeItem('dev_switcher_admin_token');
-    localStorage.removeItem('dev_switcher_active_role');
-    sessionStorage.removeItem('trial_banner_dismissed');
+    // audit 4fcd843 #2 — AWAIT the full local purge (API cache, AES key, Dexie,
+    // list caches, estate selectors, SW caches, auth/switcher keys) BEFORE we
+    // clear React state, so a PWA closed immediately after logout still finishes
+    // wiping the previous user's data from a shared device.
+    await performLocalLogoutCleanup();
     setToken(null);
     setUser(null);
     setPendingEmail(null);
@@ -617,11 +623,12 @@ export const AuthProvider = ({ children }) => {
       midnight.setHours(24, 0, 0, 0);
       const msUntilMidnight = midnight.getTime() - now.getTime();
       midnightTimer = setTimeout(() => {
-        localStorage.removeItem('carryon_token');
-        sessionStorage.removeItem('trial_banner_dismissed');
-        setToken(null);
-        setUser(null);
-        window.location.href = '/login';
+        // audit 4fcd843 #1 — full local purge on automatic midnight logout.
+        performLocalLogoutCleanup().finally(() => {
+          setToken(null);
+          setUser(null);
+          window.location.href = '/login';
+        });
       }, msUntilMidnight);
     };
 
@@ -633,11 +640,12 @@ export const AuthProvider = ({ children }) => {
       const resetInactivity = () => {
         if (inactivityTimer) clearTimeout(inactivityTimer);
         inactivityTimer = setTimeout(() => {
-          localStorage.removeItem('carryon_token');
-          sessionStorage.removeItem('trial_banner_dismissed');
-          setToken(null);
-          setUser(null);
-          window.location.href = '/login';
+          // audit 4fcd843 #1 — full local purge on server-mandated idle logout.
+          performLocalLogoutCleanup().finally(() => {
+            setToken(null);
+            setUser(null);
+            window.location.href = '/login';
+          });
         }, serverTimeout * 60 * 1000);
       };
       resetInactivity();
@@ -664,23 +672,24 @@ export const AuthProvider = ({ children }) => {
       const mins = parseInt(setting, 10);
       if (document.hidden && token) {
         if (mins === 0) {
-          // Instant logout on app leave
-          localStorage.removeItem('carryon_token');
-          sessionStorage.removeItem('trial_banner_dismissed');
-          setToken(null);
-          setUser(null);
-          window.location.href = '/login';
+          // Instant logout on app leave — audit 4fcd843 #1 full local purge.
+          performLocalLogoutCleanup().finally(() => {
+            setToken(null);
+            setUser(null);
+            window.location.href = '/login';
+          });
         } else {
           bgTimer = setTimeout(() => {
             // Re-check the suspend flag at the moment the timer fires
             // (the user may have started a Stripe/upload flow during
             // the wait window).
             if (isAutoLogoutSuspended()) return;
-            localStorage.removeItem('carryon_token');
-            sessionStorage.removeItem('trial_banner_dismissed');
-            setToken(null);
-            setUser(null);
-            window.location.href = '/login';
+            // audit 4fcd843 #1 — full local purge on background-timeout logout.
+            performLocalLogoutCleanup().finally(() => {
+              setToken(null);
+              setUser(null);
+              window.location.href = '/login';
+            });
           }, mins * 60 * 1000);
         }
       } else if (bgTimer) {

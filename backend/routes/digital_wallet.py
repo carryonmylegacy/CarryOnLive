@@ -166,23 +166,18 @@ async def create_digital_wallet_entry(data: DigitalWalletCreate, current_user: d
     """Create a new digital wallet entry."""
     await require_benefactor_role(current_user, "add digital wallet entries")
 
-    # Resolve the TARGET estate explicitly when provided, validating ownership,
-    # rather than silently using "the first estate" (audit fa1ad83 #10).
-    if data.estate_id:
-        estate = await db.estates.find_one({"id": data.estate_id}, {"_id": 0, "id": 1, "owner_id": 1})
-        if not estate:
-            raise HTTPException(status_code=404, detail="Estate not found")
-        if current_user.get("role") != "admin" and estate.get("owner_id") != current_user["id"]:
-            raise HTTPException(status_code=403, detail="You do not own this estate")
-        estate_id = estate["id"]
-    else:
-        if current_user.get("role") == "admin":
-            estates = await db.estates.find({}, {"_id": 0}).to_list(1)
-        else:
-            estates = await db.estates.find({"owner_id": current_user["id"]}, {"_id": 0}).to_list(1)
-        if not estates:
-            raise HTTPException(status_code=404, detail="No estate found")
-        estate_id = estates[0]["id"]
+    # estate_id is REQUIRED so a multi-estate owner/admin can never silently
+    # create a sensitive credential in the wrong tenant (audit 4fcd843 #7,
+    # tightening fa1ad83 #10). The frontend now always sends the selected
+    # estate_id (persistEntityCredentials + Digital Wallet create).
+    if not data.estate_id:
+        raise HTTPException(status_code=400, detail="estate_id is required")
+    estate = await db.estates.find_one({"id": data.estate_id}, {"_id": 0, "id": 1, "owner_id": 1})
+    if not estate:
+        raise HTTPException(status_code=404, detail="Estate not found")
+    if current_user.get("role") != "admin" and estate.get("owner_id") != current_user["id"]:
+        raise HTTPException(status_code=403, detail="You do not own this estate")
+    estate_id = estate["id"]
     estate_salt = await get_estate_salt(estate_id)
 
     # Get beneficiary name if assigned. audit P2.3 — the assigned beneficiary

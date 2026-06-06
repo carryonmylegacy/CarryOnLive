@@ -28,9 +28,14 @@ const isBlank = (c) =>
 export async function persistEntityCredentials({
   credentials,
   entityId,
+  estateId,
   authHeaders,
 }) {
   if (!entityId || !Array.isArray(credentials)) return { created: 0, updated: 0, deleted: 0, linked: 0 };
+  // audit 4fcd843 #7 — POST /digital-wallet now REQUIRES an explicit estate_id.
+  // Prefer the caller-supplied estate, fall back to the selected estate.
+  const resolvedEstateId = estateId
+    || (typeof localStorage !== 'undefined' ? localStorage.getItem('selected_estate_id') : null);
 
   let created = 0;
   let updated = 0;
@@ -59,6 +64,7 @@ export async function persistEntityCredentials({
       if (c._new && isBlank(c)) continue;
 
       const payload = {
+        estate_id: resolvedEstateId,
         account_name: (c.account_name || '').trim() || 'Untitled credential',
         login_username: (c.login_username || '').trim(),
         password: c.password || null,
