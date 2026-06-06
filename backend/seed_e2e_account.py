@@ -20,6 +20,29 @@ from config import db, logger
 from services.encryption import generate_estate_salt
 from utils import hash_password, verify_password
 
+# Hard production-deny (audit d5a54f5e P2): defense-in-depth BEYOND the single
+# SEED_E2E_ACCOUNT flag. Even if that flag were ever set true on prod by
+# mistake, refuse to seed a predictable-credential account when ANY production
+# signal is present, and refuse weak seed passwords.
+_PROD_ENV_VARS = (
+    "ENVIRONMENT",
+    "APP_ENV",
+    "CARRYON_ENV",
+    "DEPLOY_ENV",
+    "NODE_ENV",
+    "RAILWAY_ENVIRONMENT",
+    "VERCEL_ENV",
+)
+_MIN_SEED_PASSWORD_LEN = 12
+
+
+def _looks_like_production() -> bool:
+    for var in _PROD_ENV_VARS:
+        val = (os.environ.get(var) or "").strip().lower()
+        if val in ("production", "prod") or val.startswith("prod"):
+            return True
+    return False
+
 
 async def _ensure_estate(owner_id: str) -> None:
     if await db.estates.find_one({"owner_id": owner_id}, {"_id": 0, "id": 1}):
@@ -43,10 +66,22 @@ async def seed_e2e_account() -> None:
     if os.environ.get("SEED_E2E_ACCOUNT", "").strip().lower() != "true":
         return
 
+    # Hard production-deny — refuse to seed regardless of the flag if any
+    # production signal is present.
+    if _looks_like_production():
+        logger.warning("[seed_e2e] production environment detected — refusing to seed E2E account (hard-deny)")
+        return
+
     email = os.environ.get("E2E_SEED_EMAIL", "e2e@carryon.us").strip()
     password = os.environ.get("E2E_SEED_PASSWORD", "").strip()
     if not password:
         logger.warning("[seed_e2e] SEED_E2E_ACCOUNT=true but E2E_SEED_PASSWORD is unset — skipping")
+        return
+    if len(password) < _MIN_SEED_PASSWORD_LEN:
+        logger.warning(
+            "[seed_e2e] E2E_SEED_PASSWORD too short (<%d chars) — refusing to seed weak credential",
+            _MIN_SEED_PASSWORD_LEN,
+        )
         return
 
     email_lower = email.lower()

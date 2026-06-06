@@ -1,6 +1,20 @@
 # CarryOn — Changelog
 
 
+## Jun 6, 2026 — Audit d5a54f5e: P2/P3 hardening (CI gate, E2E secret, logout UX, audit alerting)
+
+Second pass after the P0/P1 batch. `housekeeping.sh --strict` EXIT 0; backend reloads clean (seed still runs on preview, prod-deny verified); changed JS/PY lint clean (no new findings).
+
+- **P2 — Remove hardcoded E2E password.** `smoke.spec.js` no longer embeds `E2eSmoke2026Pass`; password now MUST come from env `E2E_ADMIN_PASSWORD` (fails fast if unset). Email keeps the non-secret `e2e@carryon.us` default. Founder confirmed GitHub secrets `E2E_ADMIN_EMAIL`/`E2E_ADMIN_PASSWORD` hold the matching values.
+- **P2 — Harden E2E seed prod-deny.** `seed_e2e_account.py` adds `_looks_like_production()` (refuses if `ENVIRONMENT/APP_ENV/CARRYON_ENV/DEPLOY_ENV/NODE_ENV/RAILWAY_ENVIRONMENT/VERCEL_ENV` ∈ prod) and a min 12-char password floor — defense-in-depth beyond the `SEED_E2E_ACCOUNT` flag.
+- **P2 — Local-logout reliability policy.** `AuthContext.logout()` now warns (window.confirm) when the offline outbox has unsynced work, letting the user cancel and reconnect instead of silently discarding it on local purge.
+- **P2 — CI gitleaks is a HARD GATE.** Removed `continue-on-error: true` from the gitleaks job in `ci.yml` (`.gitleaks.toml` allowlist manages false-positives). NOTE: `--frozen-lockfile` strict restore was **deliberately NOT done** — `yarn.lock` currently drifts from `package.json` by ~1,900 lines (new deps never locked via Save-to-GitHub); forcing strict mode would break CI, not harden it. Deferred to the platform-level lockfile-sync fix already tracked in PRD backlog.
+- **P3 — `persistEntityCredentials` partial-failure visibility.** Returns a `failures[]` array; EntityWizard shows a precise toast when the entity saves but a credential fails to reach the DAV.
+- **P3 — Audit-chain severe alert.** `/admin/audit-chain-status` now logs a SEVERE warning (links/head/backlog) whenever `verify_audit_chain` is not OK (it already exposed `repair_queue_backlog` + `chain_head_matches_last_event`).
+- **P3 — Offline partitioned-cache diagnostics.** `sw-push.js` GET_DIAG now enumerates ALL `carryon-api-*` / `carryon-images-*` partitions and reports per-family cache + entry totals (the 4 named caches under-reported readiness).
+
+
+
 ## Jun 6, 2026 — Audit d5a54f5e: DAV plaintext-leak fix + bi-directional CFP↔DAV sync (P0/P1)
 
 Remediated the high-severity findings from the latest fix prompt. Backend verified by pytest (`tests/test_dav_sync_estate_scope_jun2026.py` — 9 passed) + curl; frontend verified by testing agent (iteration_170, 7/7 scenarios PASS incl. the localStorage security check). `housekeeping.sh --strict` EXIT 0.

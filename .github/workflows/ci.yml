@@ -23,7 +23,10 @@ jobs:
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        continue-on-error: true # Don't block PRs; surface findings as annotations.
+          # SOC2 [CC6.1] — secret scan is a HARD GATE (audit d5a54f5e P2): a
+          # leaked credential now FAILS the job and blocks the merge instead of
+          # merely annotating. Known false-positives are managed via the
+          # repo-root .gitleaks.toml allowlist.
 
   backend-lint:
     name: Backend Lint

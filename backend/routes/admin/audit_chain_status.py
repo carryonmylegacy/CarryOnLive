@@ -17,6 +17,7 @@ from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends
 
+from config import logger
 from guards import require_admin
 from services.audit import ensure_chain_genesis, verify_audit_chain
 
@@ -38,6 +39,21 @@ async def get_audit_chain_status(_admin: dict = Depends(require_admin)):
     """
     genesis = await ensure_chain_genesis()
     result = await verify_audit_chain(limit=10000)
+    if not result["ok"]:
+        # audit d5a54f5e P2 / SOC2 [CC7.2] — surface a SEVERE alert whenever the
+        # chain is not fully authoritative: a broken link, a missing/mismatched
+        # CAS head, or a non-zero repair-queue backlog. Streamed to logs (and
+        # Sentry breadcrumbs) so on-call sees it without polling the dashboard.
+        logger.warning(
+            "[audit_chain] INTEGRITY NOT OK — links_ok=%s head_present=%s head_matches=%s "
+            "repair_backlog=%s first_break_id=%s entries_checked=%s",
+            result.get("chain_links_ok"),
+            result.get("chain_head_present"),
+            result.get("chain_head_matches_last_event"),
+            result.get("repair_queue_backlog"),
+            result.get("first_break_id"),
+            result.get("entries_checked"),
+        )
     return {
         "checked_at": datetime.now(timezone.utc).isoformat(),
         "ok": result["ok"],

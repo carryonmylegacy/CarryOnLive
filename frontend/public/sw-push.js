@@ -15,7 +15,7 @@
 // ── Versioning ──────────────────────────────────────────────────────────────
 // Bump SHELL_VERSION whenever the list of precached shell assets or the
 // caching strategy changes — triggers a cache purge on next SW activation.
-const SHELL_VERSION = 'build-2026-06-06-mq2zbg6j';
+const SHELL_VERSION = 'build-2026-06-06-mq30g7p7';
 const SHELL_CACHE = `carryon-shell-${SHELL_VERSION}`;
 const RUNTIME_CACHE = `carryon-runtime-${SHELL_VERSION}`;
 const API_CACHE = `carryon-api-${SHELL_VERSION}`;
@@ -582,6 +582,32 @@ self.addEventListener('message', (event) => {
             result.caches[n] = keys.length;
           } catch { result.caches[n] = -1; }
         }
+        // audit d5a54f5e P3 — runtime caches are PARTITIONED per estate/api id
+        // (e.g. carryon-api-<v>-<id>, carryon-images-<v>). The four named caches
+        // above miss those partitions and under-report true offline readiness.
+        // Enumerate every partition and report per-family cache + entry totals.
+        try {
+          const allNames = await caches.keys();
+          const partitioned = {
+            api: { caches: 0, entries: 0 },
+            images: { caches: 0, entries: 0 },
+          };
+          for (const n of allNames) {
+            const fam = n.startsWith('carryon-api-')
+              ? 'api'
+              : (n.startsWith('carryon-images-') ? 'images' : null);
+            if (!fam) continue;
+            try {
+              const c = await caches.open(n);
+              const cnt = (await c.keys()).length;
+              partitioned[fam].caches += 1;
+              partitioned[fam].entries += cnt;
+              result.caches[n] = cnt;
+            } catch { /* skip unreadable partition */ }
+          }
+          result.partitioned = partitioned;
+          result.totalCacheCount = allNames.length;
+        } catch { /* caches.keys() unavailable */ }
         result.pdfWorkerReactCached = !!(await caches.match('/pdf.worker.react-pdf.min.mjs'));
         result.pdfWorkerStdCached = !!(await caches.match('/pdf.worker.min.mjs'));
         result.shellLogoCached = !!(await caches.match('/carryon-logo.png'));

@@ -31,7 +31,7 @@ export async function persistEntityCredentials({
   estateId,
   authHeaders,
 }) {
-  if (!entityId || !Array.isArray(credentials)) return { created: 0, updated: 0, deleted: 0, linked: 0 };
+  if (!entityId || !Array.isArray(credentials)) return { created: 0, updated: 0, deleted: 0, linked: 0, failures: [] };
   // audit 4fcd843 #7 — POST /digital-wallet now REQUIRES an explicit estate_id.
   // Prefer the caller-supplied estate, fall back to the selected estate.
   const resolvedEstateId = estateId
@@ -41,6 +41,10 @@ export async function persistEntityCredentials({
   let updated = 0;
   let deleted = 0;
   let linked = 0;
+  // audit d5a54f5e P3 — make partial failures VISIBLE. The entity itself may
+  // save fine while a credential sync fails; collect per-row failures so the
+  // caller can surface a precise toast instead of silently swallowing them.
+  const failures = [];
 
   for (const c of credentials) {
     try {
@@ -82,10 +86,16 @@ export async function persistEntityCredentials({
         await apiClient.put(`${API_URL}/digital-wallet/${c.id}`, payload, authHeaders);
         updated += 1;
       }
-    } catch {
-      // Continue on individual failures; caller will show a single toast.
+    } catch (err) {
+      // Continue on individual failures, but record them so the caller can
+      // tell the user exactly which credential(s) didn't sync.
+      failures.push({
+        account_name: (c.account_name || '').trim() || 'Untitled credential',
+        action: c._delete ? 'delete' : c._link_to_id ? 'link' : c._new ? 'create' : 'update',
+        error: err?.response?.data?.detail || err?.message || 'unknown error',
+      });
     }
   }
 
-  return { created, updated, deleted, linked };
+  return { created, updated, deleted, linked, failures };
 }

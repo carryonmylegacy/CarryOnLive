@@ -16,7 +16,17 @@ import { test, expect } from '@playwright/test';
 // which tripped single-session sign-out and broke on password rotation.
 // CI may still override via the E2E_ADMIN_EMAIL / E2E_ADMIN_PASSWORD secrets.
 const ADMIN_EMAIL = process.env.E2E_ADMIN_EMAIL || 'e2e@carryon.us';
-const ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD || 'E2eSmoke2026Pass';
+// audit d5a54f5e P2 — NO hardcoded password literal in the repo. The
+// dedicated, non-human e2e@carryon.us account's password MUST come from the
+// environment (the CI secret E2E_ADMIN_PASSWORD, which must match the preview
+// backend's E2E_SEED_PASSWORD). Fail fast with a clear message if it's unset.
+const ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD;
+if (!ADMIN_PASSWORD) {
+  throw new Error(
+    'E2E_ADMIN_PASSWORD is required (no hardcoded fallback). Set the GitHub secret / local env '
+    + 'to the seeded e2e@carryon.us password (= the preview backend E2E_SEED_PASSWORD).'
+  );
+}
 
 // Helper: log in and land on dashboard. Returns after navigation settles.
 async function loginAsAdmin(page) {

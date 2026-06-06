@@ -591,6 +591,21 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
+    // audit d5a54f5e P2 — explicit local-logout reliability policy. If the
+    // offline outbox holds unsynced work, the local purge below would discard
+    // it. Warn the user and let them cancel to reconnect and sync first.
+    try {
+      const { pendingCount } = await import('../offline/outbox');
+      const pending = await pendingCount();
+      if (pending > 0) {
+        const proceed = window.confirm(
+          `You have ${pending} change${pending === 1 ? '' : 's'} saved offline that haven't synced yet. `
+          + `Logging out now will permanently discard ${pending === 1 ? 'it' : 'them'}.\n\n`
+          + 'Reconnect to sync first, or press OK to log out and discard.'
+        );
+        if (!proceed) return;
+      }
+    } catch { /* outbox unavailable — proceed with logout */ }
     // Server-side token blacklisting + session clear
     try {
       if (token) {

@@ -432,12 +432,21 @@ export default function EntityWizard({
 
       // Persist any digital credentials → DAV (linked to the new entity)
       if (credentials.length > 0) {
-        await persistEntityCredentials({
+        const credResult = await persistEntityCredentials({
           credentials,
           entityId: newEntity.id,
           estateId,
           authHeaders: getAuthHeaders(),
         });
+        // audit d5a54f5e P3 — surface partial failures: the entity saved, but
+        // one or more credentials didn't reach the Digital Access Vault.
+        if (credResult?.failures?.length) {
+          const n = credResult.failures.length;
+          toast.error(
+            `Entity saved, but ${n} credential${n === 1 ? '' : 's'} failed to sync to your `
+            + 'Digital Access Vault. Re-open the entity to retry.'
+          );
+        }
       }
 
       onCreated?.(newEntity, rels.filter(Boolean));
