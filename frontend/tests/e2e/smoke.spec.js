@@ -11,8 +11,12 @@
 
 import { test, expect } from '@playwright/test';
 
-const ADMIN_EMAIL = process.env.E2E_ADMIN_EMAIL || 'info@carryon.us';
-const ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD || 'Demo1234!';
+// Defaults target the DEDICATED, non-human E2E account seeded on preview/staging
+// (see backend/seed_e2e_account.py). This avoids logging in as a real user,
+// which tripped single-session sign-out and broke on password rotation.
+// CI may still override via the E2E_ADMIN_EMAIL / E2E_ADMIN_PASSWORD secrets.
+const ADMIN_EMAIL = process.env.E2E_ADMIN_EMAIL || 'e2e@carryon.us';
+const ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD || 'E2eSmoke2026Pass';
 
 // Helper: log in and land on dashboard. Returns after navigation settles.
 async function loginAsAdmin(page) {

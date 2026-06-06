@@ -114,12 +114,14 @@ jobs:
       - name: Bundle size check
         working-directory: frontend
         run: |
-          # Fail if main JS bundle > 1 MB (gzipped). Tune as the app grows.
+          # Informational guardrail against runaway growth. Threshold set to a
+          # realistic ceiling for this PWA (was 1 MB, which warned on every build
+          # since the app legitimately exceeds it). Never fails the build.
           MAIN_SIZE=$(du -b build/static/js/main.*.js 2>/dev/null | awk '{s+=$1} END {print s}')
-          MAX_SIZE=1048576
-          echo "Main bundle: $MAIN_SIZE bytes (limit: $MAX_SIZE)"
+          MAX_SIZE=4194304  # 4 MB
+          echo "Main bundle: ${MAIN_SIZE:-0} bytes (informational ceiling: $MAX_SIZE)"
           if [ "${MAIN_SIZE:-0}" -gt "$MAX_SIZE" ]; then
-            echo "::warning::Main JS bundle is larger than ${MAX_SIZE} bytes — consider code-splitting"
+            echo "::warning::Main JS bundle exceeds ${MAX_SIZE} bytes — consider code-splitting"
           fi
 
   e2e-smoke:

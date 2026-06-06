@@ -494,6 +494,26 @@ bug — fix it in the preview DB immediately (snippet in
 - **iOS Share Extension**: pending App Store build.
 
 ### Backlog (P2 — pull when calm, do NOT pre-empt the founder)
+- **[CI hardening — Jun 6 2026] Dedicated E2E account DONE; remaining one-time
+  founder action:** the dedicated `e2e@carryon.us` benefactor is now auto-seeded
+  on the preview backend (`backend/seed_e2e_account.py`, gated by
+  `SEED_E2E_ACCOUNT=true`, prod-safe). The Playwright smoke suite defaults to it.
+  To fully activate in CI, the founder must point the GitHub secrets
+  `E2E_ADMIN_EMAIL`/`E2E_ADMIN_PASSWORD` at it (or delete them so spec defaults
+  apply) and keep `E2E_BASE_URL` on the current preview URL. Until then CI still
+  uses whatever those secrets hold. NOTE: `SEED_E2E_ACCOUNT`/`E2E_SEED_PASSWORD`
+  live in the (gitignored) preview `.env`; if the preview pod is recreated, set
+  them again in the Emergent backend env so the account re-seeds.
+- **[Frontend build — DELIBERATE, NOT URGENT] CRA → Vite migration.** Would
+  permanently remove the eslint/yarn peer-dependency warning noise (the CRA
+  toolchain pins eslint 8 / react-hooks 4, which can't all be satisfied). It is a
+  MULTI-DAY, high-risk migration on a production PWA (build system, env vars,
+  service worker, offline caching, jest) and must be done as its own deliberate
+  project with full regression — NOT bundled into a routine push. IMPORTANT: it
+  would NOT remove the "Node.js 20 is deprecated" CI warnings — those come from
+  GitHub Actions' own runner internals (checkout/setup-node/etc.), not our build
+  tool, and are harmless. The CI bundle-size warning was already quieted (ceiling
+  raised 1 MB → 4 MB, informational-only, in `.github/workflows/ci.yml`).
 - **[SECURITY — audit `4fcd843` #5] Encrypt-at-rest for offline JSON/list
   mirrors.** Today `warmup.js` writes financial/beneficiary/message/checklist
   metadata to `localStorage` (`carryon_list_cache:*` via `localListCache.js` +

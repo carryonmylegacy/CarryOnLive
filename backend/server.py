@@ -197,6 +197,16 @@ async def lifespan(app):
     except Exception as e:
         logger.warning(f"llm cost ledger index init failed: {e}")
 
+    # Dedicated CI/E2E benefactor account — preview/staging ONLY (gated by
+    # SEED_E2E_ACCOUNT=true, never set in production). Lets the Playwright smoke
+    # suite log in without hijacking a real human's single-session account.
+    try:
+        from seed_e2e_account import seed_e2e_account
+
+        await seed_e2e_account()
+    except Exception as e:
+        logger.warning(f"E2E account seed skipped: {e}")
+
     # Each scheduler is wrapped with a distributed lock. `_locked()` is itself
     # infinite so we restart the scheduler if it ever returns/crashes.
     # Health state (last_error / last_success / failure_count) is mirrored
