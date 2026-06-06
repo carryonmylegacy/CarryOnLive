@@ -399,6 +399,7 @@ if ('serviceWorker' in navigator && window.location.protocol !== 'file:' && !IS_
       Promise.allSettled([
         import('./offline/db').then((m) => m.purgeLocalData()),
         import('./utils/localListCache').then((m) => m.clearAllLists()),
+        import('./utils/clearLocalDrafts').then((m) => m.clearLocalDrafts()),
       ]).catch(() => {});
     });
     navigator.serviceWorker.register('/sw-push.js', { scope: '/' })
@@ -489,6 +490,13 @@ try {
   import('./offline/syncClient').then((m) => {
     m.syncClient.init().catch(() => {});
   }).catch(() => {});
+} catch {}
+
+// audit d5a54f5e P0 — purge any DAV secrets that older builds leaked into
+// plaintext localStorage list caches. One-time + self-healing: only rewrites
+// cache entries that still carry secret fields, no-ops thereafter.
+try {
+  import('./utils/sanitizeDavForCache').then((m) => m.purgeLeakedDavSecrets()).catch(() => {});
 } catch {}
 
 const root = ReactDOM.createRoot(document.getElementById("root"));

@@ -6,6 +6,7 @@ from ._core import (
     _filter_for_actor,
     _financial_item_visible_for_actor,
     _resolve_financial_actor,
+    _require_dav_entry_in_estate,
     BillCreate,
     BillUpdate,
     BillPaymentCreate,
@@ -88,7 +89,12 @@ async def _upsert_dav_for_bill(
                     pass
 
     if existing_dav_id:
-        existing = await db.digital_wallet.find_one({"id": existing_dav_id}, {"_id": 0})
+        # Estate-scoped lookup (audit d5a54f5e P1) so a cross-estate
+        # existing_dav_id can never update a row in another tenant — it
+        # falls through to create a fresh in-estate row instead.
+        existing = await db.digital_wallet.find_one(
+            {"id": existing_dav_id, "estate_id": estate_id, "deleted_at": None}, {"_id": 0}
+        )
         if existing:
             update_doc = {
                 "account_name": bill_name,
@@ -150,6 +156,7 @@ async def get_bills(estate_id: str, current_user: dict = Depends(get_current_use
 async def create_bill(data: BillCreate, current_user: dict = Depends(get_current_user)):
     """Create a new bill (and optionally materialise a linked DAV row)."""
     await _verify_estate_access(data.estate_id, current_user, require_owner=True)
+    await _require_dav_entry_in_estate(data.estate_id, data.dav_entry_id)
     bill_id = str(uuid.uuid4())
     payload = data.model_dump()
     # Pull DAV credential bits OUT of the bill doc — they live in the DAV.
@@ -199,6 +206,8 @@ async def update_bill(bill_id: str, data: BillUpdate, current_user: dict = Depen
     # the auto-DAV upsert helper instead.
     dav_username = updates.pop("dav_login_username", None)
     dav_password = updates.pop("dav_login_password", None)
+    if "dav_entry_id" in updates:
+        await _require_dav_entry_in_estate(bill["estate_id"], updates["dav_entry_id"])
     # Defense-in-depth (mirrors create_bill): if the caller is supplying
     # structured late_fee_* fields, clear the legacy string so they
     # can't drift apart.

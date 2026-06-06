@@ -8,6 +8,7 @@ import { Switch } from '../ui/switch';
 import { useFinancialForm } from '../../hooks/useFinancialForm';
 import { PassdownNotes } from './PassdownNotes';
 import { VisibilityTimingPills } from './VisibilityTimingPills';
+import { DavCredentialFields } from './DavCredentialFields';
 
 const DebtForm = ({ estateId, debt, categories, categoryLabels, davEntries, beneficiaries: _beneficiaries, onSaved, onAddCategory, getAuthHeaders }) => {
   const {
@@ -30,7 +31,7 @@ const DebtForm = ({ estateId, debt, categories, categoryLabels, davEntries, bene
       origination_date: '', estimated_payoff_date: '', account_number_masked: '',
       lender_name: '', lender_phone: '', lender_website: '', lender_address: '',
       collateral: '', co_signer: '', has_life_insurance: false, life_insurance_policy: '',
-      dav_entry_id: '', priority: 'important',
+      dav_entry_id: '', dav_login_username: '', dav_login_password: '', priority: 'important',
       notes: '', notes_first_action: '', notes_gotchas: '', notes_who_to_call: '',
       status: 'active', visibility_timing: { pre: false, post: true },
     }),
@@ -210,6 +211,7 @@ const DebtForm = ({ estateId, debt, categories, categoryLabels, davEntries, bene
           </Select>
         </div>
       )}
+      <DavCredentialFields form={form} update={update} idPrefix="debt" />
       <PassdownNotes form={form} update={update} />
       <Button className="gold-button w-full mt-4" onClick={handleSubmit} disabled={saving} data-testid="save-debt-button">
         {saving ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : null}

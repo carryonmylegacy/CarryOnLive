@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { useFinancialForm } from '../../hooks/useFinancialForm';
 import { PassdownNotes } from './PassdownNotes';
 import { VisibilityTimingPills } from './VisibilityTimingPills';
+import { DavCredentialFields } from './DavCredentialFields';
 
 const CATEGORIES = [
   { value: 'real_estate', label: 'Real Estate' },
@@ -58,7 +59,7 @@ const PropertyAssetForm = ({ estateId, asset, davEntries, onSaved, getAuthHeader
       location_address: '', acquisition_date: '', ownership_type: 'individual',
       joint_owner: '', entity_type: 'none', entity_state: '', entity_ein: '',
       appraised_by: '', appraisal_date: '', insurance_policy: '', serial_or_vin: '',
-      description: '', dav_entry_id: '', priority: 'important',
+      description: '', dav_entry_id: '', dav_login_username: '', dav_login_password: '', priority: 'important',
       notes: '', notes_first_action: '', notes_gotchas: '', notes_who_to_call: '',
       status: 'active', visibility_timing: { pre: false, post: true },
     }),
@@ -203,6 +204,8 @@ const PropertyAssetForm = ({ estateId, asset, davEntries, onSaved, getAuthHeader
           </Select>
         </div>
       )}
+
+      <DavCredentialFields form={form} update={update} idPrefix="property" />
 
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-2">

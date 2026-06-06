@@ -18,6 +18,7 @@ import apiClient from '../utils/apiClient';
 import { cachedGet } from '../utils/apiCache';
 import { API_URL } from '../config';
 import { saveList, readList } from '../utils/localListCache';
+import { sanitizeDavList } from '../utils/sanitizeDavForCache';
 import { useDraftState } from '../hooks/useDraftState';
 
 const CATEGORIES = [
@@ -90,8 +91,9 @@ const DigitalWalletPage = () => {
         const nextBens = Array.isArray(benRes.data) ? benRes.data : [];
         if (nextEntries.length > 0 || entries.length === 0) setEntries(nextEntries);
         if (nextBens.length > 0 || beneficiaries.length === 0) setBeneficiaries(nextBens);
-        // Persist both for airplane-mode rehydration next visit.
-        saveList(`financial:dav:${eid}`, nextEntries);
+        // Persist both for airplane-mode rehydration next visit. DAV
+        // secrets are stripped before caching (audit d5a54f5e P0).
+        saveList(`financial:dav:${eid}`, sanitizeDavList(nextEntries));
         saveList(`dav:beneficiaries:${eid}`, nextBens);
       }
     } catch (err) {
@@ -124,7 +126,7 @@ const DigitalWalletPage = () => {
           ? prev.map(e => (e.id === saved.id ? { ...e, ...saved } : e))
           : (prev.some(e => e.id === saved.id) ? prev : [...prev, saved]);
         const savedEid = localStorage.getItem('selected_estate_id');
-        if (savedEid) saveList(`financial:dav:${savedEid}`, next);
+        if (savedEid) saveList(`financial:dav:${savedEid}`, sanitizeDavList(next));
         return next;
       });
     }
@@ -150,7 +152,7 @@ const DigitalWalletPage = () => {
     setEntries(prev => prev.filter(e => e.id !== entryId));
     const savedEid = localStorage.getItem('selected_estate_id');
     if (savedEid) {
-      saveList(`financial:dav:${savedEid}`, prevEntries.filter(e => e.id !== entryId));
+      saveList(`financial:dav:${savedEid}`, sanitizeDavList(prevEntries.filter(e => e.id !== entryId)));
     }
     try {
       const { mutateWithOutbox } = await import('../utils/offlineMutation');
@@ -462,7 +464,11 @@ const WalletEntryPanel = ({ entry, beneficiaries, existingEntries, onClose, onSa
     }
     setSaving(true);
     try {
+      const currentEstateId = entry?.estate_id
+        || (typeof localStorage !== 'undefined' && localStorage.getItem('selected_estate_id'))
+        || undefined;
       const data = {
+        estate_id: currentEstateId,
         account_name: name, login_username: login,
         password: password || undefined, additional_access: access || undefined,
         notes: notes || undefined, category,
@@ -494,6 +500,7 @@ const WalletEntryPanel = ({ entry, beneficiaries, existingEntries, onClose, onSa
         const ben = (beneficiaries || []).find(b => b.id === beneficiaryId);
         saved = {
           id: tempId,
+          estate_id: currentEstateId || null,
           account_name: name,
           login_username: login,
           password: password || null,

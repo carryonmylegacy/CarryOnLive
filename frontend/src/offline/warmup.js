@@ -41,6 +41,7 @@ import { upsertLocalMessages } from './repos/messagesRepo';
 import { prefetchPhotosFrom } from './prefetchPhotos';
 import { fetchAndStoreImageBlob, fetchAndStoreAuthedBlob } from './imageBlobsRepo';
 import { saveList } from '../utils/localListCache';
+import { sanitizeDavList } from '../utils/sanitizeDavForCache';
 import { cacheBenEstates, cacheBenSection } from '../utils/beneficiaryOfflineCache';
 
 function emit(type, detail) {
@@ -325,7 +326,8 @@ function taskFinancial(estateId, headers) {
       saveList(`financial:accounts:${estateId}`, pick(accts));
       saveList(`financial:property:${estateId}`, pick(props));
       saveList(`financial:beneficiaries:${estateId}`, pick(bens));
-      saveList(`financial:dav:${estateId}`, pick(dav));
+      // DAV secrets are stripped before caching (audit d5a54f5e P0).
+      saveList(`financial:dav:${estateId}`, sanitizeDavList(pick(dav)));
       if (summary?.data) saveList(`financial:summary:${estateId}`, summary.data);
       saveList(`financial:categories:${estateId}`, {
         bills: pick(cBills),

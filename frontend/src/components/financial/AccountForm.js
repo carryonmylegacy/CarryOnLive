@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { useFinancialForm } from '../../hooks/useFinancialForm';
 import { PassdownNotes } from './PassdownNotes';
 import { VisibilityTimingPills } from './VisibilityTimingPills';
+import { DavCredentialFields } from './DavCredentialFields';
 
 const AccountForm = ({ estateId, account, categories, categoryLabels, davEntries, beneficiaries: _beneficiaries, bills: _bills, onSaved, onAddCategory, getAuthHeaders }) => {
   const {
@@ -28,7 +29,7 @@ const AccountForm = ({ estateId, account, categories, categoryLabels, davEntries
       interest_rate: '', institution_name: '', account_number_masked: '', routing_number: '',
       institution_phone: '', institution_website: '', branch_address: '',
       ownership_type: 'individual', joint_owner: '', named_beneficiary_at_institution: '',
-      beneficiary_on_account: '', dav_entry_id: '', linked_bill_ids: [], priority: 'important',
+      beneficiary_on_account: '', dav_entry_id: '', dav_login_username: '', dav_login_password: '', linked_bill_ids: [], priority: 'important',
       notes: '', notes_first_action: '', notes_gotchas: '', notes_who_to_call: '',
       status: 'active', visibility_timing: { pre: false, post: true },
     }),
@@ -195,6 +196,7 @@ const AccountForm = ({ estateId, account, categories, categoryLabels, davEntries
           </Select>
         </div>
       )}
+      <DavCredentialFields form={form} update={update} idPrefix="account" />
       <PassdownNotes form={form} update={update} />
       <Button className="gold-button w-full mt-4" onClick={handleSubmit} disabled={saving} data-testid="save-account-button">
         {saving ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : null}

@@ -19,6 +19,7 @@ async function performLocalLogoutCleanup() {
     import('../offline/crypto').then((m) => m.clearSessionKey()).catch(() => {}),
     import('../offline/db').then((m) => m.purgeLocalData()).catch(() => {}),
     import('../utils/localListCache').then((m) => m.clearAllLists()).catch(() => {}),
+    import('../utils/clearLocalDrafts').then((m) => m.clearLocalDrafts()).catch(() => {}),
   ];
   // Synchronous storage + SW-cache wipe — token removed IMMEDIATELY (before any
   // await) so the dead session can't be reused even if a purge below stalls.

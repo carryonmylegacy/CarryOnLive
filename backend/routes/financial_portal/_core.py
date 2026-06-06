@@ -3,16 +3,34 @@ Sub-modules: categories, bills, debts, accounts, property, designations, summary
 No route handlers in this file.
 """
 
+import uuid
+from datetime import datetime, timezone
 from typing import List, Literal, Optional
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
+from config import db
 from services.access_control import (
     emergency_scope_allows,
     require_beneficiary_section_access,
     resolve_estate_actor,
 )
+
+# DAV passwords are estate-scoped and must round-trip through the same
+# encrypt_field fence the Digital Wallet route uses, so the owner-decrypt
+# path keeps working. Best-effort import — CFP saves must never hard-fail
+# if encryption is misconfigured (the password is simply not materialised).
+try:
+    from services.encryption import encrypt_field, get_estate_salt
+except Exception:  # pragma: no cover
+    encrypt_field = None
+    get_estate_salt = None
+
+try:  # Sentry is best-effort; CFP items still save without it.
+    import sentry_sdk
+except Exception:  # pragma: no cover
+    sentry_sdk = None
 
 router = APIRouter()
 
@@ -145,6 +163,8 @@ class DebtCreate(BaseModel):
     has_life_insurance: bool = False
     life_insurance_policy: Optional[str] = None
     dav_entry_id: Optional[str] = None
+    dav_login_username: Optional[str] = None
+    dav_login_password: Optional[str] = None
     priority: DebtPriority = "important"
     notes: Optional[str] = None
     notes_first_action: Optional[str] = None
@@ -176,6 +196,8 @@ class DebtUpdate(BaseModel):
     has_life_insurance: Optional[bool] = None
     life_insurance_policy: Optional[str] = None
     dav_entry_id: Optional[str] = None
+    dav_login_username: Optional[str] = None
+    dav_login_password: Optional[str] = None
     priority: Optional[DebtPriority] = None
     notes: Optional[str] = None
     notes_first_action: Optional[str] = None
@@ -204,6 +226,10 @@ class AccountCreate(BaseModel):
     named_beneficiary_at_institution: Optional[str] = None
     beneficiary_on_account: Optional[str] = None
     dav_entry_id: Optional[str] = None
+    # Auto-DAV: optional login the beneficiary uses to reach this account.
+    # Materialises / refreshes a linked DAV credential row on save.
+    dav_login_username: Optional[str] = None
+    dav_login_password: Optional[str] = None
     linked_bill_ids: List[str] = []
     priority: AccountPriority = "important"
     notes: Optional[str] = None
@@ -232,6 +258,8 @@ class AccountUpdate(BaseModel):
     named_beneficiary_at_institution: Optional[str] = None
     beneficiary_on_account: Optional[str] = None
     dav_entry_id: Optional[str] = None
+    dav_login_username: Optional[str] = None
+    dav_login_password: Optional[str] = None
     linked_bill_ids: Optional[List[str]] = None
     priority: Optional[AccountPriority] = None
     notes: Optional[str] = None
@@ -262,6 +290,8 @@ class PropertyAssetCreate(BaseModel):
     serial_or_vin: Optional[str] = None  # vehicle VIN, serial number, etc.
     description: Optional[str] = None
     dav_entry_id: Optional[str] = None
+    dav_login_username: Optional[str] = None
+    dav_login_password: Optional[str] = None
     priority: AssetPriority = "important"
     notes: Optional[str] = None
     notes_first_action: Optional[str] = None
@@ -290,6 +320,8 @@ class PropertyAssetUpdate(BaseModel):
     serial_or_vin: Optional[str] = None
     description: Optional[str] = None
     dav_entry_id: Optional[str] = None
+    dav_login_username: Optional[str] = None
+    dav_login_password: Optional[str] = None
     priority: Optional[AssetPriority] = None
     notes: Optional[str] = None
     notes_first_action: Optional[str] = None
@@ -450,3 +482,113 @@ def _filter_for_beneficiary(
         ):
             visible.append(item)
     return visible
+
+
+# ===================== DAV <-> CFP SYNC HELPERS =====================
+
+
+async def _require_dav_entry_in_estate(estate_id: str, dav_entry_id: Optional[str]) -> Optional[str]:
+    """Estate-scope every DAV link used by a CFP item (audit d5a54f5e P1).
+
+    When a CFP item (bill/account/debt/property) references a Digital Access
+    Vault entry, that entry MUST belong to the SAME estate. Without this a
+    multi-estate owner could cross-link a credential from estate A onto an
+    item in estate B — leaking it to estate B's beneficiaries. Returns the
+    id when valid; raises 400 otherwise. No-op when no link is provided.
+    """
+    if not dav_entry_id:
+        return None
+    entry = await db.digital_wallet.find_one(
+        {"id": dav_entry_id, "estate_id": estate_id, "deleted_at": None},
+        {"_id": 0, "id": 1},
+    )
+    if not entry:
+        raise HTTPException(status_code=400, detail="Linked DAV entry is not part of this estate.")
+    return dav_entry_id
+
+
+async def _upsert_dav_for_cfp_item(
+    *,
+    estate_id: str,
+    item_id: str,
+    item_name: str,
+    source_type: str,
+    source_id: str,
+    login_username: Optional[str],
+    login_password: Optional[str],
+    existing_dav_id: Optional[str],
+    user_id: str,
+    website: Optional[str] = None,
+    account_mask: Optional[str] = None,
+    category: str = "banking",
+) -> Optional[str]:
+    """Materialise / refresh a DAV credential row mirroring a CFP item's
+    login (audit d5a54f5e P0 — bi-directional CFP <-> DAV sync).
+
+    Behaviour (per founder decision): if the item already links to a DAV row
+    in THIS estate, update it IN PLACE (preserving its beneficiary
+    assignments / visibility); otherwise create a new row and return its id
+    so the caller can store it on the item. Triggered when any of
+    {website, login_username, login_password, account_mask} is present.
+    """
+    has_payload = any([website, login_username, login_password, account_mask])
+    if not has_payload:
+        return existing_dav_id
+
+    notes_lines = [f"Auto-linked from CarryOn Financial Picture: {item_name}"]
+    if website:
+        notes_lines.append(f"Visit: {website}")
+    if account_mask:
+        notes_lines.append(f"Account ending: {account_mask}")
+    notes_blob = "\n".join(notes_lines)
+
+    enc_password = None
+    if login_password and encrypt_field and get_estate_salt:
+        try:
+            salt = await get_estate_salt(estate_id)
+            enc_password = encrypt_field(login_password, salt)
+        except Exception as enc_err:  # pragma: no cover
+            enc_password = None
+            if sentry_sdk:
+                try:
+                    sentry_sdk.capture_exception(enc_err)
+                except Exception:
+                    pass
+
+    if existing_dav_id:
+        # Estate-scoped lookup so existing_dav_id can never update a row in
+        # another tenant (defense-in-depth alongside _require_dav_entry_in_estate).
+        existing = await db.digital_wallet.find_one(
+            {"id": existing_dav_id, "estate_id": estate_id, "deleted_at": None}, {"_id": 0, "id": 1}
+        )
+        if existing:
+            update_doc = {"account_name": item_name, "category": category, "notes": notes_blob}
+            if login_username:
+                update_doc["login_username"] = login_username
+            if enc_password is not None:
+                update_doc["encrypted_password"] = enc_password
+            await db.digital_wallet.update_one({"id": existing_dav_id}, {"$set": update_doc})
+            return existing_dav_id
+        # linked row was deleted / cross-estate — fall through and recreate.
+
+    new_id = str(uuid.uuid4())
+    dav_doc = {
+        "id": new_id,
+        "estate_id": estate_id,
+        "account_name": item_name,
+        "login_username": login_username or "",
+        "encrypted_password": enc_password,
+        "additional_access": None,
+        "notes": notes_blob,
+        "assigned_beneficiary_id": None,
+        "assigned_beneficiary_name": None,
+        "category": category,
+        "source_type": source_type,
+        "source_id": source_id,
+        "auto_created_from": {"source": source_type, "item_id": item_id},
+        "created_by": user_id,
+        "deleted_at": None,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.digital_wallet.insert_one(dav_doc)
+    return new_id

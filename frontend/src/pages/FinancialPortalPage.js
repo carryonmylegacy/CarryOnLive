@@ -24,6 +24,7 @@ import SlidePanel from '../components/SlidePanel';
 import SortControl, { makeSorter } from '../components/ui/SortControl';
 import { API_URL } from '../config';
 import { saveList, readList } from '../utils/localListCache';
+import { sanitizeDavList } from '../utils/sanitizeDavForCache';
 import { useDraftState } from '../hooks/useDraftState';
 import { useScrollLock } from '../hooks/useScrollLock';
 import BillForm from '../components/financial/BillForm';
@@ -273,7 +274,7 @@ const FinancialPortalPage = () => {
         accounts: nextAccts,
         property: nextProps,
         beneficiaries: nextBens,
-        dav: nextDav,
+        dav: sanitizeDavList(nextDav),
         summary: summaryRes.data || null,
         categories: nextCats,
       });
@@ -324,8 +325,9 @@ const FinancialPortalPage = () => {
     if (!estate?.id) return;
     saveList(`financial:portal:${estate.id}`, {
       bills, debts, accounts, property: propertyAssets,
-      beneficiaries, dav: davEntries, summary, categories: customCategories,
+      beneficiaries, dav: sanitizeDavList(davEntries), summary, categories: customCategories,
       ...overrides,
+      ...(overrides.dav ? { dav: sanitizeDavList(overrides.dav) } : {}),
     });
   };
 
@@ -511,7 +513,7 @@ const FinancialPortalPage = () => {
       setDavEntries(nextDav);
       if (estate?.id) {
         try {
-          saveList(`financial:dav:${estate.id}`, nextDav);
+          saveList(`financial:dav:${estate.id}`, sanitizeDavList(nextDav));
           persistPortalCache({ dav: nextDav });
         } catch { /* non-fatal */ }
       }
