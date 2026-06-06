@@ -31,21 +31,24 @@ from config import db, logger
 # Sentinel for the first entry in the chain.
 _GENESIS_HASH = "0" * 64
 
-# Single-writer lock for chain appends. The read-prev-hash → compute → insert
-# sequence is NOT atomic; without serialization two concurrent appends can read
-# the same prev_hash and FORK the chain (audit P1.6). This lock serializes
-# appends within the process (the dominant concurrency source for a single
-# backend instance).
+# Single-writer lock for chain appends WITHIN a process (fast path that avoids
+# most CAS retries on a single instance). Cross-pod safety comes from the
+# compare-and-swap on the singleton head document below.
 _chain_lock = asyncio.Lock()
+
+# The chain head is a single document in `audit_chain_state`: {key, hash}. Every
+# append atomically advances it from the prev hash to the new hash via
+# find_one_and_update (compare-and-swap). Only the CAS winner keeps its inserted
+# entry, so two pods can never fork the chain — and this needs NO unique index on
+# historical audit_trail data (which may contain a pre-existing fork).
+_HEAD_KEY = "chain_head"
 
 
 async def _latest_chain_hash() -> str:
     """Return the integrity_hash of the most recently inserted CHAINED entry.
 
-    Falls back to `_GENESIS_HASH` for the very first entry ever written
-    *into the chain*. Filters on `prev_hash` exists so legacy pre-chain
-    entries (which carry an `integrity_hash` but no `prev_hash`) don't
-    leak into the chain root and corrupt the linkage.
+    Used only to initialize the head pointer the first time. Falls back to
+    `_GENESIS_HASH` when no chained entry exists yet.
     """
     latest = await db.audit_trail.find_one(
         {"prev_hash": {"$exists": True}, "integrity_hash": {"$exists": True}},
@@ -55,6 +58,25 @@ async def _latest_chain_hash() -> str:
     if latest and latest.get("integrity_hash"):
         return latest["integrity_hash"]
     return _GENESIS_HASH
+
+
+async def _ensure_head_hash() -> str:
+    """Read the current chain-head hash, initializing it (idempotently, race-safe
+    via the unique `key` index) from the canonical latest chained hash."""
+    doc = await db.audit_chain_state.find_one({"key": _HEAD_KEY}, {"_id": 0, "hash": 1})
+    if doc and doc.get("hash"):
+        return doc["hash"]
+    seed = await _latest_chain_hash()
+    try:
+        await db.audit_chain_state.update_one(
+            {"key": _HEAD_KEY},
+            {"$setOnInsert": {"key": _HEAD_KEY, "hash": seed, "created_at": datetime.now(timezone.utc)}},
+            upsert=True,
+        )
+    except DuplicateKeyError:
+        pass  # another worker initialized it first
+    doc = await db.audit_chain_state.find_one({"key": _HEAD_KEY}, {"_id": 0, "hash": 1})
+    return (doc or {}).get("hash") or seed
 
 
 async def log_audit_event(
@@ -85,43 +107,51 @@ async def log_audit_event(
         "session_id": session_id,
     }
 
-    # Bind this entry to the prior entry's hash under the single-writer lock so
-    # concurrent appends within THIS process cannot fork the chain. Across pods
-    # the unique partial index on `prev_hash` (db_indexes) makes the insert the
-    # serialization point: if another instance chained off the same prev_hash
-    # first, our insert raises DuplicateKeyError and we recompute against the new
-    # head and retry. timestamp/stored_at are (re)computed INSIDE the loop so a
-    # retry that chains to a newer head also carries a monotonically newer
-    # stored_at — keeping `_latest_chain_hash()` head selection correct
-    # (audit 18a9d44 F-18-02).
+    # Append via compare-and-swap on the singleton head pointer. We reserve the
+    # next slot by atomically advancing the head from prev → our hash FIRST, then
+    # insert the entry. Only the CAS winner proceeds to insert; losers recompute
+    # against the new head and retry. This prevents cross-pod forks with no
+    # dependency on a unique index over historical data, and keeps audit_trail
+    # strictly APPEND-ONLY (no updates/deletes — SOC2 CC7.2 immutability).
     inserted = False
     async with _chain_lock:
-        for _attempt in range(12):
+        for _attempt in range(16):
             now = datetime.now(timezone.utc)
-            entry["timestamp"] = now.isoformat()
+            prev = await _ensure_head_hash()
+            entry.pop("_id", None)
             entry.pop("integrity_hash", None)
             entry.pop("stored_at", None)
-            entry["prev_hash"] = await _latest_chain_hash()
+            entry["timestamp"] = now.isoformat()
+            entry["prev_hash"] = prev
 
             canonical = json.dumps(entry, sort_keys=True)
-            entry["integrity_hash"] = hashlib.sha256(canonical.encode()).hexdigest()
-            entry["stored_at"] = now  # datetime for MongoDB TTL index (added after hash)
+            new_hash = hashlib.sha256(canonical.encode()).hexdigest()
 
-            try:
-                await db.audit_trail.insert_one(entry)
-                inserted = True
-                break
-            except DuplicateKeyError:
+            advanced = await db.audit_chain_state.find_one_and_update(
+                {"key": _HEAD_KEY, "hash": prev},
+                {"$set": {"hash": new_hash, "updated_at": now}},
+            )
+            if advanced is None:
+                # Lost the CAS — another writer advanced the head. Nothing was
+                # inserted, so simply recompute against the new head and retry.
                 continue
+
+            # Won the slot: persist the entry (append-only insert).
+            entry["integrity_hash"] = new_hash
+            entry["stored_at"] = now  # datetime for MongoDB TTL index
+            await db.audit_trail.insert_one(entry)
+            inserted = True
+            break
 
     if not inserted:
         # Do NOT silently drop a compliance event. Persist it to a durable repair
-        # queue for out-of-band re-chaining and surface a critical log so the gap
-        # is visible (audit 18a9d44 F-18-02).
+        # queue for out-of-band re-chaining and surface a log so the gap is
+        # visible (audit 18a9d44 F-18-02).
         try:
+            entry.pop("_id", None)
             entry.pop("stored_at", None)
             await db.audit_repair_queue.insert_one(
-                {**entry, "queued_at": datetime.now(timezone.utc), "reason": "chain_contention_retries_exhausted"}
+                {**entry, "queued_at": datetime.now(timezone.utc), "reason": "chain_cas_retries_exhausted"}
             )
         except Exception as e:  # noqa: BLE001
             logger.error(f"AUDIT chain append AND repair-queue write failed: {e}")
@@ -206,12 +236,10 @@ async def verify_audit_chain(limit: int = 10000) -> dict:
     # chain is NOT fully authoritative even when every existing link verifies
     # (audit 512bd5c F-18-06).
     repair_queue_backlog = await db.audit_repair_queue.count_documents({})
-    # Whether the cross-pod chain guard index is currently active.
-    try:
-        _idx = await db.audit_trail.index_information()
-        prev_hash_index_present = "prev_hash_unique" in _idx
-    except Exception:
-        prev_hash_index_present = False
+    # The cross-pod chain guard is now the singleton head pointer (CAS), not a
+    # unique index — report whether it is initialized.
+    head_doc = await db.audit_chain_state.find_one({"key": "chain_head"}, {"_id": 0, "hash": 1})
+    chain_head_present = bool(head_doc and head_doc.get("hash"))
 
     return {
         "ok": first_break_at is None and repair_queue_backlog == 0,
@@ -221,7 +249,7 @@ async def verify_audit_chain(limit: int = 10000) -> dict:
         "first_break_id": first_break_id,
         "skipped_legacy": skipped_legacy,
         "repair_queue_backlog": repair_queue_backlog,
-        "prev_hash_index_present": prev_hash_index_present,
+        "chain_head_present": chain_head_present,
     }
 
 

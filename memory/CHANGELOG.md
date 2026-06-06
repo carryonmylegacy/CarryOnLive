@@ -1,6 +1,15 @@
 # CarryOn — Changelog
 
 
+## Jun 6, 2026 — PROD incident fix: audit-chain fatal alert (`prev_hash_unique` missing)
+
+Production Sentry `fatal` (PYTHON-296): the round-5 unique-index cross-pod guard couldn't be created because prod `audit_trail` held a historical fork (dup prev_hash); the startup health-check logged CRITICAL.
+- **Fix:** replaced the unique-index mechanism with a **compare-and-swap on a singleton head pointer** (`audit_chain_state`). CAS-first → append-only insert; cross-pod fork-proof, works regardless of historical data, and keeps `audit_trail` strictly append-only (passes CI [CC7.2] immutability).
+- Removed `prev_hash_unique` index + the fatal startup check; added non-unique `prev_hash` lookup index + unique `key` index on the head doc. `verify_audit_chain` now reports `chain_head_present` + `repair_queue_backlog`.
+- Historical fork left as detected evidence (`first_break_id`) — rewriting an immutable log is a SOC2 anti-pattern; CAS prevents recurrence.
+- **Tests:** concurrency no-fork (25 parallel appends → 25 unique prev_hashes) + backlog → 44/44 green; `housekeeping.sh --strict` EXIT 0; route 670/670. Fatal alert source removed.
+
+
 ## Jun 6, 2026 — Round-6 audit (GitHub `512bd5c`): 9 findings, ALL fixed (surgical)
 
 - **#1 (P1)** SW never-caches decrypted doc/message/chat-file routes (`API_NEVER_CACHE_PATTERNS`, network-only); backend sends `Cache-Control: no-store` on all such responses.

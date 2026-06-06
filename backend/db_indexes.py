@@ -142,33 +142,16 @@ async def ensure_indexes(db, logger):
         await db.audit_trail.create_index([("timestamp", -1)])
         await db.audit_trail.create_index("actor_id")
         await db.audit_trail.create_index("category")
-        # audit 05c1776 P2.5 — unique partial index on the chain pointer makes the
-        # insert the cross-pod serialization point: two instances cannot both
-        # chain off the same prev_hash (the second insert fails and retries).
-        # Guarded: if pre-existing data already contains a fork, index creation
-        # fails — the in-process lock still protects single-instance writes.
-        try:
-            await db.audit_trail.create_index(
-                "prev_hash",
-                unique=True,
-                name="prev_hash_unique",
-                partialFilterExpression={"prev_hash": {"$exists": True}},
-            )
-        except Exception as _e:
-            logger.warning(f"audit_trail prev_hash unique index not created: {_e}")
-        # Loud health check (audit 18a9d44 F-18-02): if the cross-pod chain guard
-        # is absent, multi-instance audit writes can fork/drop silently. Surface
-        # it as CRITICAL so it can't pass unnoticed during high-concurrency ops.
-        try:
-            _idx = await db.audit_trail.index_information()
-            if "prev_hash_unique" not in _idx:
-                logger.critical(
-                    "AUDIT INTEGRITY: prev_hash_unique index MISSING — cross-pod "
-                    "chain protection is NOT active. Resolve any historical fork "
-                    "and recreate the index to restore SOC2-grade evidence."
-                )
-        except Exception as _e:
-            logger.warning(f"audit_trail index health check failed: {_e}")
+        # Non-unique lookup index for chain verification / head re-sync. Cross-pod
+        # append serialization is handled by a compare-and-swap on the single
+        # `audit_chain_state` head document (see services/audit.py), which works
+        # regardless of any historical fork — so NO unique index on prev_hash is
+        # required and the prior fatal "index MISSING" startup alarm is removed
+        # (audit 512bd5c follow-up — production audit_trail held a historical fork).
+        await db.audit_trail.create_index("prev_hash")
+        # The head pointer is a singleton; a unique key guarantees exactly one head
+        # and makes concurrent first-time initialization across pods safe.
+        await db.audit_chain_state.create_index("key", unique=True, name="chain_head_key")
         # audit 512bd5c F-18-06 — index the repair queue so reconciliation /
         # admin evidence queries are fast and ordered.
         await db.audit_repair_queue.create_index([("queued_at", 1)])

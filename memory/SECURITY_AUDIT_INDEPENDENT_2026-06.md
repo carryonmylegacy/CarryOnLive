@@ -427,3 +427,39 @@ findings (2×P1, 6×P2, 5×P3) — all addressed:
 
 **Tests:** `test_audit_live_avb.py` → **43/43 green** (broadcast-requires-all-recipients, audit repair-backlog). `housekeeping.sh --strict` EXIT 0; route policy 670/670; backend 200; `node --check sw-push.js` OK; preview app renders.
 **Bottom line:** all 9 `512bd5c` findings resolved on `/app`. Needs GitHub push + redeploy.
+
+---
+
+## ROUND-6b — PRODUCTION incident: audit-chain `prev_hash_unique` fatal alert (Jun 2026)
+
+**Symptom:** Sentry `fatal` (PYTHON-296) in production — "AUDIT INTEGRITY:
+prev_hash_unique index MISSING — cross-pod chain protection is NOT active."
+
+**Root cause:** The round-5/F-18-02 design enforced cross-pod ordering via a
+UNIQUE partial index on `audit_trail.prev_hash`. Production `audit_trail` already
+contained a **historical fork** (two entries sharing a prev_hash, created before
+the single-writer lock existed), so the unique index could not be created; the
+startup health-check then logged CRITICAL → fatal Sentry alert. The unique-index
+approach was fundamentally fragile (depends on already-clean history).
+
+**Fix (replaces the unique-index mechanism):**
+- Cross-pod append ordering now uses a **compare-and-swap on a singleton head
+  pointer** (`audit_chain_state` doc `{key:"chain_head", hash}`). Each append:
+  `_ensure_head_hash()` → compute new hash → `find_one_and_update({hash:prev} →
+  {hash:new})` CAS → only the winner inserts (append-only). Losers recompute
+  against the new head and retry. No fork across pods, **no dependency on clean
+  historical data**, and `audit_trail` stays strictly append-only (SOC2 CC7.2 —
+  no updates/deletes; CAS-first-then-insert, never insert-then-delete).
+- Removed the `prev_hash_unique` index + the fatal startup health-check
+  (`db_indexes.py`). Added a non-unique `prev_hash` lookup index + a unique `key`
+  index on the tiny `audit_chain_state` head doc (trivially creatable).
+- `verify_audit_chain` now reports `chain_head_present` (replaces
+  `prev_hash_index_present`) + `repair_queue_backlog`; admin chain-status surfaces both.
+- **Historical fork is intentionally LEFT as detected evidence** (surfaced via
+  `chain_links_ok=False` + `first_break_id`). Rewriting an immutable audit log to
+  "fix" a fork is itself a SOC2 anti-pattern; the CAS guarantees no recurrence.
+
+**Tests:** added concurrency no-fork test (25 parallel appends → 25 unique
+prev_hashes) + repair-backlog test → `test_audit_live_avb.py` 44/44 green.
+`housekeeping.sh --strict` EXIT 0 incl. **[CC7.2] Audit immutability PASS
+(append-only)**; route policy 670/670. The fatal Sentry alert source is removed.
