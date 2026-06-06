@@ -168,10 +168,13 @@ jobs:
           E2E_API_URL: ${{ secrets.E2E_API_URL }}
           E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
           E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
-        # CI runs the DESKTOP smoke suite only. smoke-mobile doubles the
-        # runtime (110 tests) and historically times out on 2-worker
-        # GitHub runners. Mobile coverage is still available locally via
-        # `yarn e2e` or can be added as a nightly scheduled workflow.
+        # CI runs the DESKTOP smoke suite only — explicitly scoped to
+        # tests/e2e/smoke.spec.js (8 critical-path tests). The smoke-chromium
+        # PROJECT's testDir is the whole tests/e2e/ folder, so WITHOUT the
+        # explicit file path this ran all ~73 offline-phase/toggle/signup specs
+        # (designed for localhost) against the remote Cloudflare preview and
+        # blew past the 25m job cap. Keep the file path in `e2e:smoke:desktop`.
+        # Full suite + mobile run locally via `yarn e2e` or a nightly workflow.
         run: yarn e2e:smoke:desktop
       - name: Upload Playwright report on failure
         if: failure()

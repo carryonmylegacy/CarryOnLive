@@ -97,7 +97,7 @@
     "e2e:prod-safe": "playwright test --project=smoke-chromium --project=smoke-mobile --grep-invert 'Revenue funnel'",
     "e2e:visual": "playwright test --project=visual",
     "e2e:ui": "playwright test --ui",
-    "e2e:smoke:desktop": "playwright test --project=smoke-chromium"
+    "e2e:smoke:desktop": "playwright test --project=smoke-chromium tests/e2e/smoke.spec.js"
   },
   "browserslist": {
     "production": [
