@@ -81,11 +81,11 @@ async def get_financial_portal(estate_id: str, current_user: dict = Depends(get_
         # beneficiary can see — hidden owner-created labels must not leak via the
         # estate-level category list (audit fa1ad83 #9).
         used_categories = {
-            item.get("category")
-            for item in (bills + debts + accounts + property_assets)
-            if item.get("category")
+            item.get("category") for item in (bills + debts + accounts + property_assets) if item.get("category")
         }
-        custom_categories = [c for c in custom_categories if c.get("name") in used_categories or c.get("id") in used_categories]
+        custom_categories = [
+            c for c in custom_categories if c.get("name") in used_categories or c.get("id") in used_categories
+        ]
 
     return {
         "bills": bills,

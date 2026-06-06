@@ -169,7 +169,9 @@ async def log_audit_event(
     if not cas_won and not inserted:
         # Never won the head slot after retries (extreme contention) — capture for
         # repair so the compliance event is not silently dropped.
-        await _enqueue_audit_repair(entry, entry.get("prev_hash", ""), entry.get("integrity_hash", ""), "chain_cas_retries_exhausted")
+        await _enqueue_audit_repair(
+            entry, entry.get("prev_hash", ""), entry.get("integrity_hash", ""), "chain_cas_retries_exhausted"
+        )
         logger.error(
             f"AUDIT chain append failed after retries; event queued for repair "
             f"(actor={actor_email} action={action} {resource_type}:{resource_id})"

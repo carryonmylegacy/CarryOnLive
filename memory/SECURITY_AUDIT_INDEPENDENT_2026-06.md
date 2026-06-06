@@ -463,3 +463,29 @@ approach was fundamentally fragile (depends on already-clean history).
 prev_hashes) + repair-backlog test → `test_audit_live_avb.py` 44/44 green.
 `housekeeping.sh --strict` EXIT 0 incl. **[CC7.2] Audit immutability PASS
 (append-only)**; route policy 670/670. The fatal Sentry alert source is removed.
+
+---
+
+## ROUND-7 — Live Current-Code Audit `fa1ad83` (10 findings) — VERIFIED REMEDIATED (Jun 6, 2026)
+
+All 10 findings of the final "Live Current-Code Audit" (commit `fa1ad83`) were
+implemented and committed in the prior session; this pass **verified** each
+against the live `/app` tree (no re-implementation needed — handoff was stale):
+
+| # | Finding | Where remediated (verified) |
+|---|---------|------------------------------|
+| 1 | Audit chain atomicity | `audit.py`: CAS-first-then-insert; on insert failure event captured in durable `audit_repair_queue` (no silent drop, no history rewrite); retries-exhausted also enqueued |
+| 2 | Purge local data on logout | `AuthContext.logout()`: `crypto.clearSessionKey()` + `db.purgeLocalData()` + `localListCache.clearAllLists()` + SW `CLEAR_APP_CACHES`, independent of offline toggle |
+| 3 | Encrypt offline blobs at rest | `crypto.js` `sealBlob`/`unsealBlob` AES-GCM; `pinnedDocsRepo.js` seals on write, unseals on read (legacy plaintext back-compat) |
+| 5 | SW network-first for sensitive APIs | `sw-push.js` `AUTHZ_SENSITIVE_API_PREFIXES` → `networkFirstApi` (cache = offline-only fallback); 401/403 drops cache + posts `AUTHZ_REVOKED` |
+| 6 | No-store on handoff PDF | `portal_aggregate.py` `GET /financial/handoff-package/{estate_id}` → `Cache-Control: no-store`; SW `API_NEVER_CACHE_PATTERNS` includes the route |
+| 7 | Partition SW cache per client | `apiCacheName()`/`userImageCacheName()` keyed to `SET_CACHE_ID`; `CLEAR_APP_CACHES` wipes all per-user namespaces, preserves app-shell |
+| 8 | Require chain head in verification | `verify_audit_chain` `ok` requires `chain_head_present` AND `chain_head_matches_last_event` AND `repair_queue_backlog==0` |
+| 9 | Restrict custom-categories payload | `portal_aggregate.py` filters `custom_categories` to those actually used (name/id ∈ used set) |
+| 10 | Enforce estate_id on POST /digital-wallet | `digital_wallet.py` create requires explicit `estate_id` → 404 (not found) / 403 (not owner) / 400 (assignee or linked entity not in estate) |
+
+**Verification (Jun 6, 2026):** `test_audit_live_avb.py` **44/44 green**;
+`node --check sw-push.js` OK; `housekeeping.sh --strict` **EXIT 0** (route policy
+670/670, `[CC7.2] Audit immutability PASS (append-only)`, dependency no
+regression vs baseline); preview app renders. **Bottom line:** all 10 `fa1ad83`
+findings resolved on `/app` — needs GitHub push + redeploy to clear the live audit.
