@@ -1,6 +1,12 @@
 # CarryOn — Changelog
 
 
+## Jun 7, 2026 — "Login in DAV" reassurance pill on CFP tiles (enhancement)
+
+New shared `DavSyncedPill.js` renders a subtle green "✓ Login in DAV" pill on Bill/Account/Debt/Property tiles whenever the item links a DAV credential (`item.dav_entry_id`). Gives benefactors instant at-a-glance confirmation the beneficiary login was saved to the vault. Verified visually (both account tiles show the pill) + `housekeeping.sh --strict` EXIT 0 (font bumped 10px→11px for the iOS min-font gate).
+
+
+
 ## Jun 6, 2026 — Audit d5a54f5e: P2/P3 hardening (CI gate, E2E secret, logout UX, audit alerting)
 
 Second pass after the P0/P1 batch. `housekeeping.sh --strict` EXIT 0; backend reloads clean (seed still runs on preview, prod-deny verified); changed JS/PY lint clean (no new findings).

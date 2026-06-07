@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Edit2, Trash2, Users, ChevronDown, ChevronUp, CheckCircle2 } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { computePassdownScore, passdownColor, passdownLabel } from '../../utils/passdownScore';
+import { DavSyncedPill } from './DavSyncedPill';
 
 const CATEGORY_COLORS = {
   mortgage_rent: '#ef4444', utilities: '#f59e0b', insurance: '#8b5cf6',
@@ -87,6 +88,7 @@ const BillTile = ({ bill, categoryLabels, beneficiaries, onEdit, onDelete, onDes
               )}
               {bill.amount != null && <span className="text-[var(--t5)] text-xs">·</span>}
               <span className="text-xs font-bold" style={{ color: due.color }}>{due.text}</span>
+              <DavSyncedPill linked={!!bill.dav_entry_id} testId={`bill-dav-pill-${bill.id}`} />
             </div>
           </div>
           <div className="flex items-center gap-1 flex-shrink-0">

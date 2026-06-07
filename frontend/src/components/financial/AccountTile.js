@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Edit2, Trash2, Users, ChevronDown, ChevronUp } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { computePassdownScore, passdownColor, passdownLabel } from '../../utils/passdownScore';
+import { DavSyncedPill } from './DavSyncedPill';
 
 const AccountTile = ({ account, categoryLabels, beneficiaries, onEdit, onDelete, onDesignationUpdate }) => {
   const [expanded, setExpanded] = useState(false);
@@ -54,6 +55,7 @@ const AccountTile = ({ account, categoryLabels, beneficiaries, onEdit, onDelete,
                   color: statusColors[account.status] || '#64748b',
                 }}>{account.status}</span>
               )}
+              <DavSyncedPill linked={!!account.dav_entry_id} testId={`account-dav-pill-${account.id}`} />
             </div>
           </div>
           <div className="flex items-center gap-1 flex-shrink-0">

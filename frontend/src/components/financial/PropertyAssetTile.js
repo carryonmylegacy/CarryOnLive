@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Edit2, Trash2, Users, ChevronDown, ChevronUp, Home, Car, Gem, Palette, Building2, Package } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { computePassdownScore, passdownColor, passdownLabel } from '../../utils/passdownScore';
+import { DavSyncedPill } from './DavSyncedPill';
 
 const CATEGORY_ICONS = {
   real_estate: Home,
@@ -88,6 +89,7 @@ const PropertyAssetTile = ({ asset, beneficiaries, onEdit, onDelete, onDesignati
                   color: statusColors[asset.status] || '#64748b',
                 }}>{asset.status}</span>
               )}
+              <DavSyncedPill linked={!!asset.dav_entry_id} testId={`property-dav-pill-${asset.id}`} />
             </div>
           </div>
           <div className="flex items-center gap-1 flex-shrink-0">
