@@ -360,9 +360,13 @@ export async function snapshot() {
  *  PendingSyncPanel to render the per-item list. Conflict rows keep
  *  their full `body` + `server_row` so the panel can render the
  *  inline diff; non-conflict rows strip `body` to keep the payload
- *  small. */
+ *  small.
+ *
+ *  audit #50f324c P2 — NOT gated on isOfflineEnabled() (matches
+ *  pendingUploadsRepo). enqueue() deliberately queues writes when the device
+ *  is truly offline even with Offline Mode OFF; those rows must stay visible
+ *  and resolvable, otherwise a failed/conflicted write becomes invisible. */
 export async function listPending() {
-  if (!isOfflineEnabled()) return [];
   try {
     const db = getDB();
     const all = await db.outbox.orderBy('id').reverse().toArray();
@@ -381,9 +385,10 @@ export async function listPending() {
   } catch { return []; }
 }
 
-/** Re-queue a failed or inflight outbox row for the next drain. */
+/** Re-queue a failed or inflight outbox row for the next drain.
+ *  Flag-agnostic (audit #50f324c P2) — see listPending. */
 export async function retryRow(id) {
-  if (!isOfflineEnabled() || !id) return;
+  if (!id) return;
   try {
     const db = getDB();
     await db.outbox.update(id, {
@@ -397,9 +402,10 @@ export async function retryRow(id) {
   }
 }
 
-/** Permanently remove an outbox row (user chose to cancel the write). */
+/** Permanently remove an outbox row (user chose to cancel the write).
+ *  Flag-agnostic (audit #50f324c P2) — see listPending. */
 export async function removeRow(id) {
-  if (!isOfflineEnabled() || !id) return;
+  if (!id) return;
   try {
     await getDB().outbox.delete(id);
     try { window.dispatchEvent(new CustomEvent('carryon:outbox:drained-one', { detail: { id } })); } catch { /* SSR */ }
@@ -410,9 +416,9 @@ export async function removeRow(id) {
 
 // ── Phase 8 — Conflict resolution ───────────────────────────────────────────
 
-/** List every outbox row currently in the `conflict` state (unsealed + redacted). */
+/** List every outbox row currently in the `conflict` state (unsealed + redacted).
+ *  Flag-agnostic (audit #50f324c P2) — see listPending. */
 export async function listConflicts() {
-  if (!isOfflineEnabled()) return [];
   try {
     const db = getDB();
     const rows = await db.outbox.where('status').equals('conflict').toArray();
@@ -424,9 +430,10 @@ export async function listConflicts() {
  * Resolve a conflict with the user's chosen strategy.
  *   'mine'   — re-enqueue the local write, overwriting the server's state.
  *   'theirs' — discard the local write and accept the server's state.
+ *  Flag-agnostic (audit #50f324c P2) — see listPending.
  */
 export async function resolveConflict(id, choice) {
-  if (!isOfflineEnabled() || !id) return;
+  if (!id) return;
   try {
     const db = getDB();
     const rawRow = await db.outbox.get(id);

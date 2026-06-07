@@ -341,30 +341,37 @@ async def get_message_voice(voice_id: str, current_user: dict = Depends(get_curr
         raise HTTPException(status_code=403, detail="Access denied")
     await require_beneficiary_section_access(actor, "messages")
 
-    voice_storage_key = f"voices/{voice_id}"
+    # audit #50f324c P1 — voice blobs are stored ESTATE-SCOPED (storage.upload →
+    # estates/{estate_id}/{voice_id}), both for inline creates and chunked
+    # uploads. The old voices/{voice_id} key 404'd every newly-created voice
+    # milestone. Download the correct key first; fall back to the legacy path
+    # only for objects written by much older builds.
+    estate_salt = await get_estate_salt(message["estate_id"])
     try:
-        encrypted_blob = await storage.download(voice_storage_key)
-        estate_salt = await get_estate_salt(message["estate_id"])
-        decrypted = decrypt_aes256(encrypted_blob.decode("ascii"), estate_salt)
-
-        await audit_log(
-            action="message.voice_access",
-            user_id=current_user["id"],
-            resource_type="voice",
-            resource_id=voice_id,
-            estate_id=message.get("estate_id") if message else None,
-        )
-
-        return Response(
-            content=decrypted,
-            media_type="audio/webm",
-            headers={
-                "Content-Disposition": f'inline; filename="{voice_id}.webm"',
-                "Cache-Control": "no-store",
-            },
-        )
+        encrypted_blob = await storage.download(f"estates/{message['estate_id']}/{voice_id}")
     except FileNotFoundError:
-        raise HTTPException(status_code=404, detail="Voice recording not found")
+        try:
+            encrypted_blob = await storage.download(f"voices/{voice_id}")
+        except FileNotFoundError:
+            raise HTTPException(status_code=404, detail="Voice recording not found")
+    decrypted = decrypt_aes256(encrypted_blob.decode("ascii"), estate_salt)
+
+    await audit_log(
+        action="message.voice_access",
+        user_id=current_user["id"],
+        resource_type="voice",
+        resource_id=voice_id,
+        estate_id=message.get("estate_id") if message else None,
+    )
+
+    return Response(
+        content=decrypted,
+        media_type="audio/webm",
+        headers={
+            "Content-Disposition": f'inline; filename="{voice_id}.webm"',
+            "Cache-Control": "no-store",
+        },
+    )
 
 
 @router.post("/messages")
@@ -500,7 +507,8 @@ async def upload_message_video(
     current_user: dict = Depends(get_current_user),
 ):
     """Upload video for a message separately (supports large files)."""
-    message = await db.messages.find_one({"id": message_id}, {"_id": 0})
+    # audit #50f324c P2 — refuse mutations on soft-deleted messages.
+    message = await db.messages.find_one({"id": message_id, "deleted_at": None}, {"_id": 0})
     if not message:
         raise HTTPException(status_code=404, detail="Message not found")
 
@@ -537,7 +545,8 @@ async def upload_message_attachment(
     current_user: dict = Depends(get_current_user),
 ):
     """Upload a document/image attachment for a milestone message."""
-    message = await db.messages.find_one({"id": message_id}, {"_id": 0})
+    # audit #50f324c P2 — refuse mutations on soft-deleted messages.
+    message = await db.messages.find_one({"id": message_id, "deleted_at": None}, {"_id": 0})
     if not message:
         raise HTTPException(status_code=404, detail="Message not found")
 
@@ -570,7 +579,9 @@ async def upload_message_attachment(
 @router.get("/messages/{message_id}/attachment")
 async def get_message_attachment(message_id: str, current_user: dict = Depends(get_current_user)):
     """Download a message attachment (decrypted)."""
-    message = await db.messages.find_one({"id": message_id}, {"_id": 0})
+    # audit #50f324c P2 — soft-deleted messages must not serve attachments, even
+    # to owner/admin/operator (who bypass can_access_message). Guard at the query.
+    message = await db.messages.find_one({"id": message_id, "deleted_at": None}, {"_id": 0})
     if not message:
         raise HTTPException(status_code=404, detail="Message not found")
 
@@ -609,7 +620,7 @@ async def update_message(message_id: str, data: MessageUpdate, current_user: dic
     """Edit an existing message (benefactor only, before transition)"""
     await require_benefactor_role(current_user, "edit messages")
 
-    existing = await db.messages.find_one({"id": message_id}, {"_id": 0})
+    existing = await db.messages.find_one({"id": message_id, "deleted_at": None}, {"_id": 0})
     if not existing:
         raise HTTPException(status_code=404, detail="Message not found")
     # IDOR guard — only the estate owner (or admin) can edit a message.
@@ -675,11 +686,12 @@ async def update_message(message_id: str, data: MessageUpdate, current_user: dic
         if data.video_thumbnail:
             update_fields["video_thumbnail"] = data.video_thumbnail
     elif data.remove_video and existing.get("video_url"):
-        video_key = f"videos/{existing['video_url']}"
-        try:
-            await storage.delete(video_key)
-        except Exception:
-            pass
+        # audit #50f324c — delete the estate-scoped blob (legacy fallback too).
+        for _k in (f"estates/{existing['estate_id']}/{existing['video_url']}", f"videos/{existing['video_url']}"):
+            try:
+                await storage.delete(_k)
+            except Exception:
+                pass
         update_fields["video_url"] = None
         update_fields["video_thumbnail"] = None
 
@@ -696,11 +708,12 @@ async def update_message(message_id: str, data: MessageUpdate, current_user: dic
         )
         update_fields["voice_url"] = voice_id
     elif data.remove_voice and existing.get("voice_url"):
-        voice_key = f"voices/{existing['voice_url']}"
-        try:
-            await storage.delete(voice_key)
-        except Exception:
-            pass
+        # audit #50f324c — delete the estate-scoped blob (legacy fallback too).
+        for _k in (f"estates/{existing['estate_id']}/{existing['voice_url']}", f"voices/{existing['voice_url']}"):
+            try:
+                await storage.delete(_k)
+            except Exception:
+                pass
         update_fields["voice_url"] = None
 
     # Handle attachment removal
@@ -750,10 +763,18 @@ async def delete_message(message_id: str, current_user: dict = Depends(get_curre
     # IDOR guard — only the estate owner (or admin) can delete a message.
     await require_estate_owner(message.get("estate_id"), current_user)
 
-    # Delete video from storage if exists
-    if message.get("video_url"):
-        video_key = f"videos/{message['video_url']}"
-        await storage.delete(video_key)
+    # audit #50f324c — best-effort blob cleanup on soft-delete. Blobs are stored
+    # estate-scoped (estates/{estate_id}/{url}); older objects used videos/ and
+    # voices/ prefixes, so try both. (The deleted_at filter on the direct media
+    # routes is the real access guard since blob deletion is best-effort.)
+    for _url, _legacy in ((message.get("video_url"), "videos"), (message.get("voice_url"), "voices")):
+        if not _url:
+            continue
+        for _k in (f"estates/{message['estate_id']}/{_url}", f"{_legacy}/{_url}"):
+            try:
+                await storage.delete(_k)
+            except Exception:
+                pass
 
     result = await db.messages.update_one(
         {"id": message_id},
@@ -781,7 +802,9 @@ async def download_message(message_id: str, current_user: dict = Depends(get_cur
     - voice → webm audio redirect
     - video → mp4/webm redirect
     """
-    message = await db.messages.find_one({"id": message_id}, {"_id": 0})
+    # audit #50f324c P2 — soft-deleted messages must not be downloadable, even
+    # by owner/admin/operator who bypass can_access_message.
+    message = await db.messages.find_one({"id": message_id, "deleted_at": None}, {"_id": 0})
     if not message:
         raise HTTPException(status_code=404, detail="Message not found")
 

@@ -38,7 +38,6 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import { RefreshCw, AlertTriangle, CloudUpload } from 'lucide-react';
-import { getOfflineMode } from '../offline/featureFlag';
 import PendingSyncPanel from './PendingSyncPanel';
 
 function safeCount(fn) {
@@ -51,12 +50,13 @@ export function usePendingSyncCounts() {
   const timerRef = useRef(null);
 
   const refresh = async () => {
-    if (getOfflineMode() === 'off') {
-      setCounts({ outbox: 0, uploads: 0, conflicts: 0, lastSyncedAt: null });
-      return;
-    }
+    // audit #50f324c P2 — do NOT zero out when Offline Mode is 'off'. enqueue()
+    // queues writes whenever the device is truly offline (even with the flag
+    // off), and the chunked uploader/outbox reads are flag-agnostic. Always read
+    // the real counts so a device-offline-queued (and possibly failed/conflicted)
+    // write stays visible and resolvable.
     try {
-      // Lazy-imported so that with flag='off' these modules never touch Dexie.
+      // Lazy-imported to keep the initial bundle lean.
       const [
         { pendingCount, listConflicts },
         { countPendingUploads },
@@ -82,7 +82,7 @@ export function usePendingSyncCounts() {
     refresh();
     const handler = () => refresh();
     const onDrained = () => {
-      try { localStorage.setItem('carryon_last_sync_at', String(Date.now())); } catch {}
+      try { localStorage.setItem('carryon_last_sync_at', String(Date.now())); } catch { /* private mode */ }
       refresh();
     };
     const onOnline = () => { setOnline(true); refresh(); };
@@ -175,9 +175,9 @@ export default function PendingSyncChip() {
   useEffect(() => {
     // Auto-open the panel the moment a new conflict arrives so users
     // always see the resolver without having to tap the tiny header
-    // chip first. Replaces the legacy standalone ConflictResolver modal.
+    // chip first. audit #50f324c P2 — fire regardless of Offline Mode, since a
+    // conflict can arise from a device-offline-queued write with the flag off.
     const onConflict = () => {
-      if (getOfflineMode() !== 'on') return;
       setPanelOpen(true);
     };
     window.addEventListener('carryon:outbox:conflict', onConflict);
