@@ -499,6 +499,11 @@ try {
   import('./utils/sanitizeDavForCache').then((m) => m.purgeLeakedDavSecrets()).catch(() => {});
 } catch {}
 
+// audit #d0c48d7 P2 — scrub any legacy DAV notes drafts left in sessionStorage.
+try {
+  import('./utils/clearLocalDrafts').then((m) => m.purgeLegacyDavNoteDrafts()).catch(() => {});
+} catch {}
+
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
   <React.StrictMode>

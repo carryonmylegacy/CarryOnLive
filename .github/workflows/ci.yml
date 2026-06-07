@@ -194,3 +194,26 @@ jobs:
           path: frontend/playwright-report/
           retention-days: 14
 
+  deploy-gate:
+    name: SOC2 Deploy Gate (E2E required on main)
+    runs-on: ubuntu-latest
+    needs: [e2e-smoke]
+    # audit #d0c48d7 — explicit change-management gate (SOC2 CC8.1). On the
+    # production/staging release branch (main, push), a build CANNOT be treated
+    # as verified unless the E2E smoke is configured (RUN_E2E=true) AND green.
+    # `always()` ensures this gate still runs (and fails) even when e2e-smoke is
+    # skipped because RUN_E2E was never enabled.
+    if: ${{ always() && github.ref == 'refs/heads/main' && github.event_name == 'push' }}
+    steps:
+      - name: Require a green E2E smoke on the release branch
+        run: |
+          if [ "${{ vars.RUN_E2E }}" != "true" ]; then
+            echo "::error::SOC2 deploy gate FAILED — vars.RUN_E2E is not 'true'. There is no end-to-end change-management evidence for this main build. Set the repo/org variable RUN_E2E=true and configure the E2E_* secrets (E2E_BASE_URL, E2E_API_URL, E2E_ADMIN_EMAIL, E2E_ADMIN_PASSWORD)."
+            exit 1
+          fi
+          if [ "${{ needs.e2e-smoke.result }}" != "success" ]; then
+            echo "::error::SOC2 deploy gate FAILED — E2E smoke did not pass (result=${{ needs.e2e-smoke.result }}). A production/staging change cannot be treated as verified without a green end-to-end smoke."
+            exit 1
+          fi
+          echo "✅ SOC2 deploy gate satisfied: E2E smoke is enabled and green on main."
+

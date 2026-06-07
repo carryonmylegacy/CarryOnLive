@@ -459,7 +459,10 @@ const WalletEntryPanel = ({ entry, beneficiaries, existingEntries, onClose, onSa
   const [login, setLogin, clearLoginDraft] = useDraftState(dKey ? `${dKey}:login` : null, entry?.login_username || '');
   const [password, setPassword] = useState(entry?.password || '');
   const [access, setAccess] = useState(entry?.additional_access || '');
-  const [notes, setNotes, clearNotesDraft] = useDraftState(dKey ? `${dKey}:notes` : null, entry?.notes || '');
+  // audit #d0c48d7 P2 — DAV notes are secret-like (recovery hints, PIN/backup
+  // context). Treat them exactly like password/additional_access: in-memory
+  // useState only, NEVER mirrored to sessionStorage drafts.
+  const [notes, setNotes] = useState(entry?.notes || '');
   const [category, setCategory, clearCategoryDraft] = useDraftState(dKey ? `${dKey}:category` : null, entry?.category || 'other');
   const [beneficiaryId, setBeneficiaryId, clearBenIdDraft] = useDraftState(dKey ? `${dKey}:benId` : null, entry?.assigned_beneficiary_id || '');
   const [saving, setSaving] = useState(false);
@@ -467,7 +470,6 @@ const WalletEntryPanel = ({ entry, beneficiaries, existingEntries, onClose, onSa
   const clearPanelDrafts = () => {
     clearNameDraft();
     clearLoginDraft();
-    clearNotesDraft();
     clearCategoryDraft();
     clearBenIdDraft();
   };

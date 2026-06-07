@@ -38,3 +38,22 @@ export function clearLocalDrafts() {
 }
 
 export default clearLocalDrafts;
+
+/**
+ * Boot-time purge of legacy DAV notes drafts (audit #d0c48d7 P2).
+ * Older builds persisted the DAV "notes" field via useDraftState into
+ * sessionStorage (`carryon_draft:dav_form:<estate>:notes`). Notes are
+ * secret-like, so existing users may have one sitting in storage right now —
+ * scrub it on boot, independent of logout. Runs once per session, cheap.
+ */
+export function purgeLegacyDavNoteDrafts() {
+  try {
+    if (typeof sessionStorage === 'undefined') return;
+    const toRemove = [];
+    for (let i = 0; i < sessionStorage.length; i += 1) {
+      const k = sessionStorage.key(i);
+      if (k && k.startsWith('carryon_draft:dav_form:') && k.endsWith(':notes')) toRemove.push(k);
+    }
+    toRemove.forEach((k) => { try { sessionStorage.removeItem(k); } catch { /* noop */ } });
+  } catch { /* private mode */ }
+}

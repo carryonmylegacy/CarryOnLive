@@ -37,9 +37,74 @@
 import axios from 'axios';
 import { getDB } from './db';
 import { isOfflineEnabled, getOfflineMode } from './featureFlag';
+import { sealRecord, unsealRecord, ensureSessionKey, isEncryptionEnabled } from './crypto';
 import { API_URL } from '../config';
 
 const MAX_RETRIES = 3;
+
+// audit #d0c48d7 P1 — encrypt outbox bodies at rest. Only these query/index
+// fields stay plaintext (Dexie indexes them or we filter on them); everything
+// else — crucially `body` and `server_row` — is sealed into `__enc`.
+const OUTBOX_PLAIN_KEYS = [
+  'id', 'entity_type', 'entity_id', 'method', 'url',
+  'status', 'retry_count', 'last_error', 'created_at', 'conflict_status',
+];
+
+// Secret-like fields a DAV / CFP offline body can carry. Used both to decide
+// fail-closed behaviour on enqueue and to redact display surfaces.
+const SECRET_BODY_FIELDS = ['password', 'additional_access', 'notes', 'dav_login_password'];
+
+function bodyHasSecret(body) {
+  if (!body || typeof body !== 'object') return false;
+  return SECRET_BODY_FIELDS.some((f) => f in body && body[f] != null && body[f] !== '');
+}
+
+/** Deep copy that masks secret fields wherever they appear. Display-only. */
+function redactSecrets(value) {
+  if (!value || typeof value !== 'object') return value;
+  if (Array.isArray(value)) return value.map(redactSecrets);
+  const out = {};
+  for (const [k, v] of Object.entries(value)) {
+    if (SECRET_BODY_FIELDS.includes(k) && v != null && v !== '') out[k] = '••••••';
+    else if (v && typeof v === 'object') out[k] = redactSecrets(v);
+    else out[k] = v;
+  }
+  return out;
+}
+
+/** Display-safe view of a stored row: unseal (so the UI can read it) then
+ *  redact secret fields from body + server_row. Never returns raw secrets. */
+async function toDisplayRow(row) {
+  const unsealed = (row && row.__enc) ? await unsealRecord(row) : row;
+  if (!unsealed) {
+    // Couldn't decrypt (no key) — return a minimal redacted shell.
+    const { __enc: _e, body: _b, server_row: _s, ...plain } = row || {};
+    return { ...plain, body: undefined, server_row: undefined, _sealed: true };
+  }
+  const safe = { ...unsealed };
+  delete safe.__enc;
+  if (safe.body) safe.body = redactSecrets(safe.body);
+  if (safe.server_row) safe.server_row = redactSecrets(safe.server_row);
+  return safe;
+}
+
+/** Opportunistically seal any legacy plaintext rows once a key is available. */
+async function sealExistingPlaintextRows(db) {
+  try {
+    if (!isEncryptionEnabled()) return;
+    const key = await ensureSessionKey();
+    if (!key) return;
+    const all = await db.outbox.toArray();
+    for (const r of all) {
+      if (r.__enc) continue;
+      if (r.body == null && r.server_row == null) continue; // nothing worth sealing
+      const sealed = await sealRecord(r, OUTBOX_PLAIN_KEYS);
+      if (sealed.__enc) await db.outbox.put({ ...sealed, id: r.id });
+    }
+  } catch (err) {
+    console.warn('[offline] outbox seal migration warning:', err);
+  }
+}
 
 /** Add a new job to the outbox. Returns the new row's id, or null if gated off. */
 export async function enqueue({ entity_type, entity_id, method, url, body }) {
@@ -66,7 +131,24 @@ export async function enqueue({ entity_type, entity_id, method, url, body }) {
     last_error: null,
     created_at: Date.now(),
   };
-  const id = await db.outbox.add(row);
+
+  // audit #d0c48d7 P1 — seal the body at rest. DAV/CFP offline saves can carry
+  // password / additional_access / notes / dav_login_password.
+  const hasSecret = bodyHasSecret(body);
+  let storedRow = row;
+  const key = await ensureSessionKey();
+  if (key && isEncryptionEnabled()) {
+    storedRow = await sealRecord(row, OUTBOX_PLAIN_KEYS);
+    // sealRecord silently falls back to plaintext on a crypto error — for a
+    // secret-bearing body that is unacceptable, so fail closed.
+    if (hasSecret && !storedRow.__enc) {
+      throw new Error('Could not securely store this change offline. Please reconnect and try again.');
+    }
+  } else if (hasSecret) {
+    // No session key → NEVER write a secret body to disk in plaintext.
+    throw new Error('This change includes sensitive data and cannot be saved offline without a secure session. Please reconnect to save.');
+  }
+  const id = await db.outbox.add(storedRow);
   console.log(`[offline] enqueue #${id} ${method} ${url}`);
   try { window.dispatchEvent(new CustomEvent('carryon:outbox:enqueued', { detail: { id, entity_type } })); } catch { /* SSR */ }
   return id;
@@ -106,6 +188,9 @@ export async function drain() {
     const token = localStorage.getItem('carryon_token');
     if (!token) return { sent: 0, failed: 0, skipped: true };
     const headers = { Authorization: `Bearer ${token}` };
+    // audit #d0c48d7 P1 — opportunistically seal any legacy plaintext rows now
+    // that a key is available, before we start replaying.
+    await sealExistingPlaintextRows(db);
     let sent = 0;
     let failed = 0;
     // Process one at a time, in order.
@@ -114,9 +199,22 @@ export async function drain() {
       if (!next) break;
       // Mark inflight so a concurrent drain on another tab doesn't duplicate.
       await db.outbox.update(next.id, { status: 'inflight' });
+      // audit #d0c48d7 P1 — unseal the encrypted body for replay. If the row is
+      // sealed but no key is available (cold boot / logged out), defer it: put
+      // it back to pending and stop, so it drains once the key is primed.
+      let job = next;
+      if (next.__enc) {
+        const unsealed = await unsealRecord(next);
+        if (!unsealed) {
+          await db.outbox.update(next.id, { status: 'pending' });
+          console.warn(`[offline] drain deferred #${next.id} — no key to unseal`);
+          break;
+        }
+        job = unsealed;
+      }
       try {
         const url = next.url.startsWith('http') ? next.url : `${API_URL}${next.url}`;
-        const response = await axios.request({ method: next.method, url, data: next.body, headers });
+        const response = await axios.request({ method: next.method, url, data: job.body, headers });
 
         // Phase 2.1 — Temp-ID reconciliation for offline creates.
         // When a POST succeeds for an entity we inserted with a
@@ -159,7 +257,7 @@ export async function drain() {
         if (next.entity_type === 'profile' && next.method === 'PUT') {
           try {
             const repo = await import('./repos/profileRepo');
-            const merged = response?.data || next.body || null;
+            const merged = response?.data || job.body || null;
             if (merged) await repo.upsertLocalProfile(merged);
           } catch { /* non-fatal */ }
         }
@@ -178,18 +276,25 @@ export async function drain() {
         // what to do. Broadcast so the modal can pop immediately.
         if (status === 409 || status === 412) {
           const serverRow = err?.response?.data?.server || err?.response?.data?.current || null;
-          await db.outbox.update(next.id, {
+          // audit #d0c48d7 P1 — re-seal the whole row so body + server_row stay
+          // encrypted at rest (a 409 body still carries the user's secrets).
+          const mergedRow = {
+            ...job,
             status: 'conflict',
             retry_count: retries,
             last_error: msg,
             server_row: serverRow,
             conflict_status: status,
-          });
+          };
+          const sealedRow = (next.__enc || isEncryptionEnabled())
+            ? await sealRecord(mergedRow, OUTBOX_PLAIN_KEYS)
+            : mergedRow;
+          await db.outbox.put({ ...sealedRow, id: next.id });
           try {
             window.dispatchEvent(new CustomEvent('carryon:outbox:conflict', {
               detail: { id: next.id, entity_type: next.entity_type },
             }));
-          } catch {}
+          } catch { /* noop */ }
           console.warn(`[offline] drain CONFLICT #${next.id} (${status}): ${msg}`);
           break;
         }
@@ -206,14 +311,14 @@ export async function drain() {
       }
     }
     // Garbage-collect completed rows so the outbox stays small.
-    try { await db.outbox.where('status').equals('done').delete(); } catch {}
+    try { await db.outbox.where('status').equals('done').delete(); } catch { /* noop */ }
     // Broadcast so pages that display queued entities can refetch and
     // swap their optimistic `_local_pending` rows for the server-authoritative
     // data. Best-effort — never blocks the drain on failure.
     if (sent > 0) {
       try {
         window.dispatchEvent(new CustomEvent('carryon:outbox:drained', { detail: { sent, failed } }));
-      } catch {}
+      } catch { /* noop */ }
     }
     return { sent, failed, skipped: false };
   })();
@@ -221,12 +326,15 @@ export async function drain() {
   finally { _drainLock = null; }
 }
 
-/** Debug helper: snapshot of the outbox. */
+/** Debug helper: snapshot of the outbox (bodies + ciphertext + server_row hidden). */
 export async function snapshot() {
   try {
     const db = getDB();
     const all = await db.outbox.orderBy('id').toArray();
-    return all.map(({ body: _body, ...rest }) => rest); // hide bodies in logs
+    return all.map(({ body: _body, __enc: _enc, server_row, ...rest }) => ({
+      ...rest,
+      server_row: server_row ? redactSecrets(server_row) : undefined,
+    }));
   } catch { return []; }
 }
 
@@ -241,13 +349,18 @@ export async function listPending() {
   try {
     const db = getDB();
     const all = await db.outbox.orderBy('id').reverse().toArray();
-    return all
-      .filter((r) => ['pending', 'inflight', 'failed', 'conflict'].includes(r.status))
-      .map((r) => {
-        if (r.status === 'conflict') return r; // keep body + server_row
-        const { body: _body, ...rest } = r;
-        return rest;
-      });
+    const rows = all.filter((r) => ['pending', 'inflight', 'failed', 'conflict'].includes(r.status));
+    const out = [];
+    for (const r of rows) {
+      if (r.status === 'conflict') {
+        // Unseal + redact so the diff renders without exposing raw secrets.
+        out.push(await toDisplayRow(r));
+      } else {
+        const { body: _body, __enc: _enc, ...rest } = r;
+        out.push(rest);
+      }
+    }
+    return out;
   } catch { return []; }
 }
 
@@ -280,12 +393,13 @@ export async function removeRow(id) {
 
 // ── Phase 8 — Conflict resolution ───────────────────────────────────────────
 
-/** List every outbox row currently in the `conflict` state. */
+/** List every outbox row currently in the `conflict` state (unsealed + redacted). */
 export async function listConflicts() {
   if (!isOfflineEnabled()) return [];
   try {
     const db = getDB();
-    return await db.outbox.where('status').equals('conflict').toArray();
+    const rows = await db.outbox.where('status').equals('conflict').toArray();
+    return await Promise.all(rows.map(toDisplayRow));
   } catch { return []; }
 }
 
@@ -298,7 +412,10 @@ export async function resolveConflict(id, choice) {
   if (!isOfflineEnabled() || !id) return;
   try {
     const db = getDB();
-    const row = await db.outbox.get(id);
+    const rawRow = await db.outbox.get(id);
+    if (!rawRow) return;
+    // Unseal so 'theirs' can read the encrypted server_row / entity fields.
+    const row = rawRow.__enc ? await unsealRecord(rawRow) : rawRow;
     if (!row) return;
     if (choice === 'mine') {
       // Clear conflict state and re-queue for the next drain. The server's
@@ -319,13 +436,13 @@ export async function resolveConflict(id, choice) {
         try {
           const repo = await import('./repos/beneficiariesRepo');
           await repo.updateLocalBeneficiary(server.id, server);
-        } catch {}
+        } catch { /* noop */ }
       }
       if (server && row.entity_type === 'profile') {
         try {
           const repo = await import('./repos/profileRepo');
           await repo.upsertLocalProfile(server);
-        } catch {}
+        } catch { /* noop */ }
       }
       await db.outbox.delete(id);
     }

@@ -129,7 +129,10 @@ async def get_messages(estate_id: str, current_user: dict = Depends(get_current_
 async def get_message_video(video_id: str, current_user: dict = Depends(get_current_user)):
     """Get video data for a message"""
     # Check if video is in cloud storage
-    message = await db.messages.find_one({"video_url": video_id}, {"_id": 0})
+    # audit #d0c48d7 P2 — exclude soft-deleted media. Owner/admin/operator
+    # bypass `can_access_message`, so the deleted check MUST happen at the
+    # query, otherwise privileged actors can still pull deleted milestone video.
+    message = await db.messages.find_one({"video_url": video_id, "deleted_at": None}, {"_id": 0})
     if not message:
         raise HTTPException(status_code=404, detail="Video not found")
     actor = await require_estate_actor(message["estate_id"], current_user, allow_staff=True)
@@ -329,7 +332,8 @@ async def download_video_direct(video_id: str, dt: str = QueryParam(...)):
 @router.get("/messages/voice/{voice_id}")
 async def get_message_voice(voice_id: str, current_user: dict = Depends(get_current_user)):
     """Get voice recording data for a message"""
-    message = await db.messages.find_one({"voice_url": voice_id}, {"_id": 0})
+    # audit #d0c48d7 P2 — exclude soft-deleted media (see get_message_video).
+    message = await db.messages.find_one({"voice_url": voice_id, "deleted_at": None}, {"_id": 0})
     if not message:
         raise HTTPException(status_code=404, detail="Voice recording not found")
     actor = await require_estate_actor(message["estate_id"], current_user, allow_staff=True)
