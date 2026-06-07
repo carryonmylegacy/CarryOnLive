@@ -4,7 +4,7 @@ import { Card, CardContent } from '../ui/card';
 import { computePassdownScore, passdownColor, passdownLabel } from '../../utils/passdownScore';
 import { DavSyncedPill } from './DavSyncedPill';
 
-const AccountTile = ({ account, categoryLabels, beneficiaries, onEdit, onDelete, onDesignationUpdate }) => {
+const AccountTile = ({ account, categoryLabels, beneficiaries, onEdit, onDelete, onDesignationUpdate, highlightId }) => {
   const [expanded, setExpanded] = useState(false);
   const catLabel = categoryLabels[account.category] || account.category;
   const designated = account.designated_beneficiaries || ['all'];
@@ -36,9 +36,9 @@ const AccountTile = ({ account, categoryLabels, beneficiaries, onEdit, onDelete,
 
   return (
     <Card
-      className="glass-card relative overflow-hidden group"
+      className="glass-card relative overflow-hidden group transition-all duration-500"
       data-testid={`account-tile-${account.id}`}
-      style={{ contentVisibility: 'auto', containIntrinsicSize: '120px' }}
+      style={{ contentVisibility: 'auto', containIntrinsicSize: '120px', ...(account.id === highlightId ? { boxShadow: '0 0 0 2px var(--gold), 0 0 24px rgba(var(--gold-rgb), 0.45)' } : {}) }}
     >
       <CardContent className="p-4">
         {/* ── Collapsed header — name, balance, status, actions ── */}

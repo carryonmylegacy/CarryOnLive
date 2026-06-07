@@ -1,7 +1,14 @@
 # CarryOn — Changelog
 
 
-## Jun 7, 2026 — "Login in DAV" reassurance pill on CFP tiles (enhancement)
+## Jun 7, 2026 — Two-way CFP ↔ DAV deep-link navigation (enhancement)
+
+Completed the navigable loop between the Financial Picture and the Digital Access Vault:
+- **CFP → DAV:** the "✓ Login in DAV" tile pill is a button that routes to `/digital-wallet?entry=<id>`; the DAV page scrolls to + gold-rings the matching credential.
+- **DAV → CFP:** `get_digital_wallet` now enriches each entry with `source_label` + `source_tab` (batched lookup of the linked bill/account/debt/property name). The DAV entry renders a green "🔗 Linked to <item>" chip that routes to `/financial?item=<id>&tab=<tab>`; `FinancialPortalPage` switches to the tab and gold-rings the matching tile (`highlightId` threaded into all four tiles).
+Verified end-to-end on preview (chips show correct names; both deep-links switch context and ring the target — "RING APPLIED ON CFP TILE: True") + `housekeeping.sh --strict` ALL CHECKS PASSED, no regression.
+
+
 
 New shared `DavSyncedPill.js` renders a subtle green "✓ Login in DAV" pill on Bill/Account/Debt/Property tiles whenever the item links a DAV credential (`item.dav_entry_id`). The pill is a one-tap DEEP-LINK: clicking it routes to `/digital-wallet?entry=<id>`, where `DigitalWalletPage` scrolls the matching credential into view and pulses a gold ring around it for ~2.6s. Verified visually (pill renders on tiles; deep-link highlights the exact entry) + `housekeeping.sh --strict` EXIT 0 (11px font for the iOS gate).
 

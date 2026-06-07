@@ -114,6 +114,38 @@ async def get_digital_wallet(estate_id: str, request: Request = None, current_us
             if eid and eid in ent_name:
                 e["linked_entity_name"] = ent_name[eid]
 
+    # Resolve CFP source item (bill/account/debt/property) → name + tab so the
+    # DAV UI can render a "Linked to [item]" pill that deep-links back into the
+    # Financial Picture. Batched per collection; soft-deleted items filtered.
+    _SOURCE_TAB = {
+        "financial_bill": ("bills", "bills"),
+        "financial_account": ("financial_accounts", "accounts"),
+        "financial_debt": ("debts", "debts"),
+        "financial_property": ("property_assets", "property"),
+    }
+    by_coll: dict = {}
+    for e in entries:
+        st, sid = e.get("source_type"), e.get("source_id")
+        if st in _SOURCE_TAB and sid:
+            by_coll.setdefault(_SOURCE_TAB[st][0], set()).add(sid)
+    source_name: dict = {}
+    for coll, ids in by_coll.items():
+        rows = (
+            await db[coll]
+            .find(
+                {"id": {"$in": list(ids)}, "estate_id": estate_id, "deleted_at": None},
+                {"_id": 0, "id": 1, "name": 1},
+            )
+            .to_list(500)
+        )
+        for r in rows:
+            source_name[r["id"]] = r.get("name")
+    for e in entries:
+        st, sid = e.get("source_type"), e.get("source_id")
+        if st in _SOURCE_TAB and sid and sid in source_name:
+            e["source_label"] = source_name[sid]
+            e["source_tab"] = _SOURCE_TAB[st][1]
+
     estate_salt = await get_estate_salt(estate_id)
 
     if is_owner or is_admin:

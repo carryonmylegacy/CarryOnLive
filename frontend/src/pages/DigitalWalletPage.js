@@ -377,6 +377,22 @@ const DigitalWalletPage = () => {
                                   Linked to {entry.linked_entity_name}
                                 </button>
                               )}
+                              {entry.source_tab && entry.source_id && entry.source_label && (
+                                <button
+                                  onClick={() => navigate(`/financial?item=${encodeURIComponent(entry.source_id)}&tab=${entry.source_tab}`)}
+                                  className="mt-2 ml-2 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-bold transition-colors"
+                                  style={{
+                                    color: '#10b981',
+                                    background: 'rgba(16,185,129,0.10)',
+                                    border: '1px solid rgba(16,185,129,0.35)',
+                                  }}
+                                  data-testid={`wallet-cfp-link-${entry.id}`}
+                                  title="Open the linked item in your Financial Picture"
+                                >
+                                  <CreditCard className="w-3 h-3" />
+                                  Linked to {entry.source_label}
+                                </button>
+                              )}
                             </>
                           )}
                         </div>

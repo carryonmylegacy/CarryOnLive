@@ -108,6 +108,9 @@ const FinancialPortalPage = () => {
   const _seed = (key) => (_hasCachedPortal && Array.isArray(_cachedPortal[key])) ? _cachedPortal[key] : [];
 
   const [activeTab, setActiveTab] = useState('bills');
+  // Deep-link from a DAV "Linked to [item]" chip (/financial?item=<id>&tab=<tab>):
+  // switch to the tab and pulse a gold ring around the matching tile.
+  const [highlightItemId, setHighlightItemId] = useState(null);
   const [bills, setBills] = useState(() => _seed('bills'));
   const [debts, setDebts] = useState(() => _seed('debts'));
   const [accounts, setAccounts] = useState(() => _seed('accounts'));
@@ -132,6 +135,36 @@ const FinancialPortalPage = () => {
   // Skip the full-page skeleton on every mount where cached portal data
   // exists. fetchAll still runs in background to refresh.
   const [loading, setLoading] = useState(!_hasCachedPortal);
+
+  // Deep-link handler: read ?item=&tab= once and on changes. The scroll/ring
+  // runs after data has loaded (retries a few times while tiles mount).
+  useEffect(() => {
+    const params = new URLSearchParams(_location.search);
+    const tab = params.get('tab');
+    const item = params.get('item');
+    if (tab && ['bills', 'debts', 'accounts', 'property'].includes(tab)) setActiveTab(tab);
+    if (item) setHighlightItemId(item);
+  }, [_location.search]);
+
+  useEffect(() => {
+    if (loading || !highlightItemId) return undefined;
+    const prefix = { bills: 'bill', debts: 'debt', accounts: 'account', property: 'property' }[activeTab];
+    if (!prefix) return undefined;
+    let attempts = 0;
+    let timer;
+    const tryFind = () => {
+      const el = document.querySelector(`[data-testid="${prefix}-tile-${highlightItemId}"]`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        timer = setTimeout(() => setHighlightItemId(null), 2600);
+      } else if (attempts < 12) {
+        attempts += 1;
+        timer = setTimeout(tryFind, 300);
+      }
+    };
+    tryFind();
+    return () => { if (timer) clearTimeout(timer); };
+  }, [loading, highlightItemId, activeTab]); // eslint-disable-line react-hooks/exhaustive-deps
   const [billFilter, setBillFilter] = useState('all');
   const [debtFilter, setDebtFilter] = useState('all');
   // Confirm-delete modal state. Set when the user taps "delete" on
@@ -1042,6 +1075,7 @@ const FinancialPortalPage = () => {
                       onEdit={(b) => { setEditItem(b); setShowBillForm(true); }}
                       onDelete={(id) => handleDelete('bills', id)}
                       onDesignationUpdate={(id, bens, timing) => handleDesignationUpdate('bills', id, bens, timing)}
+                      highlightId={highlightItemId}
                     />
                   ))}
                 </div>
@@ -1092,6 +1126,7 @@ const FinancialPortalPage = () => {
                     onEdit={(d) => { setEditItem(d); setShowDebtForm(true); }}
                     onDelete={(id) => handleDelete('debts', id)}
                     onDesignationUpdate={(id, bens, timing) => handleDesignationUpdate('debts', id, bens, timing)}
+                    highlightId={highlightItemId}
                   />
                 ))}
               </div>
@@ -1130,6 +1165,7 @@ const FinancialPortalPage = () => {
                     onEdit={(a) => { setEditItem(a); setShowAccountForm(true); }}
                     onDelete={(id) => handleDelete('accounts', id)}
                     onDesignationUpdate={(id, bens, timing) => handleDesignationUpdate('accounts', id, bens, timing)}
+                    highlightId={highlightItemId}
                   />
                 ))}
               </div>
@@ -1166,6 +1202,7 @@ const FinancialPortalPage = () => {
                     onEdit={(a) => { setEditItem(a); setShowPropertyForm(true); }}
                     onDelete={(id) => handleDelete('property', id)}
                     onDesignationUpdate={(id, bens, timing) => handleDesignationUpdate('property', id, bens, timing)}
+                    highlightId={highlightItemId}
                   />
                 ))}
               </div>

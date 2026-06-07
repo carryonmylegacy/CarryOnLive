@@ -33,7 +33,7 @@ const ENTITY_LABELS = {
   trust: 'Trust',
 };
 
-const PropertyAssetTile = ({ asset, beneficiaries, onEdit, onDelete, onDesignationUpdate }) => {
+const PropertyAssetTile = ({ asset, beneficiaries, onEdit, onDelete, onDesignationUpdate, highlightId }) => {
   const [expanded, setExpanded] = useState(false);
   const CatIcon = CATEGORY_ICONS[asset.category] || Package;
   const catLabel = CATEGORY_LABELS[asset.category] || asset.category;
@@ -66,9 +66,9 @@ const PropertyAssetTile = ({ asset, beneficiaries, onEdit, onDelete, onDesignati
 
   return (
     <Card
-      className="glass-card relative overflow-hidden group"
+      className="glass-card relative overflow-hidden group transition-all duration-500"
       data-testid={`property-tile-${asset.id}`}
-      style={{ contentVisibility: 'auto', containIntrinsicSize: '120px' }}
+      style={{ contentVisibility: 'auto', containIntrinsicSize: '120px', ...(asset.id === highlightId ? { boxShadow: '0 0 0 2px var(--gold), 0 0 24px rgba(var(--gold-rgb), 0.45)' } : {}) }}
     >
       <CardContent className="p-4">
         {/* ── Collapsed header — name, value, status, actions ── */}

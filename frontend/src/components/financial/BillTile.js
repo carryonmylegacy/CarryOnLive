@@ -30,7 +30,7 @@ const getDueInfo = (bill) => {
   return { text: `Due in ${daysUntil} days`, color: '#64748b', urgent: false };
 };
 
-const BillTile = ({ bill, categoryLabels, beneficiaries, onEdit, onDelete, onDesignationUpdate }) => {
+const BillTile = ({ bill, categoryLabels, beneficiaries, onEdit, onDelete, onDesignationUpdate, highlightId }) => {
   // Master collapsed/expanded state. Collapsed shows only name + amount
   // + due-date + action icons + chevron — the rest of the card body
   // (category, pass-down readiness, auto-pay badge, payment-account
@@ -69,9 +69,9 @@ const BillTile = ({ bill, categoryLabels, beneficiaries, onEdit, onDelete, onDes
 
   return (
     <Card
-      className="glass-card relative overflow-hidden group"
+      className="glass-card relative overflow-hidden group transition-all duration-500"
       data-testid={`bill-tile-${bill.id}`}
-      style={{ contentVisibility: 'auto', containIntrinsicSize: '120px' }}
+      style={{ contentVisibility: 'auto', containIntrinsicSize: '120px', ...(bill.id === highlightId ? { boxShadow: '0 0 0 2px var(--gold), 0 0 24px rgba(var(--gold-rgb), 0.45)' } : {}) }}
     >
       {due.urgent && (
         <div className="absolute top-0 left-0 right-0 h-0.5" style={{ background: due.color }} />
