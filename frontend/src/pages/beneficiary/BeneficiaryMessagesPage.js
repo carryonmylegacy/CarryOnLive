@@ -25,6 +25,8 @@ const BeneficiaryMessagesPage = () => {
   const [selectedMsg, setSelectedMsg] = useState(null);
   const [videoBlobUrl, setVideoBlobUrl] = useState(null);
   const [videoLoading, setVideoLoading] = useState(false);
+  const [voiceBlobUrl, setVoiceBlobUrl] = useState(null);
+  const [voiceLoading, setVoiceLoading] = useState(false);
 
   useEffect(() => { fetchMessages();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -58,7 +60,7 @@ const BeneficiaryMessagesPage = () => {
     const formatLabel = m.message_type === 'text' ? 'Written Message' : m.message_type === 'video' ? 'Video Recording' : 'Voice Recording';
     return (
       <div className="p-4 lg:p-6 pt-4 lg:pt-6 pb-24 lg:pb-6 animate-fade-in" data-testid="ben-message-detail">
-        <button onClick={() => { setSelectedMsg(null); setVideoBlobUrl(null); }} className="inline-flex items-center gap-1 text-sm font-bold text-[#60A5FA] mb-5">
+        <button onClick={() => { setSelectedMsg(null); setVideoBlobUrl(null); setVoiceBlobUrl(null); }} className="inline-flex items-center gap-1 text-sm font-bold text-[#60A5FA] mb-5">
           <ChevronLeft className="w-4 h-4" /> All Messages
         </button>
         <div className="flex items-center gap-3 mb-4">
@@ -87,18 +89,67 @@ const BeneficiaryMessagesPage = () => {
           </Card>
         )}
 
-        {/* Voice message player */}
-        {(m.message_type === 'voice' || (m.message_type !== 'text' && m.message_type !== 'video')) && m.message_type !== 'text' && m.video_url && (
+        {/* Voice message player — real playback via the estate-scoped
+            /messages/voice/{id} route (offline cache → network → persist). */}
+        {m.message_type === 'voice' && (
           <Card className="glass-card">
-            <CardContent className="p-5 lg:p-8 text-center">
-              <div className="w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center cursor-pointer transition-all" style={{ background: 'rgba(37,99,235,0.15)', border: '3px solid var(--bl3)' }}>
-                <Play className="w-8 h-8 text-[var(--bl3)] ml-1" />
-              </div>
-              <div className="text-sm font-bold text-[var(--t)] mb-1">Voice Message</div>
-              <div className="text-xs text-[var(--t4)]">Tap to play</div>
-              <div className="h-1 bg-[var(--b)] rounded-full mt-4 overflow-hidden">
-                <div className="h-full rounded-full" style={{ width: '0%', background: 'linear-gradient(90deg, #2563EB, #0EA5E9)' }} />
-              </div>
+            <CardContent className="p-5 lg:p-8 text-center" data-testid={`ben-voice-player-${m.id}`}>
+              {m.voice_url && voiceBlobUrl ? (
+                <audio
+                  controls
+                  autoPlay
+                  className="w-full"
+                  src={voiceBlobUrl}
+                  data-testid={`ben-voice-audio-${m.id}`}
+                >
+                  Your browser does not support audio playback.
+                </audio>
+              ) : (
+                <div
+                  className="w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center cursor-pointer transition-all active:scale-[0.96]"
+                  style={{ background: 'rgba(37,99,235,0.15)', border: '3px solid var(--bl3)' }}
+                  data-testid={`ben-voice-play-${m.id}`}
+                  onClick={async () => {
+                    if (!m.voice_url) return;
+                    const cacheKey = `mm:${m.id}:voice`;
+                    if (isOfflineEnabled()) {
+                      try {
+                        const cachedBlob = await getImageBlob(cacheKey);
+                        if (cachedBlob) { setVoiceBlobUrl(URL.createObjectURL(cachedBlob)); return; }
+                      } catch { /* non-fatal */ }
+                    }
+                    if (isBenOffline()) {
+                      toast.error("This voice message isn't saved for offline yet — reconnect once to download it.");
+                      return;
+                    }
+                    setVoiceLoading(true);
+                    try {
+                      const res = await apiClient.get(`${API_URL}/messages/voice/${m.voice_url}`, { ...getAuthHeaders(), responseType: 'blob' });
+                      const blob = res.data instanceof Blob ? res.data : new Blob([res.data]);
+                      setVoiceBlobUrl(URL.createObjectURL(blob));
+                      if (isOfflineEnabled()) putImageBlob(cacheKey, blob, 'milestone_media');
+                    } catch { toast.error('Could not load voice message'); }
+                    finally { setVoiceLoading(false); }
+                  }}
+                >
+                  {voiceLoading ? (
+                    <div className="w-8 h-8 border-3 border-[var(--bl3)] border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <Play className="w-8 h-8 text-[var(--bl3)] ml-1" />
+                  )}
+                </div>
+              )}
+              <div className="text-sm font-bold text-[var(--t)] mb-1 mt-3">Voice Message</div>
+              <div className="text-xs text-[var(--t4)]">{voiceBlobUrl ? 'Now playing' : voiceLoading ? 'Loading…' : 'Tap to play'}</div>
+              {m.voice_url && (
+                <div className="mt-4 flex justify-center">
+                  <OfflineSavedBadge
+                    testId={`mm-saved-offline-voice-${m.id}`}
+                    check={() => getImageBlob(`mm:${m.id}:voice`).then((b) => !!b)}
+                    label="Saved offline"
+                  />
+                </div>
+              )}
               {m.content && <p className="text-sm text-[var(--t3)] mt-4 leading-relaxed">{m.content}</p>}
             </CardContent>
           </Card>

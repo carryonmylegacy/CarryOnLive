@@ -1,6 +1,16 @@
 # CarryOn — Changelog
 
 
+## Jun 7, 2026 — Voice milestone playback affordance (benefactor + beneficiary)
+
+Following the audit `50f324c` P1 fix (voice download route now resolves the estate-scoped key), wired **real voice playback** into the milestone-message tiles, which previously only had it for video:
+- **Benefactor `MessageCard.js` / `MessagesPage.js`**: added a `playVoice` handler (mirrors `playVideo`: offline-cache `mm:<id>:voice` → network fetch `/messages/voice/{id}` → persist) and a green "▶ Play Voice Message" button in the expanded tile that swaps to an inline `<audio controls autoPlay>` player. Added a truthful "Saved offline" badge for voice. Testids: `play-voice-{id}`, `voice-audio-{id}`, `mm-saved-offline-voice-{id}`.
+- **Beneficiary `BeneficiaryMessagesPage.js`**: replaced the **decorative/broken** voice block (it gated on `m.video_url`, which voice messages never have, and had no audio wired) with a real tap-to-play player mirroring the video block (offline cache → blob fetch → `<audio>`). Testids: `ben-voice-play-{id}`, `ben-voice-audio-{id}`.
+
+**Verified**: benefactor flow via Playwright (Play button → inline audio player renders, 1/1); backend voice route already covered by `test_message_media_pathways.py`. Housekeeping `--strict` ALL CHECKS PASSED (0 WARN/0 FAIL, no regression); frontend compiles; my edits lint-clean.
+
+
+
 ## Jun 7, 2026 — Audit `50f324c` fixes (voice playback, deleted-message pathways, offline-chip visibility) — VERIFIED
 
 Audited main commit `50f324c9…`. Housekeeping `--strict` ALL CHECKS PASSED (0 WARN/0 FAIL, no regression); frontend compiles; lint clean on touched files.

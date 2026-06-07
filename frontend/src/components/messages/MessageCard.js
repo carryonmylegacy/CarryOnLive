@@ -28,6 +28,8 @@ const MessageCard = ({
   handleDelete,
   handleDownload,
   playVideo,
+  playVoice,
+  playingVoice,
   downloadAttachment,
 }) => {
   const [expanded, setExpanded] = useState(false);
@@ -152,6 +154,38 @@ const MessageCard = ({
                 <OfflineSavedBadge
                   testId={`mm-saved-offline-${msg.id}`}
                   check={() => getImageBlob(`mm:${msg.id}:video`).then((b) => !!b)}
+                  label="Saved offline"
+                />
+              </div>
+            )}
+
+            {/* Voice playback — Play button swaps to an inline <audio> player. */}
+            {msg.message_type === 'voice' && msg.voice_url && (
+              <div className="mb-4 space-y-3">
+                {playingVoice?.id === msg.id && playingVoice.url ? (
+                  <audio
+                    controls
+                    autoPlay
+                    src={playingVoice.url}
+                    className="w-full"
+                    data-testid={`voice-audio-${msg.id}`}
+                  >
+                    Your browser does not support audio playback.
+                  </audio>
+                ) : (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); playVoice(msg); }}
+                    className="w-full p-4 rounded-xl flex items-center justify-center gap-2 text-sm text-[#22c993] font-bold active:scale-[0.98] transition-transform"
+                    style={{ background: 'rgba(34,201,147,0.08)', border: '1px solid rgba(34,201,147,0.15)' }}
+                    data-testid={`play-voice-${msg.id}`}
+                  >
+                    {loadingPlayback ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
+                    Play Voice Message
+                  </button>
+                )}
+                <OfflineSavedBadge
+                  testId={`mm-saved-offline-voice-${msg.id}`}
+                  check={() => getImageBlob(`mm:${msg.id}:voice`).then((b) => !!b)}
                   label="Saved offline"
                 />
               </div>

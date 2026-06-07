@@ -138,6 +138,7 @@ const MessagesPage = () => {
     clearCustomEventDraft();
   };
   const [playingVideoUrl, setPlayingVideoUrl] = useState(null);
+  const [playingVoice, setPlayingVoice] = useState(null); // { id, url } — inline voice playback
   const [loadingPlayback, setLoadingPlayback] = useState(false);
   const [showReturnPopup, setShowReturnPopup] = useState(false);
   const [downloadingId, setDownloadingId] = useState(null);
@@ -1268,6 +1269,67 @@ const MessagesPage = () => {
     }
   };
 
+  // Inline voice playback — mirrors playVideo (offline cache → network fetch →
+  // persist), using the now-fixed estate-scoped /messages/voice/{id} route.
+  const playVoice = async (msg) => {
+    if (!msg.voice_url) {
+      const isDeviceOffline = (typeof window !== 'undefined' && typeof window.__isDeviceOffline === 'function')
+        ? window.__isDeviceOffline()
+        : (typeof navigator !== 'undefined' && navigator.onLine === false);
+      if (!isDeviceOffline) {
+        toast.info('Finishing sync — refreshing your milestones…');
+        try { await fetchData(); } catch { /* non-fatal */ }
+        return;
+      }
+      toast.error('This recording is still queued — it will sync when you reconnect.');
+      return;
+    }
+    setLoadingPlayback(true);
+    try {
+      const cacheKey = `mm:${msg.id}:voice`;
+      try {
+        const cachedBlob = await getImageBlob(cacheKey);
+        if (cachedBlob && cachedBlob.size > 0) {
+          setPlayingVoice({ id: msg.id, url: URL.createObjectURL(cachedBlob) });
+          return;
+        }
+      } catch { /* non-fatal — fall through to network */ }
+
+      const isDeviceOffline = (typeof window !== 'undefined' && typeof window.__isDeviceOffline === 'function')
+        ? window.__isDeviceOffline()
+        : (typeof navigator !== 'undefined' && navigator.onLine === false);
+      if (isDeviceOffline) {
+        toast.error("This voice message isn't saved for offline yet — reconnect once to download it.");
+        return;
+      }
+
+      const res = await apiClient.get(`${API_URL}/messages/voice/${msg.voice_url}`, {
+        ...getAuthHeaders(),
+        responseType: 'blob',
+        timeout: 30000,
+      });
+      if (res.data.size === 0) {
+        toast.error('Voice file is empty or unavailable');
+        return;
+      }
+      const blob = res.data instanceof Blob ? res.data : new Blob([res.data]);
+      setPlayingVoice({ id: msg.id, url: URL.createObjectURL(blob) });
+      if (getOfflineMode() !== 'off') {
+        putImageBlob(cacheKey, blob, 'milestone_media');
+      }
+    } catch (err) {
+      if (err.code === 'ECONNABORTED') {
+        toast.error('Voice took too long to load. Please try again.');
+      } else if (err.response?.status === 404) {
+        toast.error('Voice not found. It may have been removed.');
+      } else {
+        toast.error('Could not load voice message');
+      }
+    } finally {
+      setLoadingPlayback(false);
+    }
+  };
+
   const filteredMessages = activeTab === 'all'
     ? messages
     : messages.filter(m => m.trigger_type === activeTab);
@@ -1421,6 +1483,8 @@ const MessagesPage = () => {
                   handleDelete={handleDelete}
                   handleDownload={handleDownload}
                   playVideo={playVideo}
+                  playVoice={playVoice}
+                  playingVoice={playingVoice}
                   downloadAttachment={downloadAttachment}
                 />
               ))}
