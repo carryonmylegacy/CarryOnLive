@@ -1,6 +1,15 @@
 # CarryOn — Changelog
 
 
+## Jun 7, 2026 — Audit `7d6af7c` P3 polish (attachment cleanup key + beneficiary voice unavailable state)
+
+1. **P3 — attachment orphan-blob cleanup** (`backend/routes/messages.py`): attachment blobs are stored estate-scoped (`estates/{estate_id}/{attachment_id}`) but `remove_attachment` deleted `attachments/{attachment_id}` (a no-op that left encrypted orphan blobs). Fixed `remove_attachment` to delete the estate-scoped key (legacy `attachments/` fallback), and added attachment to the `delete_message` best-effort cleanup loop (now covers video + voice + attachment, estate-scoped with legacy fallbacks). No access-control impact (routes already require `deleted_at: None` / valid `attachment_url`). Regression suite `test_message_media_pathways.py` still **5/5 PASS** (deleted attachment still 404s; delete still succeeds).
+2. **P3 UX — beneficiary voice "still syncing" state** (`frontend/src/pages/beneficiary/BeneficiaryMessagesPage.js`): a `voice` message with no `voice_url` previously rendered a tappable play control that silently did nothing. Now renders a distinct **non-tappable** state — a muted/dimmed `Mic` icon (testid `ben-voice-unavailable-{id}`) with the caption "Recording still syncing — please check back soon". The tappable play control and inline `<audio>` player only render once `voice_url` exists.
+
+Gates: housekeeping `--strict` ALL CHECKS PASSED (0 WARN/0 FAIL, no regression); frontend compiles; my edits lint-clean; backend lint clean.
+
+
+
 ## Jun 7, 2026 — Voice milestone playback affordance (benefactor + beneficiary)
 
 Following the audit `50f324c` P1 fix (voice download route now resolves the estate-scoped key), wired **real voice playback** into the milestone-message tiles, which previously only had it for video:

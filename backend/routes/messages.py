@@ -718,10 +718,17 @@ async def update_message(message_id: str, data: MessageUpdate, current_user: dic
 
     # Handle attachment removal
     if data.remove_attachment and existing.get("attachment_url"):
-        try:
-            await storage.delete(f"attachments/{existing['attachment_url']}")
-        except Exception:
-            pass
+        # audit #7d6af7c — attachment blobs are stored estate-scoped
+        # (estates/{estate_id}/{attachment_id}); the old attachments/ key left
+        # encrypted orphan blobs. Delete the correct key (legacy fallback too).
+        for _k in (
+            f"estates/{existing['estate_id']}/{existing['attachment_url']}",
+            f"attachments/{existing['attachment_url']}",
+        ):
+            try:
+                await storage.delete(_k)
+            except Exception:
+                pass
         update_fields["attachment_url"] = None
         update_fields["attachment_name"] = None
         update_fields["attachment_type"] = None
@@ -763,11 +770,16 @@ async def delete_message(message_id: str, current_user: dict = Depends(get_curre
     # IDOR guard — only the estate owner (or admin) can delete a message.
     await require_estate_owner(message.get("estate_id"), current_user)
 
-    # audit #50f324c — best-effort blob cleanup on soft-delete. Blobs are stored
-    # estate-scoped (estates/{estate_id}/{url}); older objects used videos/ and
-    # voices/ prefixes, so try both. (The deleted_at filter on the direct media
-    # routes is the real access guard since blob deletion is best-effort.)
-    for _url, _legacy in ((message.get("video_url"), "videos"), (message.get("voice_url"), "voices")):
+    # audit #50f324c / #7d6af7c — best-effort blob cleanup on soft-delete. Blobs
+    # are stored estate-scoped (estates/{estate_id}/{url}); older objects used
+    # videos/, voices/ and attachments/ prefixes, so try both. (The deleted_at
+    # filter on the direct media routes is the real access guard since blob
+    # deletion is best-effort.)
+    for _url, _legacy in (
+        (message.get("video_url"), "videos"),
+        (message.get("voice_url"), "voices"),
+        (message.get("attachment_url"), "attachments"),
+    ):
         if not _url:
             continue
         for _k in (f"estates/{message['estate_id']}/{_url}", f"{_legacy}/{_url}"):

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import apiClient from '../../utils/apiClient';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLabelCleaner } from '../../utils/brandLabel';
-import { MessageSquare, ChevronLeft, Heart, Play } from 'lucide-react';
+import { MessageSquare, ChevronLeft, Heart, Play, Mic } from 'lucide-react';
 import { Card, CardContent } from '../../components/ui/card';
 import { Skeleton } from '../../components/ui/skeleton';
 import { API_URL } from '../../config';
@@ -94,7 +94,17 @@ const BeneficiaryMessagesPage = () => {
         {m.message_type === 'voice' && (
           <Card className="glass-card">
             <CardContent className="p-5 lg:p-8 text-center" data-testid={`ben-voice-player-${m.id}`}>
-              {m.voice_url && voiceBlobUrl ? (
+              {!m.voice_url ? (
+                /* audit #7d6af7c — recording not yet synced/available. Show a
+                   clear, NON-tappable state instead of a dead play control. */
+                <div
+                  className="w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center opacity-60"
+                  style={{ background: 'rgba(100,116,139,0.12)', border: '3px solid var(--t5)' }}
+                  data-testid={`ben-voice-unavailable-${m.id}`}
+                >
+                  <Mic className="w-8 h-8 text-[var(--t4)]" />
+                </div>
+              ) : voiceBlobUrl ? (
                 <audio
                   controls
                   autoPlay
@@ -110,7 +120,6 @@ const BeneficiaryMessagesPage = () => {
                   style={{ background: 'rgba(37,99,235,0.15)', border: '3px solid var(--bl3)' }}
                   data-testid={`ben-voice-play-${m.id}`}
                   onClick={async () => {
-                    if (!m.voice_url) return;
                     const cacheKey = `mm:${m.id}:voice`;
                     if (isOfflineEnabled()) {
                       try {
@@ -140,7 +149,11 @@ const BeneficiaryMessagesPage = () => {
                 </div>
               )}
               <div className="text-sm font-bold text-[var(--t)] mb-1 mt-3">Voice Message</div>
-              <div className="text-xs text-[var(--t4)]">{voiceBlobUrl ? 'Now playing' : voiceLoading ? 'Loading…' : 'Tap to play'}</div>
+              <div className="text-xs text-[var(--t4)]">
+                {!m.voice_url
+                  ? 'Recording still syncing — please check back soon'
+                  : voiceBlobUrl ? 'Now playing' : voiceLoading ? 'Loading…' : 'Tap to play'}
+              </div>
               {m.voice_url && (
                 <div className="mt-4 flex justify-center">
                   <OfflineSavedBadge
