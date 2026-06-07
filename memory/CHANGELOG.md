@@ -1,6 +1,19 @@
 # CarryOn — Changelog
 
 
+## Jun 7, 2026 — Audit `d0c48d7` remaining fixes (4 findings, surgical) — VERIFIED
+
+Audited main commit `d0c48d748e9c…` and finished/verified the four remaining items. Housekeeping `--strict` ALL CHECKS PASSED (0 WARN / 0 FAIL, no regression vs baseline); backend + frontend lint clean on all touched files.
+
+1. **P1 / SOC2 — Encrypt offline outbox bodies at rest** (`frontend/src/offline/outbox.js`): `enqueue()` now seals the non-indexed payload (`body`, `server_row`) into an AES-GCM `__enc` blob via the existing offline crypto (`sealRecord`/`unsealRecord`), keeping only query/index fields plaintext (`OUTBOX_PLAIN_KEYS`). **Fail-closed**: a secret-bearing body (`password`/`additional_access`/`notes`/`dav_login_password`) throws rather than persisting plaintext when no session key is available. `drain()` unseals before replay (and defers if no key), re-seals on 409/412 conflict rows. `snapshot()` / `listPending()` / `listConflicts()` unseal-then-redact secret fields. Legacy plaintext rows opportunistically sealed on drain.
+2. **P2 — Stop persisting DAV notes drafts** (`frontend/src/pages/DigitalWalletPage.js`): DAV `notes` now uses plain `useState` (like password/additional_access), never mirrored to `sessionStorage` drafts. Boot purge of legacy `carryon_draft:dav_form:*:notes` keys added (`purgeLegacyDavNoteDrafts()` in `clearLocalDrafts.js`, wired in `index.js`).
+3. **P2 — Block deleted milestone media direct access** (`backend/routes/messages.py`): `get_message_video()` + `get_message_voice()` now query with `deleted_at: None` (privileged owner/admin/operator bypass `can_access_message`, so the guard must be in the query). Returns 404 for deleted media. Token-redemption path already checked `deleted_at` — unchanged. New regression test `tests/test_deleted_media_block_jun2026.py` (live video 200 → soft-delete → 404) **PASSED**.
+4. **SOC2 deploy control** (`.github/workflows/ci.yml`): `e2e-smoke` Playwright job (gated on `vars.RUN_E2E=='true'`) + new `deploy-gate` job that **fails on `main` push** unless `RUN_E2E=true` AND the E2E smoke is green — production/staging can't be treated as verified without end-to-end change-management evidence.
+
+Verification: `test_deleted_media_block_jun2026.py` 1/1 pass, `test_dav_sync_estate_scope_jun2026.py` 9/9 pass, lint clean, housekeeping `--strict` clean.
+
+
+
 ## Jun 7, 2026 — Production-hardening patch #1798 (10 findings, surgical)
 
 All changes verified: backend boots clean (migration ran, compound index created), 12 pytest pass (`test_dav_sync_estate_scope_jun2026.py` 9/9, `test_hardening_1798.py` 3/3), frontend lint clean + DAV localStorage cache confirmed leak-free, `housekeeping.sh --strict` ALL CHECKS PASSED.
