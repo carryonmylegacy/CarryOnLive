@@ -88,7 +88,7 @@ export function isEncryptionEnabled() {
 
 export function setEncryptionMode(mode) {
   try { localStorage.setItem(KEY_FLAG, mode === 'on' ? 'on' : 'off'); }
-  catch {}
+  catch { /* private mode */ }
   if (mode !== 'on') _cachedKey = null;
 }
 
@@ -259,6 +259,71 @@ export async function unsealBlob(sealed) {
     return null;
   }
 }
+// ── Outbox-at-rest encryption (audit #3be1d2f P2) ───────────────────────────
+// The sync outbox can hold PII bodies for EVERY authenticated user (entity
+// writes for beneficiaries, financial items, messages, profile, chat), not
+// just users who opted into the offline feature. Those rows must therefore be
+// encrypted at rest UNCONDITIONALLY — independent of the `carryon_offline_v1`
+// feature flag. The functions below mirror sealRecord/unsealRecord/ensureSession-
+// Key but DROP the `isEncryptionEnabled()` gate: as long as a bearer token
+// exists (so a key can be derived) the payload is sealed. The derived key is the
+// SAME deterministic device-seed+user_id key, so rows seal/unseal identically
+// whether or not the user later toggles offline mode on.
+
+/** Derive + cache the AES key whenever a token exists — NOT gated on the flag. */
+export async function ensureKeyForOutbox() {
+  if (typeof window === 'undefined' || !window.crypto?.subtle) return null;
+  if (_cachedKey) return _cachedKey;
+  if (_primingPromise) return _primingPromise;
+  let token = null;
+  try { token = localStorage.getItem('carryon_token'); } catch { /* private mode */ }
+  if (!token) return null;
+  _primingPromise = primeSessionKey(token).finally(() => { _primingPromise = null; });
+  return _primingPromise;
+}
+
+/** Seal a row for the outbox regardless of the offline flag. Returns the row
+ *  unchanged only when no key could be derived (caller decides fail-closed). */
+export async function sealRecordForce(row, plainKeys = []) {
+  if (!row || typeof row !== 'object') return row;
+  const key = await ensureKeyForOutbox();
+  if (!key) return row;
+  const plain = {};
+  const sensitive = {};
+  for (const [k, v] of Object.entries(row)) {
+    if (plainKeys.includes(k) || k === '_updatedAt' || k === '_local_pending') plain[k] = v;
+    else sensitive[k] = v;
+  }
+  try {
+    const __enc = await encryptString(JSON.stringify(sensitive));
+    return { ...plain, __enc };
+  } catch (err) {
+    console.warn('[offline-enc] sealRecordForce error (not persisting plaintext):', err);
+    return row;
+  }
+}
+
+/** Unseal an outbox row regardless of the offline flag. Returns null when the
+ *  ciphertext cannot be read (no key / wrong key / corrupt). */
+export async function unsealRecordForce(stored) {
+  if (!stored || typeof stored !== 'object') return stored;
+  if (!stored.__enc) return stored;
+  if (!getKey()) {
+    await ensureKeyForOutbox();
+    if (!getKey()) return null;
+  }
+  try {
+    const { iv, ct } = stored.__enc;
+    const json = await decryptString(iv, ct);
+    const sensitive = JSON.parse(json);
+    const { __enc: _ignored, ...plain } = stored;
+    return { ...plain, ...sensitive };
+  } catch (err) {
+    console.warn('[offline-enc] unsealRecordForce failed:', err);
+    return null;
+  }
+}
+
 export async function unsealRecord(stored) {
   if (!stored || typeof stored !== 'object') return stored;
   if (!stored.__enc) return stored;

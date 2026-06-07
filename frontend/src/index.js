@@ -504,6 +504,13 @@ try {
   import('./utils/clearLocalDrafts').then((m) => m.purgeLegacyDavNoteDrafts()).catch(() => {});
 } catch {}
 
+// audit #3be1d2f P2 — seal any legacy plaintext outbox rows at boot (before any
+// read path), so offline-queued PII is encrypted at rest regardless of the
+// offline feature flag.
+try {
+  import('./offline/outbox').then((m) => m.migrateOutboxEncryption()).catch(() => {});
+} catch { /* SSR / module load */ }
+
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
   <React.StrictMode>

@@ -1,6 +1,16 @@
 # CarryOn — Changelog
 
 
+## Jun 7, 2026 — Audit `3be1d2f` remaining fixes (outbox universal-encryption, test reconciliation, iOS triage)
+
+Audited main commit `3be1d2ffa6…`. Housekeeping `--strict` ALL CHECKS PASSED; frontend compiles; lint clean on all touched files.
+
+1. **P2 / SOC2 — Offline outbox encryption is now UNIVERSAL, not flag-gated** (`frontend/src/offline/outbox.js`, `frontend/src/offline/crypto.js`): previously `enqueue()` only sealed rows when `isEncryptionEnabled()` (i.e. when `carryon_offline_v1==='on'`), so a user who never opted into offline mode could still have non-secret **PII** bodies written plaintext in IndexedDB. New flag-independent crypto helpers `ensureKeyForOutbox()` / `sealRecordForce()` / `unsealRecordForce()` derive the same deterministic device-seed+user_id AES-256-GCM key whenever a bearer token exists. `enqueue()` now seals **every** body at rest regardless of the feature flag and **fails closed** (no plaintext) when a body can't be sealed. Drain, conflict re-seal, `toDisplayRow`, `listPending`, `listConflicts`, and `resolveConflict` all use the force-unseal path. The legacy plaintext-row sealing migration now runs at **boot** (`index.js` → `migrateOutboxEncryption()`, idempotent per session) and before drain — not only during drain. The original flag-gated `sealRecord`/`unsealRecord`/`ensureSessionKey` exports are unchanged (still used by the offline mirror caches in AuthContext/profileRepo/chatRepo/OfflineDiagnostics). **Verified** with a deterministic Node WebCrypto round-trip (flag OFF → key derives, secret + non-secret bodies seal with zero plaintext leakage, exact unseal).
+2. **P3 / SOC2 evidence — deleted-media regression test reconciled.** The prior test lived at `backend/tests/test_deleted_media_block_jun2026.py`, which matches the gitignore rule `backend/tests/test_*.py` ("test files with test credentials") and was therefore never on GitHub main — making the changelog claim unverifiable. Replaced with a **committable, credential-free** test at `backend/tests/regression/test_deleted_media_block.py` (subdirectory escapes the ignore rule; reads target URL + benefactor login from `E2E_BASE_URL` + `E2E_BENEFACTOR_*`/`E2E_ADMIN_*` env vars, **skips cleanly** when unset). Proves direct `GET /api/messages/video/{id}` returns 200 while live → 404 after soft-delete. **PASSED** against preview; **SKIPPED** (no false-fail) when env unset.
+3. **Ops — Apple "App | Default" build failure is NOT caused by this commit.** `git show --stat 3be1d2ff` = only `sw-push.js`, `useFinancialForm.js`, `outbox.js`, `DigitalWalletPage.js` — **zero** iOS-native files (no `.swift/.plist/.pbxproj/Podfile`), and the last 3 commits touched no `ios/` paths. There are no Xcode Cloud CI scripts in the repo (`ci_post_clone.sh`/`Fastfile` absent) — the build is configured entirely in App Store Connect, whose logs are not reachable from this environment (no ASC API credentials). This is the standing Apple Developer Agreement / code-signing item (founder action), unrelated to commit `3be1d2f`.
+
+
+
 ## Jun 7, 2026 — Audit `d0c48d7` remaining fixes (4 findings, surgical) — VERIFIED
 
 Audited main commit `d0c48d748e9c…` and finished/verified the four remaining items. Housekeeping `--strict` ALL CHECKS PASSED (0 WARN / 0 FAIL, no regression vs baseline); backend + frontend lint clean on all touched files.

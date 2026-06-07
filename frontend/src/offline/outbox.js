@@ -37,7 +37,7 @@
 import axios from 'axios';
 import { getDB } from './db';
 import { isOfflineEnabled, getOfflineMode } from './featureFlag';
-import { sealRecord, unsealRecord, ensureSessionKey, isEncryptionEnabled } from './crypto';
+import { sealRecordForce, unsealRecordForce, ensureKeyForOutbox } from './crypto';
 import { API_URL } from '../config';
 
 const MAX_RETRIES = 3;
@@ -75,7 +75,7 @@ function redactSecrets(value) {
 /** Display-safe view of a stored row: unseal (so the UI can read it) then
  *  redact secret fields from body + server_row. Never returns raw secrets. */
 async function toDisplayRow(row) {
-  const unsealed = (row && row.__enc) ? await unsealRecord(row) : row;
+  const unsealed = (row && row.__enc) ? await unsealRecordForce(row) : row;
   if (!unsealed) {
     // Couldn't decrypt (no key) — return a minimal redacted shell.
     const { __enc: _e, body: _b, server_row: _s, ...plain } = row || {};
@@ -88,22 +88,38 @@ async function toDisplayRow(row) {
   return safe;
 }
 
-/** Opportunistically seal any legacy plaintext rows once a key is available. */
+// Run the legacy plaintext-row sealing migration at most once per session.
+let _sealMigrationDone = false;
+
+/** Opportunistically seal any legacy plaintext rows once a key is available.
+ *  Encryption is now UNCONDITIONAL (audit #3be1d2f P2) — no flag gate. */
 async function sealExistingPlaintextRows(db) {
   try {
-    if (!isEncryptionEnabled()) return;
-    const key = await ensureSessionKey();
+    const key = await ensureKeyForOutbox();
     if (!key) return;
     const all = await db.outbox.toArray();
     for (const r of all) {
       if (r.__enc) continue;
       if (r.body == null && r.server_row == null) continue; // nothing worth sealing
-      const sealed = await sealRecord(r, OUTBOX_PLAIN_KEYS);
+      const sealed = await sealRecordForce(r, OUTBOX_PLAIN_KEYS);
       if (sealed.__enc) await db.outbox.put({ ...sealed, id: r.id });
     }
   } catch (err) {
     console.warn('[offline] outbox seal migration warning:', err);
   }
+}
+
+/** Idempotent per-session migration guard, run before any outbox read and at boot. */
+async function ensureSealMigration(db) {
+  if (_sealMigrationDone) return;
+  _sealMigrationDone = true;
+  await sealExistingPlaintextRows(db || getDB());
+}
+
+/** Public entry point — wired into app boot (index.js) so legacy plaintext rows
+ *  are sealed BEFORE any read path runs, not only during a drain. */
+export async function migrateOutboxEncryption() {
+  try { await ensureSealMigration(getDB()); } catch { /* best-effort */ }
 }
 
 /** Add a new job to the outbox. Returns the new row's id, or null if gated off. */
@@ -132,25 +148,24 @@ export async function enqueue({ entity_type, entity_id, method, url, body }) {
     created_at: Date.now(),
   };
 
-  // audit #d0c48d7 P1 — seal the body at rest. DAV/CFP offline saves can carry
-  // password / additional_access / notes / dav_login_password.
+  // audit #3be1d2f P2 — seal the body at rest UNCONDITIONALLY (independent of
+  // the offline feature flag). Every outbox body is PII (entity writes), and
+  // DAV/CFP saves can additionally carry password / additional_access / notes /
+  // dav_login_password. As long as a bearer token exists a key is derivable, so
+  // the row is encrypted. A body that cannot be sealed is REFUSED — never
+  // written plaintext at rest.
   const hasSecret = bodyHasSecret(body);
   let storedRow = row;
-  const key = await ensureSessionKey();
-  if (key && isEncryptionEnabled()) {
-    storedRow = await sealRecord(row, OUTBOX_PLAIN_KEYS);
-    // sealRecord silently falls back to plaintext on a crypto error — for a
-    // secret-bearing body that is unacceptable, so fail closed.
-    if (hasSecret && !storedRow.__enc) {
-      const e = new Error('Could not securely store this change offline. Please reconnect and try again.');
+  if (body != null) {
+    const key = await ensureKeyForOutbox();
+    if (key) storedRow = await sealRecordForce(row, OUTBOX_PLAIN_KEYS);
+    if (!storedRow.__enc) {
+      const e = new Error(hasSecret
+        ? 'This change includes sensitive data and can’t be saved offline. Please reconnect to save.'
+        : 'This change can’t be securely saved offline right now. Please reconnect to save.');
       e.code = 'OFFLINE_SECRET_FAIL_CLOSED';
       throw e;
     }
-  } else if (hasSecret) {
-    // No session key → NEVER write a secret body to disk in plaintext.
-    const e = new Error('This change includes sensitive data and can’t be saved offline. Please reconnect to save.');
-    e.code = 'OFFLINE_SECRET_FAIL_CLOSED';
-    throw e;
   }
   const id = await db.outbox.add(storedRow);
   console.log(`[offline] enqueue #${id} ${method} ${url}`);
@@ -192,9 +207,9 @@ export async function drain() {
     const token = localStorage.getItem('carryon_token');
     if (!token) return { sent: 0, failed: 0, skipped: true };
     const headers = { Authorization: `Bearer ${token}` };
-    // audit #d0c48d7 P1 — opportunistically seal any legacy plaintext rows now
-    // that a key is available, before we start replaying.
-    await sealExistingPlaintextRows(db);
+    // audit #3be1d2f P2 — seal any legacy plaintext rows now that a key is
+    // available, before we start replaying (idempotent with the boot run).
+    await ensureSealMigration(db);
     let sent = 0;
     let failed = 0;
     // Process one at a time, in order.
@@ -208,7 +223,7 @@ export async function drain() {
       // it back to pending and stop, so it drains once the key is primed.
       let job = next;
       if (next.__enc) {
-        const unsealed = await unsealRecord(next);
+        const unsealed = await unsealRecordForce(next);
         if (!unsealed) {
           await db.outbox.update(next.id, { status: 'pending' });
           console.warn(`[offline] drain deferred #${next.id} — no key to unseal`);
@@ -280,8 +295,8 @@ export async function drain() {
         // what to do. Broadcast so the modal can pop immediately.
         if (status === 409 || status === 412) {
           const serverRow = err?.response?.data?.server || err?.response?.data?.current || null;
-          // audit #d0c48d7 P1 — re-seal the whole row so body + server_row stay
-          // encrypted at rest (a 409 body still carries the user's secrets).
+          // audit #3be1d2f P2 — re-seal the whole row so body + server_row stay
+          // encrypted at rest (a 409 body still carries the user's PII/secrets).
           const mergedRow = {
             ...job,
             status: 'conflict',
@@ -290,9 +305,7 @@ export async function drain() {
             server_row: serverRow,
             conflict_status: status,
           };
-          const sealedRow = (next.__enc || isEncryptionEnabled())
-            ? await sealRecord(mergedRow, OUTBOX_PLAIN_KEYS)
-            : mergedRow;
+          const sealedRow = await sealRecordForce(mergedRow, OUTBOX_PLAIN_KEYS);
           await db.outbox.put({ ...sealedRow, id: next.id });
           try {
             window.dispatchEvent(new CustomEvent('carryon:outbox:conflict', {
@@ -419,7 +432,7 @@ export async function resolveConflict(id, choice) {
     const rawRow = await db.outbox.get(id);
     if (!rawRow) return;
     // Unseal so 'theirs' can read the encrypted server_row / entity fields.
-    const row = rawRow.__enc ? await unsealRecord(rawRow) : rawRow;
+    const row = rawRow.__enc ? await unsealRecordForce(rawRow) : rawRow;
     if (!row) return;
     if (choice === 'mine') {
       // Clear conflict state and re-queue for the next drain. The server's
