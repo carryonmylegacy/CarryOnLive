@@ -165,7 +165,11 @@ export const useFinancialForm = ({
       clearFormDraft();
       onSaved(saved, { queued: !!r.queued, isEdit, module, entityType });
     } catch (err) {
-      toast.error(formatPydanticError(err, `Failed to save ${entityLabel.toLowerCase()}`));
+      // Fail-closed offline save (no secure session to encrypt the secret
+      // body, e.g. dav_login_password) — surface the specific reason.
+      toast.error(err?.code === 'OFFLINE_SECRET_FAIL_CLOSED'
+        ? err.message
+        : formatPydanticError(err, `Failed to save ${entityLabel.toLowerCase()}`));
     }
     setSaving(false);
   };

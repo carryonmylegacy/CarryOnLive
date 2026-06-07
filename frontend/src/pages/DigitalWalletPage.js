@@ -561,7 +561,13 @@ const WalletEntryPanel = ({ entry, beneficiaries, existingEntries, onClose, onSa
       }
       clearPanelDrafts();
       onSaved(saved, { queued: !!r.queued, isEdit: !!entry });
-    } catch (err) { toast.error(err.response?.data?.detail || 'Failed to save'); }
+    } catch (err) {
+      // Fail-closed offline save (no secure session to encrypt the secret
+      // body) — surface the specific reason, not a generic "Failed to save".
+      toast.error(err?.code === 'OFFLINE_SECRET_FAIL_CLOSED'
+        ? err.message
+        : (err.response?.data?.detail || 'Failed to save'));
+    }
     setSaving(false);
   };
 

@@ -142,11 +142,15 @@ export async function enqueue({ entity_type, entity_id, method, url, body }) {
     // sealRecord silently falls back to plaintext on a crypto error — for a
     // secret-bearing body that is unacceptable, so fail closed.
     if (hasSecret && !storedRow.__enc) {
-      throw new Error('Could not securely store this change offline. Please reconnect and try again.');
+      const e = new Error('Could not securely store this change offline. Please reconnect and try again.');
+      e.code = 'OFFLINE_SECRET_FAIL_CLOSED';
+      throw e;
     }
   } else if (hasSecret) {
     // No session key → NEVER write a secret body to disk in plaintext.
-    throw new Error('This change includes sensitive data and cannot be saved offline without a secure session. Please reconnect to save.');
+    const e = new Error('This change includes sensitive data and can’t be saved offline. Please reconnect to save.');
+    e.code = 'OFFLINE_SECRET_FAIL_CLOSED';
+    throw e;
   }
   const id = await db.outbox.add(storedRow);
   console.log(`[offline] enqueue #${id} ${method} ${url}`);
