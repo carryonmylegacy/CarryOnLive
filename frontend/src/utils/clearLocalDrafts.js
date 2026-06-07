@@ -27,7 +27,9 @@ export function clearLocalDrafts() {
       const toRemove = [];
       for (let i = 0; i < sessionStorage.length; i += 1) {
         const k = sessionStorage.key(i);
-        if (k && k.startsWith('carryon_draft:')) toRemove.push(k);
+        // carryon_draft:* (useDraftState) and cfp:smartcat:* (smart-categorize
+        // session cache, audit #1798 P3) — both can hold a prior user's data.
+        if (k && (k.startsWith('carryon_draft:') || k.startsWith('cfp:smartcat'))) toRemove.push(k);
       }
       toRemove.forEach((k) => { try { sessionStorage.removeItem(k); } catch { /* noop */ } });
       try { sessionStorage.removeItem('carryon_dav_popup_shown'); } catch { /* noop */ }

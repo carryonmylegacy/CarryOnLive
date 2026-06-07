@@ -277,7 +277,7 @@ async def update_digital_wallet_entry(
     current_user: dict = Depends(get_current_user),
 ):
     """Update an existing wallet entry."""
-    entry = await db.digital_wallet.find_one({"id": entry_id}, {"_id": 0})
+    entry = await db.digital_wallet.find_one({"id": entry_id, "deleted_at": None}, {"_id": 0})
     if not entry:
         raise HTTPException(status_code=404, detail="Entry not found")
 
@@ -296,6 +296,8 @@ async def update_digital_wallet_entry(
     if data.additional_access is not None:
         estate_salt = await get_estate_salt(entry["estate_id"])
         update["encrypted_additional"] = encrypt_field(data.additional_access, estate_salt)
+        # audit #1798 P2 — never leave the plaintext copy behind on update.
+        update["additional_access"] = None
     if data.notes is not None:
         update["notes"] = data.notes
     if data.category is not None:
@@ -339,7 +341,9 @@ async def update_digital_wallet_entry(
 
     if update:
         update["updated_at"] = datetime.now(timezone.utc).isoformat()
-        await db.digital_wallet.update_one({"id": entry_id}, {"$set": update})
+        await db.digital_wallet.update_one(
+            {"id": entry_id, "estate_id": entry["estate_id"], "deleted_at": None}, {"$set": update}
+        )
 
         # Log edit for timeline
         changed_fields = [k for k in update if k not in ("updated_at", "assigned_beneficiary_name")]
@@ -364,7 +368,7 @@ async def update_digital_wallet_entry(
 @router.delete("/digital-wallet/{entry_id}")
 async def delete_digital_wallet_entry(entry_id: str, current_user: dict = Depends(get_current_user)):
     """Delete a digital wallet entry."""
-    entry = await db.digital_wallet.find_one({"id": entry_id}, {"_id": 0})
+    entry = await db.digital_wallet.find_one({"id": entry_id, "deleted_at": None}, {"_id": 0})
     if not entry:
         raise HTTPException(status_code=404, detail="Entry not found")
 
@@ -373,7 +377,7 @@ async def delete_digital_wallet_entry(entry_id: str, current_user: dict = Depend
         raise HTTPException(status_code=403, detail="Not authorized")
 
     await db.digital_wallet.update_one(
-        {"id": entry_id},
+        {"id": entry_id, "estate_id": entry["estate_id"], "deleted_at": None},
         {"$set": {"deleted_at": datetime.now(timezone.utc).isoformat()}},
     )  # soft_delete
     return {"success": True, "message": "Entry deleted"}

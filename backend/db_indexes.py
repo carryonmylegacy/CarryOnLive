@@ -73,6 +73,45 @@ async def run_migrations(db, logger):
     except Exception as e:
         logger.warning(f"CFP fail-closed migration warning: {e}")
 
+    # ── DAV legacy plaintext additional_access sweep (audit #1798 P2) ─────────
+    # Older DAV rows stored 2FA/PIN/backup-code context in PLAINTEXT
+    # `additional_access`. New writes encrypt into `encrypted_additional` and
+    # null the plaintext field. Sweep legacy rows: encrypt where the estate salt
+    # is available (preserving the data), else clear, so no plaintext secret
+    # lingers at rest. Idempotent (tracked in db.migrations).
+    try:
+        migration_done = await db.migrations.find_one({"_id": "dav_plaintext_additional_sweep_v1"})
+        if not migration_done:
+            from services.encryption import encrypt_field, get_estate_salt
+
+            legacy = await db.digital_wallet.find(
+                {"additional_access": {"$nin": [None, ""]}},
+                {"_id": 0, "id": 1, "estate_id": 1, "additional_access": 1, "encrypted_additional": 1},
+            ).to_list(10000)
+            encrypted_n = 0
+            cleared_n = 0
+            _salt_cache = {}
+            for row in legacy:
+                eid = row.get("estate_id")
+                set_doc = {"additional_access": None}
+                if eid and not row.get("encrypted_additional"):
+                    try:
+                        if eid not in _salt_cache:
+                            _salt_cache[eid] = await get_estate_salt(eid)
+                        set_doc["encrypted_additional"] = encrypt_field(row["additional_access"], _salt_cache[eid])
+                        encrypted_n += 1
+                    except Exception:
+                        cleared_n += 1  # salt unavailable — clear rather than retain plaintext
+                else:
+                    cleared_n += 1
+                await db.digital_wallet.update_one({"id": row["id"]}, {"$set": set_doc})
+            await db.migrations.insert_one(
+                {"_id": "dav_plaintext_additional_sweep_v1", "encrypted": encrypted_n, "cleared": cleared_n}
+            )
+            logger.info(f"DAV plaintext additional_access sweep: encrypted={encrypted_n} cleared={cleared_n}")
+    except Exception as e:
+        logger.warning(f"DAV plaintext additional_access sweep warning: {e}")
+
 
 async def ensure_indexes(db, logger):
     """Create all security-critical and performance database indexes."""
@@ -102,6 +141,10 @@ async def ensure_indexes(db, logger):
         await db.estates.create_index("beneficiaries")
         await db.checklists.create_index("estate_id")
         await db.chat_history.create_index([("user_id", 1), ("session_id", 1)])
+        # audit #1798 P1 — estate-scoped Guardian history retrieval. Cross-session
+        # context + same-session load now filter by user_id + estate_id + session,
+        # sorted by created_at; this compound index covers all three.
+        await db.chat_history.create_index([("user_id", 1), ("estate_id", 1), ("session_id", 1), ("created_at", 1)])
         await db.token_blacklist.create_index("expires_at", expireAfterSeconds=0)
         await db.token_blacklist.create_index("jti")
         # Universal download tokens — TTL auto-expire 5 min after creation.

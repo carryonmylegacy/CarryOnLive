@@ -32,13 +32,13 @@ async def get_audit_chain_status(_admin: dict = Depends(require_admin)):
     `audit_chain_genesis` audit entry so the chain has a named anchor
     point (SOC 2 evidence). Subsequent calls are idempotent.
 
-    Pure read-only after genesis. The chain walk is bounded to the
-    latest 10k entries to keep dashboard latency under ~500ms; the full
-    historical chain can be verified out-of-band via
-    `scripts/backup_drill_smoke.py`.
+    Pure read-only after genesis. The chain walk verifies the LATEST 10k
+    chained entries (latest-window mode) so recent tampering is caught even
+    once production volume exceeds the window — the full historical chain can
+    be verified out-of-band via `scripts/backup_drill_smoke.py`.
     """
     genesis = await ensure_chain_genesis()
-    result = await verify_audit_chain(limit=10000)
+    result = await verify_audit_chain(limit=10000, latest_window=True)
     if not result["ok"]:
         # audit d5a54f5e P2 / SOC2 [CC7.2] — surface a SEVERE alert whenever the
         # chain is not fully authoritative: a broken link, a missing/mismatched
@@ -66,6 +66,8 @@ async def get_audit_chain_status(_admin: dict = Depends(require_admin)):
         "repair_queue_backlog": result.get("repair_queue_backlog", 0),
         "chain_head_present": result.get("chain_head_present", False),
         "chain_head_matches_last_event": result.get("chain_head_matches_last_event", False),
+        "windowed": result.get("windowed", False),
+        "window_size": result.get("window_size", result["entries_checked"]),
         "limit": 10000,
         "genesis_created_now": genesis["created"],
     }

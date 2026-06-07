@@ -105,7 +105,10 @@ async def _upsert_dav_for_bill(
                 update_doc["login_username"] = login_username
             if enc_password is not None:
                 update_doc["encrypted_password"] = enc_password
-            await db.digital_wallet.update_one({"id": existing_dav_id}, {"$set": update_doc})
+            # audit #1798 P2 — estate + not-deleted scoped update filter.
+            await db.digital_wallet.update_one(
+                {"id": existing_dav_id, "estate_id": estate_id, "deleted_at": None}, {"$set": update_doc}
+            )
             return existing_dav_id
         # if the previously-linked row was deleted, fall through and recreate
 
@@ -121,6 +124,9 @@ async def _upsert_dav_for_bill(
         "assigned_beneficiary_id": None,
         "assigned_beneficiary_name": None,
         "category": "banking",
+        # audit #1798 P2 — auto-created rows are explicitly private + not-deleted.
+        "beneficiary_visibility": "private",
+        "deleted_at": None,
         # Top-level origin tag so the frontend can filter the DAV list
         # by where the row came from. The `auto_created_from` blob stays
         # for backwards compatibility / per-row breadcrumb context.

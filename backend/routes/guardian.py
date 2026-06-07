@@ -15,7 +15,7 @@ from models import ChatRequest, ChatResponse, ChecklistItem
 from services.access_control import require_estate_actor
 from services.ai_burn_guard import require_ai_burn_budget
 from services.ai_safety import hardened_system_prompt
-from services.encryption import decrypt_aes256, get_estate_salt
+from services.encryption import decrypt_aes256, decrypt_field, get_estate_salt
 from services.readiness import calculate_estate_readiness
 from utils import get_current_user, log_activity, update_estate_readiness
 
@@ -254,7 +254,7 @@ async def gather_estate_context(estate_id: str, include_doc_content: bool = Fals
         ).to_list(100),
         db.beneficiaries.find({"estate_id": estate_id, "deleted_at": None}, {"_id": 0}).to_list(100),
         db.checklists.find({"estate_id": estate_id}, {"_id": 0}).sort("order", 1).to_list(200),
-        db.messages.find({"estate_id": estate_id}, {"_id": 0, "video_url": 0}).to_list(100),
+        db.messages.find({"estate_id": estate_id, "deleted_at": None}, {"_id": 0, "video_url": 0}).to_list(100),
         calculate_estate_readiness(estate_id),
     )
 
@@ -423,11 +423,27 @@ async def gather_estate_context(estate_id: str, include_doc_content: bool = Fals
 
     # Messages summary
     context_parts.append(f"\n**MILESTONE MESSAGES:** {len(messages)} total")
-    for msg in messages[:10]:
-        trigger_info = msg.get("trigger_type", "immediate")
-        if msg.get("trigger_age"):
-            trigger_info += f" (age {msg['trigger_age']})"
-        context_parts.append(f'- "{msg["title"]}" (Type: {msg.get("message_type", "text")}, Trigger: {trigger_info})')
+    if messages:
+        try:
+            _msg_salt = await get_estate_salt(estate_id)
+        except Exception:
+            _msg_salt = None
+        for msg in messages[:10]:
+            trigger_info = msg.get("trigger_type", "immediate")
+            if msg.get("trigger_age"):
+                trigger_info += f" (age {msg['trigger_age']})"
+            # audit #1798 P3 — decrypt the encrypted title before exposing it to
+            # the model; fall back to the short display label, else omit.
+            title = ""
+            if msg.get("encrypted_title") and _msg_salt is not None:
+                try:
+                    title = decrypt_field(msg["encrypted_title"], _msg_salt)
+                except Exception:
+                    title = msg.get("title", "") or ""
+            else:
+                title = msg.get("title", "") or ""
+            label = f'"{title}"' if title else "(untitled message)"
+            context_parts.append(f"- {label} (Type: {msg.get('message_type', 'text')}, Trigger: {trigger_info})")
 
     return "\n".join(context_parts)
 
@@ -807,13 +823,17 @@ Be specific. Name documents by their exact vault filename. Quote checklist items
         # pre-push-invariants: allow-system-content-bypass — `system_message` is the safety-wrapped `ESTATE_GUARDIAN_SYSTEM_PROMPT` (line 551) after `.format(estate_context=...)`.
         history_messages = [{"role": "system", "content": system_message}]
 
-        # Cross-chat knowledge: include key points from recent sessions
-        if session_id.startswith("chat_"):
+        # Cross-chat knowledge: include key points from recent sessions.
+        # audit #1798 P1 — estate-scoped: only pull prior context from the SAME
+        # estate, and exclude legacy rows that predate estate_id (they can't be
+        # proven to belong to this estate).
+        if session_id.startswith("chat_") and estate_id:
             recent_sessions = await db.chat_history.aggregate(
                 [
                     {
                         "$match": {
                             "user_id": current_user["id"],
+                            "estate_id": estate_id,
                             "session_id": {"$ne": session_id},
                         }
                     },
@@ -851,9 +871,11 @@ Be specific. Name documents by their exact vault filename. Quote checklist items
                     }
                 )
 
-        # Load previous messages from this session
+        # Load previous messages from this session (estate-scoped — audit #1798 P1)
         prev_messages = (
-            await db.chat_history.find({"session_id": session_id, "user_id": current_user["id"]}, {"_id": 0})
+            await db.chat_history.find(
+                {"session_id": session_id, "user_id": current_user["id"], "estate_id": estate_id}, {"_id": 0}
+            )
             .sort("created_at", 1)
             .to_list(50)
         )
@@ -1377,11 +1399,12 @@ Be specific. Name documents by their exact vault filename. Quote checklist items
             await update_estate_readiness(estate_id)
             action_result = {"action": "readiness_analyzed", "readiness": readiness}
 
-        # Store in history
+        # Store in history (estate-scoped — audit #1798 P1)
         await db.chat_history.insert_one(
             {
                 "session_id": session_id,
                 "user_id": current_user["id"],
+                "estate_id": estate_id,
                 "role": "user",
                 "content": data.message,
                 "created_at": datetime.now(timezone.utc).isoformat(),
@@ -1391,6 +1414,7 @@ Be specific. Name documents by their exact vault filename. Quote checklist items
             {
                 "session_id": session_id,
                 "user_id": current_user["id"],
+                "estate_id": estate_id,
                 "role": "assistant",
                 "content": response,
                 "action_result": action_result,

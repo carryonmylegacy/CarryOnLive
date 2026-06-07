@@ -181,8 +181,8 @@ async def log_audit_event(
         logger.warning(f"AUDIT[{severity}] {actor_email} {action} {resource_type}:{resource_id}")
 
 
-async def verify_audit_chain(limit: int = 10000) -> dict:
-    """Walk the hash chain from oldest to newest and report any breaks.
+async def verify_audit_chain(limit: int = 10000, latest_window: bool = False) -> dict:
+    """Walk the hash chain and report any breaks.
 
     Returns:
         {
@@ -191,47 +191,76 @@ async def verify_audit_chain(limit: int = 10000) -> dict:
           "first_break_at": str | None,  # timestamp of first broken entry
           "first_break_id": str | None,  # _id (stringified) of first broken entry
           "skipped_legacy": int,         # legacy entries without integrity_hash
+          "windowed": bool,              # True when only the latest window was walked
+          "window_size": int,            # entries in the verified window
         }
 
-    Pass `limit` to bound the walk in production (default 10k entries).
+    Modes:
+      * Full-from-genesis (`latest_window=False`): walk oldest→newest, bounded by
+        `limit`. Seeds expected_prev from the genesis hash. Suitable for a chain
+        small enough to fit within `limit`.
+      * Latest-window (`latest_window=True`): walk the NEWEST `limit` chained
+        events. We fetch them descending, reverse to oldest-first, and seed
+        expected_prev from the oldest-in-window row's own `prev_hash` (which
+        links to the event immediately before the window). This guarantees
+        recent tampering / chain breaks are caught even once production volume
+        exceeds `limit` — the old oldest-first+limit walk silently verified only
+        the OLDEST `limit` and could report a false green (audit #1798 P1).
 
-    Implementation note: filters the cursor to entries with a `prev_hash`
-    field so legacy pre-chain entries don't crowd out the chain window.
-    `skipped_legacy` is counted out-of-band via a single count_documents.
+    Implementation note: filters to entries with a `prev_hash` field so legacy
+    pre-chain entries don't crowd out the chain window. `skipped_legacy` is
+    counted out-of-band via a single count_documents.
     """
     # Count legacy entries (have integrity_hash but lack prev_hash) once.
     skipped_legacy = await db.audit_trail.count_documents(
         {"integrity_hash": {"$exists": True}, "prev_hash": {"$exists": False}}
     )
 
-    cursor = db.audit_trail.find(
-        {"prev_hash": {"$exists": True}, "integrity_hash": {"$exists": True}},
-        sort=[("stored_at", 1)],
-        projection={
-            "_id": 1,
-            "integrity_hash": 1,
-            "prev_hash": 1,
-            "timestamp": 1,
-            "actor_id": 1,
-            "actor_email": 1,
-            "actor_role": 1,
-            "action": 1,
-            "category": 1,
-            "resource_type": 1,
-            "resource_id": 1,
-            "details": 1,
-            "ip_address": 1,
-            "severity": 1,
-            "session_id": 1,
-        },
-    ).limit(limit)
+    chain_filter = {"prev_hash": {"$exists": True}, "integrity_hash": {"$exists": True}}
+    projection = {
+        "_id": 1,
+        "integrity_hash": 1,
+        "prev_hash": 1,
+        "timestamp": 1,
+        "actor_id": 1,
+        "actor_email": 1,
+        "actor_role": 1,
+        "action": 1,
+        "category": 1,
+        "resource_type": 1,
+        "resource_id": 1,
+        "details": 1,
+        "ip_address": 1,
+        "severity": 1,
+        "session_id": 1,
+    }
 
-    expected_prev = _GENESIS_HASH
+    if latest_window:
+        # Newest `limit` chained events, descending, then reversed to oldest-first.
+        rows = (
+            await db.audit_trail.find(chain_filter, sort=[("stored_at", -1)], projection=projection)
+            .limit(limit)
+            .to_list(limit)
+        )
+        rows.reverse()
+        windowed = True
+        # Seed from the oldest-in-window row's prev_hash (links to the event
+        # immediately before the window). Genesis if the window starts at row 0.
+        expected_prev = rows[0]["prev_hash"] if rows else _GENESIS_HASH
+    else:
+        rows = (
+            await db.audit_trail.find(chain_filter, sort=[("stored_at", 1)], projection=projection)
+            .limit(limit)
+            .to_list(limit)
+        )
+        windowed = False
+        expected_prev = _GENESIS_HASH
+
     checked = 0
     first_break_at: str | None = None
     first_break_id: str | None = None
 
-    async for entry in cursor:
+    for entry in rows:
         # Recompute the integrity_hash from a canonical copy of the entry
         # (excluding _id and integrity_hash themselves).
         canonical_entry = {k: v for k, v in entry.items() if k not in ("_id", "integrity_hash")}
@@ -283,6 +312,8 @@ async def verify_audit_chain(limit: int = 10000) -> dict:
         "repair_queue_backlog": repair_queue_backlog,
         "chain_head_present": chain_head_present,
         "chain_head_matches_last_event": chain_head_matches_last_event,
+        "windowed": windowed,
+        "window_size": len(rows),
     }
 
 

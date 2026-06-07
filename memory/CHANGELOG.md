@@ -1,6 +1,23 @@
 # CarryOn — Changelog
 
 
+## Jun 7, 2026 — Production-hardening patch #1798 (10 findings, surgical)
+
+All changes verified: backend boots clean (migration ran, compound index created), 12 pytest pass (`test_dav_sync_estate_scope_jun2026.py` 9/9, `test_hardening_1798.py` 3/3), frontend lint clean + DAV localStorage cache confirmed leak-free, `housekeeping.sh --strict` ALL CHECKS PASSED.
+
+1. **P1 Guardian chat history estate-scoped** (`guardian.py`): both chat_history inserts now store `estate_id`; cross-session context + same-session load filter by `user_id + estate_id` and exclude legacy rows without `estate_id`. New compound index `(user_id, estate_id, session_id, created_at)` in `db_indexes.py`.
+2. **P1 DAV/credential notes no longer cached** (`sanitizeDavForCache.js`): switched to an ALLOWLIST sanitizer — only non-sensitive display fields survive in `financial:dav` / `financial:portal` caches; `notes`, password + encrypted fields stripped. `purgeLeakedDavSecrets` now rewrites caches when notes-only leaks are present. EntityWizard drafts also strip credential `notes`. Verified: cache has 0 secret/notes fields, UI still renders them live.
+3. **P1 Audit latest-window verifier** (`audit.py`, `audit_chain_status.py`): `verify_audit_chain(latest_window=True)` walks the NEWEST 10k events (descending → reversed, seeded from the oldest-in-window `prev_hash`) so recent tampering can't hide behind the oldest-10k window. Endpoint reports `windowed`/`window_size`; keeps `repair_queue_backlog` + `chain_head_matches_last_event` in `ok`.
+4. **P2 CFP→DAV helper consistency** (`_core.py`, `bills.py`): both upsert helpers now use estate + `deleted_at: None` scoped update filters and stamp every auto-created DAV doc with `beneficiary_visibility: "private"` + `deleted_at: None`.
+5. **P2 Wallet update clears legacy plaintext** (`digital_wallet.py`): updating `additional_access` now nulls the plaintext field after encrypting; update/delete lookups scoped to `deleted_at: None` (+ estate on update). One-time startup sweep encrypts-or-clears legacy plaintext `additional_access`.
+6. **P2 No doomed offline DAV create** (`DigitalWalletPage.js`): blocks queuing a create with a toast when `estate_id` is missing instead of showing a phantom "queued".
+7. **P2 Message download-token re-auth** (`messages.py`): `video-dl` reloads the message + token user and re-runs `require_estate_actor` + `can_access_message` + `require_beneficiary_section_access` at redemption — a revoked beneficiary can no longer redeem a still-valid token.
+8. **P3 Guardian context accuracy** (`guardian.py`): messages fetched with `deleted_at: None`; message titles decrypted from `encrypted_title` (fallback to label, else omitted).
+9. **P3 Draft cleanup** (`clearLocalDrafts.js`): also clears `cfp:smartcat*` sessionStorage on logout/revocation.
+10. **SOC2 ops gate** (`ci.yml`): documented that `vars.RUN_E2E` MUST be `true` on the production/staging deploy path (change-management evidence) once E2E secrets are set.
+
+
+
 ## Jun 7, 2026 — Two-way CFP ↔ DAV deep-link navigation (enhancement)
 
 Completed the navigable loop between the Financial Picture and the Digital Access Vault:

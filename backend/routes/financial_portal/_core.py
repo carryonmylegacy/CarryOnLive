@@ -567,7 +567,10 @@ async def _upsert_dav_for_cfp_item(
                 update_doc["login_username"] = login_username
             if enc_password is not None:
                 update_doc["encrypted_password"] = enc_password
-            await db.digital_wallet.update_one({"id": existing_dav_id}, {"$set": update_doc})
+            # audit #1798 P2 — estate + not-deleted scoped update filter.
+            await db.digital_wallet.update_one(
+                {"id": existing_dav_id, "estate_id": estate_id, "deleted_at": None}, {"$set": update_doc}
+            )
             return existing_dav_id
         # linked row was deleted / cross-estate — fall through and recreate.
 
@@ -583,6 +586,8 @@ async def _upsert_dav_for_cfp_item(
         "assigned_beneficiary_id": None,
         "assigned_beneficiary_name": None,
         "category": category,
+        # audit #1798 P2 — auto-created rows are explicitly private + not-deleted.
+        "beneficiary_visibility": "private",
         "source_type": source_type,
         "source_id": source_id,
         "auto_created_from": {"source": source_type, "item_id": item_id},

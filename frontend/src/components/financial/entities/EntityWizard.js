@@ -195,11 +195,12 @@ export default function EntityWizard({
       name, state, notes, showMore,
       einLast4, formationDate, taxElection, registeredAgent,
       linkedDocIds, grossAssets, grossDebts,
-      // audit d5a54f5e P1 — never persist DAV secrets in the draft. Keep
-      // account_name + login_username so the draft restores meaningfully,
-      // but strip password + additional_access from every credential row.
+      // audit d5a54f5e P1 / #1798 P1 — never persist DAV secrets OR notes in
+      // the draft. Keep account_name + login_username so the draft restores
+      // meaningfully, but strip password, additional_access, and notes (notes
+      // often hold recovery hints / access instructions).
       credentials: (Array.isArray(credentials) ? credentials : []).map((c) => {
-        const { password, additional_access, ...rest } = c || {};
+        const { password, additional_access, notes, ...rest } = c || {};
         return rest;
       }),
       extFirst, extLast, extNotes, externalKind,

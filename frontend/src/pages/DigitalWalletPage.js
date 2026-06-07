@@ -503,6 +503,14 @@ const WalletEntryPanel = ({ entry, beneficiaries, existingEntries, onClose, onSa
       const currentEstateId = entry?.estate_id
         || (typeof localStorage !== 'undefined' && localStorage.getItem('selected_estate_id'))
         || undefined;
+      // audit #1798 P2 — never queue a DAV create the backend will reject for
+      // a missing estate_id (the user would see a phantom "queued" save that
+      // can never sync). Stop here with a clear message instead.
+      if (!entry && !currentEstateId) {
+        toast.error('Select an estate before adding a credential.');
+        setSaving(false);
+        return;
+      }
       const data = {
         estate_id: currentEstateId,
         account_name: name, login_username: login,

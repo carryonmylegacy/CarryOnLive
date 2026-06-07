@@ -220,6 +220,23 @@ async def download_video_direct(video_id: str, dt: str = QueryParam(...)):
         raise HTTPException(status_code=403, detail="Token does not match video")
 
     estate_id = token_data["estate_id"]
+
+    # audit #1798 P2 — RE-AUTHORIZE at redemption. A valid token is NOT a
+    # standing grant: the user's access can be revoked within the token's
+    # lifetime (beneficiary removed, message visibility changed, message
+    # deleted). Reload the message + the token's user and re-run the SAME
+    # access checks used at mint time before serving decrypted media.
+    message = await db.messages.find_one({"id": token_data.get("message_id")}, {"_id": 0})
+    if not message or message.get("deleted_at"):
+        raise HTTPException(status_code=404, detail="Message not found")
+    token_user = await db.users.find_one({"id": token_data.get("user_id")}, {"_id": 0})
+    if not token_user:
+        raise HTTPException(status_code=401, detail="Download token user no longer exists")
+    actor = await require_estate_actor(estate_id, token_user, allow_staff=True)
+    if not can_access_message(message, actor):
+        raise HTTPException(status_code=403, detail="Access denied")
+    await require_beneficiary_section_access(actor, "messages")
+
     video_storage_key = f"estates/{estate_id}/{video_id}"
     try:
         encrypted_blob = await storage.download(video_storage_key)
