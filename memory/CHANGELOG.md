@@ -1,6 +1,20 @@
 # CarryOn — Changelog
 
 
+## Jun 7, 2026 — Audit `50f324c` fixes (voice playback, deleted-message pathways, offline-chip visibility) — VERIFIED
+
+Audited main commit `50f324c9…`. Housekeeping `--strict` ALL CHECKS PASSED (0 WARN/0 FAIL, no regression); frontend compiles; lint clean on touched files.
+
+1. **P1 — Voice milestone playback storage-key mismatch** (`backend/routes/messages.py`): voice blobs are written estate-scoped (`storage.upload(...) → estates/{estate_id}/{voice_id}`, for both inline creates and chunked uploads) but `GET /api/messages/voice/{voice_id}` downloaded `voices/{voice_id}` → every newly-created voice milestone 404'd even when authorized. Fixed `get_message_voice` to download `estates/{estate_id}/{voice_id}` first, falling back to the legacy `voices/{voice_id}` only for old objects. Also fixed the cleanup keys to estate-scoped (with legacy fallback): `remove_voice`/`remove_video` in `PUT /messages/{id}`, and `delete_message` now cleans BOTH video and voice blobs (previously only video, at the wrong `videos/` key). `uploads_chunked.py` already wrote the correct estate-scoped key — no change needed.
+2. **P2 — Deleted milestone messages still reachable/mutable on privileged routes** (`backend/routes/messages.py`): owner/admin/operator bypass `can_access_message`, so 5 routes that fetched by `{"id": message_id}` without a deleted filter could still serve/modify soft-deleted messages. Added `{"deleted_at": None}` (→ 404) to: `GET /messages/{id}/attachment`, `GET /messages/{id}/download`, `PUT /messages/{id}`, `POST /messages/{id}/upload-video`, `POST /messages/{id}/upload-attachment`. Token-redemption + direct video/voice already filtered `deleted_at` — unchanged.
+3. **P2 — Offline outbox queued-while-flag-off rows were invisible/unresolvable** (`frontend/src/offline/outbox.js`, `frontend/src/components/PendingSyncChip.js`): `enqueue()` deliberately queues writes when the device is truly offline even with Offline Mode OFF, but `listPending`/`listConflicts`/`retryRow`/`removeRow`/`resolveConflict` early-returned on `!isOfflineEnabled()` and `PendingSyncChip` zeroed counts when the flag was off — so a failed/conflicted safety-path write became invisible and unresolvable. Made all those helpers flag-agnostic (matching `pendingUploadsRepo`'s documented policy) and stopped the chip from zeroing counts / gating the conflict auto-open on the flag.
+
+**Regression tests (committable, credential-free, env-driven; skip when unset):**
+- `backend/tests/regression/test_message_media_pathways.py` — voice playback 200; deleted text download/attachment download/edit/upload-attachment all 404. **5/5 PASS** on preview.
+- Issue 3 verified by testing agent (iteration_171, **3/3 PASS**): with Offline Mode OFF, injected pending+conflict outbox rows surface the chip + panel and allow resolve/remove; outbox returns to empty.
+
+
+
 ## Jun 7, 2026 — Audit `3be1d2f` remaining fixes (outbox universal-encryption, test reconciliation, iOS triage)
 
 Audited main commit `3be1d2ffa6…`. Housekeeping `--strict` ALL CHECKS PASSED; frontend compiles; lint clean on all touched files.
