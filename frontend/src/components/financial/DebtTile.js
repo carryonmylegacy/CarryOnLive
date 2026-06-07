@@ -56,7 +56,7 @@ const DebtTile = ({ debt, categoryLabels, beneficiaries, onEdit, onDelete, onDes
                   color: statusColors[debt.status] || '#64748b',
                 }}>{debt.status.replace(/_/g, ' ')}</span>
               )}
-              <DavSyncedPill linked={!!debt.dav_entry_id} testId={`debt-dav-pill-${debt.id}`} />
+              <DavSyncedPill linked={!!debt.dav_entry_id} davEntryId={debt.dav_entry_id} testId={`debt-dav-pill-${debt.id}`} />
             </div>
           </div>
           <div className="flex items-center gap-1 flex-shrink-0">

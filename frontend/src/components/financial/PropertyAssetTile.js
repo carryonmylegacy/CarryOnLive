@@ -89,7 +89,7 @@ const PropertyAssetTile = ({ asset, beneficiaries, onEdit, onDelete, onDesignati
                   color: statusColors[asset.status] || '#64748b',
                 }}>{asset.status}</span>
               )}
-              <DavSyncedPill linked={!!asset.dav_entry_id} testId={`property-dav-pill-${asset.id}`} />
+              <DavSyncedPill linked={!!asset.dav_entry_id} davEntryId={asset.dav_entry_id} testId={`property-dav-pill-${asset.id}`} />
             </div>
           </div>
           <div className="flex items-center gap-1 flex-shrink-0">

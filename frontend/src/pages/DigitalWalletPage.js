@@ -49,6 +49,25 @@ const DigitalWalletPage = () => {
   const [visiblePasswords, setVisiblePasswords] = useState({});
   const [showReturnPopup, setShowReturnPopup] = useState(false);
   const autoOpenedRef = useRef(false);
+  // Deep-link highlight — when arriving from a CFP "Login in DAV" pill
+  // (/digital-wallet?entry=<id>), scroll that credential into view and pulse a
+  // gold ring around it for a moment so the benefactor sees exactly which row.
+  const [highlightId, setHighlightId] = useState(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const eid = params.get('entry');
+    if (eid) setHighlightId(eid);
+  }, [location.search]);
+
+  useEffect(() => {
+    if (loading || !highlightId) return undefined;
+    const el = document.getElementById(`dav-entry-${highlightId}`);
+    if (!el) return undefined;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    const t = setTimeout(() => setHighlightId(null), 2600);
+    return () => clearTimeout(t);
+  }, [loading, highlightId, entries]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { fetchData(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -299,7 +318,8 @@ const DigitalWalletPage = () => {
                 {catEntries.map(entry => {
                   const isEditing = editEntry?.id === entry.id;
                   return (
-                  <Card key={entry.id} className="glass-card mb-2" data-testid={`wallet-entry-${entry.id}`}>
+                  <Card key={entry.id} id={`dav-entry-${entry.id}`} className="glass-card mb-2 transition-all duration-500" data-testid={`wallet-entry-${entry.id}`}
+                    style={entry.id === highlightId ? { boxShadow: '0 0 0 2px var(--gold), 0 0 24px rgba(var(--gold-rgb), 0.45)' } : undefined}>
                     <CardContent className="p-4">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">

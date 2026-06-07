@@ -3,7 +3,8 @@
 
 ## Jun 7, 2026 — "Login in DAV" reassurance pill on CFP tiles (enhancement)
 
-New shared `DavSyncedPill.js` renders a subtle green "✓ Login in DAV" pill on Bill/Account/Debt/Property tiles whenever the item links a DAV credential (`item.dav_entry_id`). Gives benefactors instant at-a-glance confirmation the beneficiary login was saved to the vault. Verified visually (both account tiles show the pill) + `housekeeping.sh --strict` EXIT 0 (font bumped 10px→11px for the iOS min-font gate).
+New shared `DavSyncedPill.js` renders a subtle green "✓ Login in DAV" pill on Bill/Account/Debt/Property tiles whenever the item links a DAV credential (`item.dav_entry_id`). The pill is a one-tap DEEP-LINK: clicking it routes to `/digital-wallet?entry=<id>`, where `DigitalWalletPage` scrolls the matching credential into view and pulses a gold ring around it for ~2.6s. Verified visually (pill renders on tiles; deep-link highlights the exact entry) + `housekeeping.sh --strict` EXIT 0 (11px font for the iOS gate).
+
 
 
 

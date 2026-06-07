@@ -88,7 +88,7 @@ const BillTile = ({ bill, categoryLabels, beneficiaries, onEdit, onDelete, onDes
               )}
               {bill.amount != null && <span className="text-[var(--t5)] text-xs">·</span>}
               <span className="text-xs font-bold" style={{ color: due.color }}>{due.text}</span>
-              <DavSyncedPill linked={!!bill.dav_entry_id} testId={`bill-dav-pill-${bill.id}`} />
+              <DavSyncedPill linked={!!bill.dav_entry_id} davEntryId={bill.dav_entry_id} testId={`bill-dav-pill-${bill.id}`} />
             </div>
           </div>
           <div className="flex items-center gap-1 flex-shrink-0">
