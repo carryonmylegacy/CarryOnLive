@@ -376,14 +376,20 @@ async def audit_log(
     details=None,
     **kwargs,
 ):
-    """Backward-compatible wrapper for legacy audit_log calls."""
+    """Backward-compatible wrapper for legacy audit_log calls. Forwards actor +
+    request context (actor_email / actor_role / ip_address / session_id /
+    category / severity) when callers supply them, so audit evidence is richer
+    without touching the hash-chained log_audit_event core. (audit #5391e8b #9)"""
     await log_audit_event(
         actor_id=user_id,
-        actor_email="",
-        actor_role="",
+        actor_email=kwargs.get("actor_email", ""),
+        actor_role=kwargs.get("actor_role", ""),
         action=action,
-        category="system",
+        category=kwargs.get("category", "system"),
         resource_type=resource_type,
         resource_id=resource_id,
+        ip_address=kwargs.get("ip_address", ""),
+        severity=kwargs.get("severity", "info"),
+        session_id=kwargs.get("session_id", ""),
         details={**(details or {}), "estate_id": estate_id},
     )

@@ -195,25 +195,73 @@ jobs:
           retention-days: 14
 
   deploy-gate:
-    name: SOC2 Deploy Gate (E2E required on main)
+    name: SOC2 Deploy Gate (all required checks green on main)
     runs-on: ubuntu-latest
-    needs: [e2e-smoke]
-    # audit #d0c48d7 — explicit change-management gate (SOC2 CC8.1). On the
-    # production/staging release branch (main, push), a build CANNOT be treated
-    # as verified unless the E2E smoke is configured (RUN_E2E=true) AND green.
-    # `always()` ensures this gate still runs (and fails) even when e2e-smoke is
-    # skipped because RUN_E2E was never enabled.
+    needs: [secret-scan, backend-lint, frontend-lint, backend-tests, frontend-build, e2e-smoke]
+    # audit #d0c48d7 / #5391e8b #8 — explicit change-management gate (SOC2
+    # CC8.1). On the production/staging release branch (main, push), a build
+    # CANNOT be treated as verified unless EVERY required check — secret scan,
+    # backend/frontend lint, backend tests, frontend build, and the E2E smoke —
+    # is green AND E2E change-management evidence (RUN_E2E=true) is present.
+    # `always()` ensures the gate still runs (and fails) when an upstream job is
+    # skipped or failed. This job is the single status check repo admins mark
+    # REQUIRED in branch protection (see docs/DEPLOY_PROTECTION_SETTINGS.md).
     if: ${{ always() && github.ref == 'refs/heads/main' && github.event_name == 'push' }}
     steps:
-      - name: Require a green E2E smoke on the release branch
+      - name: Require every required check to be green
         run: |
+          fail=0
+          check() {
+            if [ "$2" != "success" ]; then
+              echo "::error::SOC2 deploy gate — required check '$1' is '$2' (must be 'success')."
+              fail=1
+            else
+              echo "✅ $1: success"
+            fi
+          }
+          check "secret-scan"    "${{ needs.secret-scan.result }}"
+          check "backend-lint"   "${{ needs.backend-lint.result }}"
+          check "frontend-lint"  "${{ needs.frontend-lint.result }}"
+          check "backend-tests"  "${{ needs.backend-tests.result }}"
+          check "frontend-build" "${{ needs.frontend-build.result }}"
           if [ "${{ vars.RUN_E2E }}" != "true" ]; then
-            echo "::error::SOC2 deploy gate FAILED — vars.RUN_E2E is not 'true'. There is no end-to-end change-management evidence for this main build. Set the repo/org variable RUN_E2E=true and configure the E2E_* secrets (E2E_BASE_URL, E2E_API_URL, E2E_ADMIN_EMAIL, E2E_ADMIN_PASSWORD)."
-            exit 1
+            echo "::error::SOC2 deploy gate FAILED — vars.RUN_E2E is not 'true'. No end-to-end change-management evidence for this main build. Set repo/org variable RUN_E2E=true and the E2E_* secrets (E2E_BASE_URL, E2E_API_URL, E2E_ADMIN_EMAIL, E2E_ADMIN_PASSWORD)."
+            fail=1
+          elif [ "${{ needs.e2e-smoke.result }}" != "success" ]; then
+            echo "::error::SOC2 deploy gate FAILED — E2E smoke result=${{ needs.e2e-smoke.result }} (must be 'success')."
+            fail=1
+          else
+            echo "✅ e2e-smoke: success"
           fi
-          if [ "${{ needs.e2e-smoke.result }}" != "success" ]; then
-            echo "::error::SOC2 deploy gate FAILED — E2E smoke did not pass (result=${{ needs.e2e-smoke.result }}). A production/staging change cannot be treated as verified without a green end-to-end smoke."
-            exit 1
-          fi
-          echo "✅ SOC2 deploy gate satisfied: E2E smoke is enabled and green on main."
+          if [ "$fail" = "1" ]; then exit 1; fi
+          echo "✅ SOC2 deploy gate satisfied — all required checks green on main."
+      - name: Write deploy evidence (SOC2 CC8.1)
+        if: always()
+        run: |
+          mkdir -p deploy-evidence
+          cat > deploy-evidence/deploy-gate.json <<EOF
+          {
+            "commit": "${{ github.sha }}",
+            "ref": "${{ github.ref }}",
+            "run_id": "${{ github.run_id }}",
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "checks": {
+              "secret_scan": "${{ needs.secret-scan.result }}",
+              "backend_lint": "${{ needs.backend-lint.result }}",
+              "frontend_lint": "${{ needs.frontend-lint.result }}",
+              "backend_tests": "${{ needs.backend-tests.result }}",
+              "frontend_build": "${{ needs.frontend-build.result }}",
+              "e2e_smoke": "${{ needs.e2e-smoke.result }}",
+              "run_e2e_var": "${{ vars.RUN_E2E }}"
+            }
+          }
+          EOF
+          cat deploy-evidence/deploy-gate.json
+      - name: Upload deploy evidence artifact (90-day retention)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: soc2-deploy-evidence
+          path: deploy-evidence/
+          retention-days: 90
 

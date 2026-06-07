@@ -6,30 +6,77 @@ Provides token revocation capability so that:
 - Admin can revoke compromised tokens
 - Tokens are checked against blacklist on every authenticated request
 
-Uses MongoDB with TTL index for automatic cleanup.
+SOC2 (audit #5391e8b #4): we NEVER persist the raw JWT. Each revoked token is
+stored as a SHA-256 hash plus its `jti` (the token's session_id) and an
+`expires_at` BSON Date that drives the TTL index (`db_indexes.py` →
+token_blacklist.expires_at, expireAfterSeconds=0) so rows self-purge once the
+token would have expired anyway.
 """
 
-from datetime import datetime, timezone
+import hashlib
+from datetime import datetime, timedelta, timezone
 
-from config import db
+import jwt
+
+from config import JWT_ALGORITHM, JWT_SECRET, db
+
+# Fallback TTL if a token can't be decoded, so the row is still eventually reaped.
+_DEFAULT_TTL_DAYS = 2
+
+
+def _token_hash(token: str) -> str:
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+
+def _token_claims(token: str) -> dict:
+    """Best-effort decode (ignoring expiry) to extract exp + session_id."""
+    try:
+        return jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM], options={"verify_exp": False})
+    except Exception:
+        try:
+            return jwt.decode(token, options={"verify_signature": False})
+        except Exception:
+            return {}
 
 
 async def blacklist_token(token: str, user_id: str, reason: str = "logout"):
-    """Add a token to the blacklist."""
-    await db.token_blacklist.insert_one(
+    """Revoke a single token. Stores only a SHA-256 hash + jti + expiry."""
+    claims = _token_claims(token)
+    exp = claims.get("exp")
+    if isinstance(exp, (int, float)):
+        expires_at = datetime.fromtimestamp(exp, tz=timezone.utc)
+    else:
+        expires_at = datetime.now(timezone.utc) + timedelta(days=_DEFAULT_TTL_DAYS)
+    token_hash = _token_hash(token)
+    await db.token_blacklist.update_one(
+        {"token_hash": token_hash},
         {
-            "token": token,
-            "user_id": user_id,
-            "reason": reason,
-            "blacklisted_at": datetime.now(timezone.utc).isoformat(),
-        }
+            "$set": {
+                "token_hash": token_hash,
+                "jti": claims.get("session_id") or "",
+                "user_id": user_id,
+                "reason": reason,
+                "blacklisted_at": datetime.now(timezone.utc).isoformat(),
+                "expires_at": expires_at,  # BSON Date → drives the TTL index
+            }
+        },
+        upsert=True,
     )
 
 
 async def is_token_blacklisted(token: str) -> bool:
-    """Check if a token has been revoked."""
-    entry = await db.token_blacklist.find_one({"token": token})
+    """Fail-closed revocation check. Matches new hash rows AND any legacy
+    raw-token rows that haven't been purged yet."""
+    token_hash = _token_hash(token)
+    entry = await db.token_blacklist.find_one({"$or": [{"token_hash": token_hash}, {"token": token}]})
     return entry is not None
+
+
+async def purge_legacy_raw_token_rows() -> int:
+    """One-shot migration: drop pre-hash rows that stored the raw JWT in
+    `token`. The hash rows + TTL index supersede them. Idempotent."""
+    result = await db.token_blacklist.delete_many({"token": {"$exists": True}})
+    return result.deleted_count
 
 
 async def revoke_all_user_tokens(user_id: str, reason: str = "password_change"):

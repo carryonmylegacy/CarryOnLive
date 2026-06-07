@@ -101,10 +101,12 @@ async def data_retention_scheduler():
             result = await _db.otp_codes.delete_many({"created_at": {"$lt": hour_ago}})
             purged_otps = result.deleted_count
 
-            # Purge expired token blacklist entries older than 30 days
-            month_ago = (now - timedelta(days=30)).isoformat()
-            result = await _db.token_blacklist.delete_many({"revoked_at": {"$lt": month_ago}})
-            purged_tokens = result.deleted_count
+            # Token blacklist: the TTL index on `expires_at` auto-reaps expired
+            # rows. Additionally purge any legacy raw-token rows (pre hash-only
+            # schema) as a one-shot migration. (audit #5391e8b #4)
+            from services.token_blacklist import purge_legacy_raw_token_rows
+
+            purged_tokens = await purge_legacy_raw_token_rows()
 
             total = purged_trust + purged_failures + purged_otps + purged_tokens
             if total > 0:

@@ -215,6 +215,7 @@ class S3Storage(StorageBackend):
             Key=key,
             Body=blob,
             ContentType=content_type,
+            ServerSideEncryption="AES256",  # SSE-S3 — encrypt raw uploads at rest (audit #5391e8b #5)
         )
         logger.info(f"S3Storage: uploaded {len(blob)} bytes to s3://{self.bucket}/{key}")
         return key

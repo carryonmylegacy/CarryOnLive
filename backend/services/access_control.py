@@ -256,11 +256,15 @@ async def require_beneficiary_section_access(actor: dict[str, Any], section_key:
 
 def can_access_document(document: dict[str, Any], actor: dict[str, Any], *, phase: str | None = None) -> bool:
     """True when the actor can access this SDV document."""
+    # FAIL-CLOSED FIRST (audit #5391e8b #1): a soft-deleted document is
+    # accessible to NO ONE — not even the estate owner, an admin, or an
+    # operator. This check MUST precede the owner/admin bypass below so that
+    # deletion is final across every SDV pathway.
+    if document.get("deleted_at"):
+        return False
     if actor.get("is_owner") or actor.get("is_admin"):
         return True
     if not actor.get("is_beneficiary"):
-        return False
-    if document.get("deleted_at"):
         return False
     if not _designation_matches(document.get("designated_beneficiaries"), actor):
         return False

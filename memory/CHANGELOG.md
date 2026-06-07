@@ -1,6 +1,21 @@
 # CarryOn — Changelog
 
 
+## Jun 7, 2026 — Audit `5391e8b` SOC2 hardening — Batch A (#1,#4,#5,#9) + #3 doc + #8 — VERIFIED
+
+Owner-approved sequencing: Batch A surgical fixes done now; #3 accepted-risk; #8 workflow+settings. Batch B (#2 operator least-privilege, #7 prod-readiness gates, #6 deletion finality) is the next focused pass.
+
+1. **#1 SDV deleted-doc finality** (`services/access_control.py`, `routes/documents.py`): `can_access_document()` now checks `document.deleted_at` **first** (fail-closed) before any owner/admin/operator bypass. All 11 direct `{document_id}` lookups in documents.py (download×2, preview×2, lock, unlock, remove-lock, update/designation, delete, pin-offline, ai-eligible) now query `{"deleted_at": None}` → 404 on deleted. Tests: `test_sdv_deleted_doc_finality.py` (pure access-control denial for owner/admin/operator/beneficiary + integration: upload→delete→download/preview/update/pin/ai-eligible all 404). **PASS**.
+4. **#4 Token blacklist retention** (`services/token_blacklist.py`, `schedulers.py`): stop storing raw JWTs — now stores `token_hash` (SHA-256) + `jti` (session_id) + `expires_at` (BSON Date driving the existing TTL index). `is_token_blacklisted()` matches hash rows AND legacy raw-token rows during transition; `purge_legacy_raw_token_rows()` migration wired into the scheduler (replacing the dead `revoked_at` purge). Tests: `test_token_blacklist_hash.py` (hash≠raw, claims extraction, DB round-trip proves no `token` field stored). **PASS**.
+5. **#5 S3 raw-upload encryption** (`services/storage.py`): `S3Storage.upload_raw()` now sets `ServerSideEncryption="AES256"` (matches `upload()`). Static guard `test_s3_sse_guard.py` parses storage.py and asserts every `put_object` requests SSE. **PASS**.
+9. **#9 Audit evidence quality** (`services/audit.py`): the legacy `audit_log()` wrapper now forwards `actor_email/actor_role/ip_address/session_id/category/severity` from kwargs into the hash-chained `log_audit_event()` (chain architecture untouched), enabling richer evidence as call sites supply context.
+3. **#3 Offline cache encryption — ACCEPTED RISK** (owner decision): documented in `docs/SOC2_RISK_REGISTER.md` (RISK-001) with rationale (instant-paint regression + localStorage-derived key = marginal gain) and compensating controls (no raw secrets cached, logout wipes caches, outbox already encrypted).
+8. **#8 Deploy evidence**: hardened `deploy-gate` into a single aggregate gate (`needs` secret-scan + both lints + backend-tests + frontend-build + e2e-smoke; fails main unless all green AND RUN_E2E=true) + writes a 90-day `soc2-deploy-evidence` artifact. Owner dashboard settings (branch protection / Vercel / Render) documented in `docs/DEPLOY_PROTECTION_SETTINGS.md` (code can't set these).
+
+Gates: 16/16 backend regression tests PASS; backend healthy (login OK after blacklist rewrite); ci.yml YAML valid; housekeeping `--strict` ALL CHECKS PASSED (0 WARN/0 FAIL, no regression); lint clean.
+
+
+
 ## Jun 7, 2026 — Audit `7d6af7c` P3 polish (attachment cleanup key + beneficiary voice unavailable state)
 
 1. **P3 — attachment orphan-blob cleanup** (`backend/routes/messages.py`): attachment blobs are stored estate-scoped (`estates/{estate_id}/{attachment_id}`) but `remove_attachment` deleted `attachments/{attachment_id}` (a no-op that left encrypted orphan blobs). Fixed `remove_attachment` to delete the estate-scoped key (legacy `attachments/` fallback), and added attachment to the `delete_message` best-effort cleanup loop (now covers video + voice + attachment, estate-scoped with legacy fallbacks). No access-control impact (routes already require `deleted_at: None` / valid `attachment_url`). Regression suite `test_message_media_pathways.py` still **5/5 PASS** (deleted attachment still 404s; delete still succeeds).

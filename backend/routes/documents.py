@@ -582,7 +582,7 @@ async def unlock_document(
     current_user: dict = Depends(get_current_user),
 ):
     """Unlock a protected document"""
-    document = await db.documents.find_one({"id": document_id}, {"_id": 0})
+    document = await db.documents.find_one({"id": document_id, "deleted_at": None}, {"_id": 0})
     if not document:
         raise HTTPException(status_code=404, detail="Document not found")
 
@@ -657,7 +657,7 @@ async def lock_document(
     current_user: dict = Depends(get_current_user),
 ):
     """Set a password lock on an existing document."""
-    document = await db.documents.find_one({"id": document_id}, {"_id": 0})
+    document = await db.documents.find_one({"id": document_id, "deleted_at": None}, {"_id": 0})
     if not document:
         raise HTTPException(status_code=404, detail="Document not found")
 
@@ -713,7 +713,7 @@ async def remove_document_lock(
     current_user: dict = Depends(get_current_user),
 ):
     """Remove the password lock from a document (owner only, no password needed)."""
-    document = await db.documents.find_one({"id": document_id}, {"_id": 0})
+    document = await db.documents.find_one({"id": document_id, "deleted_at": None}, {"_id": 0})
     if not document:
         raise HTTPException(status_code=404, detail="Document not found")
 
@@ -746,7 +746,7 @@ async def download_document(
     current_user: dict = Depends(get_current_user),
 ):
     """Download a document (decrypted)"""
-    document = await db.documents.find_one({"id": document_id}, {"_id": 0})
+    document = await db.documents.find_one({"id": document_id, "deleted_at": None}, {"_id": 0})
     if not document:
         raise HTTPException(status_code=404, detail="Document not found")
 
@@ -816,7 +816,7 @@ async def download_document(
         # Lazy migration: move legacy docs to cloud storage on first access
         if document.get("file_data") and not document.get("storage_key"):
             await _migrate_doc_to_cloud(document_id, document)
-            document = await db.documents.find_one({"id": document_id}, {"_id": 0})
+            document = await db.documents.find_one({"id": document_id, "deleted_at": None}, {"_id": 0})
 
         estate_salt = await get_estate_salt(document["estate_id"])
 
@@ -883,7 +883,7 @@ async def preview_document(
     current_user: dict = Depends(get_current_user),
 ):
     """Preview a document (for PDFs and images)"""
-    document = await db.documents.find_one({"id": document_id}, {"_id": 0})
+    document = await db.documents.find_one({"id": document_id, "deleted_at": None}, {"_id": 0})
     if not document:
         raise HTTPException(status_code=404, detail="Document not found")
 
@@ -937,7 +937,7 @@ async def preview_document(
     try:
         if document.get("file_data") and not document.get("storage_key"):
             await _migrate_doc_to_cloud(document_id, document)
-            document = await db.documents.find_one({"id": document_id}, {"_id": 0})
+            document = await db.documents.find_one({"id": document_id, "deleted_at": None}, {"_id": 0})
 
         estate_salt = await get_estate_salt(document["estate_id"])
 
@@ -987,7 +987,7 @@ async def delete_document(document_id: str, current_user: dict = Depends(get_cur
     """Delete a document from the vault."""
     await require_benefactor_role(current_user, "delete documents")
 
-    document = await db.documents.find_one({"id": document_id}, {"_id": 0})
+    document = await db.documents.find_one({"id": document_id, "deleted_at": None}, {"_id": 0})
     if not document:
         raise HTTPException(status_code=404, detail="Document not found")
 
@@ -1032,7 +1032,7 @@ async def update_document(
     """Update document metadata (name, category, notes)"""
     await require_benefactor_role(current_user, "update documents")
 
-    doc = await db.documents.find_one({"id": document_id}, {"_id": 0})
+    doc = await db.documents.find_one({"id": document_id, "deleted_at": None}, {"_id": 0})
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
 
@@ -1098,7 +1098,7 @@ async def set_document_pinned_offline(
     any document they own. Locked documents cannot be pinned (they
     require a per-session unlock and the blob would be unusable
     offline)."""
-    doc = await db.documents.find_one({"id": document_id}, {"_id": 0})
+    doc = await db.documents.find_one({"id": document_id, "deleted_at": None}, {"_id": 0})
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
 
@@ -1160,7 +1160,7 @@ async def set_document_ai_eligible(
     Only the estate owner (benefactor) can flag AI eligibility.
     Beneficiaries cannot toggle it on documents shared with them.
     """
-    doc = await db.documents.find_one({"id": document_id}, {"_id": 0})
+    doc = await db.documents.find_one({"id": document_id, "deleted_at": None}, {"_id": 0})
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
 
