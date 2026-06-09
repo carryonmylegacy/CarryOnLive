@@ -49,7 +49,7 @@ CORS_RULE = {
                 "https://carryon.us",
                 "https://www.carryon.us",
                 "https://app.carryon.us",
-                "https://trustee-platform.preview.emergentagent.com",
+                "https://deploy-gate-strict.preview.emergentagent.com",
                 "capacitor://localhost",
                 "ionic://localhost",
             ],

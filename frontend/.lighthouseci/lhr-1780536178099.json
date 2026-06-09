@@ -1567,7 +1567,7 @@
             "entity": "localhost"
           },
           {
-            "url": "https://trustee-platform.preview.emergentagent.com/api/public/site-content",
+            "url": "https://deploy-gate-strict.preview.emergentagent.com/api/public/site-content",
             "sessionTargetType": "page",
             "protocol": "h2",
             "rendererStartTime": 626.2579999566078,
@@ -1583,7 +1583,7 @@
             "entity": "emergentagent.com"
           },
           {
-            "url": "https://trustee-platform.preview.emergentagent.com/api/public/site-content",
+            "url": "https://deploy-gate-strict.preview.emergentagent.com/api/public/site-content",
             "sessionTargetType": "page",
             "protocol": "h2",
             "rendererStartTime": 626.8659999966621,
@@ -1599,7 +1599,7 @@
             "entity": "emergentagent.com"
           },
           {
-            "url": "https://trustee-platform.preview.emergentagent.com/api/public/site-content",
+            "url": "https://deploy-gate-strict.preview.emergentagent.com/api/public/site-content",
             "sessionTargetType": "page",
             "protocol": "h2",
             "rendererStartTime": 627.1639999747276,
@@ -1615,7 +1615,7 @@
             "entity": "emergentagent.com"
           },
           {
-            "url": "https://trustee-platform.preview.emergentagent.com/api/public/site-content",
+            "url": "https://deploy-gate-strict.preview.emergentagent.com/api/public/site-content",
             "sessionTargetType": "page",
             "protocol": "h2",
             "rendererStartTime": 627.5770000219345,
@@ -1648,7 +1648,7 @@
             "entity": "vercel-scripts.com"
           },
           {
-            "url": "https://trustee-platform.preview.emergentagent.com/api/health",
+            "url": "https://deploy-gate-strict.preview.emergentagent.com/api/health",
             "sessionTargetType": "page",
             "protocol": "h2",
             "rendererStartTime": 616.1159999966621,
@@ -1682,7 +1682,7 @@
             "entity": "localhost"
           },
           {
-            "url": "https://trustee-platform.preview.emergentagent.com/api/health",
+            "url": "https://deploy-gate-strict.preview.emergentagent.com/api/health",
             "sessionTargetType": "page",
             "protocol": "h2",
             "rendererStartTime": 621.5029999613762,
@@ -1699,7 +1699,7 @@
             "entity": "emergentagent.com"
           },
           {
-            "url": "https://trustee-platform.preview.emergentagent.com/api/public/site-content",
+            "url": "https://deploy-gate-strict.preview.emergentagent.com/api/public/site-content",
             "sessionTargetType": "page",
             "protocol": "h2",
             "rendererStartTime": 625.7590000033379,
@@ -1716,7 +1716,7 @@
             "entity": "emergentagent.com"
           },
           {
-            "url": "https://trustee-platform.preview.emergentagent.com/api/public/site-content",
+            "url": "https://deploy-gate-strict.preview.emergentagent.com/api/public/site-content",
             "sessionTargetType": "page",
             "protocol": "h2",
             "rendererStartTime": 626.4049999713898,
@@ -1733,7 +1733,7 @@
             "entity": "emergentagent.com"
           },
           {
-            "url": "https://trustee-platform.preview.emergentagent.com/api/public/site-content",
+            "url": "https://deploy-gate-strict.preview.emergentagent.com/api/public/site-content",
             "sessionTargetType": "page",
             "protocol": "h2",
             "rendererStartTime": 626.8000000119209,
@@ -1750,7 +1750,7 @@
             "entity": "emergentagent.com"
           },
           {
-            "url": "https://trustee-platform.preview.emergentagent.com/api/public/site-content",
+            "url": "https://deploy-gate-strict.preview.emergentagent.com/api/public/site-content",
             "sessionTargetType": "page",
             "protocol": "h2",
             "rendererStartTime": 627.1500000357628,
@@ -1784,7 +1784,7 @@
             "entity": "localhost"
           },
           {
-            "url": "https://trustee-platform.preview.emergentagent.com/api/public/site-content",
+            "url": "https://deploy-gate-strict.preview.emergentagent.com/api/public/site-content",
             "sessionTargetType": "page",
             "protocol": "h2",
             "rendererStartTime": 707.3889999985695,
@@ -1801,7 +1801,7 @@
             "entity": "emergentagent.com"
           },
           {
-            "url": "https://trustee-platform.preview.emergentagent.com/api/public/site-content",
+            "url": "https://deploy-gate-strict.preview.emergentagent.com/api/public/site-content",
             "sessionTargetType": "page",
             "protocol": "h2",
             "rendererStartTime": 707.9130000472069,
@@ -1818,7 +1818,7 @@
             "entity": "emergentagent.com"
           },
           {
-            "url": "https://trustee-platform.preview.emergentagent.com/api/public/site-content",
+            "url": "https://deploy-gate-strict.preview.emergentagent.com/api/public/site-content",
             "sessionTargetType": "page",
             "protocol": "h2",
             "rendererStartTime": 708.4490000009537,
@@ -1835,7 +1835,7 @@
             "entity": "emergentagent.com"
           },
           {
-            "url": "https://trustee-platform.preview.emergentagent.com/api/public/site-content",
+            "url": "https://deploy-gate-strict.preview.emergentagent.com/api/public/site-content",
             "sessionTargetType": "page",
             "protocol": "h2",
             "rendererStartTime": 708.8779999613762,
@@ -2123,7 +2123,7 @@
             "entity": "Google Fonts"
           },
           {
-            "url": "https://trustee-platform.preview.emergentagent.com/api/share-cards/voices/public?limit=24",
+            "url": "https://deploy-gate-strict.preview.emergentagent.com/api/share-cards/voices/public?limit=24",
             "sessionTargetType": "page",
             "protocol": "h2",
             "rendererStartTime": 1467.6590000391006,
@@ -2139,7 +2139,7 @@
             "entity": "emergentagent.com"
           },
           {
-            "url": "https://trustee-platform.preview.emergentagent.com/api/share-cards/voices/public?limit=24",
+            "url": "https://deploy-gate-strict.preview.emergentagent.com/api/share-cards/voices/public?limit=24",
             "sessionTargetType": "page",
             "protocol": "h2",
             "rendererStartTime": 1496.6449999809265,
@@ -2155,7 +2155,7 @@
             "entity": "emergentagent.com"
           },
           {
-            "url": "https://trustee-platform.preview.emergentagent.com/api/share-cards/voices/public?limit=24",
+            "url": "https://deploy-gate-strict.preview.emergentagent.com/api/share-cards/voices/public?limit=24",
             "sessionTargetType": "page",
             "protocol": "h2",
             "rendererStartTime": 1466.0609999895096,
@@ -2172,7 +2172,7 @@
             "entity": "emergentagent.com"
           },
           {
-            "url": "https://trustee-platform.preview.emergentagent.com/api/share-cards/voices/public?limit=24",
+            "url": "https://deploy-gate-strict.preview.emergentagent.com/api/share-cards/voices/public?limit=24",
             "sessionTargetType": "page",
             "protocol": "h2",
             "rendererStartTime": 1466.6349999904633,
@@ -2465,7 +2465,7 @@
             "rtt": 57.681
           },
           {
-            "origin": "https://trustee-platform.preview.emergentagent.com",
+            "origin": "https://deploy-gate-strict.preview.emergentagent.com",
             "rtt": 13.975999999999999
           },
           {
@@ -2548,7 +2548,7 @@
             "serverResponseTime": 232.93200000000002
           },
           {
-            "origin": "https://trustee-platform.preview.emergentagent.com",
+            "origin": "https://deploy-gate-strict.preview.emergentagent.com",
             "serverResponseTime": 37.8935
           },
           {
@@ -3121,21 +3121,21 @@
               "type": "subitems",
               "items": [
                 {
-                  "url": "https://trustee-platform.preview.emergentagent.com/api/public/site-content",
+                  "url": "https://deploy-gate-strict.preview.emergentagent.com/api/public/site-content",
                   "mainThreadTime": 0,
                   "blockingTime": 0,
                   "transferSize": 6727,
                   "tbtImpact": 0
                 },
                 {
-                  "url": "https://trustee-platform.preview.emergentagent.com/api/share-cards/voices/public?limit=24",
+                  "url": "https://deploy-gate-strict.preview.emergentagent.com/api/share-cards/voices/public?limit=24",
                   "mainThreadTime": 0,
                   "blockingTime": 0,
                   "transferSize": 4043,
                   "tbtImpact": 0
                 },
                 {
-                  "url": "https://trustee-platform.preview.emergentagent.com/api/health",
+                  "url": "https://deploy-gate-strict.preview.emergentagent.com/api/health",
                   "mainThreadTime": 0,
                   "blockingTime": 0,
                   "transferSize": 2457,
@@ -12270,7 +12270,7 @@
     {
       "name": "emergentagent.com",
       "origins": [
-        "https://trustee-platform.preview.emergentagent.com"
+        "https://deploy-gate-strict.preview.emergentagent.com"
       ],
       "isUnrecognized": true
     },
