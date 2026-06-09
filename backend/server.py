@@ -277,8 +277,9 @@ async def lifespan(app):
     # ── SOC2 production-readiness gate (audit 5391e8b #7) ────────────────────
     # In production, verify PII-safe structured logging (REDACT_PII/LOG_FORMAT)
     # and the full security-middleware stack are active. Violations are logged
-    # CRITICAL and degrade /health/ready → 503 so the orchestrator pulls the pod
-    # out of rotation rather than serving traffic without SOC2 controls.
+    # CRITICAL (loud alert) and surfaced on /health/ready as ADVISORY info — they
+    # do NOT 503 the pod (a missing log setting or background job must never pull
+    # the API out of rotation; only a real MongoDB outage does that).
     # Inert on preview/dev (is_production() is False).
     try:
         from services.production_readiness import evaluate_production_readiness
@@ -491,16 +492,17 @@ async def health_ready():
         checks["mongodb"] = f"error: {e.__class__.__name__}"
         ok = False
 
-    # SOC2 production-readiness gate (#7): degrade the pod out of rotation if
-    # required logging/middleware/schedulers are inactive in production.
+    # SOC2 production-readiness (#7): surface violations on the probe and log
+    # them CRITICAL at startup, but they are ADVISORY here — a missing log
+    # setting or a stalled background job must NEVER pull the API out of
+    # rotation. MongoDB (above) is the ONLY hard 503 gate for readiness.
     # Inert on preview/dev (returns no violations).
     try:
         from services.production_readiness import get_readiness_state, scheduler_violations
 
         _prod_violations = list(get_readiness_state().get("violations", [])) + scheduler_violations()
         if _prod_violations:
-            checks["production_readiness"] = _prod_violations
-            ok = False
+            checks["production_readiness"] = _prod_violations  # advisory, does not 503
     except Exception as e:
         checks["production_readiness"] = f"check_error: {e.__class__.__name__}"
 
