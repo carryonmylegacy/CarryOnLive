@@ -29,21 +29,66 @@ Settings → Branches → Add branch ruleset (or classic protection) for `main`:
 - ☑ **Do not allow bypassing the above settings** (applies to admins)
 - ☑ **Require signed commits** (recommended)
 
-## 3. Vercel (frontend production) — block on CI
-Vercel → Project → Settings → Git:
-- ☑ **"Only deploy Production when the CI checks pass"** (Ignored Build Step /
-  "Wait for CI" — enable *Require CI checks to succeed* for the Production
-  branch). If using the GitHub integration's required checks, the branch
-  protection above already prevents an unverified commit from reaching `main`.
-- Alternatively set an **Ignored Build Step** that exits non-zero unless the
-  deploy gate passed.
+## 3. Vercel (frontend production) — make the deploy WAIT for the gate
+Goal: Vercel must NOT publish a Production build until the `SOC2 Deploy Gate`
+status check on that commit is green.
 
-## 4. Render (backend production) — block on CI
-Render → Service → Settings:
-- Turn **Auto-Deploy** to **"After CI checks pass"** (Render → Settings →
-  Build & Deploy → *Auto-Deploy: On Commit* → enable *"Wait for CI"*), or
-- Set Auto-Deploy **off** and deploy only via the GitHub deployment that the
-  `deploy-gate` job gates.
+Step by step:
+1. Go to **https://vercel.com** → your team → the CarryOn frontend **Project**.
+2. **Settings** (top nav) → **Git** (left sidebar).
+3. Scroll to **"Ignored Build Step"** (or "Deploy Hooks / Production Branch").
+4. The most reliable method on Vercel today is the **"Ignored Build Step"**
+   command — set it to a script that exits 0 (build) only when the deploy gate
+   succeeded, else exits 1 (skip). Paste this into the Ignored Build Step box:
+   ```bash
+   bash -c 'gh_status=$(curl -s -H "Authorization: Bearer $GH_CHECK_TOKEN" \
+     "https://api.github.com/repos/<OWNER>/<REPO>/commits/$VERCEL_GIT_COMMIT_SHA/check-runs" \
+     | grep -o "\"name\":\"SOC2 Deploy Gate[^}]*\"conclusion\":\"success\"" ); \
+     [ -n "$gh_status" ] && exit 1 || exit 0'
+   ```
+   - Replace `<OWNER>/<REPO>` with your repo path.
+   - Add a Vercel **Environment Variable** `GH_CHECK_TOKEN` = a fine-grained
+     GitHub PAT with read-only "Checks" + "Contents" permission on the repo.
+   - Note Vercel's Ignored Build Step uses **exit 0 = "skip build"** semantics in
+     some configs and the inverse in others — test once: push a commit, confirm
+     Vercel skips until the gate is green, then deploys.
+5. Simpler alternative (recommended if you use the **Vercel GitHub App**): in
+   **Settings → Git → "Production Branch"**, ensure it's `main`, and rely on the
+   **branch ruleset from section 2** — because Emergent's commits land on `main`
+   only after the gate is required, an unverified commit can't define `main`'s
+   tip in a protected-merge flow. (For direct admin pushes, use the Ignored
+   Build Step above, since branch protection bypasses admins.)
+6. **Save**. Test with one push and watch the Vercel **Deployments** tab show
+   "Skipped — build canceled" until the GitHub check turns green.
+
+## 4. Render (backend production) — make the deploy WAIT for the gate
+Goal: Render must NOT roll out a new backend until the `SOC2 Deploy Gate` check
+on that commit is green.
+
+Step by step:
+1. Go to **https://dashboard.render.com** → your backend service (`carryon-api`).
+2. Left sidebar → **Settings**.
+3. Find **"Build & Deploy"** → **Auto-Deploy**.
+4. Render's native option: set **Auto-Deploy = "After CI Checks Pass"** (Render
+   shows this when the repo has GitHub Actions checks; it waits for **all**
+   required checks — including `SOC2 Deploy Gate` — to succeed on the commit
+   before deploying). Select it and **Save Changes**.
+5. If your plan/region doesn't show "After CI Checks Pass":
+   - Set **Auto-Deploy = No** (turn it off), AND
+   - Add a **Deploy Hook** (Settings → Deploy Hook → copy the URL), then add a
+     final step to the `deploy-gate` job in `.github/workflows/ci.yml` that
+     `curl`s that hook **only on success** — so Render deploys *because* the gate
+     passed, never before. (Tell me if you want this CI step added; it's a small
+     code change on our side.)
+6. **Verify:** push a commit, open Render's **Events** tab — it should show the
+   deploy starting **only after** the GitHub `SOC2 Deploy Gate` check is green,
+   not on the raw push.
+
+> ⚠️ Why this section matters: Emergent's "Save to GitHub" pushes commits
+> **directly to `main`**, and your branch ruleset (section 2) **bypasses admins**
+> so those pushes aren't blocked. That's intentional — but it means Render/Vercel
+> auto-deploy-on-push would otherwise ship a commit *before* CI finishes. Sections
+> 3–4 are what make production actually wait for the gate.
 
 ## 5. Evidence retention
 - `soc2-deploy-evidence` artifact (90 days) is attached to every `main` run.

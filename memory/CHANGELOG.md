@@ -1,6 +1,28 @@
 # CarryOn — Changelog
 
 
+## Jun 9, 2026 — Audit `735b3b7` SOC2 fixes (#1, #2, #4, #5, #6) + #3 risk-accepted — VERIFIED
+
+Six-part audit against main `735b3b7`. Backend items shipped + tested; #3 (offline list-cache encryption) **explicitly risk-accepted by owner** with new compensating controls.
+
+- **#1 Operator least-privilege** (`guards.py`, `routes/admin/__init__.py`, `routes/admin/users.py`):
+  - `require_scope` now **ENFORCES operator scope** (was: operators waved through). Operators mapped via `derive_operator_scopes` (manager→`ops_manager`, else→`ops_team`) must hold one of a router's allowed scopes — so an **ops_team worker is denied (403) from finance / compliance / founder / platform_health** routers.
+  - `grace_periods` router → `require_scope("finance", "ops_manager")`; `estate_health` router → `require_scope("compliance", "ops_manager")` (admin/founder/finance-or-compliance/ops_manager only; ops_team denied).
+  - Removed now-dead ops_team minimized-roster branch from `/admin/users` (router scope denies ops_team outright). Verified founder still gets full 519-user roster.
+- **#2 Deleted-doc designation finality** (`routes/documents_designate.py`): load + mutate with `{"id": id, "deleted_at": None}` → a soft-deleted document returns 404 **before** any mutation or share-notification.
+- **#4 Deletion purge gap** (`services/estate_purge.py`): `purge_user_storage` now also purges `latest-pdfs/{user_id}/` (QuickStart guide, binder exports) before the user DB row is removed.
+- **#5 SOC2 readiness enforceable** (`services/production_readiness.py`, `routes/admin/soc2_readiness.py`, `route_policies.py`): kept `/health/ready` ADVISORY (owner no-503 directive) and added a **separate HARD gate** — `GET /api/admin/soc2-readiness` (compliance-scoped, route-policy registered, baseline 670→671). Checks REDACT_PII=1, LOG_FORMAT=json, security middleware stack, required schedulers, **and staff session policies enabled**. Module docstring aligned with server.py behavior.
+- **#6 Deploy evidence** (verified + docs): CI already triggers on every `main` push (incl. Emergent auto-commits); `deploy-gate` requires all checks + writes/uploads the 90-day `soc2-deploy-evidence` artifact; branch ruleset requires the gate. Updated `docs/DEPLOY_PROTECTION_SETTINGS.md` §3–4 with explicit Render ("Auto-Deploy: After CI Checks Pass") + Vercel (Ignored Build Step) step-by-step so production WAITS for the gate (Emergent pushes directly to main + admin-bypass means deploy could otherwise start pre-CI).
+- **#3 Offline cache at rest** — partial + RISK-ACCEPTED (owner, Jun 9 2026; see `docs/SOC2_RISK_REGISTER.md` RISK-001):
+  - DONE: corrected misleading "DevTools/disk attacker can't read" comments in `offline/crypto.js` + `offline/pinnedDocsRepo.js` (seed+token co-located in localStorage → claim was false).
+  - DONE: **pinned SDV document blobs now fail-closed** (`sealBlobForce`) — sensitive doc bytes are AES-256-GCM sealed unconditionally and **refused (never stored plaintext)** if no key.
+  - DONE: confirmed DAV password/additional_access/notes already sanitized out of caches (`sanitizeDavList`).
+  - NOT DONE (accepted): encrypting the financial/beneficiary/checklist/CCP/DTS/FFN list caches — mutually exclusive with the synchronous instant-paint product requirement (WebCrypto is async-only). Residual exposure is non-credential display metadata only; credential bytes (pinned docs) + raw write bodies (outbox) are both encrypted.
+
+Gates: `tests/regression/test_audit_735b3b7.py` (8) + `test_soc2_batch_b.py` (8) = **16/16 PASS**; `server` imports clean; `housekeeping.sh --strict` **EXIT 0 / ALL CHECKS PASSED** (route policy 671/671); live: founder passes grace-periods/estate-health/users/soc2-readiness, ffmpeg-check admin-gated; frontend login renders clean after offline-crypto changes.
+
+
+
 ## Jun 9, 2026 — Audit `5391e8b` SOC2 hardening — Batch B (#2, #6, #7) — VERIFIED
 
 Completed the remaining Batch-B findings after the #8 GitHub branch-ruleset review (founder configured `main protection`: restrict deletions + block force pushes + SOC2 Deploy Gate required check + admin bypass + Active). All backend, surgical, fail-closed; no architecture change.
