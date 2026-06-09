@@ -199,3 +199,18 @@ def test_dead_youtube_fallback_purged():
         "backend/routes/public_content.py",
     ]:
         assert "EhU-jojs1jk" not in _read(rel), f"dead video id still present in {rel}"
+
+
+def test_dev_switcher_config_fetch_sends_auth():
+    """/dev-switcher/config is mounted behind require_scope('founder'). The
+    portal switcher's fetch MUST send the admin token, otherwise it 401s and the
+    switcher wrongly shows 'Not Configured'."""
+    for rel in [
+        "frontend/src/components/layout/MobileNav.js",
+        "frontend/src/components/layout/Sidebar.js",
+    ]:
+        src = _read(rel)
+        idx = src.find("/api/dev-switcher/config")
+        assert idx != -1, f"dev-switcher config fetch missing in {rel}"
+        window = src[idx - 250 : idx + 250]
+        assert "Authorization" in window, f"dev-switcher config fetch not authenticated in {rel}"

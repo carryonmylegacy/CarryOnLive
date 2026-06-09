@@ -350,10 +350,15 @@ const Sidebar = () => {
 
   const fetchDevConfig = async () => {
     try {
-      const res = await fetch(`${BASE_URL}/api/dev-switcher/config`);
-      const data = await res.json();
-      // Fetch operator accounts using the admin token (not current session)
+      // /dev-switcher/config is mounted behind require_scope("founder"), so the
+      // request MUST carry the admin token. In a switched (benefactor/beneficiary)
+      // session the original founder token is preserved in dev_switcher_admin_token.
       const adminToken = localStorage.getItem('dev_switcher_admin_token') || localStorage.getItem('carryon_token');
+      const res = await fetch(`${BASE_URL}/api/dev-switcher/config`, {
+        headers: adminToken ? { Authorization: `Bearer ${adminToken}` } : {},
+      });
+      if (!res.ok) return;
+      const data = await res.json();
       if (adminToken) {
         try {
           const opsRes = await fetch(`${BASE_URL}/api/founder/operators`, {
