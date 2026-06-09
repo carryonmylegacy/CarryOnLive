@@ -23,8 +23,8 @@ const HomePage = () => {
   const [flagOpacity, setFlagOpacity] = useState(1);
   const [exiting, setExiting] = useState(false);
   const [footerInfo, setFooterInfo] = useState({ line1: '1550 Wilson Boulevard 7th Floor', line2: 'Arlington, VA 22209 U.S.A.', phone: '(703) 884-1527' });
-  const [landscapeVideoId, setLandscapeVideoId] = useState('EhU-jojs1jk');
-  const [verticalVideoId, setVerticalVideoId] = useState('');
+  const [landscapeVideoId, setLandscapeVideoId] = useState('KlZ8egF_Nyw');
+  const [verticalVideoId, setVerticalVideoId] = useState('5fDJ9e7bEUo');
 
   const isMobileView = useIsMobileViewport();
 

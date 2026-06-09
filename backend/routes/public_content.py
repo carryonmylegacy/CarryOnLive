@@ -20,8 +20,8 @@ async def get_public_site_content():
     """Public — non-sensitive site content settings (video IDs, footer, public flags)."""
     settings = await db.platform_settings.find_one({"_id": "global"}, {"_id": 0}) or {}
     return {
-        "homepage_video_id": settings.get("homepage_video_id", "EhU-jojs1jk"),
-        "homepage_video_id_vertical": settings.get("homepage_video_id_vertical", ""),
+        "homepage_video_id": settings.get("homepage_video_id", "KlZ8egF_Nyw"),
+        "homepage_video_id_vertical": settings.get("homepage_video_id_vertical", "5fDJ9e7bEUo"),
         "footer_address_line1": settings.get("footer_address_line1", "1550 Wilson Boulevard 7th Floor"),
         "footer_address_line2": settings.get("footer_address_line2", "Arlington, VA 22209 U.S.A."),
         "footer_phone": settings.get("footer_phone", "(703) 884-1527"),

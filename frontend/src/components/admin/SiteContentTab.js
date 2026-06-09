@@ -25,7 +25,7 @@ export const SiteContentTab = ({ getAuthHeaders }) => {
     const fetch = async () => {
       try {
         const res = await apiClient.get(`${API_URL}/admin/platform-settings`, getAuthHeaders());
-        const id = res.data?.homepage_video_id || 'EhU-jojs1jk';
+        const id = res.data?.homepage_video_id || 'KlZ8egF_Nyw';
         setVideoId(id);
         setSavedVideoId(id);
         const idV = res.data?.homepage_video_id_vertical || '';

@@ -175,3 +175,27 @@ def test_subscription_repo_uses_force_encryption():
     assert "unsealRecordForce" in src
     # The old direct plaintext put must be gone.
     assert "put({\n      id: KEY,\n      data," not in src
+
+
+# ── prod CORS fix: X-Request-ID must be allow-listed (else preflight 400) ────
+
+
+def test_cors_allows_x_request_id_header():
+    """apiClient.js stamps X-Request-ID on every request; if the backend CORS
+    allow_headers omits it, the browser preflight is rejected (HTTP 400) and ALL
+    browser API calls break (this is what broke the homepage video)."""
+    src = _read("backend/middleware.py")
+    assert '"X-Request-ID"' in src, "X-Request-ID missing from CORS allow_headers"
+
+
+def test_dead_youtube_fallback_purged():
+    """The dead default video EhU-jojs1jk (returns 404) must not remain as a
+    fallback anywhere — a fetch hiccup would otherwise show a broken embed."""
+    for rel in [
+        "frontend/src/pages/HomePage.js",
+        "frontend/src/pages/LoginPage.js",
+        "frontend/src/pages/SpeakWithUsPage.js",
+        "frontend/src/components/admin/SiteContentTab.js",
+        "backend/routes/public_content.py",
+    ]:
+        assert "EhU-jojs1jk" not in _read(rel), f"dead video id still present in {rel}"

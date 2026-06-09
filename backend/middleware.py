@@ -340,7 +340,12 @@ def configure_cors(app):
         allow_credentials=True,
         allow_origins=ALLOWED_ORIGINS,
         allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-        allow_headers=["Authorization", "Content-Type", "X-Requested-With"],
+        # X-Request-ID is stamped on EVERY frontend request by apiClient.js for
+        # log correlation. It MUST be allow-listed or the browser's CORS
+        # preflight (which advertises x-request-id) is rejected with HTTP 400,
+        # silently breaking ALL browser API calls (e.g. the homepage video
+        # falling back to a dead embed). (audit 3153523 / prod CORS fix)
+        allow_headers=["Authorization", "Content-Type", "X-Requested-With", "X-Request-ID"],
         # Custom response headers the browser is allowed to read from JS.
         # Without this whitelist, CORS hides everything except the
         # standard "safe" set, which is why the Estate Binder's

@@ -233,8 +233,8 @@ const LoginPage = () => {
   }, []);
 
   /* fetch homepage video ID */
-  const [homepageVideoId, setHomepageVideoId] = useState('EhU-jojs1jk');
-  const [verticalVideoId, setVerticalVideoId] = useState('');
+  const [homepageVideoId, setHomepageVideoId] = useState('KlZ8egF_Nyw');
+  const [verticalVideoId, setVerticalVideoId] = useState('5fDJ9e7bEUo');
   const isMobileView = useIsMobileViewport();
   useEffect(() => {
     apiClient.get(`${API_URL}/public/site-content`).then(r => {
