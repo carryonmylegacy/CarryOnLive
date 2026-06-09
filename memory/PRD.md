@@ -354,7 +354,7 @@ defined in `/app/frontend/src/config/adminSections.js`:
 | **Operations** | gold `#d4af37` | founder, ops_manager, ops_team | Users, Invites, TVT, DTS, Support, Verify, Milestones, Escalations, Ops Dashboard, Templates, Team Chat, Members |
 | **Finance** | emerald `#22C993` | founder, finance | Subs, Partners, Rules, Revenue, Launch, Grace Periods, Trials, Members |
 | **Marketing** | violet `#B794F6` | founder, marketing | Funnel, Sales Brief, Beta Testing, Site Content, Emails, Announcements, Members |
-| **Compliance** | blue `#3B82F6` | founder, compliance | Audit Trail, Estate Health, Activity Log, Members |
+| **Compliance** | blue `#3B82F6` | founder, compliance | Audit Trail, SOC2 Readiness, Estate Health, Activity Log, Members |
 | **Platform** | amber `#F59E0B` | founder, platform_health | War Room, System Health, Operators, Integrations, Downloads, Product, Referrals, P1 Contact, Knowledge Base, Performance, Schedules, Training, Members |
 | **Admin** | red `#ef4444` | founder | Scoped Admins, IP Whitelist, Session Policy, Maintenance, Dev Switcher, Notification Categories, Voices, Prototypes |
 

@@ -119,6 +119,7 @@ export const ADMIN_SECTIONS = [
     scopes: ['founder', 'compliance'],
     tabs: [
       { key: 'audit', label: 'Audit Trail', icon: Shield, path: '/admin/audit' },
+      { key: 'soc2-readiness', label: 'SOC2 Readiness', icon: ShieldCheck, path: '/admin/soc2-readiness' },
       { key: 'estate-health', label: 'Estate Health', icon: HeartPulse, path: '/admin/estate-health' },
       { key: 'activity', label: 'Activity Log', icon: Activity, path: '/admin/activity' },
       { key: 'compliance-members', label: 'Members', icon: UserCog, path: '/admin/compliance-members' },

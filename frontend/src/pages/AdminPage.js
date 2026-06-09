@@ -43,6 +43,7 @@ import { OpsDashboardTab } from '../components/admin/OpsDashboardTab';
 import { MilestoneDeliveriesTab } from '../components/admin/MilestoneDeliveriesTab';
 import { TrialUsersTab } from '../components/admin/TrialUsersTab';
 import { EstateHealthTab } from '../components/admin/EstateHealthTab';
+import { Soc2ReadinessTab } from '../components/admin/Soc2ReadinessTab';
 import { IntegrationsTab } from '../components/admin/IntegrationsTab';
 import { DownloadDiagnosticsTab } from '../components/admin/DownloadDiagnosticsTab';
 import { ProductAnalyticsTab } from '../components/admin/ProductAnalyticsTab';
@@ -320,6 +321,7 @@ const AdminPage = ({ operatorMode = false }) => {
       case 'activity': return <ActivityTab getAuthHeaders={getAuthHeaders} />;
       case 'operators': return <OperatorsTab getAuthHeaders={getAuthHeaders} />;
       case 'audit': return <AuditTrailTab getAuthHeaders={getAuthHeaders} />;
+      case 'soc2-readiness': return <Soc2ReadinessTab getAuthHeaders={getAuthHeaders} />;
       case 'dev-switcher': return <DevSwitcherTab users={users} getAuthHeaders={getAuthHeaders} />;
       case 'announcements': return <AnnouncementsTab getAuthHeaders={getAuthHeaders} />;
       case 'system-health': return <SystemHealthTab getAuthHeaders={getAuthHeaders} />;
