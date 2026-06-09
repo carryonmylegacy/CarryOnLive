@@ -264,4 +264,27 @@ jobs:
           name: soc2-deploy-evidence
           path: deploy-evidence/
           retention-days: 90
+      - name: Trigger Vercel production deploy (ONLY after gate is green)
+        # Fires the existing Vercel "Emergent" Deploy Hook only once the SOC2
+        # deploy gate has passed, so production can never deploy ahead of CI.
+        # `if: success()` => this step is skipped when the gate step above
+        # exited non-zero. Requires repo secret VERCEL_DEPLOY_HOOK_URL
+        # (Settings -> Secrets and variables -> Actions). No-op (notice only)
+        # until that secret is set, so adding this never breaks a build.
+        if: success()
+        env:
+          VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$VERCEL_DEPLOY_HOOK_URL" ]; then
+            echo "::notice::VERCEL_DEPLOY_HOOK_URL not set — skipping Vercel deploy trigger (gate still passed)."
+            exit 0
+          fi
+          echo "SOC2 gate green — triggering Vercel production deploy via Deploy Hook…"
+          code=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$VERCEL_DEPLOY_HOOK_URL")
+          echo "Vercel deploy hook responded HTTP $code"
+          if [ "$code" -lt 200 ] || [ "$code" -ge 300 ]; then
+            echo "::error::Vercel deploy hook failed (HTTP $code)"
+            exit 1
+          fi
+          echo "✅ Vercel production deploy triggered."
 
