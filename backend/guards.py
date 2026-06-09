@@ -227,12 +227,16 @@ def require_admin_scope(current_user: dict, allowed_scopes: list[str]):
 
 
 def require_scope(*allowed_scopes: str):
-    """FastAPI dependency FACTORY that enforces admin scope at the router level
-    (SOC2 CC6.1 — server-side least privilege, not UI-only).
+    """FastAPI dependency FACTORY that enforces admin/operator scope at the
+    router level (SOC2 CC6.1 — server-side least privilege, not UI-only).
 
-    Behavior (chosen to add enforcement WITHOUT breaking existing workflows):
-      • Operators pass through — their per-handler `require_staff` / role checks
-        still govern, so ops endpoints behave exactly as before.
+    Behavior (audit 735b3b7 #1 — operators are now SCOPE-ENFORCED, not waved
+    through):
+      • Operators are mapped to their least-privilege scope via
+        `derive_operator_scopes` (manager → 'ops_manager', else 'ops_team') and
+        must hold one of `allowed_scopes` — exactly like a scoped admin. An
+        ops_team worker can therefore NOT reach finance / compliance / founder /
+        platform_health routers.
       • Admins must hold the 'founder' scope (god mode) OR one of
         `allowed_scopes`.
       • Legacy admins with NO `admin_scope` are treated as founder (default
@@ -243,7 +247,13 @@ def require_scope(*allowed_scopes: str):
     async def _dep(current_user: dict = Depends(get_current_user)):
         role = current_user.get("role")
         if role == "operator":
-            return current_user
+            op_scopes = derive_operator_scopes(current_user)
+            if any(s in allowed_scopes for s in op_scopes):
+                return current_user
+            raise HTTPException(
+                status_code=403,
+                detail=f"This section requires one of: {', '.join(allowed_scopes)} access",
+            )
         if role != "admin":
             raise HTTPException(status_code=403, detail="Admin access required")
         raw = current_user.get("admin_scope") or "founder"

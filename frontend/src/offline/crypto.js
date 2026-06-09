@@ -2,11 +2,20 @@
  * CarryOn — Offline Encryption at Rest (Phase 7)
  * ============================================================================
  * Provides a thin WebCrypto wrapper for sealing/unsealing IndexedDB payloads
- * with a per-session AES-256-GCM key. The key is derived from the user's
- * bearer token via PBKDF2(210,000 iterations, SHA-256) — so a user who
- * signs out and signs back in re-derives the same key and can still read
- * older rows, but a different user on the same device derives a
- * completely different key and sees only garbled ciphertext.
+ * with a per-session AES-256-GCM key. The key is derived (PBKDF2, 210k
+ * iterations, SHA-256) from a per-device random seed + the user's user_id, so a
+ * different user in the same browser profile derives a different key and sees
+ * only garbled ciphertext.
+ *
+ * THREAT MODEL (read before trusting this for compliance claims):
+ *   This protects against casual inspection and provides cross-user isolation
+ *   WITHIN a browser profile. It is NOT a defense against an attacker who has
+ *   full read access to this profile's localStorage / disk: the device seed
+ *   (`carryon_enc_seed_v1`) and the bearer token both live in localStorage, so
+ *   such an attacker can re-derive the key and decrypt. Device-level compromise
+ *   is explicitly out of scope. The value here is (a) cross-user separation on
+ *   shared browsers and (b) defense-in-depth so sensitive payloads are not
+ *   sitting in obvious plaintext.
  *
  * Design:
  *   - Key NEVER persisted anywhere. Held in a module-scoped variable;
@@ -239,6 +248,28 @@ export async function sealBlob(blob) {
   } catch (err) {
     console.warn('[offline-enc] sealBlob fallback to plaintext:', err);
     return { encrypted: false, blob };
+  }
+}
+
+/**
+ * Seal a binary Blob for at-rest storage — UNCONDITIONAL (flag-agnostic), used
+ * for sensitive pinned document blobs that must NEVER touch IndexedDB in
+ * plaintext. Derives the device key via the outbox path (works whenever a
+ * bearer token exists) and FAILS CLOSED: returns null if no key can be derived,
+ * so the caller must refuse to persist rather than fall back to plaintext.
+ */
+export async function sealBlobForce(blob) {
+  if (!blob) return null;
+  const key = await ensureKeyForOutbox();
+  if (!key) return null; // fail closed — caller must NOT store plaintext
+  try {
+    const iv = window.crypto.getRandomValues(new Uint8Array(12));
+    const buf = await blob.arrayBuffer();
+    const ct = await window.crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, buf);
+    return { encrypted: true, iv, ct, mime: blob.type || 'application/octet-stream' };
+  } catch (err) {
+    console.warn('[offline-enc] sealBlobForce failed:', err);
+    return null;
   }
 }
 

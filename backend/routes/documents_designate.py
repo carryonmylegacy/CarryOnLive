@@ -155,7 +155,10 @@ async def designate_beneficiaries(
     """
     await require_benefactor_role(current_user, "designate document beneficiaries")
 
-    doc = await db.documents.find_one({"id": document_id}, {"_id": 0})
+    # SOC2 deleted-doc finality (audit 735b3b7 #2): a soft-deleted document
+    # must be unreachable for designation — load with deleted_at: None so a
+    # deleted doc returns 404 BEFORE any mutation or share-notification fires.
+    doc = await db.documents.find_one({"id": document_id, "deleted_at": None}, {"_id": 0})
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
 
@@ -197,7 +200,7 @@ async def designate_beneficiaries(
         update_fields["visibility_timing"] = data.visibility_timing
 
     await db.documents.update_one(
-        {"id": document_id},
+        {"id": document_id, "deleted_at": None},
         {"$set": update_fields},
     )
 

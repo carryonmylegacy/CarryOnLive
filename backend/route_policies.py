@@ -353,6 +353,11 @@ ROUTE_POLICIES: dict = {
     },
     # Admin compliance / platform-health evidence routes ──────────────────────
     "GET /api/admin/audit-chain-status": {"auth": "required", "roles": ["admin"], "notes": "Compliance scope"},
+    "GET /api/admin/soc2-readiness": {
+        "auth": "required",
+        "roles": ["admin"],
+        "notes": "Compliance scope — hard SOC2 readiness monitor",
+    },
     "GET /api/admin/secrets-inventory": {
         "auth": "required",
         "roles": ["admin"],

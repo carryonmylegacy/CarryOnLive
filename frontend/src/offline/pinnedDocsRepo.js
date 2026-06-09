@@ -16,7 +16,7 @@
  */
 
 import { getDB } from './db';
-import { sealBlob, unsealBlob } from './crypto';
+import { sealBlobForce, unsealBlob } from './crypto';
 
 const TABLE = 'pinnedDoc';
 
@@ -62,18 +62,29 @@ export async function pinDocument(doc, fetchHeaders) {
   }
   if (!res.ok) throw new Error(`pinDocument: HTTP ${res.status}`);
   const blob = await res.blob();
-  // Encryption at rest: when offline encryption is enabled, the document bytes
-  // are sealed with the per-device AES-GCM key before they ever touch
-  // IndexedDB, so an attacker with raw disk/DevTools access to the device cannot
-  // read pinned legacy documents, wills, or credentials. Falls back to a
-  // plaintext blob only when encryption is disabled (transparent passthrough).
-  const sealed = await sealBlob(blob);
+  // Encryption at rest (audit 735b3b7 #3 — fail closed). Pinned documents are
+  // sensitive SDV material (wills, POAs, credentials), so their bytes are
+  // ALWAYS sealed with the per-device AES-GCM key before touching IndexedDB —
+  // unconditionally, regardless of the offline feature flag. If a key cannot be
+  // derived we REFUSE to store the blob rather than fall back to plaintext.
+  //
+  // Threat-model caveat: this protects against casual DevTools/disk inspection
+  // and cross-user isolation within the browser profile. It is NOT a defense
+  // against an attacker who already has full read access to this profile's
+  // localStorage, because the device seed + bearer token live there too and can
+  // re-derive the key. Device-level compromise is out of scope for at-rest enc.
+  const sealed = await sealBlobForce(blob);
+  if (!sealed) {
+    throw new Error(
+      'pinDocument: cannot encrypt at rest (no session key) — refusing to store sensitive document in plaintext',
+    );
+  }
   await db[TABLE].put({
     cache_key: cacheKey(doc.id),
     doc_id: doc.id,
-    blob: sealed.encrypted ? null : blob,
-    enc: sealed.encrypted ? { iv: sealed.iv, ct: sealed.ct, mime: sealed.mime } : null,
-    encrypted: !!sealed.encrypted,
+    blob: null,
+    enc: { iv: sealed.iv, ct: sealed.ct, mime: sealed.mime },
+    encrypted: true,
     mime_type: blob.type || doc.mime_type || 'application/octet-stream',
     size_bytes: blob.size,
     // Vault documents carry their display label on `name` (see

@@ -15,29 +15,13 @@ router = APIRouter()
 
 @router.get("/admin/users")
 async def get_all_users(current_user: dict = Depends(require_staff)):
-    """Get all users with subscription info and beneficiary tree — admin and operators"""
-    # SOC2 least-privilege (audit 5391e8b #2): an ops_team worker (operator
-    # whose operator_role is not 'manager') must NOT receive the full customer
-    # roster — emails, subscriptions, and beneficiary PII trees. Return a
-    # minimized view: identity + account-status fields only, no PII.
-    if current_user.get("role") == "operator" and current_user.get("operator_role") != "manager":
-        ops_view = await db.users.find(
-            {},
-            {
-                "_id": 0,
-                "id": 1,
-                "name": 1,
-                "role": 1,
-                "operator_role": 1,
-                "created_at": 1,
-                "last_login_at": 1,
-                "account_locked": 1,
-                "is_also_benefactor": 1,
-                "session_exempt": 1,
-            },
-        ).to_list(1000)
-        return [u for u in ops_view if u.get("id")]
+    """Get all users with subscription info and beneficiary tree — admin and ops_manager.
 
+    SOC2 least-privilege (audit 735b3b7 #1): the router-level `require_scope`
+    on this module ("compliance", "ops_manager") now ENFORCES operator scope,
+    so an ops_team worker is denied (403) before reaching this handler — they
+    never receive the customer roster (emails, subscriptions, beneficiary PII).
+    """
     users = await db.users.find({}, {"_id": 0, "password": 0, "onboarding_drip_state": 0, "username_lower": 0}).to_list(
         1000
     )

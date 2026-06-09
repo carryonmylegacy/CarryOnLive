@@ -31,6 +31,7 @@ from .platform import router as platform_router
 from .scoped_roles import router as scoped_roles_router
 from .security_scan import router as security_scan_router
 from .session_policy import router as session_policy_router
+from .soc2_readiness import router as soc2_readiness_router
 from .task_management import router as task_management_router
 from .trial_policy import router as trial_policy_router
 from .users import router as users_router
@@ -38,17 +39,20 @@ from .users import router as users_router
 router = APIRouter()
 
 # ── Router-level admin scope enforcement (SOC2 CC6.1) ───────────────────────
-# Founder admins (and legacy admins with no scope) always pass; operators pass
-# through to their per-handler staff checks. Scoped admins are restricted to
-# their family. Families without an explicit scope below remain open to any
+# Founder admins (and legacy admins with no scope) always pass. Operators are
+# SCOPE-ENFORCED (audit 735b3b7 #1): mapped via derive_operator_scopes
+# (manager → ops_manager, else ops_team) and must hold one of a router's
+# allowed scopes — so an ops_team worker cannot reach finance / compliance /
+# founder / platform_health routers. Scoped admins are restricted to their
+# family. Families without an explicit scope below remain open to any
 # admin/operator (unchanged behavior).
 router.include_router(dev_switcher_router, dependencies=[Depends(require_scope("founder"))])
 router.include_router(users_router, dependencies=[Depends(require_scope("compliance", "ops_manager"))])
 router.include_router(analytics_router, dependencies=[Depends(require_scope("marketing", "ops_manager"))])
 router.include_router(platform_router, dependencies=[Depends(require_scope("founder"))])
 router.include_router(security_scan_router, dependencies=[Depends(require_scope("compliance"))])
-router.include_router(estate_health_router, dependencies=[Depends(require_scope("compliance"))])
-router.include_router(grace_periods_router, dependencies=[Depends(require_scope("finance"))])
+router.include_router(estate_health_router, dependencies=[Depends(require_scope("compliance", "ops_manager"))])
+router.include_router(grace_periods_router, dependencies=[Depends(require_scope("finance", "ops_manager"))])
 router.include_router(scoped_roles_router, dependencies=[Depends(require_scope("founder"))])
 router.include_router(ip_whitelist_router, dependencies=[Depends(require_scope("founder"))])
 router.include_router(bulk_ops_router, dependencies=[Depends(require_scope("founder"))])
@@ -65,6 +69,7 @@ router.include_router(trial_policy_router, dependencies=[Depends(require_scope("
 router.include_router(llm_cost_router, dependencies=[Depends(require_scope("platform_health"))])
 router.include_router(db_status_router, dependencies=[Depends(require_scope("platform_health"))])
 router.include_router(audit_chain_status_router, dependencies=[Depends(require_scope("compliance"))])
+router.include_router(soc2_readiness_router, dependencies=[Depends(require_scope("compliance"))])
 
 __all__ = [
     "router",

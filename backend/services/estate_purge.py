@@ -73,14 +73,22 @@ async def purge_estate_storage(estate_id: str) -> dict:
 
 
 async def purge_user_storage(user_id: str) -> int:
-    """Delete a user's personal media (profile photos). Estate-owned blobs are
-    handled per-estate by purge_estate_storage. Best-effort."""
+    """Delete a user's personal media + cached PDFs. Estate-owned blobs are
+    handled per-estate by purge_estate_storage. Best-effort.
+
+    Covers (audit 735b3b7 #4):
+      • profile photos          → photos/users/{id}/
+      • cached "latest" PDFs    → latest-pdfs/{id}/ (QuickStart guide, binder
+                                  exports, etc. — written by routes/pdfs.py and
+                                  routes/quickstart.py)
+    """
     if not user_id:
         return 0
     removed = 0
-    try:
-        removed = await storage.purge_prefix(f"photos/users/{user_id}/")
-    except Exception as e:
-        logger.warning(f"[estate_purge] user photo purge failed for {user_id}: {e}")
-    logger.info(f"[estate_purge] user={user_id} purged {removed} personal media blob(s)")
+    for prefix in (f"photos/users/{user_id}/", f"latest-pdfs/{user_id}/"):
+        try:
+            removed += await storage.purge_prefix(prefix)
+        except Exception as e:
+            logger.warning(f"[estate_purge] user storage purge failed for {prefix}: {e}")
+    logger.info(f"[estate_purge] user={user_id} purged {removed} personal blob(s)")
     return removed

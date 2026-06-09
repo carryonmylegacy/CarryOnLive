@@ -1,13 +1,26 @@
-"""CarryOn™ — SOC2 production-readiness gate (audit 5391e8b #7).
+"""CarryOn™ — SOC2 production-readiness checks (audit 5391e8b #7 / 735b3b7 #5).
 
-In production, the platform MUST run with PII-safe structured logging and the
-full security-middleware stack, and its required background schedulers must be
-active. This module evaluates those invariants and exposes the result so the
-`/health/ready` probe can return 503 (degrade the pod out of rotation) when a
-required control is inactive — rather than silently serving traffic without it.
+Two distinct surfaces, deliberately split (founder directive, Jun 2026):
+
+  1. `/health/ready` (server.py) — ADVISORY. It surfaces readiness violations
+     and logs them CRITICAL at startup, but it does NOT 503 on them: a missing
+     log setting or a stalled background job must NEVER pull a live pod out of
+     rotation. The ONLY hard 503 on /health/ready is MongoDB being unreachable.
+
+  2. `production_readiness_report()` — the HARD, ENFORCEABLE gate. It combines
+     the static logging/middleware snapshot with live scheduler + staff
+     session-policy checks and returns a pass/fail. It is exposed to compliance
+     admins at `GET /api/admin/soc2-readiness` and is meant to back a production
+     uptime/alerting monitor (page on `ok: false`) and/or a deploy gate — so
+     production is BLOCKED/ALERTED when a required control is inactive, without
+     risking an availability outage from the liveness path.
+
+Required production controls: REDACT_PII=1, LOG_FORMAT=json, full security
+middleware stack loaded, required schedulers healthy (or a dedicated worker),
+and staff session inactivity policies enabled.
 
 Non-production (preview/dev) is INERT: `is_production()` is False, so every
-check returns "ok" and `/health/ready` behaves exactly as before.
+check returns "ok".
 """
 
 import os
@@ -99,3 +112,48 @@ def scheduler_violations() -> list[str]:
         elif s.get("status") == "error":
             v.append(f"required scheduler in error state: {name}")
     return v
+
+
+# Staff roles whose session inactivity policy MUST be enabled in production.
+REQUIRED_SESSION_POLICY_ROLES = ("admin", "manager", "worker")
+
+
+async def session_policy_violations() -> list[str]:
+    """Staff session inactivity policies (admin/manager/worker) must be ENABLED
+    in production (SOC2 CC6.1 — bounded privileged sessions). Inert otherwise."""
+    if not is_production():
+        return []
+    from config import db
+
+    doc = await db.session_policies.find_one({"_id": "global"}, {"_id": 0})
+    policies = (doc or {}).get("policies", {})
+    v = []
+    for role_type in REQUIRED_SESSION_POLICY_ROLES:
+        if not policies.get(role_type, {}).get("enabled"):
+            v.append(f"staff session policy not enabled: {role_type}")
+    return v
+
+
+async def production_readiness_report() -> dict:
+    """HARD, enforceable readiness report (audit 735b3b7 #5).
+
+    Combines the static logging/middleware snapshot (computed at startup) with
+    LIVE scheduler + staff session-policy checks. Backs the compliance monitor
+    endpoint `GET /api/admin/soc2-readiness` and any production deploy/uptime
+    gate. Distinct from `/health/ready`, which is intentionally advisory.
+    """
+    violations = list(get_readiness_state().get("violations", []))
+    violations += scheduler_violations()
+    violations += await session_policy_violations()
+    return {
+        "ok": not violations,
+        "production": is_production(),
+        "violations": violations,
+        "required_controls": {
+            "REDACT_PII": "1",
+            "LOG_FORMAT": "json",
+            "middleware": sorted(REQUIRED_MIDDLEWARE),
+            "schedulers": sorted(REQUIRED_SCHEDULERS),
+            "session_policy_roles": list(REQUIRED_SESSION_POLICY_ROLES),
+        },
+    }
