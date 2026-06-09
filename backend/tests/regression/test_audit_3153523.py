@@ -214,3 +214,12 @@ def test_dev_switcher_config_fetch_sends_auth():
         assert idx != -1, f"dev-switcher config fetch missing in {rel}"
         window = src[idx - 250 : idx + 250]
         assert "Authorization" in window, f"dev-switcher config fetch not authenticated in {rel}"
+
+
+def test_beneficiary_hub_has_offline_fallback():
+    """BeneficiaryHubPage must rehydrate the connected-estates orbit from the
+    beneficiary offline cache when the live /estates fetch fails (airplane mode),
+    instead of rendering '0 benefactor estates'."""
+    src = _read("frontend/src/pages/beneficiary/BeneficiaryHubPage.js")
+    assert "readBenEstates" in src, "Hub has no offline estate fallback"
+    assert "cacheBenEstates" in src, "Hub does not mirror estates for offline use"

@@ -10,6 +10,10 @@ import EmergencyAccessPanel from '../../components/beneficiary/EmergencyAccessPa
 import OfflineImage from '../../components/OfflineImage';
 import { resolvePhotoUrl } from '../../utils/photoUrl';
 import BenefactorPrompt from '../../components/BenefactorPrompt';
+import {
+  cacheBenEstates, readBenEstates,
+  cacheBenFamilyConnections, readBenFamilyConnections,
+} from '../../utils/beneficiaryOfflineCache';
 import { API_URL } from '../../config';
 
 /**
@@ -88,6 +92,11 @@ const BeneficiaryHubPage = () => {
       ]);
       setEstates((estatesRes.data || []).filter(e => e.user_role_in_estate !== 'owner'));
       setFamilyConnections(connectionsRes.data || []);
+      // Mirror to the beneficiary offline cache so the orbit still renders on
+      // airplane mode (this page previously showed "0 estates" offline because
+      // it never read the cache that warmup.js / the Dashboard already populate).
+      cacheBenEstates(estatesRes.data || []);
+      cacheBenFamilyConnections(connectionsRes.data || []);
       // Photo priority: user's own profile photo > benefactor-uploaded photo for me
       if (meRes.data.photo_url) {
         setMyPhoto(meRes.data.photo_url);
@@ -95,7 +104,14 @@ const BeneficiaryHubPage = () => {
         const benefactorSetPhoto = (connectionsRes.data || []).find(c => c.my_photo_in_estate)?.my_photo_in_estate;
         if (benefactorSetPhoto) setMyPhoto(benefactorSetPhoto);
       }
-    } catch { /* offline / 401 — render empty hub */ }
+    } catch {
+      // Offline / 401 — rehydrate the orbit from the beneficiary offline cache
+      // (populated at login by warmup.js) instead of showing "0 estates".
+      const cachedEstates = readBenEstates().filter(e => e.user_role_in_estate !== 'owner');
+      if (cachedEstates.length) setEstates(cachedEstates);
+      const cachedConns = readBenFamilyConnections();
+      if (cachedConns.length) setFamilyConnections(cachedConns);
+    }
     finally { setLoading(false); }
   };
 
