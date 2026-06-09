@@ -942,6 +942,13 @@ async def delete_estate(estate_id: str, current_user: dict = Depends(get_current
     if estate["owner_id"] != current_user["id"]:
         raise HTTPException(status_code=403, detail="Access denied")
 
+    # SOC2 deletion finality (audit 5391e8b #6): purge ALL object-storage blobs
+    # (documents, message media, PDFs, chat media, photos) BEFORE removing the
+    # DB rows that point to them — otherwise the encrypted material is orphaned.
+    from services.estate_purge import purge_estate_storage
+
+    await purge_estate_storage(estate_id)
+
     # Delete all related data
     await db.documents.delete_many({"estate_id": estate_id})
     await db.messages.delete_many({"estate_id": estate_id})

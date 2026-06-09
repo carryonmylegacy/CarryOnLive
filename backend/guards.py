@@ -285,6 +285,18 @@ def check_manager_or_admin(user: dict):
         raise HTTPException(status_code=403, detail="Manager or admin access required")
 
 
+def derive_operator_scopes(user: dict) -> list[str]:
+    """Map an operator account to its least-privilege admin scope (SOC2 #2).
+
+    operator_role 'manager' → ['ops_manager']; anything else → ['ops_team'].
+    Non-operators return []. Mirrors routes/admin/scoped_roles.py so the
+    operator → scope mapping has one consistent definition.
+    """
+    if user.get("role") != "operator":
+        return []
+    return ["ops_manager"] if user.get("operator_role") == "manager" else ["ops_team"]
+
+
 # ── IDOR (Insecure Direct Object Reference) guards ──────────────────────────
 # Use these on every endpoint that takes an estate_id (or fetches by item id
 # and then needs to authorize the calling user). Added Feb 2026 after an

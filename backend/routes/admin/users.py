@@ -16,6 +16,28 @@ router = APIRouter()
 @router.get("/admin/users")
 async def get_all_users(current_user: dict = Depends(require_staff)):
     """Get all users with subscription info and beneficiary tree — admin and operators"""
+    # SOC2 least-privilege (audit 5391e8b #2): an ops_team worker (operator
+    # whose operator_role is not 'manager') must NOT receive the full customer
+    # roster — emails, subscriptions, and beneficiary PII trees. Return a
+    # minimized view: identity + account-status fields only, no PII.
+    if current_user.get("role") == "operator" and current_user.get("operator_role") != "manager":
+        ops_view = await db.users.find(
+            {},
+            {
+                "_id": 0,
+                "id": 1,
+                "name": 1,
+                "role": 1,
+                "operator_role": 1,
+                "created_at": 1,
+                "last_login_at": 1,
+                "account_locked": 1,
+                "is_also_benefactor": 1,
+                "session_exempt": 1,
+            },
+        ).to_list(1000)
+        return [u for u in ops_view if u.get("id")]
+
     users = await db.users.find({}, {"_id": 0, "password": 0, "onboarding_drip_state": 0, "username_lower": 0}).to_list(
         1000
     )
@@ -140,6 +162,13 @@ async def delete_user(
     estate_ids = [e["id"] for e in estates]
 
     if estate_ids:
+        # SOC2 deletion finality (audit 5391e8b #6): purge ALL object-storage
+        # blobs for each estate BEFORE removing the DB rows that point to them.
+        from services.estate_purge import purge_estate_storage
+
+        for _eid in estate_ids:
+            await purge_estate_storage(_eid)
+
         # Delete ALL data tied to these estates
         await db.beneficiaries.delete_many({"estate_id": {"$in": estate_ids}})
         await db.documents.delete_many({"estate_id": {"$in": estate_ids}})
@@ -171,6 +200,12 @@ async def delete_user(
     )
     # Delete beneficiary records that link this user to other estates
     await db.beneficiaries.delete_many({"user_id": user_id})
+
+    # SOC2 deletion finality (#6): purge the user's personal media (profile
+    # photos) from object storage before the user row is removed.
+    from services.estate_purge import purge_user_storage
+
+    await purge_user_storage(user_id)
 
     # Finally delete the user
     await db.users.delete_one({"id": user_id})

@@ -12,6 +12,7 @@ from guards import require_admin
 from starlette.middleware.gzip import GZipMiddleware
 
 from config import client, db, logger
+from services.environment import is_production
 from middleware import (
     RateLimitMiddleware,
     RequestTraceMiddleware,
@@ -273,6 +274,23 @@ async def lifespan(app):
     sla_task = asyncio.create_task(_supervise("sla_checker", sla_checker_loop, ttl=120))
     scheduler_tasks.append(sla_task)
 
+    # ── SOC2 production-readiness gate (audit 5391e8b #7) ────────────────────
+    # In production, verify PII-safe structured logging (REDACT_PII/LOG_FORMAT)
+    # and the full security-middleware stack are active. Violations are logged
+    # CRITICAL and degrade /health/ready → 503 so the orchestrator pulls the pod
+    # out of rotation rather than serving traffic without SOC2 controls.
+    # Inert on preview/dev (is_production() is False).
+    try:
+        from services.production_readiness import evaluate_production_readiness
+
+        _readiness = evaluate_production_readiness(app)
+        if not _readiness["ok"]:
+            for _v in _readiness["violations"]:
+                logger.critical(f"[SOC2-READINESS] production gate violation: {_v}")
+
+    except Exception as _rd_exc:
+        logger.warning(f"production readiness evaluation skipped: {_rd_exc}")
+
     yield
 
     # ── Graceful shutdown: bounded wait so SIGTERM doesn't hang pods ──
@@ -296,9 +314,12 @@ app = FastAPI(
     title="CarryOn™ API",
     version="1.0.0",
     lifespan=lifespan,
-    docs_url="/api/docs",
-    redoc_url="/api/redoc",
-    openapi_url="/api/openapi.json",
+    # SOC2 (#7): the interactive API explorer + raw schema are DISABLED in
+    # production (set to None) so the full route surface isn't enumerable on a
+    # live deployment. Available on preview/dev for integration work.
+    docs_url=None if is_production() else "/api/docs",
+    redoc_url=None if is_production() else "/api/redoc",
+    openapi_url=None if is_production() else "/api/openapi.json",
     summary="Family Preparedness Platform — Partner & B2B Integration API",
     description=(
         "CarryOn™ is an offline-first family-preparedness platform. This is the "
@@ -469,6 +490,20 @@ async def health_ready():
     except Exception as e:
         checks["mongodb"] = f"error: {e.__class__.__name__}"
         ok = False
+
+    # SOC2 production-readiness gate (#7): degrade the pod out of rotation if
+    # required logging/middleware/schedulers are inactive in production.
+    # Inert on preview/dev (returns no violations).
+    try:
+        from services.production_readiness import get_readiness_state, scheduler_violations
+
+        _prod_violations = list(get_readiness_state().get("violations", [])) + scheduler_violations()
+        if _prod_violations:
+            checks["production_readiness"] = _prod_violations
+            ok = False
+    except Exception as e:
+        checks["production_readiness"] = f"check_error: {e.__class__.__name__}"
+
     status_code = 200 if ok else 503
     return JSONResponse(
         status_code=status_code,

@@ -15,7 +15,9 @@ from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel
 
 from config import db, logger
+from guards import require_admin
 from services.download_tokens import consume_token, create_token
+from services.environment import is_production
 from utils import get_current_user
 
 router = APIRouter()
@@ -53,8 +55,14 @@ async def prepare_download(data: PrepareRequest, current_user: dict = Depends(ge
 
 
 @router.get("/downloads/ffmpeg-check")
-async def ffmpeg_check():
-    """Diagnostic: verify FFmpeg is available and has libx264 encoder."""
+async def ffmpeg_check(current_user: dict = Depends(require_admin)):
+    """Diagnostic: verify FFmpeg is available and has libx264 encoder.
+
+    SOC2 (#7): admin-only, and fully DISABLED (404) in production — a video
+    transcode probe must never be reachable on a live deployment.
+    """
+    if is_production():
+        raise HTTPException(status_code=404, detail="Not found")
     import os
     import shutil
 
@@ -297,7 +305,7 @@ async def _handle_ccp_plan(user: dict, params: dict, filename: str) -> Response:
         raise HTTPException(status_code=404, detail="Estate not found")
     is_owner = estate["owner_id"] == user["id"]
     is_ben = user["id"] in estate.get("beneficiaries", [])
-    is_admin = user.get("role") in ("admin", "operator")
+    is_admin = user.get("role") == "admin"
     if not (is_owner or is_ben or is_admin):
         raise HTTPException(status_code=403, detail="Access denied")
 
@@ -471,7 +479,7 @@ async def _handle_family_readiness_report(user: dict, params: dict, filename: st
     if not estate:
         raise HTTPException(status_code=404, detail="Estate not found")
     is_owner = estate["owner_id"] == user["id"]
-    is_admin = user.get("role") in ("admin", "operator")
+    is_admin = user.get("role") == "admin"
     if not (is_owner or is_admin):
         raise HTTPException(status_code=403, detail="Only the estate owner can generate this report")
 
@@ -738,7 +746,7 @@ async def _handle_emergency_card(user: dict, params: dict, filename: str) -> Res
         raise HTTPException(status_code=404, detail="Estate not found")
     is_owner = estate["owner_id"] == user["id"]
     is_ben = user["id"] in estate.get("beneficiaries", [])
-    is_admin = user.get("role") in ("admin", "operator")
+    is_admin = user.get("role") == "admin"
     if not (is_owner or is_ben or is_admin):
         raise HTTPException(status_code=403, detail="Access denied")
 

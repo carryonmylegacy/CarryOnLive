@@ -53,6 +53,11 @@ class StorageBackend(ABC):
         """Download a blob by arbitrary key."""
         return await self.download(key)
 
+    async def purge_prefix(self, prefix: str) -> int:
+        """Delete every blob whose key starts with `prefix`. Returns the count
+        deleted. Used for estate/user deletion finality. Default no-op."""
+        return 0
+
     def presign_get_url(
         self,
         storage_key: str,
@@ -126,6 +131,17 @@ class LocalStorage(StorageBackend):
         file_path.write_bytes(blob)
         logger.info(f"LocalStorage: uploaded {len(blob)} bytes to {key}")
         return key
+
+    async def purge_prefix(self, prefix: str) -> int:
+        import shutil
+
+        target = self._key_to_path(prefix)
+        if not target.exists():
+            return 0
+        count = sum(1 for p in target.rglob("*") if p.is_file())
+        shutil.rmtree(target, ignore_errors=True)
+        logger.info(f"LocalStorage: purged prefix {prefix} ({count} files)")
+        return count
 
 
 class S3Storage(StorageBackend):
@@ -219,6 +235,24 @@ class S3Storage(StorageBackend):
         )
         logger.info(f"S3Storage: uploaded {len(blob)} bytes to s3://{self.bucket}/{key}")
         return key
+
+    async def purge_prefix(self, prefix: str) -> int:
+        import asyncio
+
+        def _purge() -> int:
+            paginator = self.client.get_paginator("list_objects_v2")
+            total = 0
+            for page in paginator.paginate(Bucket=self.bucket, Prefix=prefix):
+                objs = [{"Key": o["Key"]} for o in page.get("Contents", [])]
+                for i in range(0, len(objs), 1000):
+                    batch = objs[i : i + 1000]
+                    self.client.delete_objects(Bucket=self.bucket, Delete={"Objects": batch})
+                    total += len(batch)
+            return total
+
+        total = await asyncio.to_thread(_purge)
+        logger.info(f"S3Storage: purged prefix s3://{self.bucket}/{prefix} ({total} objects)")
+        return total
 
     def presign_get_url(
         self,

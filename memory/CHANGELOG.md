@@ -1,6 +1,31 @@
 # CarryOn — Changelog
 
 
+## Jun 9, 2026 — Audit `5391e8b` SOC2 hardening — Batch B (#2, #6, #7) — VERIFIED
+
+Completed the remaining Batch-B findings after the #8 GitHub branch-ruleset review (founder configured `main protection`: restrict deletions + block force pushes + SOC2 Deploy Gate required check + admin bypass + Active). All backend, surgical, fail-closed; no architecture change.
+
+- **#2 Operator least-privilege** (`guards.py`, `routes/admin/users.py`, `routes/downloads.py`):
+  - New `derive_operator_scopes(user)` helper (manager→`ops_manager`, worker/else→`ops_team`) — one consistent operator→scope mapping (mirrors `scoped_roles.py`).
+  - `GET /admin/users`: an **ops_team worker** (operator whose `operator_role` != manager) now receives a **minimized roster** — identity + account-status fields only (id, name, role, operator_role, created_at, last_login_at, account_locked, is_also_benefactor, session_exempt). NO emails, subscriptions, or beneficiary PII trees. Admins + ops managers keep the full roster (verified: founder still gets 519 users with subscription/email/estate_groups — no regression).
+  - **Arbitrary estate/CCP material downloads**: removed the `operator` bypass from `_handle_ccp_plan`, `_handle_family_readiness_report`, and `_handle_emergency_card` (`("admin","operator")` → `("admin",)`). Operators can no longer download any estate's CCP plan PDF / family-readiness report / wallet emergency card (rendezvous points, addresses, self-defense notes). Owner/beneficiary/admin unaffected.
+
+- **#7 Production SOC2 readiness gates** (`services/environment.py`, `services/production_readiness.py`, `server.py`, `routes/downloads.py`):
+  - New canonical `is_production()` (same env-var convention as `seed_e2e`). **Inert on preview/dev** — every gate is a no-op unless a deploy env var signals production.
+  - **API explorer disabled in production**: `docs_url`/`redoc_url`/`openapi_url` set to `None` when `is_production()` (route surface not enumerable on a live deployment). Preview keeps `/api/docs` etc.
+  - **`/downloads/ffmpeg-check`**: now `Depends(require_admin)` (matches its declared route policy) AND returns **404 in production** (transcode probe never reachable live). Verified: unauth→401, admin on preview→200.
+  - **Readiness gate**: `evaluate_production_readiness(app)` at startup logs CRITICAL for each violation; `/health/ready` returns **503** in production when REDACT_PII!=1, LOG_FORMAT!=json, a required security middleware (SecurityHeaders/RateLimit/RequestTrace/DoS/Idempotency/TrusteeAudit) didn't load, or a required scheduler (data_retention/milestone_delivery/grace_period/billing_lifecycle) is unregistered/errored — degrade the pod out of rotation rather than serve traffic without SOC2 controls. Verified via prod simulation (ENVIRONMENT=production: docs=None, violations correctly raised then cleared once REDACT_PII/LOG_FORMAT/middleware present).
+
+- **#6 Full user/estate deletion finality** (`services/storage.py`, `services/estate_purge.py`, `routes/estates.py`, `routes/admin/users.py`):
+  - New `StorageBackend.purge_prefix(prefix)` (LocalStorage: rmtree; S3: paginated list+batch delete_objects). New `services/estate_purge.py`: `purge_estate_storage(estate_id)` enumerates documents (`storage_key`) + message media (estate-scoped + legacy `videos/`/`voices/`/`attachments/` keys), then sweeps `estates/{id}/` + `photos/estates/{id}/` prefixes; `purge_user_storage(user_id)` sweeps `photos/users/{id}/`.
+  - Wired into `DELETE /estates/{id}` and admin `DELETE /admin/users/{id}` **BEFORE** any DB row deletion — encrypted blobs are no longer orphaned in S3/local storage after hard delete. Best-effort (a missing blob never aborts deletion).
+
+**⚠️ FOUNDER ACTION REQUIRED for #7 to activate in production** (Render backend env): set **`ENVIRONMENT=production`** AND **`REDACT_PII=1`** AND **`LOG_FORMAT=json`** together. Setting `ENVIRONMENT=production` WITHOUT the other two will (by design) make `/health/ready` return 503. Until `ENVIRONMENT` (or another prod env var) is set, all #7 gates stay inert and prod behaves as today.
+
+Gates: `tests/regression/test_soc2_batch_b.py` **8/8 PASS** (env detection, readiness violations, operator-scope mapping, LocalStorage prefix purge, ffmpeg static guard); `server` imports clean; `housekeeping.sh --strict` **EXIT 0 / ALL CHECKS PASSED** (route policy 670/670, dep-vuln no regression); live: founder roster unchanged, ffmpeg-check admin-gated.
+
+
+
 ## Jun 7, 2026 — Audit `5391e8b` SOC2 hardening — Batch A (#1,#4,#5,#9) + #3 doc + #8 — VERIFIED
 
 Owner-approved sequencing: Batch A surgical fixes done now; #3 accepted-risk; #8 workflow+settings. Batch B (#2 operator least-privilege, #7 prod-readiness gates, #6 deletion finality) is the next focused pass.
