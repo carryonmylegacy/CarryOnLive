@@ -1,6 +1,17 @@
 # CarryOn — Changelog
 
 
+## Jun 9, 2026 — Audit `3153523` SOC2 fixes (#1–#4, all implemented) — VERIFIED
+
+Four-part audit (SOC2 / beneficiary access / offline / deploy gate). All shipped + tested; none conflicted with the Prime Directive. Two carry a founder dashboard-mirror action (Render reads `render.yaml` only on Blueprint sync). Full disposition: `docs/SOC2_AUDIT_RESPONSES_3153523.md`.
+
+- **#1 Production controls inert on Render** (`render.yaml`): added non-secret `ENVIRONMENT=production`, `REDACT_PII=1`, `LOG_FORMAT=json` so `is_production()` + the hard readiness gate actually arm on Render. **Founder must set the same three in the Render dashboard.** Regression: `production_readiness_report()` fails closed when prod + controls absent.
+- **#2 Scheduler-worker liveness proof** (`scheduler_worker.py`, `services/production_readiness.py`): worker now writes durable per-scheduler heartbeats to Mongo (`scheduler_heartbeats`); new `worker_heartbeat_violations()` makes `/api/admin/soc2-readiness` **FAIL CLOSED** when `DISABLE_INPROC_SCHEDULERS=1` and any required scheduler heartbeat is missing/stale(>300s)/error. Inert in current in-proc topology (covered by sync check); arms automatically on worker-pod flip.
+- **#3 Render auto-deploy contradiction** (`render.yaml`): `autoDeploy: true → false`; comment clarifies Deploy-Hook-only release after the SOC2 Deploy Gate, dashboard "Auto-Deploy = No" authoritative.
+- **#4 Offline mirrors plaintext-at-rest** (`offline/repos/profileRepo.js`, `subscriptionRepo.js`): full `/auth/me` profile + subscription payloads now force-encrypted (`sealRecordForce`, flag-agnostic) into `__enc`; only profile display-identity fields stay plaintext. FAIL CLOSED (no key → display-only/purged). Legacy plaintext rows self-heal on read. **Browser-verified** on preview with offline mode OFF: both mirrors `__enc`, no plaintext `data`. Tests: backend static guards + `frontend/src/offline/repos/__tests__/offlineRepos.test.js` (real WebCrypto).
+- Regression suite: `backend/tests/regression/test_audit_3153523.py` (23/23 green incl. prior batches). Housekeeping `--strict`: 0 WARN / 0 FAIL.
+
+
 ## Jun 9, 2026 — Audit `735b3b7` SOC2 fixes (#1, #2, #4, #5, #6) + #3 risk-accepted — VERIFIED
 
 Six-part audit against main `735b3b7`. Backend items shipped + tested; #3 (offline list-cache encryption) **explicitly risk-accepted by owner** with new compensating controls.

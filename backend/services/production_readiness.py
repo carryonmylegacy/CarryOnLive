@@ -114,6 +114,62 @@ def scheduler_violations() -> list[str]:
     return v
 
 
+# Heartbeat freshness window for the dedicated scheduler worker (audit 3153523 #2).
+WORKER_HEARTBEAT_STALE_SECONDS = 300
+
+
+async def worker_heartbeat_violations() -> list[str]:
+    """When schedulers are owned by a DEDICATED worker pod
+    (DISABLE_INPROC_SCHEDULERS=1), the API process can't observe their in-proc
+    health. Require a FRESH, non-error Mongo heartbeat (written by
+    scheduler_worker.py) for every REQUIRED scheduler. FAILS CLOSED:
+    missing / stale / errored → violation.
+
+    Inert outside production, and inert when in-proc schedulers are enabled
+    (the synchronous scheduler_violations() already covers that mode). This is
+    what stops SOC2 readiness from reporting ok=true while the worker is dead.
+    """
+    if not is_production():
+        return []
+    if os.environ.get("DISABLE_INPROC_SCHEDULERS", "").strip().lower() not in ("1", "true", "yes"):
+        return []
+    from datetime import datetime, timezone
+
+    from config import db
+
+    now = datetime.now(timezone.utc)
+    try:
+        rows = await db.scheduler_heartbeats.find(
+            {"scheduler_name": {"$in": sorted(REQUIRED_SCHEDULERS)}}, {"_id": 0}
+        ).to_list(100)
+    except Exception as e:  # pragma: no cover
+        logger.warning(f"worker heartbeat lookup failed in readiness gate: {e}")
+        return [f"scheduler worker heartbeats unreadable: {e}"]
+    by_name = {r.get("scheduler_name"): r for r in rows}
+    v: list[str] = []
+    for name in sorted(REQUIRED_SCHEDULERS):
+        r = by_name.get(name)
+        if not r:
+            v.append(f"scheduler worker heartbeat missing: {name}")
+            continue
+        if r.get("status") == "error":
+            v.append(f"scheduler worker in error state: {name} ({r.get('last_error')})")
+            continue
+        last_seen = r.get("last_seen_at")
+        stale = True
+        if last_seen:
+            try:
+                ls = datetime.fromisoformat(last_seen)
+                if ls.tzinfo is None:
+                    ls = ls.replace(tzinfo=timezone.utc)
+                stale = (now - ls).total_seconds() > WORKER_HEARTBEAT_STALE_SECONDS
+            except Exception:
+                stale = True
+        if stale:
+            v.append(f"scheduler worker heartbeat stale: {name} (last_seen={last_seen})")
+    return v
+
+
 # Staff roles whose session inactivity policy MUST be enabled in production.
 REQUIRED_SESSION_POLICY_ROLES = ("admin", "manager", "worker")
 
@@ -144,6 +200,7 @@ async def production_readiness_report() -> dict:
     """
     violations = list(get_readiness_state().get("violations", []))
     violations += scheduler_violations()
+    violations += await worker_heartbeat_violations()
     violations += await session_policy_violations()
     return {
         "ok": not violations,
