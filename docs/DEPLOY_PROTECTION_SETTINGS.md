@@ -33,33 +33,35 @@ Settings → Branches → Add branch ruleset (or classic protection) for `main`:
 Goal: Vercel must NOT publish a Production build until the `SOC2 Deploy Gate`
 status check on that commit is green.
 
+NOTE: Vercel moved "Ignored Build Step" — it is **NO LONGER under Settings → Git**.
+It now lives under **Settings → Build and Deployment** (older UIs: "General").
+
 Step by step:
 1. Go to **https://vercel.com** → your team → the CarryOn frontend **Project**.
-2. **Settings** (top nav) → **Git** (left sidebar).
-3. Scroll to **"Ignored Build Step"** (or "Deploy Hooks / Production Branch").
-4. The most reliable method on Vercel today is the **"Ignored Build Step"**
-   command — set it to a script that exits 0 (build) only when the deploy gate
-   succeeded, else exits 1 (skip). Paste this into the Ignored Build Step box:
+2. **Settings** (top nav) → **Build and Deployment** (left sidebar).
+3. Scroll to the **"Ignored Build Step"** section.
+4. Change the dropdown from "Automatic" to **"Run my Bash script / Custom"**, and
+   paste a command that SKIPS the build unless the deploy gate succeeded on this
+   commit:
    ```bash
-   bash -c 'gh_status=$(curl -s -H "Authorization: Bearer $GH_CHECK_TOKEN" \
+   bash -c 'ok=$(curl -s -H "Authorization: Bearer $GH_CHECK_TOKEN" \
      "https://api.github.com/repos/<OWNER>/<REPO>/commits/$VERCEL_GIT_COMMIT_SHA/check-runs" \
      | grep -o "\"name\":\"SOC2 Deploy Gate[^}]*\"conclusion\":\"success\"" ); \
-     [ -n "$gh_status" ] && exit 1 || exit 0'
+     [ -n "$ok" ] && exit 1 || exit 0'
    ```
+   - Vercel semantics: **exit 1 = build proceeds**, **exit 0 = build is skipped**.
+     So this proceeds only when the gate's conclusion is `success`.
    - Replace `<OWNER>/<REPO>` with your repo path.
-   - Add a Vercel **Environment Variable** `GH_CHECK_TOKEN` = a fine-grained
-     GitHub PAT with read-only "Checks" + "Contents" permission on the repo.
-   - Note Vercel's Ignored Build Step uses **exit 0 = "skip build"** semantics in
-     some configs and the inverse in others — test once: push a commit, confirm
-     Vercel skips until the gate is green, then deploys.
-5. Simpler alternative (recommended if you use the **Vercel GitHub App**): in
-   **Settings → Git → "Production Branch"**, ensure it's `main`, and rely on the
-   **branch ruleset from section 2** — because Emergent's commits land on `main`
-   only after the gate is required, an unverified commit can't define `main`'s
-   tip in a protected-merge flow. (For direct admin pushes, use the Ignored
-   Build Step above, since branch protection bypasses admins.)
-6. **Save**. Test with one push and watch the Vercel **Deployments** tab show
-   "Skipped — build canceled" until the GitHub check turns green.
+   - Add a Vercel **Environment Variable** (Settings → Environment Variables)
+     `GH_CHECK_TOKEN` = a fine-grained GitHub PAT with **read-only** "Checks" +
+     "Contents" permission on the repo.
+5. **Save**, then push one commit and watch the **Deployments** tab show
+   "Skipped — build canceled" until the GitHub `SOC2 Deploy Gate` check is green.
+
+Alternative (no script): you already have a Deploy Hook named **"Emergent" on
+`main`** (Settings → Git → Deploy Hooks). You can instead turn OFF Vercel's
+auto-deploy-on-push and have the GitHub `deploy-gate` job `curl` that hook ONLY
+on success — same pattern as Render §4 below. Tell me and I'll add the CI step.
 
 ## 4. Render (backend production) — make the deploy WAIT for the gate
 Goal: Render must NOT roll out a new backend until the `SOC2 Deploy Gate` check
