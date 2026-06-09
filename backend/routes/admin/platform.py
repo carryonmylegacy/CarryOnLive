@@ -13,36 +13,6 @@ router = APIRouter()
 # ===================== PLATFORM SETTINGS =====================
 
 
-@router.get("/public/site-content")
-async def get_public_site_content():
-    """Public endpoint — returns non-sensitive site content settings (video ID, footer info, etc.)."""
-    settings = await db.platform_settings.find_one({"_id": "global"}, {"_id": 0}) or {}
-    return {
-        "homepage_video_id": settings.get("homepage_video_id", "EhU-jojs1jk"),
-        "homepage_video_id_vertical": settings.get("homepage_video_id_vertical", ""),
-        "footer_address_line1": settings.get("footer_address_line1", "1550 Wilson Boulevard 7th Floor"),
-        "footer_address_line2": settings.get("footer_address_line2", "Arlington, VA 22209 U.S.A."),
-        "footer_phone": settings.get("footer_phone", "(703) 884-1527"),
-        # Public, non-sensitive feature flag (Feb 26 2026). When the
-        # founder's Admin sidebar toggle is OFF, the user-facing
-        # Offline section in Settings and the Offline Mode onboarding
-        # tile must disappear too — otherwise users see a toggle for a
-        # feature that's been disabled platform-wide. Returned as the
-        # raw mode string ('on' | 'off') so the frontend can treat any
-        # non-'on' value as "hide it".
-        "offline_mode": settings.get("offline_mode", "off"),
-        # Public, non-sensitive feature flag (Jun 2026). When the founder's
-        # Admin sidebar "Subscriptions" toggle is OFF, EVERY user's menu must
-        # hide the Subscription item platform-wide. Defaults to True (shown).
-        "subscriptions_enabled": settings.get("subscriptions_enabled", True),
-        # Public, non-sensitive feature flag (Jun 2026). When platform-wide
-        # Free Mode is ON, the marketing/login hero surfaces the "CarryOn is
-        # free right now" tile (same copy as the in-app Free banner) so
-        # prospective users see it before signing in. Defaults to False.
-        "platform_free_mode": bool(settings.get("platform_free_mode", False)),
-    }
-
-
 @router.get("/admin/platform-settings")
 async def get_platform_settings(current_user: dict = Depends(require_admin)):
     """Get platform-wide settings (admin only)."""
