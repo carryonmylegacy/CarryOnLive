@@ -257,7 +257,12 @@ self.addEventListener('install', (event) => {
           console.warn('[SW] Manifest chunk precache failed:', e?.message || e);
         }
       })
-      .then(() => self.skipWaiting())
+      // NOTE: we intentionally do NOT call self.skipWaiting() here.
+      // The new worker stays in the "waiting" state so the app can show
+      // a "New version available — tap to refresh" prompt and only
+      // activate (via the SKIP_WAITING message) when the user taps.
+      // This stops the open page from silently running stale code until
+      // a full app close/reopen (the recurring PWA-cache complaint).
   );
 });
 

@@ -21,6 +21,7 @@ import PendingSyncChip from './components/PendingSyncChip';
 import ScrollRestorationProvider from './components/ScrollRestorationProvider';
 import PartnerHeadBranding from './components/PartnerHeadBranding';
 import BuildTag from './components/BuildTag';
+import UpdatePrompt from './components/UpdatePrompt';
 import { AmberAlertProvider } from './components/AmberAlert';
 import { initErrorReporter, reportError } from './utils/errorReporter';
 import { checkForUpdates } from './utils/versionCheck';
@@ -916,6 +917,7 @@ function App() {
           <AmberAlertProvider />
           <UsernameReviewModal />
           <BuildTag />
+          <UpdatePrompt />
           <AppRoutes />
           <ShareHandler />
           {/* Global PDF preview modal — listens for `carryon:open-pdf-preview`

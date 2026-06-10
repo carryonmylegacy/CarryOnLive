@@ -1,6 +1,16 @@
 # CarryOn — Changelog
 
 
+## Jun 10, 2026 — PWA "New version available — tap to refresh" prompt — VERIFIED
+
+Fixes the recurring "the fix didn't work until I fully closed & reopened the app" friction: a freshly-deployed build now self-announces inside the open PWA.
+
+- **`public/sw-push.js`**: removed `self.skipWaiting()` from the install chain so a newly-installed worker stays in the **waiting** state (instead of silently activating while the open page kept running stale JS). `SKIP_WAITING` message handler + `clients.claim()` retained.
+- **`src/index.js`**: registration now detects a waiting/installed-update worker and dispatches a `carryon:update-available` window event + exposes `window.__carryonApplyUpdate()` (messages the waiting worker → reloads on `controllerchange`, listener attached only at tap time to avoid first-install reload loops). Also polls `reg.update()` on window focus + every 30 min while visible.
+- **`src/components/UpdatePrompt.js`** (new): dismissible bottom-center gold banner ("New version available — Tap refresh to get the latest CarryOn") with `data-testid` `pwa-update-prompt` / `pwa-update-refresh-button` / `pwa-update-dismiss-button`. Safe-area-aware bottom inset for iOS PWA. Mounted in `App.js` inside `BrowserRouter`.
+- Verified on preview: banner renders on event, Refresh invokes the apply-update path, dismiss removes it. SW registration is skipped in headless (Playwright) by design, so the prompt was exercised via a dispatched event. No new lint warnings introduced (UpdatePrompt clean; 4 pre-existing `no-mixed-operators` warnings untouched).
+
+
 ## Jun 10, 2026 — CES org-chart working-area now fills the screen — VERIFIED
 
 User complaint (open ~1 week): the CarryOn Entities & Structures (CES) tree was truncated by the section border instead of the window/screen edge.

@@ -404,19 +404,58 @@ if ('serviceWorker' in navigator && window.location.protocol !== 'file:' && !IS_
     });
     navigator.serviceWorker.register('/sw-push.js', { scope: '/' })
       .then((reg) => {
-        // If a new SW is waiting, prompt it to take over on next navigation.
-        if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+        // ── Tap-to-refresh update flow ──────────────────────────────
+        // The SW no longer self-skips waiting (see sw-push.js install
+        // handler). When a NEW version is installed and waiting, we
+        // surface a "New version available — tap to refresh" prompt
+        // instead of silently activating it (which left the open page
+        // running stale code until a full close/reopen). On tap, the
+        // app calls window.__carryonApplyUpdate(): it messages the
+        // waiting worker to SKIP_WAITING, then reloads once the new
+        // worker takes control (controllerchange). We guard against the
+        // first-ever install's controllerchange by only attaching the
+        // reload listener at tap time.
+        const promptUpdate = (worker) => {
+          if (!worker) return;
+          window.__carryonWaitingWorker = worker;
+          window.__carryonApplyUpdate = () => {
+            const w = window.__carryonWaitingWorker;
+            if (!w) { window.location.reload(); return; }
+            navigator.serviceWorker.addEventListener(
+              'controllerchange',
+              () => window.location.reload(),
+              { once: true },
+            );
+            w.postMessage({ type: 'SKIP_WAITING' });
+          };
+          window.dispatchEvent(new CustomEvent('carryon:update-available'));
+        };
+
+        // A new worker may already be waiting at page load (installed
+        // on a previous visit but never activated).
+        if (reg.waiting && navigator.serviceWorker.controller) {
+          promptUpdate(reg.waiting);
+        }
         reg.addEventListener('updatefound', () => {
           const installing = reg.installing;
-          if (installing) {
-            installing.addEventListener('statechange', () => {
-              if (installing.state === 'installed' && navigator.serviceWorker.controller) {
-                // New version ready — activate it so the next launch is fresh.
-                installing.postMessage({ type: 'SKIP_WAITING' });
-              }
-            });
-          }
+          if (!installing) return;
+          installing.addEventListener('statechange', () => {
+            // 'installed' + an existing controller == an UPDATE (not the
+            // first install). The worker is now waiting — prompt the user.
+            if (installing.state === 'installed' && navigator.serviceWorker.controller) {
+              promptUpdate(reg.waiting || installing);
+            }
+          });
         });
+        // Long-lived PWA sessions: actively poll for a new SW so the
+        // prompt appears without needing a manual reload. Check on tab
+        // focus and every 30 minutes while visible.
+        const checkForUpdate = () => { reg.update().catch(() => {}); };
+        window.addEventListener('focus', checkForUpdate);
+        setInterval(() => {
+          if (document.visibilityState === 'visible') checkForUpdate();
+        }, 30 * 60 * 1000);
+
         // Tell the SW about every same-origin bundle the browser has
         // already fetched on this page so it can copy them into
         // RUNTIME_CACHE. CRITICAL for offline boot: the FIRST page load
