@@ -7,7 +7,7 @@ import React from 'react';
 // free forever, leaving the future pricing model open.
 export const FREE_MODE_HEADLINE = 'CarryOn is in Free Mode';
 export const FREE_MODE_BODY =
-  "Right now, every feature and every tier is unlocked for everyone — at no cost. In these early days, our founder wants as many families as possible to experience everything CarryOn offers and protect what matters most, without cost getting in the way. While Free Mode is active, all plans below are paused and you won't be charged anything. Please use CarryOn to its fullest and get the maximum value from it — consider it our gift to you and your family.";
+  "Right now, every feature and every tier is unlocked for everyone — at no cost. In these early days, our founder wants as many families as possible to experience everything CarryOn offers and protect what matters most, without cost getting in the way. While Free Mode is active, all plan subscriptions are paused and you won't be charged anything. Please use CarryOn to its fullest and get the maximum value from it — consider it our gift to you and your family.";
 
 export const FreeModeBanner = ({ className = '', tone = 'auto', testId = 'free-mode-banner' }) => {
   // `tone="onDark"` renders readable light text for placement over a dark
