@@ -1,6 +1,16 @@
 # CarryOn — Changelog
 
 
+## Jun 10, 2026 — CES org-chart working-area now fills the screen — VERIFIED
+
+User complaint (open ~1 week): the CarryOn Entities & Structures (CES) tree was truncated by the section border instead of the window/screen edge.
+
+- **`frontend/src/components/financial/entities/EntitiesSection.js`**: removed the hardcoded `maxH = expanded ? '90vh' : '50vh'` cap. The chart canvas now measures its own top offset (`chartWrapRef.getBoundingClientRect().top`) against the **visual viewport** height and fills everything down to the bottom edge, minus a 12px gap and `env(safe-area-inset-bottom)` (iOS home-bar). Recomputed on resize / orientationchange / visualViewport resize+scroll, and after toolbar reflow (150ms/500ms settle timers).
+- **Expand button** now toggles a true full-window overlay (`position:fixed; inset:0; height:100dvh`, z-index 95) with a floating **Collapse** button (`data-testid="entities-collapse-fullscreen"`), giving an edge-to-edge canvas. List view height tracks the same `availH`.
+- New `data-testid="entities-chart-wrap"`. Verified on preview (desktop 1920×1080): normal mode chart bottom = 1068/1080px; expanded = 0,0→1920×1080. iOS PWA covered via safe-area insets + visualViewport. No new lint warnings (one pre-existing `getAuthHeaders` exhaustive-deps warning untouched).
+- Preview-only test scaffolding: enabled the `ces` feature gate for all tiers on the preview pod and seeded 4 entities on the `testben...@example.com` estate to exercise the chart (production unaffected).
+
+
 ## Jun 9, 2026 — Audit `3153523` SOC2 fixes (#1–#4, all implemented) — VERIFIED
 
 Four-part audit (SOC2 / beneficiary access / offline / deploy gate). All shipped + tested; none conflicted with the Prime Directive. Two carry a founder dashboard-mirror action (Render reads `render.yaml` only on Blueprint sync). Full disposition: `docs/SOC2_AUDIT_RESPONSES_3153523.md`.

@@ -9,7 +9,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import apiClient from '../../../utils/apiClient';
 import { notify } from '../../AppNotification';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Network, List as ListIcon, Maximize2, RotateCcw, Lock, Unlock, Map, Printer, LocateFixed } from 'lucide-react';
+import { Plus, Network, List as ListIcon, Maximize2, Minimize2, RotateCcw, Lock, Unlock, Map, Printer, LocateFixed } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { Button } from '../../ui/button';
 import { API_URL } from '../../../config';
@@ -71,6 +71,14 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
   // visible in fit-tree mode). The chart bubbles updates via
   // `onHiddenChange`.
   const [hiddenInfo, setHiddenInfo] = useState({ count: 0, showAll: () => {} });
+  // Working-area height — the chart canvas fills from its top edge down
+  // to the bottom of the *viewport/screen* (minus the iOS home-bar safe
+  // area) instead of an arbitrary 50vh/90vh cap, so the org-chart is only
+  // ever truncated by the window edge, never by the section border.
+  // `availH` is recomputed on resize / orientation change / toolbar
+  // reflow via the effect below.
+  const chartWrapRef = React.useRef(null);
+  const [availH, setAvailH] = useState(480);
   // Legend visibility — persists per estate so the user's last
   // preference survives a portal switch / hard reload.
   const [legendHidden, setLegendHidden] = useState(() => EntityLegend.readHiddenForEstate(estateId));
@@ -186,10 +194,52 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
-  const isEmpty = entities.length === 0 && externals.length === 0;
+  // Measure available height from the chart wrapper's top edge down to
+  // the bottom of the (visual) viewport. We use visualViewport when
+  // present so the iOS standalone PWA chrome + dynamic browser toolbars
+  // are accounted for. A tiny off-screen probe reads
+  // env(safe-area-inset-bottom) so the canvas clears the home-bar
+  // instead of hiding beneath it. When `expanded`, the wrapper goes
+  // full-window (see render) so this only drives the in-page height.
+  useEffect(() => {
+    const readSafeBottom = () => {
+      try {
+        const probe = document.createElement('div');
+        probe.style.cssText = 'position:fixed;left:0;bottom:0;width:0;height:env(safe-area-inset-bottom,0px);pointer-events:none;visibility:hidden;';
+        document.body.appendChild(probe);
+        const h = probe.getBoundingClientRect().height || 0;
+        probe.remove();
+        return h;
+      } catch { return 0; }
+    };
+    const compute = () => {
+      if (expanded) return; // full-window mode ignores measured height
+      const el = chartWrapRef.current;
+      if (!el) return;
+      const top = el.getBoundingClientRect().top;
+      const vh = window.visualViewport?.height || window.innerHeight;
+      const h = Math.max(320, Math.round(vh - top - 12 - readSafeBottom()));
+      setAvailH(h);
+    };
+    compute();
+    // Recompute after fonts/toolbar settle (the toolbar wraps onto a
+    // second row on narrow PWA widths, shifting our top offset).
+    const t1 = setTimeout(compute, 150);
+    const t2 = setTimeout(compute, 500);
+    window.addEventListener('resize', compute);
+    window.addEventListener('orientationchange', compute);
+    window.visualViewport?.addEventListener('resize', compute);
+    window.visualViewport?.addEventListener('scroll', compute);
+    return () => {
+      clearTimeout(t1); clearTimeout(t2);
+      window.removeEventListener('resize', compute);
+      window.removeEventListener('orientationchange', compute);
+      window.visualViewport?.removeEventListener('resize', compute);
+      window.visualViewport?.removeEventListener('scroll', compute);
+    };
+  }, [loaded, expanded, viewMode, entities.length, externals.length]);
 
-  // Section height grows to fit content, capped at 50dvh / 90dvh expanded.
-  const maxH = expanded ? '90vh' : '50vh';
+  const isEmpty = entities.length === 0 && externals.length === 0;
 
   // The user object passed downstream uses the freshest photo_url
   // available — fall back to the auth-context user when /auth/me hasn't
@@ -570,7 +620,33 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
         </Button>
       </div>
 
-      <div style={{ height: maxH, position: 'relative' }}>
+      <div
+        ref={chartWrapRef}
+        data-testid="entities-chart-wrap"
+        style={
+          expanded
+            ? {
+                position: 'fixed', inset: 0, zIndex: 95, width: '100vw', height: '100dvh',
+                background: 'var(--bg, #0B1120)',
+                padding: '8px',
+                paddingTop: 'calc(8px + env(safe-area-inset-top, 0px))',
+                paddingBottom: 'calc(8px + env(safe-area-inset-bottom, 0px))',
+              }
+            : { height: availH, position: 'relative' }
+        }
+      >
+        {expanded && (
+          <button
+            onClick={() => setExpanded(false)}
+            className="text-[11px] font-bold flex items-center gap-1 px-3 py-1.5 rounded-full transition-all border border-[var(--b)] text-[var(--t)] bg-[var(--bg2,#0F1729)] hover:border-[var(--gold)] hover:text-[var(--gold)]"
+            style={{ position: 'absolute', top: 'calc(12px + env(safe-area-inset-top, 0px))', right: 16, zIndex: 96 }}
+            data-testid="entities-collapse-fullscreen"
+            title="Collapse the chart back into the page"
+            aria-label="Collapse chart"
+          >
+            <Minimize2 className="w-3 h-3" /> Collapse
+          </button>
+        )}
         {viewMode === 'chart' ? (
           <EntityOrgChart
             key={resetTick}
@@ -683,7 +759,7 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
             }}
           />
         ) : (
-          <div className="overflow-auto" style={{ height: maxH, WebkitOverflowScrolling: 'touch' }}>
+          <div className="overflow-auto" style={{ height: expanded ? '100%' : availH, WebkitOverflowScrolling: 'touch' }}>
             <EntityListView
               entities={entities}
               externals={externals}
