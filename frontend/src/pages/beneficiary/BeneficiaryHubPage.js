@@ -14,6 +14,7 @@ import {
   cacheBenEstates, readBenEstates,
   cacheBenFamilyConnections, readBenFamilyConnections,
 } from '../../utils/beneficiaryOfflineCache';
+import { getLocalEstates } from '../../offline/repos/estatesRepo';
 import { API_URL } from '../../config';
 
 /**
@@ -105,9 +106,29 @@ const BeneficiaryHubPage = () => {
         if (benefactorSetPhoto) setMyPhoto(benefactorSetPhoto);
       }
     } catch {
-      // Offline / 401 — rehydrate the orbit from the beneficiary offline cache
-      // (populated at login by warmup.js) instead of showing "0 estates".
-      const cachedEstates = readBenEstates().filter(e => e.user_role_in_estate !== 'owner');
+      // Offline / 401 — rehydrate the orbit from whatever offline mirror
+      // still has data, in priority order:
+      //   1) the localStorage beneficiary cache (written here on a prior
+      //      online visit + by warmup.js at login), then
+      //   2) the Dexie estates mirror the Dashboard switcher uses — the
+      //      most reliably-populated source. This rescues the case the
+      //      user hit: warmup's /estates lost the network race when they
+      //      went offline quickly (so the localStorage cache was never
+      //      written) while the Dexie mirror still held the estates, OR
+      //      the Hub was simply never opened online this session. We
+      //      backfill the localStorage cache so the next offline mount
+      //      is instant.
+      let cachedEstates = readBenEstates().filter(e => e.user_role_in_estate !== 'owner');
+      if (!cachedEstates.length) {
+        try {
+          const all = await getLocalEstates();
+          const dexieBenEstates = all.filter(e => e.user_role_in_estate !== 'owner');
+          if (dexieBenEstates.length) {
+            cachedEstates = dexieBenEstates;
+            cacheBenEstates(all); // backfill the full list for next time
+          }
+        } catch { /* Dexie unavailable — fall through to empty state */ }
+      }
       if (cachedEstates.length) setEstates(cachedEstates);
       const cachedConns = readBenFamilyConnections();
       if (cachedConns.length) setFamilyConnections(cachedConns);

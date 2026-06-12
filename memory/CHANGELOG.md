@@ -1,6 +1,17 @@
 # CarryOn — Changelog
 
 
+## Jun 12, 2026 — Offline beneficiary Hub "0 estates" — root-caused & fixed — VERIFIED
+
+User hit "connected to 0 benefactor estates" on the beneficiary Hub (`/beneficiary`) in airplane mode after logging in online then immediately going offline.
+
+- **Root cause:** the Hub's offline rescue read only the `localStorage` beneficiary cache (`beneficiary:estates`), written by `warmup.js` at login. If warmup's `/estates` GET lost the network race when the user went offline quickly (or the Hub was never opened online that session), that cache was empty. Compounding it, the service worker only cached `/api/estates/` (details, trailing slash) — NOT the `/api/estates` list — so offline there was no SW fallback either.
+- **Fix 1 — `frontend/src/pages/beneficiary/BeneficiaryHubPage.js`**: the offline `catch` now falls back to the **Dexie estates mirror** (`getLocalEstates()` from `offline/repos/estatesRepo`, the same source the Dashboard switcher uses and the most reliably-populated one), filters out owner-role rows, and backfills the localStorage cache for next mount.
+- **Fix 2 — `public/sw-push.js`**: `CACHEABLE_API_PREFIXES` changed `/api/estates/` → `/api/estates` so the LIST endpoint is now cached (SWR), letting any online visit prime it for offline.
+- **Verified** (preview, Playwright offline sim): injected a beneficiary estate into Dexie, cleared the localStorage beneficiary cache, went offline, remounted the Hub → renders "connected to 1 benefactor" + the estate tile. (SW registration is skipped in headless, so the SW half is covered by code review; the app-level Dexie fallback is the one exercised.) No new lint warnings.
+- ⚠️ Takes effect on-device only after a new deploy + one full app close/reopen (new SW + JS bundle).
+
+
 ## Jun 10, 2026 — PWA "New version available — tap to refresh" prompt — VERIFIED
 
 Fixes the recurring "the fix didn't work until I fully closed & reopened the app" friction: a freshly-deployed build now self-announces inside the open PWA.

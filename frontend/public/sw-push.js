@@ -15,7 +15,7 @@
 // ── Versioning ──────────────────────────────────────────────────────────────
 // Bump SHELL_VERSION whenever the list of precached shell assets or the
 // caching strategy changes — triggers a cache purge on next SW activation.
-const SHELL_VERSION = 'build-2026-06-10-mq87y27j';
+const SHELL_VERSION = 'build-2026-06-10-mq8jobou';
 const SHELL_CACHE = `carryon-shell-${SHELL_VERSION}`;
 const RUNTIME_CACHE = `carryon-runtime-${SHELL_VERSION}`;
 const API_CACHE = `carryon-api-${SHELL_VERSION}`;
@@ -117,7 +117,8 @@ const OFFLINE_FALLBACK_HTML = `<!doctype html>
 const CACHEABLE_API_PREFIXES = [
   '/api/dashboard/tiles',
   '/api/beneficiaries/',
-  '/api/estates/',
+  '/api/estates',          // /api/estates (list) + /api/estates/{id} — cache so the
+                           // beneficiary Hub + Dashboard switcher survive airplane mode
   '/api/estate/',          // /api/estate/{id}/readiness
   '/api/estate-chat/contacts',
   '/api/subscriptions/enabled-features',
