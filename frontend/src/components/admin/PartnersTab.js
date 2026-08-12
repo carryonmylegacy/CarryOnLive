@@ -17,7 +17,7 @@ import apiClient from '../../utils/apiClient';
 import {
   Briefcase, Plus, Trash2, Copy, Check, Loader2, ExternalLink,
   Upload, Image as ImageIcon, Power, Send, Pencil, Users,
-  DollarSign, UserPlus, X,
+  DollarSign, UserPlus, X, KeyRound,
 } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
@@ -26,6 +26,7 @@ import { Label } from '../ui/label';
 import { Switch } from '../ui/switch';
 import { toast } from '../../utils/toast';
 import { PartnerRevShareModal } from './PartnerRevShareModal';
+import { PartnerManagersModal } from './PartnerManagersModal';
 import { API_URL } from '../../config';
 
 const LOGO_PLACEHOLDER = (
@@ -124,6 +125,7 @@ export const PartnersTab = ({ getAuthHeaders }) => {
   });
   const [copied, setCopied] = useState(null);
   const [revShareFor, setRevShareFor] = useState(null);
+  const [managersFor, setManagersFor] = useState(null);
   const fileInputs = useRef({});
   // Legacy `b2b_codes` rows — the old system that's been retired.
   // We surface them here read-only so admins can audit + delete any
@@ -505,6 +507,7 @@ export const PartnersTab = ({ getAuthHeaders }) => {
                     onCopyEmail={copyWelcomeEmail}
                     onSendEmail={sendWelcomeEmail}
                     onOpenRevShare={setRevShareFor}
+                    onOpenManagers={setManagersFor}
                     onRefetch={fetchAll}
                     sending={sending}
                     copied={copied}
@@ -521,6 +524,14 @@ export const PartnersTab = ({ getAuthHeaders }) => {
           partner={revShareFor}
           authHeaders={authHeaders}
           onClose={() => setRevShareFor(null)}
+        />
+      )}
+
+      {managersFor && (
+        <PartnerManagersModal
+          partner={managersFor}
+          authHeaders={authHeaders}
+          onClose={() => setManagersFor(null)}
         />
       )}
 
@@ -573,7 +584,7 @@ export const PartnersTab = ({ getAuthHeaders }) => {
   );
 };
 
-function PartnerRow({ partner, columns, gateField, gateMode, authHeaders, fileInputs, onUpdate, onToggleGate, onUploadLogo, onDelete, onCopy, onCopyEmail, onSendEmail, onOpenRevShare, onRefetch, sending, copied }) {
+function PartnerRow({ partner, columns, gateField, gateMode, authHeaders, fileInputs, onUpdate, onToggleGate, onUploadLogo, onDelete, onCopy, onCopyEmail, onSendEmail, onOpenRevShare, onOpenManagers, onRefetch, sending, copied }) {
   // Pre-pitch UX (May 20, 2026): default partner rows to a read-only
   // identity view with pencil + trash icons next to the logo. Tap the
   // pencil to expand into the editable Input fields. Keeps rows
@@ -961,6 +972,14 @@ function PartnerRow({ partner, columns, gateField, gateMode, authHeaders, fileIn
       {/* Actions */}
       <td className="px-3 py-3 text-right align-middle">
         <div className="flex items-center justify-end gap-2">
+          <button
+            onClick={() => onOpenManagers(partner)}
+            className="text-[var(--t5)] hover:text-[var(--gold)] p-0.5"
+            title="Manager logins (Partner Manager Portal)"
+            data-testid={`partner-managers-${partner.slug}`}
+          >
+            <KeyRound className="w-3.5 h-3.5" />
+          </button>
           <button
             onClick={() => onOpenRevShare(partner)}
             className="flex items-center gap-0.5 text-[11px] font-bold text-[#34d399] hover:text-[#6ee7b7]"

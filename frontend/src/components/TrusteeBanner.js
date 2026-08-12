@@ -16,10 +16,15 @@ import { ShieldAlert } from 'lucide-react';
  *         mobile header, dropdowns) already steps down by this var.
  *    When the banner unmounts we restore the offline var to whatever the
  *    NetworkStatusBanner had set (or 0px).
- *  • z-index is 40 — below the notification dropdown (z-index ≥ 50) so
- *    dropdowns layer above the banner, never the reverse.
+ *  • z-index is 240 — ABOVE the app modal layer (z-200: QuickStart
+ *    wizard, dialogs). The banner is the acting-as escape hatch: its
+ *    "Return to…" buttons must stay clickable even when the client's
+ *    portal has a full-screen modal open (found in iter173 — the
+ *    QuickStart backdrop swallowed clicks when the banner sat at z-40).
+ *    No practical overlap with dropdowns: the layout offsets everything
+ *    below by the banner height via --cy-trustee-banner-h.
  */
-const TRUSTEE_Z = 40;
+const TRUSTEE_Z = 240;
 
 const TrusteeBanner = () => {
   const { user } = useAuth();
@@ -79,7 +84,11 @@ const TrusteeBanner = () => {
   // rep's own account (/pro/clients "Enter portal"), the rep's original
   // token is stashed so they can hop back without re-authenticating.
   let proReturnToken = null;
-  try { proReturnToken = localStorage.getItem('carryon_pro_return_token'); } catch { /* ignore */ }
+  let managerReturn = null;
+  try {
+    proReturnToken = localStorage.getItem('carryon_pro_return_token');
+    managerReturn = localStorage.getItem('carryon_manager_return');
+  } catch { /* ignore */ }
 
   const returnToMyAccount = () => {
     try {
@@ -87,6 +96,17 @@ const TrusteeBanner = () => {
       localStorage.removeItem('carryon_pro_return_token');
     } catch { /* ignore */ }
     window.location.assign('/pro/clients');
+  };
+
+  // Partner Manager Portal — managers have no user token to restore;
+  // their own session lives in carryon_manager_token. Drop the trustee
+  // token and send them home.
+  const returnToManagerPortal = () => {
+    try {
+      localStorage.removeItem('carryon_token');
+      localStorage.removeItem('carryon_manager_return');
+    } catch { /* ignore */ }
+    window.location.assign('/manager/portal');
   };
 
   return (
@@ -144,6 +164,27 @@ const TrusteeBanner = () => {
           }}
         >
           Return to my account
+        </button>
+      )}
+      {!proReturnToken && managerReturn && (
+        <button
+          type="button"
+          onClick={returnToManagerPortal}
+          data-testid="trustee-banner-manager-return-btn"
+          style={{
+            marginLeft: 12,
+            background: '#fff7ed',
+            color: '#92400e',
+            border: 'none',
+            borderRadius: 999,
+            padding: '4px 14px',
+            fontSize: 12,
+            fontWeight: 800,
+            cursor: 'pointer',
+            verticalAlign: 'middle',
+          }}
+        >
+          Return to manager portal
         </button>
       )}
     </div>

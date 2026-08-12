@@ -51,6 +51,7 @@ from routes.pdf_export import router as pdf_export_router
 from routes.pdfs import router as pdfs_router
 from routes.quickstart import router as quickstart_router
 from routes.pro_clients import router as pro_clients_router
+from routes.partner_managers import router as partner_managers_router
 from routes.estate_binder import router as estate_binder_router
 from routes.share import router as share_router
 from routes.push import router as push_router
@@ -407,6 +408,7 @@ api_router.include_router(errors_router)
 api_router.include_router(pdfs_router)
 api_router.include_router(quickstart_router)
 api_router.include_router(pro_clients_router)
+api_router.include_router(partner_managers_router)
 api_router.include_router(estate_binder_router)
 api_router.include_router(share_router)
 api_router.include_router(section_permissions_router)

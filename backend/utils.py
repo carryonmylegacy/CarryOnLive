@@ -115,7 +115,7 @@ def create_token(
         payload["dev_session"] = True
     if extra_claims:
         # Only allow whitelisted extra claims to avoid accidental leakage.
-        for k in ("acting_as", "trustee_grant_id", "trustee_display_name"):
+        for k in ("acting_as", "trustee_grant_id", "trustee_display_name", "manager_id", "manager_partner_id"):
             if k in extra_claims:
                 payload[k] = extra_claims[k]
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)

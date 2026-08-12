@@ -332,6 +332,34 @@ ROUTE_POLICIES: dict = {
     "GET /api/admin/partners/{partner_id}/revshare-report": {"auth": "required", "roles": ["admin"]},
     "POST /api/admin/partners/{partner_id}/link-rep": {"auth": "required", "roles": ["admin"]},
     "DELETE /api/admin/partners/{partner_id}/link-rep": {"auth": "required", "roles": ["admin"]},
+    # ── Partner manager accounts (founder CRUD + manager portal) ────────────
+    "GET /api/admin/partners/{partner_id}/managers": {"auth": "required", "roles": ["admin"]},
+    "POST /api/admin/partners/{partner_id}/managers": {"auth": "required", "roles": ["admin"]},
+    "POST /api/admin/partners/{partner_id}/managers/{manager_id}/reset-password": {
+        "auth": "required",
+        "roles": ["admin"],
+    },
+    "PUT /api/admin/partners/{partner_id}/managers/{manager_id}": {"auth": "required", "roles": ["admin"]},
+    "DELETE /api/admin/partners/{partner_id}/managers/{manager_id}": {"auth": "required", "roles": ["admin"]},
+    "POST /api/manager/login": {
+        "auth": "public",
+        "notes": "Manager credential login — brute-force lockout, bcrypt verify",
+    },
+    "GET /api/manager/me": {"auth": "required", "notes": "Manager-token gated (get_current_manager)"},
+    "GET /api/manager/clients": {"auth": "required", "notes": "Manager-token gated; partner-scoped roster"},
+    "POST /api/manager/clients": {"auth": "required", "notes": "Manager-token gated; provisions client portal"},
+    "POST /api/manager/clients/{client_id}/send-invite": {
+        "auth": "required",
+        "notes": "Manager-token gated; partner-scoped",
+    },
+    "POST /api/manager/clients/{client_id}/enter": {
+        "auth": "required",
+        "notes": "Manager-token gated; mints trustee acting-as token against live grant + tma gate",
+    },
+    "POST /api/manager/clients/{client_id}/reset-password": {
+        "auth": "required",
+        "notes": "Manager-token gated; email OTP or temp password + full session revocation, audited",
+    },
     # Authenticated user-self flows ──────────────────────────────────────────
     "PUT /api/auth/email": {"auth": "required", "roles": "self", "notes": "Changing email sets email_verified=False"},
     "POST /api/onboarding/skip-step/{step_key}": {"auth": "required", "roles": "self"},

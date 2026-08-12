@@ -62,6 +62,8 @@ const AcceptInvitationPage = lazy(() => import('./pages/AcceptInvitationPage'));
 const TrusteeClaimPage = lazy(() => import('./pages/TrusteeClaimPage'));
 const ProClientsPage = lazy(() => import('./pages/ProClientsPage'));
 const ProClaimPage = lazy(() => import('./pages/ProClaimPage'));
+const ManagerLoginPage = lazy(() => import('./pages/ManagerLoginPage'));
+const ManagerPortalPage = lazy(() => import('./pages/ManagerPortalPage'));
 // EditBeneficiaryPage removed — editing now handled by SlidePanel in BeneficiariesPage
 const EditMilestoneMessagePage = lazy(() => import('./pages/EditMilestoneMessagePage'));
 const _GuardianPage = lazy(() => import('./pages/GuardianPage'));
@@ -662,6 +664,12 @@ function AppRoutes() {
           white-glove-provisioned by their partner rep takes ownership
           here (username + password + email OTP). */}
       <Route path="/claim/:token" element={<ProClaimPage />} />
+
+      {/* Partner Manager Portal — Public shell, self-guarded by the
+          manager token (separate principal type; founder-issued
+          credentials, /api/manager/* only). */}
+      <Route path="/manager" element={<ManagerLoginPage />} />
+      <Route path="/manager/portal" element={<ManagerPortalPage />} />
 
       {/* Shared Plan - Public (no auth required) */}
       <Route path="/shared/plan/:token" element={<SharedPlanPage />} />

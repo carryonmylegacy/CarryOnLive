@@ -159,6 +159,9 @@ async def ensure_indexes(db, logger):
         await db.document_pins.create_index("estate_id")
         await db.otps.create_index("user_id")
         await db.failed_logins.create_index("email")
+        # Partner manager credentials (B2B sub-manager portal)
+        await db.partner_managers.create_index("username_lower", unique=True)
+        await db.partner_managers.create_index("partner_id")
         # Drop conflicting old indexes if they exist, then recreate with unique=True
         try:
             await db.otp_trust.drop_index("user_id_1_ip_address_1")

@@ -9693,3 +9693,44 @@ gradient, `vaultGlowPulse` glow animation (reduced-motion safe), navigates to /v
 3. Have Jazmine create her own account (her landing page works), then Link rep with her email.
 4. Jazmine gets "Client Setup" in her sidebar → creates portals, preloads vault docs, sends invites.
 5. Payments stay $0 until beta_mode is flipped OFF; the rev-share report activates automatically then.
+
+---
+
+## Jun 2026 (fork, part 2) — Partner Manager Portal (B2B sub-manager accounts)
+
+### Added — Manager portal for partners (Jazmine's surface)
+- New principal type: `partner_managers` collection (founder-issued credentials, bcrypt at rest,
+  password shown ONCE + regenerate; unique username index). JWT role `partner_manager` with
+  manager_id claim (create_token whitelist extended); `get_current_manager` live-validates
+  manager + parent partner. Manager tokens rejected on user endpoints and vice-versa.
+- `POST /api/manager/login` (brute-force lockout: 10 fails/5 min, namespaced `mgr:` keys in
+  failed_logins, audited), `GET /api/manager/me`.
+- Manager ops (all partner-scoped, `routes/partner_managers.py`):
+  `GET /manager/clients` (full roster incl. self-signups, stat block, capability flags),
+  `POST /manager/clients` (white-glove provisioning — shared `provision_client_portal` helper
+  refactored out of pro_clients.py), send-invite, enter (trustee acting-as token vs live grant +
+  tma gate), reset-password with BOTH founder-approved modes: `email` (standard reset code via
+  otp_codes) and `temp` (one-time password + `revoke_all_user_tokens` session purge), audited
+  at warning severity.
+- Frontend: `ManagerLoginPage` (/manager) + `ManagerPortalPage` (/manager/portal) — stat tiles,
+  roster with Enter Portal / invites / Reset Password modal (email or temp with copy-once block),
+  new-client form, TMA warning, sign-out. Manager token lives in `carryon_manager_token`.
+- Founder UI: key icon per partner row → `PartnerManagersModal` (create with credentials-shown-once
+  block incl. portal URL + copy-all, regenerate, deactivate, delete).
+- TrusteeBanner: "Return to manager portal" branch (`carryon_manager_return` flag).
+
+### Fixed
+- TrusteeBanner z-index 40 → 240: the acting-as escape hatch now sits ABOVE the app modal layer
+  (z-200 QuickStart wizard backdrop was swallowing clicks on the return buttons — iter173 HIGH).
+- test_pre_push_invariants auth-gate whitelist now recognizes `get_current_manager`.
+
+### Verified
+- Testing agent iter173: backend 14/14 (+9/9 regression), frontend all flows; z-index fix
+  self-verified with a real non-forced click through the open QuickStart modal.
+- Housekeeping ALL CLEAR (0 WARN / 0 FAIL).
+- Preview manager creds: jazmine-manager (see test_credentials.md).
+
+### Production runbook addition
+After deploy: Admin → Finance → Partners → key icon on Carpenter Collective → create manager
+"Jazmine Carpenter" → copy the Portal URL + username + password block and send it to her.
+She signs in at carryon.us/manager.

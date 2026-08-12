@@ -117,6 +117,146 @@ def _client_public(u: dict, docs_count: int = 0, estate_id: str = "") -> dict:
     }
 
 
+async def provision_client_portal(
+    partner: dict,
+    first: str,
+    last: str,
+    email: str,
+    *,
+    trustee_display_name: str,
+    trustee_email: str,
+    rep_user_id: str | None = None,
+    manager_id: str | None = None,
+) -> tuple[dict, str]:
+    """Shared white-glove provisioning core, used by both the partner-rep
+    surface (/pro/clients) and the partner-manager portal (/manager).
+    Creates the pending-claim client user + estate + auto-active trustee
+    grant, consumes a partner seat. Returns (client_sans_password, estate_id)."""
+    email_lower = email.lower().strip()
+    if await db.users.find_one(
+        {"$or": [{"email_lower": email_lower}, {"email": email_lower}, {"username_lower": email_lower}]},
+        {"_id": 0, "id": 1},
+    ):
+        raise HTTPException(status_code=409, detail="A CarryOn account already exists for that email.")
+
+    max_uses = int(partner.get("max_uses", 0) or 0)
+    if max_uses > 0 and int(partner.get("times_used", 0) or 0) >= max_uses:
+        raise HTTPException(status_code=400, detail="Your partnership has used all of its authorized user slots.")
+
+    now = datetime.now(timezone.utc)
+    client_id = str(uuid.uuid4())
+    claim_token = secrets.token_urlsafe(32)
+    claim_expires = (now + timedelta(days=CLAIM_TOKEN_TTL_DAYS)).isoformat()
+    first = first.strip()
+    last = last.strip()
+
+    client = {
+        "id": client_id,
+        "email": email.strip(),
+        "email_lower": email_lower,
+        "email_verified": False,
+        "username": "",
+        "username_lower": "",
+        # Unusable placeholder — login is additionally blocked while
+        # account_status == pending_claim (see routes/auth/login.py).
+        "password": hash_password(secrets.token_urlsafe(32)),
+        "name": f"{first} {last}".strip(),
+        "first_name": first,
+        "last_name": last,
+        "role": "benefactor",
+        "account_status": "pending_claim",
+        "claim_token": claim_token,
+        "claim_token_expires_at": claim_expires,
+        "created_by_rep_id": rep_user_id,
+        "created_by_manager_id": manager_id,
+        "partner_id": partner["id"],
+        "partner_slug": partner["slug"],
+        "partner_company": partner["company_name"],
+        "b2b_code": partner.get("code", ""),
+        "b2b_partner": partner["company_name"],
+        "b2b_discount_percent": int(partner.get("discount_percent", 0) or 0),
+        "subscription_status": "pending_claim",
+        "created_at": now.isoformat(),
+    }
+    await db.users.insert_one(client)
+
+    estate_id = str(uuid.uuid4())
+    estate = {
+        "id": estate_id,
+        "owner_id": client_id,
+        "name": f"{last} Family Estate",
+        "status": "pre-transition",
+        "beneficiaries": [],
+        "encryption_salt": generate_estate_salt().hex(),
+        "created_at": now.isoformat(),
+    }
+    await db.estates.insert_one(estate)
+    await ensure_default_checklist(estate_id)
+
+    grant = {
+        "id": str(uuid.uuid4()),
+        "benefactor_id": client_id,
+        "email": trustee_email,
+        "email_lower": (trustee_email or "").lower(),
+        "trustee_username": "",
+        "trustee_username_lower": "",
+        "trustee_display_name": trustee_display_name,
+        # No credential login for this grant — access is ONLY via a
+        # server-minted acting-as token (rep or manager Enter Portal).
+        "password_hash": "",
+        "rep_user_id": rep_user_id,
+        "manager_id": manager_id,
+        "partner_id": partner["id"],
+        "via_pro_setup": True,
+        "include_beneficiaries": True,
+        "duration": "indefinite",
+        "custom_days": None,
+        "expires_at": None,
+        "status": "active",
+        "claim_token": None,
+        "claim_token_expires_at": None,
+        "claimed_at": now.isoformat(),
+        "revoked_at": None,
+        "last_used_at": None,
+        "otp": None,
+        "otp_expires_at": None,
+        "created_at": now.isoformat(),
+    }
+    await db.trustee_grants.insert_one(grant)
+
+    await db.b2b_partners.update_one({"id": partner["id"]}, {"$inc": {"times_used": 1}})
+    logger.info(
+        "[PRO] Client portal provisioned client=%s rep=%s manager=%s partner=%s",
+        client_id,
+        rep_user_id,
+        manager_id,
+        partner["id"],
+    )
+    return {k: v for k, v in client.items() if k != "password"}, estate_id
+
+
+async def refresh_claim_token(client: dict) -> tuple[str, str]:
+    """Return a valid (token, expires_iso) for a pending-claim client,
+    rotating the token if the stored one is missing/expired."""
+    now = datetime.now(timezone.utc)
+    token = client.get("claim_token")
+    expires = client.get("claim_token_expires_at")
+    expired = True
+    if token and expires:
+        try:
+            expired = datetime.fromisoformat(expires) <= now
+        except (ValueError, TypeError):
+            expired = True
+    if expired:
+        token = secrets.token_urlsafe(32)
+        expires = (now + timedelta(days=CLAIM_TOKEN_TTL_DAYS)).isoformat()
+        await db.users.update_one(
+            {"id": client["id"]},
+            {"$set": {"claim_token": token, "claim_token_expires_at": expires}},
+        )
+    return token, expires
+
+
 # ─── Rep endpoints ──────────────────────────────────────────────────────
 
 
@@ -170,102 +310,16 @@ async def create_pro_client(
     current_user: dict = Depends(get_current_user),
 ):
     partner = await _require_rep(current_user)
-
-    email_lower = str(data.email).lower().strip()
-    if await db.users.find_one(
-        {"$or": [{"email_lower": email_lower}, {"email": email_lower}, {"username_lower": email_lower}]},
-        {"_id": 0, "id": 1},
-    ):
-        raise HTTPException(status_code=409, detail="A CarryOn account already exists for that email.")
-
-    max_uses = int(partner.get("max_uses", 0) or 0)
-    if max_uses > 0 and int(partner.get("times_used", 0) or 0) >= max_uses:
-        raise HTTPException(status_code=400, detail="Your partnership has used all of its authorized user slots.")
-
-    now = datetime.now(timezone.utc)
-    client_id = str(uuid.uuid4())
-    claim_token = secrets.token_urlsafe(32)
-    claim_expires = (now + timedelta(days=CLAIM_TOKEN_TTL_DAYS)).isoformat()
-    first = data.first_name.strip()
-    last = data.last_name.strip()
-
-    client = {
-        "id": client_id,
-        "email": str(data.email).strip(),
-        "email_lower": email_lower,
-        "email_verified": False,
-        "username": "",
-        "username_lower": "",
-        # Unusable placeholder — login is additionally blocked while
-        # account_status == pending_claim (see routes/auth/login.py).
-        "password": hash_password(secrets.token_urlsafe(32)),
-        "name": f"{first} {last}".strip(),
-        "first_name": first,
-        "last_name": last,
-        "role": "benefactor",
-        "account_status": "pending_claim",
-        "claim_token": claim_token,
-        "claim_token_expires_at": claim_expires,
-        "created_by_rep_id": current_user["id"],
-        "partner_id": partner["id"],
-        "partner_slug": partner["slug"],
-        "partner_company": partner["company_name"],
-        "b2b_code": partner.get("code", ""),
-        "b2b_partner": partner["company_name"],
-        "b2b_discount_percent": int(partner.get("discount_percent", 0) or 0),
-        "subscription_status": "pending_claim",
-        "created_at": now.isoformat(),
-    }
-    await db.users.insert_one(client)
-
-    estate_id = str(uuid.uuid4())
-    estate = {
-        "id": estate_id,
-        "owner_id": client_id,
-        "name": f"{last} Family Estate",
-        "status": "pre-transition",
-        "beneficiaries": [],
-        "encryption_salt": generate_estate_salt().hex(),
-        "created_at": now.isoformat(),
-    }
-    await db.estates.insert_one(estate)
-    await ensure_default_checklist(estate_id)
-
-    grant = {
-        "id": str(uuid.uuid4()),
-        "benefactor_id": client_id,
-        "email": current_user.get("email", ""),
-        "email_lower": (current_user.get("email", "") or "").lower(),
-        "trustee_username": "",
-        "trustee_username_lower": "",
-        "trustee_display_name": f"{current_user.get('name', 'Your advisor')} ({partner['company_name']})",
-        # No credential login for this grant — access is ONLY via the
-        # rep's server-minted acting-as token (POST .../enter).
-        "password_hash": "",
-        "rep_user_id": current_user["id"],
-        "via_pro_setup": True,
-        "include_beneficiaries": True,
-        "duration": "indefinite",
-        "custom_days": None,
-        "expires_at": None,
-        "status": "active",
-        "claim_token": None,
-        "claim_token_expires_at": None,
-        "claimed_at": now.isoformat(),
-        "revoked_at": None,
-        "last_used_at": None,
-        "otp": None,
-        "otp_expires_at": None,
-        "created_at": now.isoformat(),
-    }
-    await db.trustee_grants.insert_one(grant)
-
-    await db.b2b_partners.update_one({"id": partner["id"]}, {"$inc": {"times_used": 1}})
-    logger.info(
-        "[PRO] Client portal provisioned client=%s rep=%s partner=%s", client_id, current_user["id"], partner["id"]
+    client, estate_id = await provision_client_portal(
+        partner,
+        data.first_name,
+        data.last_name,
+        str(data.email),
+        trustee_display_name=f"{current_user.get('name', 'Your advisor')} ({partner['company_name']})",
+        trustee_email=current_user.get("email", ""),
+        rep_user_id=current_user["id"],
     )
-
-    return _client_public({k: v for k, v in client.items() if k != "password"}, docs_count=0, estate_id=estate_id)
+    return _client_public(client, docs_count=0, estate_id=estate_id)
 
 
 def _claim_email_html(client_name: str, rep_name: str, company: str, claim_url: str) -> str:
@@ -314,21 +368,7 @@ async def send_pro_client_invite(
         raise HTTPException(status_code=409, detail="This client already claimed their portal.")
 
     now = datetime.now(timezone.utc)
-    token = client.get("claim_token")
-    expires = client.get("claim_token_expires_at")
-    expired = True
-    if token and expires:
-        try:
-            expired = datetime.fromisoformat(expires) <= now
-        except (ValueError, TypeError):
-            expired = True
-    if expired:
-        token = secrets.token_urlsafe(32)
-        expires = (now + timedelta(days=CLAIM_TOKEN_TTL_DAYS)).isoformat()
-        await db.users.update_one(
-            {"id": client_id},
-            {"$set": {"claim_token": token, "claim_token_expires_at": expires}},
-        )
+    token, expires = await refresh_claim_token(client)
 
     claim_url = _claim_url(token)
     background_tasks.add_task(
