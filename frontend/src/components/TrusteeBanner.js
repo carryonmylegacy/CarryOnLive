@@ -75,6 +75,19 @@ const TrusteeBanner = () => {
 
   const acting = user.name || 'the benefactor';
   const trusteeName = user.trustee_display_name || 'Trustee';
+  // Pro Client Setup — when the trustee session was entered from the
+  // rep's own account (/pro/clients "Enter portal"), the rep's original
+  // token is stashed so they can hop back without re-authenticating.
+  let proReturnToken = null;
+  try { proReturnToken = localStorage.getItem('carryon_pro_return_token'); } catch { /* ignore */ }
+
+  const returnToMyAccount = () => {
+    try {
+      localStorage.setItem('carryon_token', proReturnToken);
+      localStorage.removeItem('carryon_pro_return_token');
+    } catch { /* ignore */ }
+    window.location.assign('/pro/clients');
+  };
 
   return (
     <div
@@ -112,6 +125,27 @@ const TrusteeBanner = () => {
         />
         TRUSTEE MODE — {trusteeName} acting on behalf of {acting}
       </span>
+      {proReturnToken && (
+        <button
+          type="button"
+          onClick={returnToMyAccount}
+          data-testid="trustee-banner-return-btn"
+          style={{
+            marginLeft: 12,
+            background: '#fff7ed',
+            color: '#92400e',
+            border: 'none',
+            borderRadius: 999,
+            padding: '4px 14px',
+            fontSize: 12,
+            fontWeight: 800,
+            cursor: 'pointer',
+            verticalAlign: 'middle',
+          }}
+        >
+          Return to my account
+        </button>
+      )}
     </div>
   );
 };

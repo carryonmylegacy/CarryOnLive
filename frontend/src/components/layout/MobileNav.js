@@ -15,6 +15,7 @@ import {
   Sparkles,
   CheckSquare,
   Settings,
+  Briefcase,
   LogOut,
   Home,
   Moon,
@@ -513,6 +514,7 @@ const MobileNav = () => {
     }
     // Benefactor
     return [
+      ...(user?.partner_rep ? [{ to: '/pro/clients', icon: Briefcase, label: 'Client Setup' }] : []),
       { to: '/settings', icon: Settings, label: 'Settings' },
       ...(subsVisible ? [{ to: '/subscription', icon: CreditCard, label: 'Subscription' }] : []),
       { to: '/security-settings', icon: ShieldCheck, label: 'Security Settings' },

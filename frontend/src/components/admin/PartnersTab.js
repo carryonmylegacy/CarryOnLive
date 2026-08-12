@@ -17,6 +17,7 @@ import apiClient from '../../utils/apiClient';
 import {
   Briefcase, Plus, Trash2, Copy, Check, Loader2, ExternalLink,
   Upload, Image as ImageIcon, Power, Send, Pencil, Users,
+  DollarSign, UserPlus, X,
 } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
@@ -24,6 +25,7 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Switch } from '../ui/switch';
 import { toast } from '../../utils/toast';
+import { PartnerRevShareModal } from './PartnerRevShareModal';
 import { API_URL } from '../../config';
 
 const LOGO_PLACEHOLDER = (
@@ -118,9 +120,10 @@ export const PartnersTab = ({ getAuthHeaders }) => {
   const [showNew, setShowNew] = useState(false);
   const [newForm, setNewForm] = useState({
     company_name: '', slug: '', code: '', discount_percent: 100,
-    max_uses: 0, tagline: '', partner_email: '',
+    revshare_percent: 0, max_uses: 0, tagline: '', partner_email: '',
   });
   const [copied, setCopied] = useState(null);
+  const [revShareFor, setRevShareFor] = useState(null);
   const fileInputs = useRef({});
   // Legacy `b2b_codes` rows — the old system that's been retired.
   // We surface them here read-only so admins can audit + delete any
@@ -183,7 +186,7 @@ export const PartnersTab = ({ getAuthHeaders }) => {
         code: newForm.code.toUpperCase().trim(),
       }, { headers: { ...authHeaders(), 'Content-Type': 'application/json' } });
       setShowNew(false);
-      setNewForm({ company_name: '', slug: '', code: '', discount_percent: 100, max_uses: 0, tagline: '', partner_email: '' });
+      setNewForm({ company_name: '', slug: '', code: '', discount_percent: 100, revshare_percent: 0, max_uses: 0, tagline: '', partner_email: '' });
       await fetchAll();
       toast.success('Partner created');
     } catch (err) {
@@ -416,7 +419,14 @@ export const PartnersTab = ({ getAuthHeaders }) => {
                 <Input type="number" min={0} max={100} value={newForm.discount_percent}
                   onChange={e => setNewForm({ ...newForm, discount_percent: parseInt(e.target.value) || 0 })}
                   className="input-field text-sm" />
-                <p className="text-[11px] text-[var(--t5)]">100 = free for all their members</p>
+                <p className="text-[11px] text-[var(--t5)]">100 = free for all their members · 0 = members pay full retail (rev-share deals)</p>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs text-[var(--t4)]">Rev Share %</Label>
+                <Input type="number" min={0} max={100} value={newForm.revshare_percent}
+                  onChange={e => setNewForm({ ...newForm, revshare_percent: parseInt(e.target.value) || 0 })}
+                  className="input-field text-sm" data-testid="new-partner-revshare" />
+                <p className="text-[11px] text-[var(--t5)]">Cut of monthly revenue from steady paying subscribers you&apos;ll pay this partner.</p>
               </div>
               <div className="space-y-1">
                 <Label className="text-xs text-[var(--t4)]">Users Authorized</Label>
@@ -494,6 +504,8 @@ export const PartnersTab = ({ getAuthHeaders }) => {
                     onCopy={copy}
                     onCopyEmail={copyWelcomeEmail}
                     onSendEmail={sendWelcomeEmail}
+                    onOpenRevShare={setRevShareFor}
+                    onRefetch={fetchAll}
                     sending={sending}
                     copied={copied}
                   />
@@ -502,6 +514,14 @@ export const PartnersTab = ({ getAuthHeaders }) => {
             </table>
           </CardContent>
         </Card>
+      )}
+
+      {revShareFor && (
+        <PartnerRevShareModal
+          partner={revShareFor}
+          authHeaders={authHeaders}
+          onClose={() => setRevShareFor(null)}
+        />
       )}
 
       {/* Legacy codes panel — only shown when stragglers exist in
@@ -553,7 +573,7 @@ export const PartnersTab = ({ getAuthHeaders }) => {
   );
 };
 
-function PartnerRow({ partner, columns, gateField, gateMode, fileInputs, onUpdate, onToggleGate, onUploadLogo, onDelete, onCopy, onCopyEmail, onSendEmail, sending, copied }) {
+function PartnerRow({ partner, columns, gateField, gateMode, authHeaders, fileInputs, onUpdate, onToggleGate, onUploadLogo, onDelete, onCopy, onCopyEmail, onSendEmail, onOpenRevShare, onRefetch, sending, copied }) {
   // Pre-pitch UX (May 20, 2026): default partner rows to a read-only
   // identity view with pencil + trash icons next to the logo. Tap the
   // pencil to expand into the editable Input fields. Keeps rows
@@ -564,10 +584,41 @@ function PartnerRow({ partner, columns, gateField, gateMode, fileInputs, onUpdat
     slug: partner.slug,
     code: partner.code,
     discount_percent: partner.discount_percent,
+    revshare_percent: partner.revshare_percent || 0,
     max_uses: partner.max_uses || 0,
     tagline: partner.tagline || '',
     partner_email: partner.partner_email || '',
   });
+  const [repEmail, setRepEmail] = useState('');
+  const [repBusy, setRepBusy] = useState(false);
+
+  const linkRep = async () => {
+    const email = repEmail.trim();
+    if (!email) { toast.error('Enter the rep\u2019s account email'); return; }
+    setRepBusy(true);
+    try {
+      await apiClient.post(`${API_URL}/admin/partners/${partner.id}/link-rep`, { email }, {
+        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+      });
+      toast.success('Rep linked — they now see Client Setup in their portal');
+      setRepEmail('');
+      await onRefetch();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to link rep');
+    } finally { setRepBusy(false); }
+  };
+
+  const unlinkRep = async () => {
+    if (!window.confirm(`Remove ${partner.rep_user_email} as ${partner.company_name}'s rep?`)) return;
+    setRepBusy(true);
+    try {
+      await apiClient.delete(`${API_URL}/admin/partners/${partner.id}/link-rep`, { headers: authHeaders() });
+      toast.success('Rep unlinked');
+      await onRefetch();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to unlink rep');
+    } finally { setRepBusy(false); }
+  };
   // Re-sync local draft state whenever the persisted partner doc
   // changes from outside (e.g. after a toggle triggers re-fetch).
   // Without this the row would keep stale slug/code text after edits
@@ -578,11 +629,12 @@ function PartnerRow({ partner, columns, gateField, gateMode, fileInputs, onUpdat
       slug: partner.slug,
       code: partner.code,
       discount_percent: partner.discount_percent,
+      revshare_percent: partner.revshare_percent || 0,
       max_uses: partner.max_uses || 0,
       tagline: partner.tagline || '',
       partner_email: partner.partner_email || '',
     });
-  }, [partner.company_name, partner.slug, partner.code, partner.discount_percent, partner.max_uses, partner.tagline, partner.partner_email]);
+  }, [partner.company_name, partner.slug, partner.code, partner.discount_percent, partner.revshare_percent, partner.max_uses, partner.tagline, partner.partner_email]);
 
   const url = partnerLandingHref(partner.slug);
   // Logo is now embedded as a base64 data URL in the API response.
@@ -665,9 +717,20 @@ function PartnerRow({ partner, columns, gateField, gateMode, fileInputs, onUpdat
                   <span className="font-mono">{partner.code}</span>
                   <span>·</span>
                   <span>{partner.discount_percent}% off</span>
+                  {(partner.revshare_percent || 0) > 0 && (
+                    <>
+                      <span>·</span>
+                      <span className="text-[#34d399] font-semibold">{partner.revshare_percent}% rev-share</span>
+                    </>
+                  )}
                   <span>·</span>
                   <span>{partner.max_uses > 0 ? `${partner.max_uses} seats` : 'unlimited'}</span>
                 </div>
+                {partner.rep_user_email && (
+                  <div className="text-[11px] text-[var(--t4)] truncate flex items-center gap-1" title={`Rep: ${partner.rep_user_email}`}>
+                    <UserPlus className="w-3 h-3 text-[#34d399]" /> Rep: {partner.rep_user_name || partner.rep_user_email}
+                  </div>
+                )}
                 {partner.tagline && (
                   <div className="text-[11px] text-[var(--t4)] italic truncate" title={partner.tagline}>
                     {partner.tagline}
@@ -783,6 +846,35 @@ function PartnerRow({ partner, columns, gateField, gateMode, fileInputs, onUpdat
               maxLength={120}
               data-testid={`partner-email-${partner.slug}`}
             />
+            {/* Partner rep — the user authorized to white-glove-provision
+                client portals via /pro/clients. One rep per partner. */}
+            {partner.rep_user_email ? (
+              <div className="flex items-center gap-1.5 text-[11px]" data-testid={`partner-rep-linked-${partner.slug}`}>
+                <UserPlus className="w-3 h-3 text-[#34d399]" />
+                <span className="text-[var(--t4)] truncate">Rep: <span className="font-semibold text-[var(--t3)]">{partner.rep_user_name || partner.rep_user_email}</span></span>
+                <button onClick={unlinkRep} disabled={repBusy} className="text-[var(--t5)] hover:text-[var(--rd)]"
+                  title="Unlink rep" aria-label={`Unlink rep for ${partner.company_name}`}
+                  data-testid={`partner-rep-unlink-${partner.slug}`}>
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5">
+                <Input
+                  type="email"
+                  value={repEmail}
+                  onChange={e => setRepEmail(e.target.value)}
+                  className="input-field text-xs h-7 flex-1"
+                  placeholder="Rep account email (unlocks Client Setup)"
+                  data-testid={`partner-rep-email-${partner.slug}`}
+                />
+                <Button size="sm" variant="outline" onClick={linkRep} disabled={repBusy || !repEmail.trim()}
+                  className="text-[11px] h-7 px-2 border-[var(--gold)]/40 text-[var(--gold)]"
+                  data-testid={`partner-rep-link-${partner.slug}`}>
+                  {repBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <><UserPlus className="w-3 h-3 mr-1" /> Link rep</>}
+                </Button>
+              </div>
+            )}
             </>
             )}
             {/* Live seat utilization (always visible) */}
@@ -869,6 +961,15 @@ function PartnerRow({ partner, columns, gateField, gateMode, fileInputs, onUpdat
       {/* Actions */}
       <td className="px-3 py-3 text-right align-middle">
         <div className="flex items-center justify-end gap-2">
+          <button
+            onClick={() => onOpenRevShare(partner)}
+            className="flex items-center gap-0.5 text-[11px] font-bold text-[#34d399] hover:text-[#6ee7b7]"
+            title="Monthly rev-share payout report"
+            data-testid={`partner-revshare-report-${partner.slug}`}
+          >
+            <DollarSign className="w-3.5 h-3.5" />
+            {partner.revshare_percent || 0}%
+          </button>
           <button
             onClick={() => onUpdate(partner.id, { active: !partner.active })}
             className="flex items-center gap-1 text-[11px] font-bold"

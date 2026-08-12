@@ -1101,6 +1101,35 @@ const DashboardPage = () => {
         </div>
       </div>
 
+      {/* ── Secure Document Vault hot button ──────────────────────────
+          Prominent pulsing/glowing shortcut straight into the SDV
+          (founder directive, Jun 2026 — requested by Carpenter
+          Collective for first-time clients whose vault was preloaded
+          by their advisor). Shown to all benefactors whose plan
+          includes the vault. */}
+      {isFeatureEnabled('/vault', enabledFeatures) && (
+        <button
+          type="button"
+          onClick={() => navigate('/vault')}
+          data-testid="vault-hot-button"
+          aria-label="Open your Secure Document Vault"
+          className="vault-hot-button w-full mb-5 rounded-2xl px-5 py-4 flex items-center gap-4 text-left"
+        >
+          <span className="vault-hot-button-icon w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0">
+            <FolderLock className="w-6 h-6" style={{ color: '#0B1221' }} strokeWidth={2.4} />
+          </span>
+          <span className="flex-1 min-w-0">
+            <span className="block text-base lg:text-lg font-bold leading-tight" style={{ color: '#0B1221' }}>
+              Your Secure Document Vault
+            </span>
+            <span className="block text-xs lg:text-sm font-semibold mt-0.5" style={{ color: 'rgba(11,18,33,0.72)' }}>
+              View the documents prepared and protected for you — tap to open
+            </span>
+          </span>
+          <ChevronRight className="w-6 h-6 flex-shrink-0" style={{ color: '#0B1221' }} strokeWidth={2.6} />
+        </button>
+      )}
+
       {/* ── Getting Started Prompts Group ─────────────────────────────
           Master wrapper enclosing the three dashboard onboarding tiles
           ("Resume the QuickStart Wizard", "Your QuickStart Guide is

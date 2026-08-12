@@ -60,6 +60,8 @@ const DigitalWalletPage = lazy(() => import('./pages/DigitalWalletPage'));
 const OnboardingPage = lazy(() => import('./pages/OnboardingPage'));
 const AcceptInvitationPage = lazy(() => import('./pages/AcceptInvitationPage'));
 const TrusteeClaimPage = lazy(() => import('./pages/TrusteeClaimPage'));
+const ProClientsPage = lazy(() => import('./pages/ProClientsPage'));
+const ProClaimPage = lazy(() => import('./pages/ProClaimPage'));
 // EditBeneficiaryPage removed — editing now handled by SlidePanel in BeneficiariesPage
 const EditMilestoneMessagePage = lazy(() => import('./pages/EditMilestoneMessagePage'));
 const _GuardianPage = lazy(() => import('./pages/GuardianPage'));
@@ -656,6 +658,11 @@ function AppRoutes() {
       {/* Trustee Claim Route - Public (TMA invite flow) */}
       <Route path="/trustee/claim/:token" element={<TrusteeClaimPage />} />
 
+      {/* Pro Client Setup claim — Public. A client whose portal was
+          white-glove-provisioned by their partner rep takes ownership
+          here (username + password + email OTP). */}
+      <Route path="/claim/:token" element={<ProClaimPage />} />
+
       {/* Shared Plan - Public (no auth required) */}
       <Route path="/shared/plan/:token" element={<SharedPlanPage />} />
       <Route path="/s/:token" element={<SharedBinderPage />} />
@@ -704,6 +711,9 @@ function AppRoutes() {
         <Route path="/timeline" element={<FeatureGate><LegacyTimelinePage /></FeatureGate>} />
         <Route path="/estate-chat" element={<FeatureGate><EstateChatPage /></FeatureGate>} />
         <Route path="/connected-protocol" element={<FeatureGate><ConnectedProtocolPage /></FeatureGate>} />
+        {/* Pro Client Setup — partner-rep-only surface (server-gated via
+            users.partner_rep_for; the sidebar link only shows for reps). */}
+        <Route path="/pro/clients" element={<ProClientsPage />} />
       </Route>
 
       {/* Print-only routes — benefactor-gated but NOT wrapped in

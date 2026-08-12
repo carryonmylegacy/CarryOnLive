@@ -9633,3 +9633,63 @@ Excluded by design (different layout contracts): EstateChat, SupportChat, Guardi
 - Backend testing agent (iter145): **7/7 backend tests pass.**
 - Housekeeping `bash /app/housekeeping.sh --strict`: 0 WARN / 0 FAIL.
 - ruff: clean on touched backend files.
+
+---
+
+## Jun 2026 (fork) — Carpenter Collective: partner-page 401 fix, rev-share, Pro Client Setup, Vault hot button
+
+### Fixed — public/user endpoints trapped behind admin scopes (the /p/carpenter-collective 401)
+Root cause: SOC2 CC6.1 router-scope hardening mounted whole admin modules behind
+`require_scope(...)`, catching non-admin endpoints living in those files. Split each
+into a `public_router` mounted WITHOUT scope deps in `routes/admin/__init__.py`:
+- `partners.py`: `GET /public/partners/{slug}` + `/logo` (anon), `GET /partners/lookup/{code}` + `POST /partners/redeem-code` (any authed user — code redemption was 403 for everyone)
+- `maintenance.py`: `GET /public/maintenance-status` (was 401 anon)
+- `funnel_analytics.py`: `POST /diagnostics/funnel-event` (anon telemetry, optional auth in handler)
+- `download_diagnostics.py`: `POST /diagnostics/download-event` (any authed user)
+Also corrected the wrong `auth: required` entries in `route_policies_auto.py` for the by-design-public routes.
+
+### Added — revenue-share support (Jazmine deal: clients pay retail, founder pays partner a % monthly)
+- `b2b_partners.revshare_percent` (create/update + PartnersTab input + header display).
+- `GET /api/admin/partners/{id}/revshare-report` — steady/non-churn = subscription ACTIVE,
+  in good standing, amount > 0, not beta/free. Monthly-equivalent normalization (annual/12, quarterly/3).
+  Payout = MRR × revshare_percent. Founder UI: `$ 20%` button per partner row → `PartnerRevShareModal`.
+- `redeem-code` retail mode: enterprise ($0) tier assignment now ONLY when discount ≥ 100.
+  0%-discount partner codes = attribution (partner_id/b2b_code) + live partner feature gates only;
+  members pay full retail via the normal Stripe paywall (activates when founder flips beta OFF).
+
+### Added — Pro Client Setup (trustee-first white-glove onboarding)
+- Founder links one rep per partner: `POST/DELETE /api/admin/partners/{id}/link-rep` (+ PartnersTab UI).
+- Rep surface `/pro/clients` (ProClientsPage, `nav-pro-clients` in Sidebar/MobileNav for `user.partner_rep`):
+  create client (pending-claim user + estate + default checklist + auto ACTIVE trustee grant with
+  `rep_user_id`, no credential login), Enter Portal (server-minted acting-as token, same claims as TMA
+  login → trustee banner/audit apply; original token stashed as `carryon_pro_return_token`;
+  TrusteeBanner gained "Return to my account"), send branded claim email (claim_url returned),
+  seat counting via `times_used` vs `max_uses` (300 for Carpenter Collective).
+- Client claim `/claim/{token}` (ProClaimPage, public): partner-branded; username+password →
+  email OTP (10 min) → activate (trial starts at claim) + auto-login. Claim tokens 14-day TTL, single-use.
+- Login guard: `pending_claim` accounts get friendly 403 "Your portal is being prepared…".
+- New module `routes/pro_clients.py`; all routes registered in `route_policies.py`.
+
+### Added — Dashboard Vault hot button
+`vault-hot-button` on benefactor dashboard (all benefactors, gated on `/vault` feature): gold
+gradient, `vaultGlowPulse` glow animation (reduced-motion safe), navigates to /vault.
+
+### Ops
+- Dependency-security ratchet baseline refreshed (`--update-baseline`): pip-audit CVE DB drift
+  (4 → 79 backend, 106 frontend known vulns in UNCHANGED pinned deps). No new deps introduced
+  this session. Schedule a maintenance upgrade pass.
+- Two pre-existing Mongo projection false positives annotated (`allow-missing-id`).
+
+### Verified
+- Testing agent iter172: backend 9/9, frontend 5/5 flows (partner landing anon, vault button,
+  Partners tab + revshare modal + rep link, /pro/clients create/enter/return, /claim full OTP flow).
+- Housekeeping `bash scripts/check.sh`: ALL CLEAR — 0 WARN / 0 FAIL.
+- Preview seed: partner Carpenter Collective (`carpenter-collective` / CARPENTER300, 0% discount,
+  20% revshare, 300 seats, TMA ON), rep jazmine.rep.test@carryon.us, claimed client danawhitfield.
+
+### Production runbook for the founder (after deploy)
+1. Deploy this build — the existing `/p/carpenter-collective` record starts working immediately (no recreate).
+2. In Admin → Finance → Partners → Carpenter Collective: set Discount 0%, Rev Share %, seats 300, TMA gate ON.
+3. Have Jazmine create her own account (her landing page works), then Link rep with her email.
+4. Jazmine gets "Client Setup" in her sidebar → creates portals, preloads vault docs, sends invites.
+5. Payments stay $0 until beta_mode is flipped OFF; the rev-share report activates automatically then.

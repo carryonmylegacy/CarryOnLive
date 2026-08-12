@@ -82,6 +82,9 @@ class UserResponse(BaseModel):
     trustee_mode: bool = False
     trustee_display_name: str = ""
     trustee_can_access_beneficiaries: bool = False
+    # Pro Client Setup — true when this user is the designated rep of a
+    # B2B partner (users.partner_rep_for). Unlocks the /pro/clients nav.
+    partner_rep: bool = False
 
 
 class TokenResponse(BaseModel):

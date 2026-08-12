@@ -22,6 +22,11 @@ from guards import get_current_user, require_admin
 
 router = APIRouter()
 
+# Authenticated end-user telemetry sink — mounted WITHOUT the
+# router-level `require_scope("platform_health")` dependency (see
+# routes/admin/__init__.py). The handler requires get_current_user.
+public_router = APIRouter()
+
 VALID_OUTCOMES = {"saved", "opened", "downloaded", "shared", "cancelled", "failed"}
 VALID_PLATFORMS = {"ios", "android", "ios-pwa", "android-pwa", "web", "capacitor", "unknown"}
 
@@ -36,7 +41,7 @@ class DownloadEvent(BaseModel):
     error_message: Optional[str] = Field(None, max_length=200)
 
 
-@router.post("/diagnostics/download-event")
+@public_router.post("/diagnostics/download-event")
 async def record_download_event(payload: DownloadEvent, user: dict = Depends(get_current_user)):
     """Fire-and-forget telemetry sink. Validates and stores."""
     outcome = payload.outcome.lower()

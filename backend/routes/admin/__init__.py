@@ -13,8 +13,10 @@ from .bulk_ops import router as bulk_ops_router
 from .canned_responses import router as canned_responses_router
 from .dev_switcher import router as dev_switcher_router
 from .download_diagnostics import router as download_diagnostics_router
+from .download_diagnostics import public_router as download_diagnostics_public_router
 from .download_diagnostics import ensure_indexes as ensure_download_diagnostics_indexes
 from .funnel_analytics import router as funnel_analytics_router
+from .funnel_analytics import public_router as funnel_analytics_public_router
 from .funnel_analytics import ensure_indexes as ensure_funnel_analytics_indexes
 from .email_health import router as email_health_router
 from .email_health import ensure_indexes as ensure_email_health_indexes
@@ -26,7 +28,9 @@ from .launch_war_room import router as launch_war_room_router
 from .llm_cost import router as llm_cost_router
 from .db_status import router as db_status_router
 from .maintenance import router as maintenance_router
+from .maintenance import public_router as maintenance_public_router
 from .partners import router as partners_router
+from .partners import public_router as partners_public_router
 from .platform import router as platform_router
 from .scoped_roles import router as scoped_roles_router
 from .security_scan import router as security_scan_router
@@ -70,6 +74,17 @@ router.include_router(llm_cost_router, dependencies=[Depends(require_scope("plat
 router.include_router(db_status_router, dependencies=[Depends(require_scope("platform_health"))])
 router.include_router(audit_chain_status_router, dependencies=[Depends(require_scope("compliance"))])
 router.include_router(soc2_readiness_router, dependencies=[Depends(require_scope("compliance"))])
+
+# ── Public / end-user endpoints that live inside admin modules ──────────────
+# These MUST NOT carry a require_scope dependency: they serve anonymous
+# visitors (partner landing pages, maintenance probe, funnel telemetry) or
+# regular authenticated users (code redemption, download telemetry). The
+# scope-hardening pass that mounted their parent routers behind admin
+# scopes broke all of them (401/403) — split out and mounted open here.
+router.include_router(partners_public_router)
+router.include_router(maintenance_public_router)
+router.include_router(funnel_analytics_public_router)
+router.include_router(download_diagnostics_public_router)
 
 __all__ = [
     "router",

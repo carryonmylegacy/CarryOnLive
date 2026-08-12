@@ -68,6 +68,7 @@ async def get_all_users(current_user: dict = Depends(require_staff)):
     _user_ids = [u["id"] for u in users if u.get("id")]
     _subs = await db.user_subscriptions.find(
         {"user_id": {"$in": _user_ids}},
+        # pre-push-invariants: allow-missing-id (user_subscriptions is keyed by user_id; no id field)
         {
             "_id": 0,
             "user_id": 1,

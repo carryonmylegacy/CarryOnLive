@@ -538,6 +538,13 @@ bug — fix it in the preview DB immediately (snippet in
 - Hardcoded `rgba(212,175,55,…)` → `var(--gold-rgb)` sweep.
 
 ### Last verified end-to-end working item
+**Carpenter Collective B2B launch pack (Jun 2026 fork, testing-agent iter172, 100% pass):**
+public partner landing 401 regression fixed (admin-scope split), rev-share % + payout report,
+retail-mode redeem (0% discount ⇒ members pay retail, attribution + partner gates only),
+pulsing Vault hot button on dashboard, and the new Pro Client Setup flow (rep provisions
+client portal → enters in Trustee Mode → preloads vault → client claims via branded
+/claim/{token} OTP flow → auto-login). Housekeeping 0 WARN / 0 FAIL. See CHANGELOG for
+the founder's production runbook.
 - Admin Portal six-section restructure (Operations / Finance /
   Marketing / Compliance / Platform / Admin) with gradient headers and
   opaque high-contrast pill navigation. PWA Trustee Mode banner

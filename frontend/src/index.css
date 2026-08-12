@@ -1993,3 +1993,22 @@ body.ect-chat-active .dashboard-content-area {
   color: rgba(255,255,255,0.6) !important;
   opacity: 1;
 }
+
+/* ── Secure Document Vault hot button (Dashboard) ─────────────────── */
+@keyframes vaultGlowPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.55), 0 10px 30px rgba(212, 175, 55, 0.22); }
+  50% { box-shadow: 0 0 0 12px rgba(212, 175, 55, 0), 0 10px 40px rgba(212, 175, 55, 0.5); }
+}
+.vault-hot-button {
+  background: linear-gradient(135deg, #e9c964 0%, #d4af37 45%, #b8962e 100%);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  animation: vaultGlowPulse 2.6s ease-in-out infinite;
+  transition: transform 0.18s ease, filter 0.18s ease;
+  cursor: pointer;
+}
+.vault-hot-button:hover { transform: translateY(-2px); filter: brightness(1.05); }
+.vault-hot-button:active { transform: scale(0.985); }
+.vault-hot-button-icon { background: rgba(255, 255, 255, 0.55); }
+@media (prefers-reduced-motion: reduce) {
+  .vault-hot-button { animation: none; }
+}

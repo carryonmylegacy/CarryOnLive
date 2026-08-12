@@ -317,6 +317,21 @@ ROUTE_POLICIES: dict = {
     "GET /api/trustee/claim/{token}": {"auth": "public", "notes": "Trustee claim preview — token-scoped"},
     "POST /api/trustee/claim/{token}/start": {"auth": "public", "notes": "Trustee claim start — token-scoped"},
     "POST /api/trustee/claim/{token}/complete": {"auth": "public", "notes": "Trustee claim complete — token-scoped"},
+    # ── Pro Client Setup (partner-rep white-glove provisioning) ─────────────
+    "GET /api/pro/clients": {"auth": "required", "notes": "Rep-gated in handler (users.partner_rep_for)"},
+    "POST /api/pro/clients": {"auth": "required", "notes": "Rep-gated in handler; provisions pending-claim client"},
+    "POST /api/pro/clients/{client_id}/send-invite": {"auth": "required", "notes": "Rep-gated; rep-owned client only"},
+    "POST /api/pro/clients/{client_id}/enter": {
+        "auth": "required",
+        "notes": "Rep-gated; mints trustee acting-as token against live grant + tma gate",
+    },
+    "GET /api/pro/claim/{token}": {"auth": "public", "notes": "Client claim preview — token-scoped"},
+    "POST /api/pro/claim/{token}/start": {"auth": "public", "notes": "Client claim start — token-scoped"},
+    "POST /api/pro/claim/{token}/complete": {"auth": "public", "notes": "Client claim complete — token + OTP gated"},
+    # ── Partner rev-share & rep management (founder-only) ───────────────────
+    "GET /api/admin/partners/{partner_id}/revshare-report": {"auth": "required", "roles": ["admin"]},
+    "POST /api/admin/partners/{partner_id}/link-rep": {"auth": "required", "roles": ["admin"]},
+    "DELETE /api/admin/partners/{partner_id}/link-rep": {"auth": "required", "roles": ["admin"]},
     # Authenticated user-self flows ──────────────────────────────────────────
     "PUT /api/auth/email": {"auth": "required", "roles": "self", "notes": "Changing email sets email_verified=False"},
     "POST /api/onboarding/skip-step/{step_key}": {"auth": "required", "roles": "self"},

@@ -24,6 +24,11 @@ from guards import get_current_user_optional, require_admin
 
 router = APIRouter()
 
+# Anonymous/user telemetry sink — mounted WITHOUT the router-level
+# `require_scope("marketing")` dependency (see routes/admin/__init__.py).
+# The handler itself resolves auth optionally.
+public_router = APIRouter()
+
 VALID_EVENTS = {
     "landing_view",
     "landing_cta_click",
@@ -58,7 +63,7 @@ class FunnelEvent(BaseModel):
     referrer: Optional[str] = Field(None, max_length=200)
 
 
-@router.post("/diagnostics/funnel-event")
+@public_router.post("/diagnostics/funnel-event")
 async def record_funnel_event(
     payload: FunnelEvent,
     request: Request,

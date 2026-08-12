@@ -39,7 +39,8 @@ import {
   Star,
   Check,
   MessageCircle,
-  DollarSign
+  DollarSign,
+  Briefcase
 } from 'lucide-react';
 import { Switch } from '../ui/switch';
 import { toast } from '../../utils/toast';
@@ -1049,6 +1050,9 @@ const Sidebar = () => {
                 {!collapsed && (
                   <div className="nav-section">
                     <div className="nav-section-title">ACCOUNT</div>
+                    {user?.partner_rep && (
+                      <NavLink to="/pro/clients" className={({ isActive }) => `nav-item-sm ${isActive ? 'active' : ''}`} data-testid="nav-pro-clients"><Briefcase /><span>Client Setup</span></NavLink>
+                    )}
                     <NavLink to="/settings" className={({ isActive }) => `nav-item-sm ${isActive ? 'active' : ''}`} data-testid="nav-settings"><Settings /><span>Settings</span></NavLink>
                     {subsVisible && <NavLink to="/subscription" className={({ isActive }) => `nav-item-sm ${isActive ? 'active' : ''}`} data-testid="nav-subscription"><CreditCard /><span>Subscription</span></NavLink>}
                     <NavLink to="/security-settings" className={({ isActive }) => `nav-item-sm ${isActive ? 'active' : ''}`} data-testid="nav-security-settings"><ShieldCheck /><span>Security Settings</span></NavLink>
@@ -1057,6 +1061,9 @@ const Sidebar = () => {
                 )}
                 {collapsed && (
                   <div className="nav-section">
+                    {user?.partner_rep && (
+                      <NavLink to="/pro/clients" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} title="Client Setup" data-testid="nav-pro-clients"><Briefcase /></NavLink>
+                    )}
                     <NavLink to="/settings" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} title="Settings" data-testid="nav-settings"><Settings /></NavLink>
                     {subsVisible && <NavLink to="/subscription" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} title="Subscription" data-testid="nav-subscription"><CreditCard /></NavLink>}
                     <NavLink to="/security-settings" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} title="Security Settings" data-testid="nav-security-settings"><ShieldCheck /></NavLink>

@@ -17,6 +17,10 @@ from services.audit import get_client_ip, log_audit_event
 
 router = APIRouter()
 
+# Public status probe — mounted WITHOUT the router-level
+# `require_scope("platform_health")` dependency (see routes/admin/__init__.py).
+public_router = APIRouter()
+
 
 class MaintenanceModeUpdate(BaseModel):
     enabled: bool
@@ -81,7 +85,7 @@ async def toggle_maintenance_mode(
     return {"success": True, "enabled": data.enabled}
 
 
-@router.get("/public/maintenance-status")
+@public_router.get("/public/maintenance-status")
 async def public_maintenance_status():
     """Public endpoint to check maintenance status (no auth)."""
     doc = await db.platform_settings.find_one({"_id": "maintenance"}, {"_id": 0})

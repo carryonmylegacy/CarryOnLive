@@ -43,6 +43,7 @@ def _user_response(user: dict, owns_estate: bool = False) -> UserResponse:
         beta_accepted=bool(user.get("beta_accepted_at")),
         partner_slug=user.get("partner_slug", "") or "",
         partner_company=user.get("partner_company", "") or "",
+        partner_rep=bool(user.get("partner_rep_for")),
     )
 
 

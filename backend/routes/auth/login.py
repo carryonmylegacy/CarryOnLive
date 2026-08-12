@@ -196,6 +196,15 @@ async def login(data: UserLogin, request: Request):
                     status_code=401,
                     detail="This email has a pending invitation. Please check your email and click the invitation link to create your account.",
                 )
+        if user and user.get("account_status") == "pending_claim":
+            # Pro-provisioned client portal that hasn't been claimed yet —
+            # the account has no usable password until the client finishes
+            # the emailed claim flow. Friendly guidance instead of a
+            # generic "invalid credentials".
+            raise HTTPException(
+                status_code=403,
+                detail="Your portal is being prepared. Please use the personal setup link that was emailed to you to finish creating your login.",
+            )
         await db.failed_logins.insert_one(
             {
                 "email": login_lower,

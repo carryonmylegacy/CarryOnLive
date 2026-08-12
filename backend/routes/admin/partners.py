@@ -42,6 +42,14 @@ from utils import get_current_user
 
 router = APIRouter()
 
+# Public + end-user endpoints (partner landing page, code lookup/redeem).
+# Mounted in routes/admin/__init__.py WITHOUT the router-level
+# `require_scope("marketing")` dependency — that scope gate is for the
+# founder-only CRUD above. Mounting these four under it (SOC2 CC6.1
+# hardening) broke `/p/:slug` for anonymous visitors (401) and code
+# redemption for regular users (403).
+public_router = APIRouter()
+
 # ─── Feature pillars (mirrors feature_gates.PLATFORM_FEATURES) ─────
 # Kept locally so this module has no hard dependency on the tier
 # gating system — partner gates are a separate, partner-scoped
@@ -193,6 +201,7 @@ class PartnerCreate(BaseModel):
     slug: str
     code: str
     discount_percent: int = 100
+    revshare_percent: int = 0
     max_uses: int = 0
     tagline: str = ""
     partner_email: str = ""
@@ -225,6 +234,7 @@ async def create_partner(body: PartnerCreate, current_user: dict = Depends(get_c
         "slug": slug,
         "code": code,
         "discount_percent": max(0, min(100, int(body.discount_percent))),
+        "revshare_percent": max(0, min(100, int(body.revshare_percent))),
         "max_uses": max(0, int(body.max_uses)),
         "times_used": 0,
         "tagline": (body.tagline or "").strip()[:280],
@@ -245,6 +255,7 @@ class PartnerUpdate(BaseModel):
     slug: Optional[str] = None
     code: Optional[str] = None
     discount_percent: Optional[int] = None
+    revshare_percent: Optional[int] = None
     max_uses: Optional[int] = None
     tagline: Optional[str] = None
     partner_email: Optional[str] = None
@@ -284,6 +295,8 @@ async def update_partner(
         update["code"] = code
     if body.discount_percent is not None:
         update["discount_percent"] = max(0, min(100, int(body.discount_percent)))
+    if body.revshare_percent is not None:
+        update["revshare_percent"] = max(0, min(100, int(body.revshare_percent)))
     if body.max_uses is not None:
         update["max_uses"] = max(0, int(body.max_uses))
     if body.tagline is not None:
@@ -494,7 +507,7 @@ async def upload_partner_logo(
 # ─── Public partner endpoints (drive /p/:slug) ────────────────────
 
 
-@router.get("/public/partners/{slug}")
+@public_router.get("/public/partners/{slug}")
 async def public_partner(slug: str):
     """Public partner info used to render `/p/:slug`. Returns ONLY the
     fields the unauthenticated landing page needs — no usage counts,
@@ -534,7 +547,7 @@ async def public_partner(slug: str):
     }
 
 
-@router.get("/public/partners/{slug}/logo")
+@public_router.get("/public/partners/{slug}/logo")
 async def public_partner_logo(slug: str):
     """Streams the logo bytes. Public so the unauth landing page can
     render the partner's brand mark without leaking a presigned S3 URL.
@@ -568,7 +581,7 @@ async def public_partner_logo(slug: str):
 # ─── Code lookup & redeem (used by onboarding) ────────────────────
 
 
-@router.get("/partners/lookup/{code}")
+@public_router.get("/partners/lookup/{code}")
 async def lookup_partner_code(code: str, current_user: dict = Depends(get_current_user)):
     """Look up a partner code without redeeming. Returns the partner's
     company name + slug so the onboarding page can render the polite
@@ -583,7 +596,7 @@ async def lookup_partner_code(code: str, current_user: dict = Depends(get_curren
     return {"found": True, "company_name": doc["company_name"], "slug": doc["slug"]}
 
 
-@router.post("/partners/redeem-code")
+@public_router.post("/partners/redeem-code")
 async def redeem_partner_code(request: Request, current_user: dict = Depends(get_current_user)):
     """End-of-onboarding code redemption. Marks the user as enterprise,
     binds them to the partner, copies the partner's feature gates onto
@@ -603,23 +616,35 @@ async def redeem_partner_code(request: Request, current_user: dict = Depends(get
     discount = int(partner.get("discount_percent", 100))
     gates = _coerce_gates(partner.get("feature_gates"))
 
-    await db.users.update_one(
-        {"id": current_user["id"]},
-        {
-            "$set": {
-                # Link to the partner record — feature gates are
-                # read LIVE from `b2b_partners` on every gate check,
-                # so admin toggles propagate instantly.
-                "partner_id": partner["id"],
-                "partner_slug": partner["slug"],
-                "partner_company": partner["company_name"],
-                "b2b_code": code_str,
-                "b2b_partner": partner["company_name"],
-                "b2b_discount_percent": discount,
+    update_set = {
+        # Link to the partner record — feature gates are
+        # read LIVE from `b2b_partners` on every gate check,
+        # so admin toggles propagate instantly.
+        "partner_id": partner["id"],
+        "partner_slug": partner["slug"],
+        "partner_company": partner["company_name"],
+        "b2b_code": code_str,
+        "b2b_partner": partner["company_name"],
+        "b2b_discount_percent": discount,
+    }
+    # Enterprise ($0) tier assignment applies ONLY when the partner
+    # covers the bill (100% discount). Revenue-share partners
+    # (discount 0) keep their members on RETAIL plans — the code adds
+    # attribution + the partner's white-label feature set, and members
+    # pay full retail through the normal Stripe paywall.
+    if discount >= 100:
+        update_set.update(
+            {
                 "eligible_tier": "enterprise",
                 "special_status": ["enterprise"],
                 "verified_tier": "enterprise",
-            },
+            }
+        )
+
+    await db.users.update_one(
+        {"id": current_user["id"]},
+        {
+            "$set": update_set,
             # Wipe any stale snapshot from a pre-live-read redemption.
             # The live read in feature_gates.py ignores this field
             # entirely, but keeping it around invites confusion.
@@ -629,20 +654,22 @@ async def redeem_partner_code(request: Request, current_user: dict = Depends(get
 
     # Auto-approve enterprise verification so the user lands inside
     # the platform with their entitlements live (no manual review
-    # queue — the code IS the proof).
-    verification = {
-        "id": str(uuid.uuid4()),
-        "user_id": current_user["id"],
-        "user_email": current_user.get("email", ""),
-        "user_name": current_user.get("name", ""),
-        "tier_requested": "enterprise",
-        "status": "approved",
-        "doc_type": "B2B Partner Code (Whitelabel)",
-        "notes": (f"Partner: {partner['company_name']} | Code: {code_str} | Discount: {discount}%"),
-        "created_at": datetime.now(timezone.utc).isoformat(),
-        "reviewed_at": datetime.now(timezone.utc).isoformat(),
-    }
-    await db.tier_verifications.insert_one(verification)
+    # queue — the code IS the proof). Skipped for revenue-share
+    # partners: those members are retail subscribers, not enterprise.
+    if discount >= 100:
+        verification = {
+            "id": str(uuid.uuid4()),
+            "user_id": current_user["id"],
+            "user_email": current_user.get("email", ""),
+            "user_name": current_user.get("name", ""),
+            "tier_requested": "enterprise",
+            "status": "approved",
+            "doc_type": "B2B Partner Code (Whitelabel)",
+            "notes": (f"Partner: {partner['company_name']} | Code: {code_str} | Discount: {discount}%"),
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "reviewed_at": datetime.now(timezone.utc).isoformat(),
+        }
+        await db.tier_verifications.insert_one(verification)
 
     if discount >= 100:
         await db.subscription_overrides.update_one(
@@ -678,3 +705,149 @@ async def redeem_partner_code(request: Request, current_user: dict = Depends(get
         "discount_percent": discount,
         "feature_gates": gates,
     }
+
+
+# ─── Rev-share reporting & partner rep management ─────────────────
+
+
+def _monthly_equivalent(amount: float, billing_cycle: str) -> float:
+    """Normalize a billing-period amount to its monthly equivalent."""
+    if billing_cycle == "annual":
+        return round(amount / 12.0, 2)
+    if billing_cycle == "quarterly":
+        return round(amount / 3.0, 2)
+    return round(amount, 2)
+
+
+@router.get("/admin/partners/{partner_id}/revshare-report")
+async def partner_revshare_report(partner_id: str, current_user: dict = Depends(get_current_user)):
+    """Monthly rev-share payout report for a partner.
+
+    "Steady / non-churn" (founder definition, Jun 2026): the member's
+    subscription is ACTIVE and in good standing right now, with a real
+    paid amount (> $0, not a beta or free plan). Payout = the sum of
+    monthly-equivalent revenue x the partner's revshare_percent."""
+    _ensure_founder(current_user)
+    partner = await db.b2b_partners.find_one({"id": partner_id}, {"_id": 0})
+    if not partner:
+        raise HTTPException(status_code=404, detail="Partner not found.")
+
+    members = await db.users.find(
+        {"partner_id": partner_id},
+        {"_id": 0, "id": 1, "name": 1, "email": 1, "created_at": 1, "account_status": 1},
+    ).to_list(5000)
+    member_ids = [m["id"] for m in members]
+    subs_by_user: dict = {}
+    if member_ids:
+        subs = await db.user_subscriptions.find({"user_id": {"$in": member_ids}}, {"_id": 0}).to_list(5000)
+        subs_by_user = {s["user_id"]: s for s in subs}
+
+    pct = int(partner.get("revshare_percent", 0) or 0)
+    qualifying = []
+    non_qualifying = 0
+    mrr = 0.0
+    for m in members:
+        sub = subs_by_user.get(m["id"])
+        amount = float((sub or {}).get("amount") or 0)
+        qualifies = (
+            bool(sub)
+            and sub.get("status") == "active"
+            and amount > 0
+            and not sub.get("beta_plan")
+            and not sub.get("free_plan")
+        )
+        if not qualifies:
+            non_qualifying += 1
+            continue
+        monthly = _monthly_equivalent(amount, sub.get("billing_cycle", "monthly"))
+        mrr += monthly
+        qualifying.append(
+            {
+                "user_id": m["id"],
+                "name": m.get("name", ""),
+                "email": m.get("email", ""),
+                "plan_name": sub.get("plan_name", ""),
+                "billing_cycle": sub.get("billing_cycle", "monthly"),
+                "amount": amount,
+                "monthly_equivalent": monthly,
+                "activated_at": sub.get("activated_at"),
+            }
+        )
+    mrr = round(mrr, 2)
+    return {
+        "partner_id": partner_id,
+        "company_name": partner["company_name"],
+        "revshare_percent": pct,
+        "total_members": len(members),
+        "paying_subscribers": len(qualifying),
+        "non_qualifying_members": non_qualifying,
+        "monthly_recurring_revenue": mrr,
+        "monthly_payout": round(mrr * pct / 100.0, 2),
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "subscribers": qualifying,
+    }
+
+
+class RepLinkRequest(BaseModel):
+    email: str
+
+
+@router.post("/admin/partners/{partner_id}/link-rep")
+async def link_partner_rep(
+    partner_id: str,
+    body: RepLinkRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    """Designate an existing CarryOn user as this partner's REP — the
+    person authorized to white-glove-provision client portals via the
+    Pro Client Setup surface (/pro/clients). One rep per partner."""
+    _ensure_founder(current_user)
+    partner = await db.b2b_partners.find_one({"id": partner_id}, {"_id": 0, "id": 1, "company_name": 1})
+    if not partner:
+        raise HTTPException(status_code=404, detail="Partner not found.")
+    email_lower = (body.email or "").strip().lower()
+    if not email_lower or "@" not in email_lower:
+        raise HTTPException(status_code=400, detail="Valid email required.")
+    rep = await db.users.find_one(
+        {"$or": [{"email_lower": email_lower}, {"email": email_lower}]},
+        {"_id": 0, "id": 1, "name": 1, "email": 1, "role": 1},
+    )
+    if not rep:
+        raise HTTPException(
+            status_code=404,
+            detail="No CarryOn account with that email. The rep must create their own account first (their partner landing page works).",
+        )
+    # One rep per partner — clear any previous holder, then assign.
+    await db.users.update_many({"partner_rep_for": partner_id}, {"$unset": {"partner_rep_for": ""}})
+    await db.users.update_one({"id": rep["id"]}, {"$set": {"partner_rep_for": partner_id}})
+    await db.b2b_partners.update_one(
+        {"id": partner_id},
+        {
+            "$set": {
+                "rep_user_id": rep["id"],
+                "rep_user_email": rep["email"],
+                "rep_user_name": rep.get("name", ""),
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+            }
+        },
+    )
+    return {
+        "linked": True,
+        "rep_user_id": rep["id"],
+        "rep_user_name": rep.get("name", ""),
+        "rep_user_email": rep["email"],
+    }
+
+
+@router.delete("/admin/partners/{partner_id}/link-rep")
+async def unlink_partner_rep(partner_id: str, current_user: dict = Depends(get_current_user)):
+    _ensure_founder(current_user)
+    await db.users.update_many({"partner_rep_for": partner_id}, {"$unset": {"partner_rep_for": ""}})
+    await db.b2b_partners.update_one(
+        {"id": partner_id},
+        {
+            "$unset": {"rep_user_id": "", "rep_user_email": "", "rep_user_name": ""},
+            "$set": {"updated_at": datetime.now(timezone.utc).isoformat()},
+        },
+    )
+    return {"unlinked": True}

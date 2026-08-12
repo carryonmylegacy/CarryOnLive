@@ -187,6 +187,7 @@ async def get_me(current_user: dict = Depends(get_current_user)):
         # signups never have these fields, so their UX is untouched.
         "partner_slug": user_doc.get("partner_slug", "") or "",
         "partner_company": user_doc.get("partner_company", "") or "",
+        "partner_rep": bool(user_doc.get("partner_rep_for")),
         # ── Trustee Mode (TMA) ────────────────────────────────────
         # When the current session was created via a trustee login,
         # `current_user` (resolved in utils.get_current_user) carries

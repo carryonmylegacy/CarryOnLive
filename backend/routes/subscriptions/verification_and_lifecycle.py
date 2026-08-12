@@ -444,7 +444,7 @@ async def get_subscription_stats(current_user: dict = Depends(get_current_user))
     window_start = (now - timedelta(days=29)).replace(hour=0, minute=0, second=0, microsecond=0)
     recent_signups = await db.users.find(
         {"created_at": {"$gte": window_start.isoformat()}},
-        {"_id": 0, "created_at": 1},
+        {"_id": 0, "created_at": 1},  # pre-push-invariants: allow-missing-id (trend bucketing reads only created_at)
     ).to_list(100000)
     counts_by_date = {}
     for r in recent_signups:
