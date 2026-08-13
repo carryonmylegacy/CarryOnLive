@@ -903,6 +903,20 @@ function PartnerRow({ partner, columns, gateField, gateMode, authHeaders, fileIn
               </span>
             </div>
             <div className="flex items-center gap-1.5 text-[11px] flex-wrap">
+              <button
+                onClick={() => onOpenManagers(partner)}
+                className="flex items-center gap-1 font-bold px-2 py-0.5 rounded-full"
+                style={{
+                  color: 'var(--gold)',
+                  background: 'rgba(212,175,55,0.10)',
+                  border: '1px solid rgba(212,175,55,0.4)',
+                }}
+                title="Manager logins — create/copy credentials for this partner's Manager Portal (/manager)"
+                data-testid={`partner-managers-${partner.slug}`}
+              >
+                <KeyRound className="w-3 h-3" /> Managers
+              </button>
+              <span className="text-[var(--t6)]">·</span>
               <a href={url} target="_blank" rel="noopener noreferrer"
                 className="font-mono text-[var(--gold)] hover:text-[#fcd34d] truncate flex items-center gap-1 max-w-[200px]"
                 data-testid={`partner-url-${partner.slug}`}
@@ -972,14 +986,6 @@ function PartnerRow({ partner, columns, gateField, gateMode, authHeaders, fileIn
       {/* Actions */}
       <td className="px-3 py-3 text-right align-middle">
         <div className="flex items-center justify-end gap-2">
-          <button
-            onClick={() => onOpenManagers(partner)}
-            className="text-[var(--t5)] hover:text-[var(--gold)] p-0.5"
-            title="Manager logins (Partner Manager Portal)"
-            data-testid={`partner-managers-${partner.slug}`}
-          >
-            <KeyRound className="w-3.5 h-3.5" />
-          </button>
           <button
             onClick={() => onOpenRevShare(partner)}
             className="flex items-center gap-0.5 text-[11px] font-bold text-[#34d399] hover:text-[#6ee7b7]"

@@ -9734,3 +9734,9 @@ gradient, `vaultGlowPulse` glow animation (reduced-motion safe), navigates to /v
 After deploy: Admin → Finance → Partners → key icon on Carpenter Collective → create manager
 "Jazmine Carpenter" → copy the Portal URL + username + password block and send it to her.
 She signs in at carryon.us/manager.
+
+### Fix (founder report) — Managers button discoverability
+The Managers key icon lived in the far-right Actions cell, hidden behind ~14 horizontally-scrolling
+feature-gate columns. Moved to an always-visible gold "Managers" pill (KeyRound + label) at the start
+of the identity-cell footer row (next to /p/{slug}); far-right duplicate removed. Verified iter174
+(frontend 100%: visible without scroll at 1920x800, opens modal, exactly 1 instance, regressions pass).
