@@ -301,6 +301,11 @@ async def get_subscription_status(current_user: dict = Depends(get_current_user)
         "custom_discount": override.get("custom_discount", 0) if override else 0,
         "has_active_subscription": has_access,
         "needs_subscription": not has_access,
+        # Post-trial SDV-only lockdown (founder rule, Aug 2026): expired
+        # trial + no sub/overrides → only the Secure Document Vault stays
+        # usable. Drives the persistent banner + greyed feature buttons;
+        # middleware_subscription_lock.py is the fail-closed API twin.
+        "sdv_only_lockdown": bool(not has_access and (user_doc or {}).get("role", "") == "benefactor"),
         "is_grace_period": bool(is_grace),
         "grace_period_end": sub.get("grace_period_end") if is_grace else None,
         "is_dormant": bool(is_dormant),

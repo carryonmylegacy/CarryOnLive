@@ -37,9 +37,57 @@ const FEATURE_LABELS = {
 export const FeatureGate = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { enabledFeatures, user } = useAuth();
+  const { enabledFeatures, user, subscriptionStatus } = useAuth();
+  const path = location.pathname;
 
-  if (isFeatureEnabled(location.pathname, enabledFeatures)) return children;
+  // Trustee boundary — Milestone Messages are personal letters and are
+  // fully off-limits (view included) inside a trustee/manager session.
+  if (user?.trustee_mode && path.startsWith('/messages')) {
+    return (
+      <div className="p-4 lg:p-6 pt-6 lg:pt-10 pb-24 lg:pb-12 max-w-2xl mx-auto" data-testid="trustee-mm-offlimits">
+        <div className="glass-card p-8 text-center">
+          <Lock className="w-10 h-10 mx-auto mb-4" style={{ color: '#d4af37' }} />
+          <h1 className="text-xl font-bold text-[var(--t)] mb-2">Personal to the Account Owner</h1>
+          <p className="text-sm text-[var(--t4)] leading-relaxed">
+            Milestone Messages are private letters and recordings from the account owner to their loved ones.
+            They aren&apos;t viewable or editable in trustee access.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Post-trial SDV-only lockdown — every feature route except the vault
+  // renders a locked panel. The Secure Document Vault stays fully usable.
+  if (subscriptionStatus?.sdv_only_lockdown === true && user?.role === 'benefactor' && !path.startsWith('/vault')) {
+    return (
+      <div className="p-4 lg:p-6 pt-6 lg:pt-10 pb-24 lg:pb-12 max-w-2xl mx-auto" data-testid="lockdown-feature-panel">
+        <div className="glass-card p-8 text-center">
+          <Lock className="w-10 h-10 mx-auto mb-4" style={{ color: '#d4af37' }} />
+          <h1 className="text-xl font-bold text-[var(--t)] mb-2">
+            {user?.trustee_mode ? 'Feature Disabled for This Client' : 'Your Full-Access Trial Has Ended'}
+          </h1>
+          <p className="text-sm text-[var(--t4)] leading-relaxed mb-5">
+            {user?.trustee_mode
+              ? "This client's full-access period has ended. Everything except the Secure Document Vault is disabled until they choose a subscription. Their data is safe — nothing has been deleted."
+              : 'Everything except your Secure Document Vault is disabled until you choose a plan. Your data is safe — nothing has been deleted.'}
+          </p>
+          {!user?.trustee_mode && (
+            <button
+              onClick={() => navigate('/subscription')}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-bold text-sm active:scale-95 transition-transform"
+              style={{ background: '#d4af37', color: '#0B1221' }}
+              data-testid="lockdown-panel-choose-plan-btn"
+            >
+              Choose a Plan <ArrowUpRight className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  if (isFeatureEnabled(path, enabledFeatures)) return children;
 
   const featureLabel = FEATURE_LABELS[location.pathname] || 'This feature';
   const subscriptionPath = user?.role === 'beneficiary' ? '/beneficiary/subscription' : '/subscription';

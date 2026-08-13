@@ -6,6 +6,7 @@ import { API_URL } from '../config';
 import { useAuth } from '../contexts/AuthContext';
 import { BENEFACTOR_SECTIONS, sectionRgb } from '../config/benefactorSections';
 import { isFeatureKeyEnabled } from '../utils/featureGates';
+import { isFeatureKeyLocked } from '../utils/lockdown';
 
 /**
  * SectionLandingPage — one of four benefactor-section landing pages
@@ -53,7 +54,12 @@ const FEATURE_DESCRIPTIONS = {
 const SectionLandingPage = () => {
   const { sectionKey } = useParams();
   const navigate = useNavigate();
-  const { user: _user, enabledFeatures } = useAuth();
+  const { user: _user, enabledFeatures, subscriptionStatus: lockSub } = useAuth();
+  // Greyed-but-visible feature cards: SDV-only lockdown + trustee MM boundary.
+  const lockCtx = {
+    lockdown: lockSub?.sdv_only_lockdown === true,
+    trusteeMode: !!_user?.trustee_mode,
+  };
   const [estate, setEstate] = useState(null);
   const [stats, setStats] = useState({});
 
@@ -197,13 +203,14 @@ const SectionLandingPage = () => {
           {enabledTabs.map((tab) => {
             const TabIcon = tab.icon;
             const status = statusLine(tab.featureKey);
+            const cardLocked = isFeatureKeyLocked(tab.featureKey, lockCtx);
             return (
               <button
                 key={tab.key}
                 type="button"
                 onClick={() => navigate(tab.path)}
                 data-testid={`section-landing-${section.key}-card-${tab.key}`}
-                className="glass-card text-left p-5 lg:p-6 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+                className={`glass-card text-left p-5 lg:p-6 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer${cardLocked ? ' opacity-40' : ''}`}
                 style={{
                   borderColor: `rgba(${rgb}, 0.18)`,
                 }}
@@ -223,7 +230,9 @@ const SectionLandingPage = () => {
                       {tab.label}
                     </h2>
                   </div>
-                  <ChevronRight className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: accent }} />
+                  {cardLocked
+                    ? <Lock className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: accent }} data-testid={`section-card-locked-${tab.key}`} />
+                    : <ChevronRight className="w-5 h-5 flex-shrink-0 mt-1" style={{ color: accent }} />}
                 </div>
                 <p className="text-sm text-[var(--t4)] leading-relaxed mb-3">
                   {FEATURE_DESCRIPTIONS[tab.featureKey] || ''}

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import apiClient from '../../utils/apiClient';
 import { useAuth } from '../../contexts/AuthContext';
+import { isNavRouteLocked } from '../../utils/lockdown';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useLabelCleaner, joinBrandSuffix } from '../../utils/brandLabel';
 import { haptics } from '../../utils/haptics';
@@ -63,7 +64,7 @@ export { DOCK_REGISTRY }; // re-export so existing consumers don't break
 const BASE_URL = process.env.REACT_APP_BACKEND_URL;
 
 const MobileNav = () => {
-  const { user, logout, refreshUser, enabledFeatures, setUser: _setUser, partnerBranding } = useAuth();
+  const { user, logout, refreshUser, enabledFeatures, setUser: _setUser, partnerBranding, subscriptionStatus } = useAuth();
   const cleanLabel = useLabelCleaner();
   // Brand for partner-co-branded labels (CFP/CCP/Core Pillars etc.).
   // Legal text, footers, ™ marks and "powered by" lines stay as CarryOn.
@@ -574,6 +575,11 @@ const MobileNav = () => {
     beneficiary: '/beneficiary',
     admin: '/admin',
     operator: '/ops',
+  };
+
+  const navLockCtx = {
+    lockdown: subscriptionStatus?.sdv_only_lockdown === true,
+    trusteeMode: !!user?.trustee_mode,
   };
 
   const getBottomNav = () => {
@@ -1396,7 +1402,7 @@ const MobileNav = () => {
                   {({ isActive: _routeActive }) => {
                     return (
                       <>
-                        <div className="relative">
+                        <div className={`relative ${isNavRouteLocked(item.to, navLockCtx) ? 'opacity-40' : ''}`}>
                           <item.icon className="w-5 h-5" />
                           {item.badge > 0 && (
                             <span className="absolute -top-1.5 -right-2.5 min-w-[16px] h-4 rounded-full flex items-center justify-center text-[12px] font-bold px-1"
@@ -1405,7 +1411,7 @@ const MobileNav = () => {
                             >{item.badge > 99 ? '99+' : item.badge}</span>
                           )}
                         </div>
-                        <span className="text-[12px] font-bold">{item.label}</span>
+                        <span className={`text-[12px] font-bold ${isNavRouteLocked(item.to, navLockCtx) ? 'opacity-40' : ''}`}>{item.label}</span>
                       </>
                   );}}
                 </NavLink>

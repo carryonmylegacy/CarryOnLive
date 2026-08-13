@@ -13,6 +13,7 @@ import ShareUploadModal from './components/ShareUploadModal';
 import ForceUpdateGate from './components/ForceUpdateGate';
 import NetworkStatusBanner from './components/NetworkStatusBanner';
 import TrusteeBanner from './components/TrusteeBanner';
+import TrialLockdownBanner from './components/TrialLockdownBanner';
 import NotificationContainer from './components/AppNotification';
 import OfflineSyncProgress from './components/OfflineSyncProgress';
 import OfflineDiagnostics from './components/OfflineDiagnostics';
@@ -506,6 +507,9 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   const isOnSettings = currentPath === '/settings' || currentPath === '/security-settings';
   const needsSubscription = subscriptionStatus?.needs_subscription === true
     && subscriptionStatus?.trial?.trial_active !== true
+    // SDV-only lockdown replaces the fullscreen paywall: the user keeps
+    // their dashboard (greyed buttons + banner) and the vault stays usable.
+    && subscriptionStatus?.sdv_only_lockdown !== true
     && user?.role !== 'admin'
     && !isOnBeneficiaryRoute
     && !isOnCreateEstate
@@ -930,6 +934,7 @@ function App() {
         <BrowserRouter>
           <NetworkStatusBanner />
           <TrusteeBanner />
+          <TrialLockdownBanner />
           <PendingSyncChip />
           <NotificationContainer />
           <OfflineSyncProgress />

@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Lock as LockIcon } from 'lucide-react';
 import { BENEFACTOR_SECTIONS, sectionRgb } from '../../config/benefactorSections';
 import { useTheme } from '../../contexts/ThemeContext';
 import { isFeatureKeyEnabled } from '../../utils/featureGates';
+import { isFeatureKeyLocked } from '../../utils/lockdown';
+import { useAuth } from '../../contexts/AuthContext';
 
 /**
  * BenefactorSectionNav — expandable section list for the benefactor
@@ -34,6 +36,12 @@ const BenefactorSectionNav = ({
   const location = useLocation();
   const { theme } = useTheme();
   const isLight = theme === 'light';
+  const { user: lockUser, subscriptionStatus: lockSub } = useAuth();
+  // Greyed-but-visible feature buttons: SDV-only lockdown + trustee MM boundary.
+  const lockCtx = {
+    lockdown: lockSub?.sdv_only_lockdown === true,
+    trusteeMode: !!lockUser?.trustee_mode,
+  };
   const isMobile = variant === 'mobile';
 
   // Persist expansion state across renders / route changes.
@@ -198,6 +206,7 @@ const BenefactorSectionNav = ({
                     const TabIcon = t.icon;
                     const isTabActive = location.pathname === t.path;
                     const showBadge = t.featureKey === 'ect' && ectUnread > 0;
+                    const tabLocked = isFeatureKeyLocked(t.featureKey, lockCtx);
                     return (
                       <button
                         key={t.key}
@@ -213,10 +222,12 @@ const BenefactorSectionNav = ({
                           fontSize: isMobile ? 13 : 12,
                           border: 0,
                           cursor: 'pointer',
+                          opacity: tabLocked ? 0.45 : 1,
                         }}
                       >
                         <TabIcon style={{ width: 14, height: 14, flexShrink: 0 }} />
                         <span className="truncate flex-1">{t.label}</span>
+                        {tabLocked && <LockIcon style={{ width: 12, height: 12, flexShrink: 0 }} data-testid={`nav-locked-${t.key}`} />}
                         {showBadge && (
                           <span
                             className="px-1.5 py-0.5 rounded-full font-bold leading-none"

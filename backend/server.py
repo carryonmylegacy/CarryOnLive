@@ -634,6 +634,18 @@ try:
 except Exception as _tma_exc:
     logger.warning(f"Trustee audit middleware skipped: {_tma_exc}")
 
+# Fail-closed boundaries — deliberately OUTSIDE the try/except above:
+# if these fail to import, the server must NOT start. Personal-surface
+# protection (trustee boundary) and the post-trial SDV-only paywall
+# cannot be allowed to silently disappear.
+from middleware_subscription_lock import SubscriptionLockMiddleware  # noqa: E402
+from middleware_trustee_boundary import TrusteeBoundaryMiddleware  # noqa: E402
+
+# Added after (= run before) the audit middleware so refused requests
+# are never audited or snapshotted.
+app.add_middleware(TrusteeBoundaryMiddleware)
+app.add_middleware(SubscriptionLockMiddleware)
+
 app.add_middleware(RequestTraceMiddleware)
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(RateLimitMiddleware, max_requests=20, window_seconds=60)

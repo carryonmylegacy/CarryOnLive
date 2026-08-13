@@ -364,15 +364,11 @@ async def upload_document(
     - Encrypted with AES-256-GCM using per-estate derived key
     - Stored in cloud storage (S3 in prod, local in dev)
     """
-    # Enforce subscription requirement for new uploads
-    from guards import get_subscription_access
-
-    access = await get_subscription_access(current_user)
-    if not access["has_access"]:
-        raise HTTPException(
-            status_code=403,
-            detail="Your free trial has ended. Subscribe to continue uploading documents. Your existing documents are still accessible.",
-        )
+    # NOTE (Aug 2026 founder rule): the Secure Document Vault stays FULLY
+    # usable after the trial ends — it is the one feature an expired
+    # account keeps. The old "subscribe to upload" gate was removed here;
+    # every OTHER feature's writes are blocked centrally by
+    # middleware_subscription_lock.py (SDV is exempt there by design).
     await require_benefactor_role(current_user, "upload documents")
 
     # Verify user owns this estate (or is admin)

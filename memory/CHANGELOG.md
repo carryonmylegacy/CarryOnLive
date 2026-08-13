@@ -9843,3 +9843,36 @@ Founder set RUN_E2E=false; next Save-to-GitHub push will deploy everything.
   PartnerEditPage unlink-rep p-1→p-2. (Heuristic \bp-1\b also matches p-1.5.)
 - Verified: ruff check+format clean, ESLint clean, backend up, founder→partner-edit→managers
   modal E2E screenshot shows password field, check.sh "ALL CLEAR — SAFE TO PUSH".
+
+## 2026-08-13 (later 2) — Trustee boundary + post-trial SDV-only lockdown (pre-Jazmine-email truth pass)
+
+### A. Trustee boundary (founder choices: MM fully off-limits incl. view; est/acct deletion blocked)
+- NEW `middleware_trustee_boundary.py` (fail-closed, registered OUTSIDE the audit try/except so
+  the server won't start without it): any acting_as session gets 403 on — /api/messages +
+  /api/milestones (ALL methods), security writes (change-password, email, username,
+  webauthn/register, sms-otp, 2fa-preference), non-GET /api/subscriptions, DELETE /api/estates/{id}.
+  Concierge writes (SDV, entities, beneficiaries, checklists, financial) untouched + still audited.
+- Frontend: FeatureGate renders `trustee-mm-offlimits` panel on /messages in trustee mode;
+  BenefactorSectionNav dims MM tab (opacity .45) + `nav-locked-mm` icon.
+### B. Post-trial SDV-only lockdown (platform-wide)
+- `/api/subscriptions/status` now returns `sdv_only_lockdown` (benefactor + not has_access).
+- NEW `middleware_subscription_lock.py`: WRITE methods on feature prefixes → 403 when
+  guards.get_subscription_access says no access; SDV (/api/documents) exempt; reads open so the
+  dashboard renders. Dormant while beta_mode ON (founder will flip beta off when going live).
+- REMOVED the old per-route "subscribe to upload" gate in routes/documents.py upload — SDV must
+  stay FULLY usable post-trial (upload 200 + delete 200 verified for expired user).
+- Frontend: TrialLockdownBanner (gold, persistent; owner/dormant/trustee copy; Choose-a-Plan CTA);
+  FeatureGate `lockdown-feature-panel` on non-vault feature routes; BenefactorSectionNav +
+  SectionLandingPage grey non-SDV tabs/cards with lock icons; App.js bypasses the fullscreen
+  dismissible paywall when lockdown active; MobileNav bottom dock dims locked items.
+### Verification
+- Self-test curl matrix: trustee T1-T8c all correct; lockdown L1-L6c all correct (incl. SDV
+  upload/delete as locked user; beta ON → dormant); housekeeping ALL CLEAR 0 WARN/0 FAIL.
+- Testing agent iter178: lockdown UX 6/6 PASS; trustee UX pass. Its single reported "bug"
+  (missing nav-locked-mm) was a FALSE ALARM — sidebar sections were collapsed on /dashboard;
+  verified on /messages: opacity .45 + nav-locked-mm present. beta_mode restored True.
+### Learnings
+- GOTCHA: parallel search_replace calls on the SAME file can silently drop edits — batch
+  same-file edits into one python patcher or sequential calls.
+- QuickStartModal (fresh partner clients) blocks Playwright force-clicks — navigate directly to
+  a route to auto-expand its nav section instead.
