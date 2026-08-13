@@ -9757,3 +9757,32 @@ of the identity-cell footer row (next to /p/{slug}); far-right duplicate removed
   (overlapping PUTs from rapid toggles were completing out of order server-side);
   Managers modal render 10-15s → 112ms.
 - Housekeeping ALL CLEAR (0 WARN / 0 FAIL). Partner data fully restored post-testing.
+
+## 2026-06-08 — Render auto-deploy restored (CI deploy-gate fix, TWO root causes)
+
+### Founder bug — "pushes to GitHub no longer trigger Render"
+Render Auto-Deploy is OFF; the Deploy Hook fired by ci.yml's `deploy-gate` job is the
+ONLY release path. TWO independent CI failures were silently blocking every deploy:
+1. **E2E gate**: deploy-gate hard-required `needs.e2e-smoke.result == 'success'`, but
+   e2e-smoke is gated on `vars.RUN_E2E == 'true'`. The repo VARIABLE was never set →
+   job always SKIPPED → result 'skipped' != 'success' → gate exited 1 on every push.
+   FIX: e2e result enforced ONLY when RUN_E2E=='true'; otherwise loud ::warning:: and
+   the gate proceeds. All 5 core checks remain hard-required.
+2. **backend-tests env** (broke ~Jun 7 when the SDV-finality audit test landed):
+   `MONGO_URL: ""` crashed `AsyncIOMotorClient("")` at import (ConfigurationError:
+   Empty host) — any test importing app modules failed collection. Also
+   `JWT_SECRET: "test-secret-key-ci"` (18B) tripped PyJWT InsecureKeyLengthWarning,
+   escalated to error by the warning filter. FIX: `MONGO_URL:
+   "mongodb://localhost:27017"` (motor is lazy — imports fine, real DB awaits still
+   fail) and a 36-char JWT_SECRET.
+### Verification
+- Testing agent iter177: 24/24 — YAML/job-graph parse, gate bash simulated across full
+  scenario matrix (RUN_E2E unset/true × e2e skipped/success/failure × core check
+  failures), Render/Vercel hook steps mocked (empty-secret no-op / 200 / 500-fail).
+- New permanent regression suite `backend/tests/test_deploy_gate_ci.py` (repo-root
+  relative CI_PATH; live-network test skips when REACT_APP_BACKEND_URL unset).
+- Faithful CI simulation (repo copy outside /app, no .env files, exact CI env):
+  58 passed / 9 skipped, exit 0. Ruff lint+format clean. gitleaks clean on both files.
+- User confirmed via screenshot: RENDER_DEPLOY_HOOK_URL + VERCEL_DEPLOY_HOOK_URL +
+  all 4 E2E secrets ARE set in repo secrets. RUN_E2E variable state unknown (likely
+  unset → deploys proceed with warning; set RUN_E2E=true to enforce smoke evidence).

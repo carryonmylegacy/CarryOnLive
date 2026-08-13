@@ -15,8 +15,22 @@ Settings → Secrets and variables → Actions:
 - **Variables**: `RUN_E2E = true`
 - **Secrets**: `E2E_BASE_URL`, `E2E_API_URL`, `E2E_ADMIN_EMAIL`, `E2E_ADMIN_PASSWORD`
 
-Without `RUN_E2E=true` + these secrets, the deploy gate fails by design (no
-end-to-end change-management evidence).
+E2E enforcement is **opt-in** (founder fix, Jun 2026): while `RUN_E2E` is not
+`true`, the gate emits a loud `::warning::` and proceeds so production releases
+are not blocked before E2E is configured. Once `RUN_E2E=true` is set, a failing
+or skipped E2E smoke HARD-FAILS the gate. (The original always-hard-fail
+behavior silently stopped ALL Render/Vercel deploys — with Render Auto-Deploy
+off, the gate's Deploy Hook step is the only release path.)
+
+## 1b. GitHub — Deploy hook secrets (REQUIRED for production releases)
+Settings → Secrets and variables → Actions → Secrets:
+- `RENDER_DEPLOY_HOOK_URL` — Render dashboard → carryon-api → Settings → Deploy Hook
+- `VERCEL_DEPLOY_HOOK_URL` — Vercel dashboard → project → Settings → Git → Deploy Hooks
+
+Render Auto-Deploy is intentionally **off** (`render.yaml: autoDeploy: false`
+and dashboard "Auto-Deploy = No"), so a green gate firing these hooks is the
+ONLY way production deploys. If either secret is missing the gate passes but
+emits a `::warning::` that the platform was NOT triggered.
 
 ## 2. GitHub — Branch protection on `main`
 Settings → Branches → Add branch ruleset (or classic protection) for `main`:

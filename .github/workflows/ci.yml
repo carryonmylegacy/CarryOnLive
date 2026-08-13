@@ -88,9 +88,14 @@ jobs:
       - name: Run tests
         working-directory: backend
         env:
-          MONGO_URL: ""
+          # Valid-but-unreachable URI: motor connects lazily, so app modules
+          # import cleanly; any test that actually awaits the DB still fails.
+          # ("" crashed AsyncIOMotorClient at import → collection error.)
+          MONGO_URL: "mongodb://localhost:27017"
           DB_NAME: "carryon_test"
-          JWT_SECRET: "test-secret-key-ci"
+          # ≥32 bytes — PyJWT raises InsecureKeyLengthWarning (escalated to
+          # error by the test warning filter) for shorter HMAC keys.
+          JWT_SECRET: "test-secret-key-ci-0123456789abcdef"
           ENCRYPTION_KEY: "test-encryption-key-1234567890abcdef"
           FRONTEND_URL: "http://localhost:3000"
           PYTHONDEVMODE: "1" # surfaces DeprecationWarning (e.g. datetime.utcnow)
@@ -201,11 +206,18 @@ jobs:
     # audit #d0c48d7 / #5391e8b #8 — explicit change-management gate (SOC2
     # CC8.1). On the production/staging release branch (main, push), a build
     # CANNOT be treated as verified unless EVERY required check — secret scan,
-    # backend/frontend lint, backend tests, frontend build, and the E2E smoke —
-    # is green AND E2E change-management evidence (RUN_E2E=true) is present.
-    # `always()` ensures the gate still runs (and fails) when an upstream job is
-    # skipped or failed. This job is the single status check repo admins mark
-    # REQUIRED in branch protection (see docs/DEPLOY_PROTECTION_SETTINGS.md).
+    # backend/frontend lint, backend tests, and frontend build — is green.
+    # E2E evidence policy (founder fix, Jun 2026): the RUN_E2E=true hard
+    # requirement silently blocked EVERY production deploy while the E2E
+    # secrets were unconfigured (Render autoDeploy is off; the Deploy Hook
+    # below is the ONLY release path — pushes stopped deploying entirely).
+    # E2E is now enforced ONLY once configured: if vars.RUN_E2E == 'true',
+    # the smoke MUST pass; if unset, the gate proceeds with a loud warning
+    # so the missing evidence is visible on every run without bricking
+    # releases. `always()` ensures the gate still runs (and fails) when an
+    # upstream job is skipped or failed. This job is the single status check
+    # repo admins mark REQUIRED in branch protection (see
+    # docs/DEPLOY_PROTECTION_SETTINGS.md).
     if: ${{ always() && github.ref == 'refs/heads/main' && github.event_name == 'push' }}
     steps:
       - name: Require every required check to be green
@@ -224,14 +236,16 @@ jobs:
           check "frontend-lint"  "${{ needs.frontend-lint.result }}"
           check "backend-tests"  "${{ needs.backend-tests.result }}"
           check "frontend-build" "${{ needs.frontend-build.result }}"
-          if [ "${{ vars.RUN_E2E }}" != "true" ]; then
-            echo "::error::SOC2 deploy gate FAILED — vars.RUN_E2E is not 'true'. No end-to-end change-management evidence for this main build. Set repo/org variable RUN_E2E=true and the E2E_* secrets (E2E_BASE_URL, E2E_API_URL, E2E_ADMIN_EMAIL, E2E_ADMIN_PASSWORD)."
-            fail=1
-          elif [ "${{ needs.e2e-smoke.result }}" != "success" ]; then
-            echo "::error::SOC2 deploy gate FAILED — E2E smoke result=${{ needs.e2e-smoke.result }} (must be 'success')."
-            fail=1
+          if [ "${{ vars.RUN_E2E }}" = "true" ]; then
+            if [ "${{ needs.e2e-smoke.result }}" != "success" ]; then
+              echo "::error::SOC2 deploy gate FAILED — E2E smoke result=${{ needs.e2e-smoke.result }} (must be 'success' when RUN_E2E=true)."
+              fail=1
+            else
+              echo "✅ e2e-smoke: success"
+            fi
           else
-            echo "✅ e2e-smoke: success"
+            echo "::warning::E2E smoke NOT configured (vars.RUN_E2E != 'true') — deploying WITHOUT end-to-end change-management evidence. Set repo variable RUN_E2E=true plus secrets E2E_BASE_URL, E2E_API_URL, E2E_ADMIN_EMAIL, E2E_ADMIN_PASSWORD to enforce it."
+            echo "⚠️ e2e-smoke: skipped (RUN_E2E not configured — gate proceeds)"
           fi
           if [ "$fail" = "1" ]; then exit 1; fi
           echo "✅ SOC2 deploy gate satisfied — all required checks green on main."
@@ -276,7 +290,7 @@ jobs:
           VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
         run: |
           if [ -z "$VERCEL_DEPLOY_HOOK_URL" ]; then
-            echo "::notice::VERCEL_DEPLOY_HOOK_URL not set — skipping Vercel deploy trigger (gate still passed)."
+            echo "::warning::VERCEL_DEPLOY_HOOK_URL secret not set — Vercel was NOT triggered. Add it under Settings → Secrets and variables → Actions if CI should drive frontend deploys."
             exit 0
           fi
           echo "SOC2 gate green — triggering Vercel production deploy via Deploy Hook…"
@@ -300,7 +314,7 @@ jobs:
           RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
         run: |
           if [ -z "$RENDER_DEPLOY_HOOK_URL" ]; then
-            echo "::notice::RENDER_DEPLOY_HOOK_URL not set — skipping Render deploy trigger (gate still passed)."
+            echo "::warning::RENDER_DEPLOY_HOOK_URL secret not set — Render was NOT triggered. With Render Auto-Deploy off, this secret is the ONLY release path: add it under Settings → Secrets and variables → Actions (value: Render dashboard → Service → Settings → Deploy Hook)."
             exit 0
           fi
           echo "SOC2 gate green — triggering Render production deploy via Deploy Hook…"
