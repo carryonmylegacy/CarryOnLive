@@ -227,7 +227,7 @@ const PushPrompt = ({ getAuthHeaders }) => {
             </Button>
           </div>
         </div>
-        <button onClick={dismiss} className="text-[#8892A6] hover:text-white p-1">
+        <button onClick={dismiss} className="text-[#8892A6] hover:text-white p-2">
           <X className="w-4 h-4" />
         </button>
       </div>

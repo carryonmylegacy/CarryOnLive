@@ -375,5 +375,5 @@ async def delete_voice(submission_id: str, current_user: dict = Depends(get_curr
     check_founder_role(current_user)
     if not submission_id or len(submission_id) > 64:
         raise HTTPException(status_code=400, detail="Invalid submission id")
-    res = await db.share_quote_submissions.delete_one({"id": submission_id})
+    res = await db.share_quote_submissions.delete_one({"id": submission_id})  # hk-25: reviewed
     return {"deleted": res.deleted_count}

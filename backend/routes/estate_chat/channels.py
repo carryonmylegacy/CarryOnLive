@@ -182,10 +182,10 @@ async def delete_channel(
         # up too (audit 18a9d44 F-18-13 — deleting messages first orphaned them).
         if channel.get("type") != "circle":
             msg_ids = [m["id"] async for m in db.estate_messages.find({"channel_id": channel_id}, {"id": 1, "_id": 0})]
-            await db.estate_channels.delete_one({"id": channel_id})
+            await db.estate_channels.delete_one({"id": channel_id})  # cascade: channel teardown (hk-25 reviewed)
             if msg_ids:
                 await db.estate_reactions.delete_many({"message_id": {"$in": msg_ids}})
-            await db.estate_messages.delete_many({"channel_id": channel_id})
+            await db.estate_messages.delete_many({"channel_id": channel_id})  # hk-25: cascade
         else:
             # Circle: dismiss for all members
             for mid in channel.get("members", []):
@@ -251,10 +251,10 @@ async def batch_delete_channels(
             # Collect message ids BEFORE deleting so reactions are cleaned up
             # too (audit 512bd5c F-18-09 — batch path orphaned reactions).
             msg_ids = [m["id"] async for m in db.estate_messages.find({"channel_id": ch_id}, {"id": 1, "_id": 0})]
-            await db.estate_channels.delete_one({"id": ch_id})
+            await db.estate_channels.delete_one({"id": ch_id})  # cascade: channel teardown (hk-25 reviewed)
             if msg_ids:
                 await db.estate_reactions.delete_many({"message_id": {"$in": msg_ids}})
-            await db.estate_messages.delete_many({"channel_id": ch_id})
+            await db.estate_messages.delete_many({"channel_id": ch_id})  # cascade: channel teardown (hk-25 reviewed)
             await db.estate_channel_reads.delete_many({"channel_id": ch_id})
         deleted.append(ch_id)
     return {"deleted": deleted, "failed": failed}

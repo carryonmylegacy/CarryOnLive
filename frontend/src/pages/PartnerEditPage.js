@@ -406,7 +406,7 @@ export default function PartnerEditPage() {
                   <UserPlus className="w-4 h-4 text-[#34d399]" />
                   <span className="text-[var(--t3)] font-semibold">{partner.rep_user_name || partner.rep_user_email}</span>
                   <span className="text-[var(--t5)] text-[12px]">({partner.rep_user_email})</span>
-                  <button onClick={unlinkRep} disabled={repBusy} className="text-[var(--t5)] hover:text-[var(--rd)] p-1"
+                  <button onClick={unlinkRep} disabled={repBusy} className="text-[var(--t5)] hover:text-[var(--rd)] p-2"
                     title="Unlink rep" data-testid="partner-edit-rep-unlink">
                     <X className="w-4 h-4" />
                   </button>

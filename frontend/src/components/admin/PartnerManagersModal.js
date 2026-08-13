@@ -47,7 +47,7 @@ const CredentialsBlock = ({ creds }) => {
           </div>
         ))}
       </div>
-      <p className="text-[11px] text-[var(--t4)] mt-2">The password is not stored readable — if it's lost, use Regenerate to issue a new one.</p>
+      <p className="text-[11px] text-[var(--t4)] mt-2">The password is not stored readable — if it's lost, use Regenerate to issue a new one. The manager will be asked to create their own password at first sign-in.</p>
     </div>
   );
 };
@@ -57,6 +57,7 @@ export const PartnerManagersModal = ({ partner, authHeaders, onClose }) => {
   const [managers, setManagers] = useState([]);
   const [name, setName] = useState('');
   const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(null);
   const [creds, setCreds] = useState(null);
 
@@ -79,12 +80,13 @@ export const PartnerManagersModal = ({ partner, authHeaders, onClose }) => {
     try {
       const { data } = await apiClient.post(
         `${API_URL}/admin/partners/${partner.id}/managers`,
-        { name: name.trim(), username: username.trim() },
+        { name: name.trim(), username: username.trim(), password: password.trim() },
         { headers: { ...authHeaders(), 'Content-Type': 'application/json' } },
       );
       setCreds(data.credentials);
       setName('');
       setUsername('');
+      setPassword('');
       await fetchAll();
       toast.success('Manager login created — copy the credentials now');
     } catch (err) {
@@ -95,12 +97,16 @@ export const PartnerManagersModal = ({ partner, authHeaders, onClose }) => {
   };
 
   const regenerate = async (m) => {
-    if (!window.confirm(`Regenerate ${m.username}'s password? The old one stops working immediately.`)) return;
+    const pw = window.prompt(
+      `New password for ${m.username} — type one to assign it, or leave blank to auto-generate. The old password stops working immediately.`,
+      '',
+    );
+    if (pw === null) return;
     setBusy(`regen-${m.id}`);
     try {
       const { data } = await apiClient.post(
-        `${API_URL}/admin/partners/${partner.id}/managers/${m.id}/reset-password`, {},
-        { headers: authHeaders() },
+        `${API_URL}/admin/partners/${partner.id}/managers/${m.id}/reset-password`, { password: pw.trim() },
+        { headers: { ...authHeaders(), 'Content-Type': 'application/json' } },
       );
       setCreds(data.credentials);
       toast.success('New password generated — copy it now');
@@ -169,11 +175,16 @@ export const PartnerManagersModal = ({ partner, authHeaders, onClose }) => {
               className="input-field text-sm flex-1" data-testid="manager-name-input" />
             <Input value={username} onChange={e => setUsername(e.target.value)} placeholder="Username (optional — auto)"
               className="input-field text-sm sm:w-48" data-testid="manager-username-input" />
+          </div>
+          <div className="flex flex-col sm:flex-row gap-2 mt-2">
+            <Input value={password} onChange={e => setPassword(e.target.value)} placeholder="Password (optional — auto-generated if blank)"
+              className="input-field text-sm flex-1" data-testid="manager-password-input" autoComplete="off" />
             <Button size="sm" className="gold-button text-xs h-9" onClick={createManager} disabled={busy === 'create' || !name.trim()}
               data-testid="manager-create-btn">
               {busy === 'create' ? <Loader2 className="w-3 h-3 animate-spin" /> : <><Plus className="w-3 h-3 mr-1" /> Create</>}
             </Button>
           </div>
+          <p className="text-[11px] text-[var(--t5)] mt-2">If you assign a password: min 8 characters with an uppercase letter, a lowercase letter, and a number. Either way, the manager sets their own password at first sign-in.</p>
         </div>
 
         {loading ? (
@@ -187,7 +198,8 @@ export const PartnerManagersModal = ({ partner, authHeaders, onClose }) => {
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-bold text-[var(--t)] truncate">
                     {m.name}
-                    {!m.active && <span className="ml-2 text-[10px] font-bold uppercase text-[var(--rd)]">deactivated</span>}
+                    {!m.active && <span className="ml-2 text-[11px] font-bold uppercase text-[var(--rd)]">deactivated</span>}
+                    {m.active && m.must_change_password && <span className="ml-2 text-[11px] font-bold uppercase" style={{ color: 'var(--gold)' }} data-testid={`manager-temp-pw-${m.username}`}>temp password</span>}
                   </div>
                   <div className="text-[11px] text-[var(--t4)] font-mono truncate">
                     {m.username}

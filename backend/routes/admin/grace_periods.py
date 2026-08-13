@@ -106,7 +106,7 @@ async def execute_mm_purge_endpoint(
 ):
     """Final purge: Remove undelivered Milestone Messages. Admin/Ops only.
     Requires password confirmation. This is the LAST and irreversible action."""
-    password = data.get("password")
+    password = data.get("password")  # confirmation input, verified against bcrypt below (hk-14)
     if not password:
         raise HTTPException(status_code=400, detail="Password confirmation required")
 

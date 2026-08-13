@@ -67,7 +67,7 @@ const ResetPasswordModal = ({ client, onClose }) => {
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" data-testid="mgr-reset-modal"
       style={{ background: 'rgba(5,10,20,0.75)', backdropFilter: 'blur(6px)' }} onClick={onClose}>
-      <div className="w-full max-w-md rounded-2xl p-6" style={{ background: 'var(--bg)', border: '1px solid rgba(var(--gold-rgb),0.25)' }}
+      <div className="w-full max-w-md max-h-[85vh] overflow-y-auto rounded-2xl p-6" style={{ background: 'var(--bg)', border: '1px solid rgba(var(--gold-rgb),0.25)' }}
         onClick={e => e.stopPropagation()}>
         <div className="flex items-start justify-between gap-3 mb-4">
           <div>
@@ -346,7 +346,7 @@ export default function ManagerPortalPage() {
                     <span className="text-sm font-bold text-[var(--t)]" data-testid="mgr-client-name">{client.name}</span>
                     <StatusChip status={client.status} />
                     {!client.provisioned && (
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--t5)]" title="This client signed up on their own through your landing page">self-signup</span>
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--t5)]" title="This client signed up on their own through your landing page">self-signup</span>
                     )}
                   </div>
                   <div className="text-[12px] text-[var(--t4)] mt-0.5 flex items-center gap-3 flex-wrap">

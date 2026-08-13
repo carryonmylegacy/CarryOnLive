@@ -346,6 +346,10 @@ ROUTE_POLICIES: dict = {
         "auth": "public",
         "notes": "Manager credential login — brute-force lockout, bcrypt verify",
     },
+    "POST /api/manager/set-password": {
+        "auth": "public",
+        "notes": "First-login password set — gated by limited-scope pwchange token from /manager/login; flag re-check makes it single-use",
+    },
     "GET /api/manager/me": {"auth": "required", "notes": "Manager-token gated (get_current_manager)"},
     "GET /api/manager/clients": {"auth": "required", "notes": "Manager-token gated; partner-scoped roster"},
     "POST /api/manager/clients": {"auth": "required", "notes": "Manager-token gated; provisions client portal"},

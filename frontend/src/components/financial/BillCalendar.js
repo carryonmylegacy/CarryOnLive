@@ -61,14 +61,14 @@ const BillCalendar = ({ bills, month, onMonthChange, selectedDay, onDaySelect, c
     <div className="glass-card rounded-2xl overflow-hidden" data-testid="bill-calendar">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid var(--b)' }}>
-        <button onClick={prevMonth} className="p-1.5 rounded-lg hover:bg-[var(--s)] transition-colors" data-testid="cal-prev" aria-label="Previous month">
+        <button onClick={prevMonth} className="p-2 rounded-lg hover:bg-[var(--s)] transition-colors" data-testid="cal-prev" aria-label="Previous month">
           <ChevronLeft className="w-4 h-4 text-[var(--t4)]" />
         </button>
         <div className="text-center">
           <div className="text-sm font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>{monthName}</div>
           <button onClick={goToday} className="text-xs text-[#10b981] hover:underline" data-testid="cal-today">Today</button>
         </div>
-        <button onClick={nextMonth} className="p-1.5 rounded-lg hover:bg-[var(--s)] transition-colors" data-testid="cal-next" aria-label="Next month">
+        <button onClick={nextMonth} className="p-2 rounded-lg hover:bg-[var(--s)] transition-colors" data-testid="cal-next" aria-label="Next month">
           <ChevronRight className="w-4 h-4 text-[var(--t4)]" />
         </button>
       </div>

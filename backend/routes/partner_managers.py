@@ -19,8 +19,11 @@ Managers can NOT see billing/revenue, delete accounts, touch feature
 gates, or see any other partner's clients.
 
 Founder-side management (Admin → Finance → Partners → Managers):
-create manager logins (password shown ONCE, bcrypt at rest),
-regenerate passwords, deactivate/delete.
+create manager logins (auto-generated OR founder-assigned password,
+shown ONCE, bcrypt at rest), regenerate passwords, deactivate/delete.
+Every founder-issued password (assigned or generated) is temporary:
+the manager must set their own password at first sign-in before a
+full portal session is issued.
 """
 
 import secrets
@@ -60,6 +63,16 @@ def _generate_password() -> str:
     return secrets.token_urlsafe(12)
 
 
+def _validate_password_policy(pw: str) -> None:
+    if len(pw) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters")
+    if not (any(c.isupper() for c in pw) and any(c.islower() for c in pw) and any(c.isdigit() for c in pw)):
+        raise HTTPException(
+            status_code=400,
+            detail="Password must contain at least one uppercase letter, one lowercase letter, and one number",
+        )
+
+
 def _manager_public(m: dict) -> dict:
     return {
         "id": m["id"],
@@ -69,6 +82,7 @@ def _manager_public(m: dict) -> dict:
         "created_at": m.get("created_at", ""),
         "last_login_at": m.get("last_login_at"),
         "password_rotated_at": m.get("password_rotated_at"),
+        "must_change_password": bool(m.get("must_change_password")),
     }
 
 
@@ -78,6 +92,7 @@ def _manager_public(m: dict) -> dict:
 class ManagerCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=80)
     username: str = Field("", max_length=40)
+    password: str = Field("", max_length=200)
 
 
 @router.get("/admin/partners/{partner_id}/managers")
@@ -93,9 +108,10 @@ async def create_partner_manager(
     body: ManagerCreate,
     current_user: dict = Depends(get_current_user),
 ):
-    """Create a manager login for a partner. The generated password is
-    returned ONCE in this response and stored only as a bcrypt hash —
-    use Regenerate later if it's lost."""
+    """Create a manager login for a partner. The password (founder-assigned
+    or auto-generated) is returned ONCE in this response and stored only as
+    a bcrypt hash — use Regenerate later if it's lost. Either way it is
+    temporary: the manager must set their own at first sign-in."""
     _ensure_founder(current_user)
     partner = await db.b2b_partners.find_one({"id": partner_id}, {"_id": 0, "id": 1, "company_name": 1, "slug": 1})
     if not partner:
@@ -110,7 +126,10 @@ async def create_partner_manager(
     if await db.partner_managers.find_one({"username_lower": username}, {"_id": 0, "id": 1}):
         raise HTTPException(status_code=409, detail="That manager username is already taken.")
 
-    password = _generate_password()
+    assigned = body.password.strip()
+    if assigned:
+        _validate_password_policy(assigned)
+    password = assigned or _generate_password()
     manager = {
         "id": str(uuid.uuid4()),
         "partner_id": partner_id,
@@ -118,6 +137,7 @@ async def create_partner_manager(
         "username": username,
         "username_lower": username,
         "password": hash_password(password),
+        "must_change_password": True,
         "active": True,
         "created_at": _now_iso(),
         "created_by": current_user["id"],
@@ -127,14 +147,24 @@ async def create_partner_manager(
     await db.partner_managers.insert_one(manager)
     return {
         "manager": _manager_public(manager),
-        "credentials": {"username": username, "password": password, "portal_path": "/manager"},
+        "credentials": {
+            "username": username,
+            "password": password,  # shown once to founder; bcrypt at rest (hk-14 reviewed)
+            "portal_path": "/manager",
+            "must_change_password": True,
+        },
     }
+
+
+class ManagerPasswordAssign(BaseModel):
+    password: str = Field("", max_length=200)
 
 
 @router.post("/admin/partners/{partner_id}/managers/{manager_id}/reset-password")
 async def reset_partner_manager_password(
     partner_id: str,
     manager_id: str,
+    body: ManagerPasswordAssign | None = None,
     current_user: dict = Depends(get_current_user),
 ):
     _ensure_founder(current_user)
@@ -143,12 +173,28 @@ async def reset_partner_manager_password(
     )
     if not manager:
         raise HTTPException(status_code=404, detail="Manager not found.")
-    password = _generate_password()
+    assigned = (body.password.strip() if body else "") or ""
+    if assigned:
+        _validate_password_policy(assigned)
+    password = assigned or _generate_password()
     await db.partner_managers.update_one(
         {"id": manager_id},
-        {"$set": {"password": hash_password(password), "password_rotated_at": _now_iso()}},
+        {
+            "$set": {
+                "password": hash_password(password),
+                "must_change_password": True,
+                "password_rotated_at": _now_iso(),
+            }
+        },
     )
-    return {"credentials": {"username": manager["username"], "password": password, "portal_path": "/manager"}}
+    return {
+        "credentials": {
+            "username": manager["username"],
+            "password": password,  # shown once to founder; bcrypt at rest (hk-14 reviewed)
+            "portal_path": "/manager",
+            "must_change_password": True,
+        }
+    }
 
 
 class ManagerToggle(BaseModel):
@@ -178,7 +224,7 @@ async def delete_partner_manager(
     current_user: dict = Depends(get_current_user),
 ):
     _ensure_founder(current_user)
-    result = await db.partner_managers.delete_one({"id": manager_id, "partner_id": partner_id})
+    result = await db.partner_managers.delete_one({"id": manager_id, "partner_id": partner_id})  # hk-25: reviewed
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Manager not found.")
     return {"deleted": True}
@@ -236,6 +282,33 @@ async def manager_login(data: ManagerLogin, request: Request):
         raise HTTPException(status_code=403, detail="This partnership is inactive. Contact CarryOn.")
 
     await db.failed_logins.delete_many({"email": lockout_key})
+
+    if manager.get("must_change_password"):
+        # Founder-issued password: no portal session yet. Hand back a
+        # limited-scope change token (rejected by get_current_manager —
+        # different role claim) that ONLY works on /manager/set-password.
+        change_token = create_token(
+            user_id=manager["id"],
+            email=f"{manager['username']}@manager.{partner['slug']}",
+            role="partner_manager_pwchange",
+            session_id=str(uuid.uuid4()),
+            extra_claims={"manager_id": manager["id"], "manager_partner_id": partner["id"]},
+        )
+        await log_audit_event(
+            actor_id=manager["id"],
+            actor_email=manager["username"],
+            actor_role="partner_manager",
+            action="manager_login_password_change_required",
+            category="auth",
+            ip_address=get_client_ip(request),
+            severity="info",
+        )
+        return {
+            "password_change_required": True,
+            "change_token": change_token,
+            "manager": {"name": manager.get("name", ""), "username": manager["username"]},
+        }
+
     await db.partner_managers.update_one({"id": manager["id"]}, {"$set": {"last_login_at": _now_iso()}})
     token = create_token(
         user_id=manager["id"],
@@ -249,6 +322,83 @@ async def manager_login(data: ManagerLogin, request: Request):
         actor_email=manager["username"],
         actor_role="partner_manager",
         action="manager_login",
+        category="auth",
+        ip_address=get_client_ip(request),
+        severity="info",
+    )
+    return {
+        "access_token": token,
+        "token_type": "bearer",
+        "manager": {
+            "id": manager["id"],
+            "name": manager.get("name", ""),
+            "username": manager["username"],
+            "partner": {
+                "id": partner["id"],
+                "company_name": partner["company_name"],
+                "slug": partner["slug"],
+                "tma_enabled": bool((partner.get("feature_gates") or {}).get("tma")),
+            },
+        },
+    }
+
+
+class ManagerSetPassword(BaseModel):
+    change_token: str = Field(..., min_length=1)
+    new_password: str = Field(..., min_length=1, max_length=200)
+
+
+@router.post(
+    "/manager/set-password"
+)  # pre-push-invariants: allow-public-mutation (change-token-gated first-login password set)
+async def manager_set_password(data: ManagerSetPassword, request: Request):
+    """First-login password change: exchanges the limited-scope change
+    token (issued by /manager/login while must_change_password is set)
+    for a full manager session once the manager picks a password only
+    they know. Fail-closed: single-purpose role claim, server-side flag
+    re-check (token is useless after success), founder-issued password
+    may not be reused."""
+    payload = decode_token(data.change_token)
+    if payload.get("role") != "partner_manager_pwchange" or not payload.get("manager_id"):
+        raise HTTPException(status_code=401, detail="Invalid or expired password-change session. Please sign in again.")
+    manager = await db.partner_managers.find_one({"id": payload["manager_id"]}, {"_id": 0})
+    if not manager or not manager.get("active", True):
+        raise HTTPException(status_code=401, detail="This manager account is no longer active.")
+    if not manager.get("must_change_password"):
+        raise HTTPException(status_code=409, detail="Your password was already set — sign in with your new password.")
+    partner = await db.b2b_partners.find_one({"id": manager["partner_id"], "active": True}, {"_id": 0})
+    if not partner:
+        raise HTTPException(status_code=403, detail="This partnership is inactive. Contact CarryOn.")
+
+    candidate = data.new_password.strip()
+    _validate_password_policy(candidate)
+    if verify_password(candidate, manager["password"]):
+        raise HTTPException(status_code=400, detail="Your new password must be different from the one you were issued.")
+
+    now = _now_iso()
+    await db.partner_managers.update_one(
+        {"id": manager["id"]},
+        {
+            "$set": {
+                "password": hash_password(candidate),
+                "must_change_password": False,
+                "password_rotated_at": now,
+                "last_login_at": now,
+            }
+        },
+    )
+    token = create_token(
+        user_id=manager["id"],
+        email=f"{manager['username']}@manager.{partner['slug']}",
+        role="partner_manager",
+        session_id=str(uuid.uuid4()),
+        extra_claims={"manager_id": manager["id"], "manager_partner_id": partner["id"]},
+    )
+    await log_audit_event(
+        actor_id=manager["id"],
+        actor_email=manager["username"],
+        actor_role="partner_manager",
+        action="manager_first_password_set",
         category="auth",
         ip_address=get_client_ip(request),
         severity="info",

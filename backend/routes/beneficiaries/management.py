@@ -287,7 +287,7 @@ async def delete_beneficiary(
             )
 
         # 4. Delete section permissions
-        await db.section_permissions.delete_many({"beneficiary_id": bid})
+        await db.section_permissions.delete_many({"beneficiary_id": bid})  # hk-25: cascade
 
         # 5. Remove from message recipients (don't delete messages — just pull this beneficiary)
         if estate_id:
@@ -310,10 +310,10 @@ async def delete_beneficiary(
             )
 
         # 7. Clean up milestone deliveries for this beneficiary
-        await db.milestone_deliveries.delete_many({"beneficiary_id": bid})
+        await db.milestone_deliveries.delete_many({"beneficiary_id": bid})  # hk-25: cascade
 
         # 8. Clean up beneficiary grace periods
-        await db.beneficiary_grace_periods.delete_many({"beneficiary_id": bid})
+        await db.beneficiary_grace_periods.delete_many({"beneficiary_id": bid})  # hk-25: cascade
 
         # 9. Clean up DTS tasks referencing this beneficiary
         if estate_id:
@@ -329,10 +329,10 @@ async def delete_beneficiary(
 
         # 10. Clean up unread notifications for this beneficiary
         if b.get("user_id"):
-            await db.notifications.delete_many({"user_id": b["user_id"], "read": False})
+            await db.notifications.delete_many({"user_id": b["user_id"], "read": False})  # hk-25: cascade
 
         # 11. Delete the beneficiary record
-        await db.beneficiaries.delete_one({"id": bid})
+        await db.beneficiaries.delete_one({"id": bid})  # reviewed: founder-approved full beneficiary removal (hk-25)
 
         # 12. Log activity
         if estate_id:

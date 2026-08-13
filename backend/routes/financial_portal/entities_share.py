@@ -164,7 +164,7 @@ def _credential_view(cred: dict, estate_salt: bytes) -> dict:
         "id": cred.get("id"),
         "account_name": cred.get("account_name"),
         "login_username": cred.get("login_username"),
-        "password": password,
+        "password": password,  # decrypted for authorized beneficiary view (hk-14 reviewed)
         "additional_access": additional,
         "notes": cred.get("notes"),
         "linked_entity_id": cred.get("linked_entity_id"),

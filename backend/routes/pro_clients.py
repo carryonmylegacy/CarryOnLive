@@ -476,7 +476,7 @@ async def pro_claim_preview(token: str):
     if user.get("partner_id"):
         partner = await db.b2b_partners.find_one(
             {"id": user["partner_id"]},
-            {"_id": 0, "company_name": 1, "logo_key": 1, "logo_content_type": 1},
+            {"_id": 0, "id": 1, "company_name": 1, "logo_key": 1, "logo_content_type": 1},
         )
         if partner and partner.get("logo_key"):
             try:
@@ -486,7 +486,7 @@ async def pro_claim_preview(token: str):
             except Exception:  # noqa: BLE001
                 logger.exception("Claim-preview logo encode failed")
 
-    rep = await db.users.find_one({"id": user.get("created_by_rep_id", "")}, {"_id": 0, "name": 1})
+    rep = await db.users.find_one({"id": user.get("created_by_rep_id", "")}, {"_id": 0, "id": 1, "name": 1})
     estate = await db.estates.find_one({"owner_id": user["id"]}, {"_id": 0, "id": 1})
     docs = await db.documents.count_documents({"estate_id": estate["id"]}) if estate else 0
 

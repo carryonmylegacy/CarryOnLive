@@ -87,9 +87,13 @@ async def update_dev_switcher_config(data: DevSwitcherConfig, current_user: dict
         update_fields["portal_visibility"] = data.portal_visibility
     # Only update passwords if provided (don't clear with empty string)
     if data.benefactor_password:
-        update_fields["benefactor_password"] = data.benefactor_password
+        update_fields["benefactor_password"] = (
+            data.benefactor_password
+        )  # dev-only portal-switcher config (hk-14 reviewed)
     if data.beneficiary_password:
-        update_fields["beneficiary_password"] = data.beneficiary_password
+        update_fields["beneficiary_password"] = (
+            data.beneficiary_password
+        )  # dev-only portal-switcher config (hk-14 reviewed)
 
     await db.dev_config.update_one(
         {"id": "dev_switcher"},

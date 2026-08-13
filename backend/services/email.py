@@ -6,6 +6,10 @@ import resend
 
 from config import RESEND_API_KEY, SENDER_EMAIL, logger
 
+# RFC 2606/6761 reserved names — used by test agents for seed accounts.
+RESERVED_TEST_DOMAINS = frozenset({"example.com", "example.org", "example.net"})
+RESERVED_TEST_TLDS = (".test", ".invalid", ".localhost", ".example")
+
 if RESEND_API_KEY:
     resend.api_key = RESEND_API_KEY
 
@@ -30,6 +34,12 @@ async def send_email_ex(to: str, subject: str, html: str) -> dict:
     if not RESEND_API_KEY:
         logger.info(f"Email not configured — would send '{subject}' to {to}")
         return {"ok": False, "error": "Email service not configured on this environment."}
+    domain = to.rsplit("@", 1)[-1].lower()
+    if domain in RESERVED_TEST_DOMAINS or domain.endswith(RESERVED_TEST_TLDS):
+        # RFC 2606/6761 reserved domains (test-agent seed data) — Resend
+        # rejects these with an error; skip quietly instead of polluting logs.
+        logger.info(f"Email skipped (reserved test domain): '{subject}' → {to}")
+        return {"ok": False, "error": "Recipient domain is a reserved test domain."}
     try:
         await asyncio.to_thread(
             resend.Emails.send,

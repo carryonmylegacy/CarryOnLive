@@ -94,7 +94,7 @@ async def dev_switch(data: DevSwitchRequest, request: Request):
     stored_password = None
     if config.get("benefactor_email") == data.email:
         stored_password = config.get("benefactor_password")
-    if not stored_password and config.get("beneficiary_email") == data.email:
+    if not stored_password and data.email == config.get("beneficiary_email"):
         stored_password = config.get("beneficiary_password")
 
     if not stored_password:
