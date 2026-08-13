@@ -16,7 +16,7 @@ import { API_URL } from '../../config';
 
 const CredentialsBlock = ({ creds }) => {
   const [copied, setCopied] = useState(null);
-  const portalUrl = `${window.location.origin}${creds.portal_path || '/manager'}`;
+  const portalUrl = `${window.location.origin}${creds.portal_path || '/partner'}`;
   const copy = (key, value) => {
     navigator.clipboard.writeText(value);
     setCopied(key);
@@ -27,7 +27,7 @@ const CredentialsBlock = ({ creds }) => {
     { key: 'username', label: 'Username', value: creds.username },
     { key: 'password', label: 'Password', value: creds.password },
   ];
-  const copyAll = () => copy('all', `Manager Portal: ${portalUrl}\nUsername: ${creds.username}\nPassword: ${creds.password}`);
+  const copyAll = () => copy('all', `Partner Portal: ${portalUrl}\nUsername: ${creds.username}\nPassword: ${creds.password}`);
   return (
     <div className="rounded-xl p-4 mb-4" style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.35)' }} data-testid="manager-credentials-block">
       <div className="flex items-center justify-between mb-2">
@@ -47,7 +47,7 @@ const CredentialsBlock = ({ creds }) => {
           </div>
         ))}
       </div>
-      <p className="text-[11px] text-[var(--t4)] mt-2">The password is not stored readable — if it's lost, use Regenerate to issue a new one. The manager will be asked to create their own password at first sign-in.</p>
+      <p className="text-[11px] text-[var(--t4)] mt-2">The password is not stored readable — if it's lost, use Regenerate to issue a new one. The partner will be asked to create their own password at first sign-in.</p>
     </div>
   );
 };
@@ -156,9 +156,9 @@ export const PartnerManagersModal = ({ partner, authHeaders, onClose }) => {
         <div className="flex items-start justify-between gap-3 mb-4">
           <div>
             <h3 className="text-lg font-bold text-[var(--t)] flex items-center gap-2">
-              <KeyRound className="w-4 h-4 text-[var(--gold)]" /> Partner Managers
+              <KeyRound className="w-4 h-4 text-[var(--gold)]" /> Partner Logins
             </h3>
-            <p className="text-sm text-[var(--t4)]">{partner.company_name} · sign in at <code className="text-[var(--gold)]">/manager</code></p>
+            <p className="text-sm text-[var(--t4)]">{partner.company_name} · sign in at <code className="text-[var(--gold)]">/partner</code></p>
           </div>
           <button onClick={onClose} className="text-[var(--t5)] hover:text-[var(--t)]" data-testid="managers-modal-close" aria-label="Close managers dialog">
             <X className="w-5 h-5" />
@@ -169,9 +169,9 @@ export const PartnerManagersModal = ({ partner, authHeaders, onClose }) => {
 
         {/* Create form */}
         <div className="rounded-xl p-4 mb-4" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
-          <p className="text-xs font-bold text-[var(--t3)] uppercase tracking-wider mb-2">New Manager Login</p>
+          <p className="text-xs font-bold text-[var(--t3)] uppercase tracking-wider mb-2">New Partner Login</p>
           <div className="flex flex-col sm:flex-row gap-2">
-            <Input value={name} onChange={e => setName(e.target.value)} placeholder="Manager name (e.g. Jazmine Carpenter)"
+            <Input value={name} onChange={e => setName(e.target.value)} placeholder="Partner name (e.g. Jazmine Carpenter)"
               className="input-field text-sm flex-1" data-testid="manager-name-input" />
             <Input value={username} onChange={e => setUsername(e.target.value)} placeholder="Username (optional — auto)"
               className="input-field text-sm sm:w-48" data-testid="manager-username-input" />
@@ -184,13 +184,13 @@ export const PartnerManagersModal = ({ partner, authHeaders, onClose }) => {
               {busy === 'create' ? <Loader2 className="w-3 h-3 animate-spin" /> : <><Plus className="w-3 h-3 mr-1" /> Create</>}
             </Button>
           </div>
-          <p className="text-[11px] text-[var(--t5)] mt-2">If you assign a password: min 8 characters with an uppercase letter, a lowercase letter, and a number. Either way, the manager sets their own password at first sign-in.</p>
+          <p className="text-[11px] text-[var(--t5)] mt-2">If you assign a password: min 8 characters with an uppercase letter, a lowercase letter, and a number. Either way, the partner sets their own password at first sign-in.</p>
         </div>
 
         {loading ? (
           <div className="flex items-center justify-center py-10"><Loader2 className="w-5 h-5 animate-spin text-[var(--gold)]" /></div>
         ) : managers.length === 0 ? (
-          <p className="text-sm text-[var(--t4)] text-center py-6" data-testid="managers-empty">No manager logins yet.</p>
+          <p className="text-sm text-[var(--t4)] text-center py-6" data-testid="managers-empty">No partner logins yet.</p>
         ) : (
           <div className="space-y-2">
             {managers.map(m => (
@@ -217,7 +217,7 @@ export const PartnerManagersModal = ({ partner, authHeaders, onClose }) => {
                   <Power className="w-4 h-4" />
                 </button>
                 <button onClick={() => remove(m)} disabled={!!busy} className="text-[var(--t5)] hover:text-[var(--rd)] p-1.5"
-                  title="Delete manager" data-testid={`manager-delete-${m.username}`}>
+                  title="Delete partner login" data-testid={`manager-delete-${m.username}`}>
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>

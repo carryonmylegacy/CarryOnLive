@@ -124,7 +124,7 @@ async def create_partner_manager(
     if not username.replace("-", "").replace("_", "").replace(".", "").isalnum() or len(username) < 3:
         raise HTTPException(status_code=400, detail="Username must be at least 3 characters (letters, numbers, - _ .)")
     if await db.partner_managers.find_one({"username_lower": username}, {"_id": 0, "id": 1}):
-        raise HTTPException(status_code=409, detail="That manager username is already taken.")
+        raise HTTPException(status_code=409, detail="That partner username is already taken.")
 
     assigned = body.password.strip()
     if assigned:
@@ -150,7 +150,7 @@ async def create_partner_manager(
         "credentials": {
             "username": username,
             "password": password,  # shown once to founder; bcrypt at rest (hk-14 reviewed)
-            "portal_path": "/manager",
+            "portal_path": "/partner",
             "must_change_password": True,
         },
     }
@@ -172,7 +172,7 @@ async def reset_partner_manager_password(
         {"id": manager_id, "partner_id": partner_id}, {"_id": 0, "password": 0}
     )
     if not manager:
-        raise HTTPException(status_code=404, detail="Manager not found.")
+        raise HTTPException(status_code=404, detail="Partner login not found.")
     assigned = (body.password.strip() if body else "") or ""
     if assigned:
         _validate_password_policy(assigned)
@@ -191,7 +191,7 @@ async def reset_partner_manager_password(
         "credentials": {
             "username": manager["username"],
             "password": password,  # shown once to founder; bcrypt at rest (hk-14 reviewed)
-            "portal_path": "/manager",
+            "portal_path": "/partner",
             "must_change_password": True,
         }
     }
@@ -213,7 +213,7 @@ async def toggle_partner_manager(
         {"id": manager_id, "partner_id": partner_id}, {"$set": {"active": bool(body.active)}}
     )
     if result.matched_count == 0:
-        raise HTTPException(status_code=404, detail="Manager not found.")
+        raise HTTPException(status_code=404, detail="Partner login not found.")
     return {"updated": True, "active": bool(body.active)}
 
 
@@ -226,7 +226,7 @@ async def delete_partner_manager(
     _ensure_founder(current_user)
     result = await db.partner_managers.delete_one({"id": manager_id, "partner_id": partner_id})  # hk-25: reviewed
     if result.deleted_count == 0:
-        raise HTTPException(status_code=404, detail="Manager not found.")
+        raise HTTPException(status_code=404, detail="Partner login not found.")
     return {"deleted": True}
 
 
@@ -244,10 +244,10 @@ async def get_current_manager(credentials: HTTPAuthorizationCredentials = Depend
     and user tokens never pass this."""
     payload = decode_token(credentials.credentials)
     if payload.get("role") != "partner_manager" or not payload.get("manager_id"):
-        raise HTTPException(status_code=401, detail="Manager session required.")
+        raise HTTPException(status_code=401, detail="Partner session required.")
     manager = await db.partner_managers.find_one({"id": payload["manager_id"]}, {"_id": 0, "password": 0})
     if not manager or not manager.get("active", True):
-        raise HTTPException(status_code=401, detail="This manager account is no longer active.")
+        raise HTTPException(status_code=401, detail="This partner account is no longer active.")
     partner = await db.b2b_partners.find_one({"id": manager["partner_id"], "active": True}, {"_id": 0})
     if not partner:
         raise HTTPException(status_code=403, detail="This partnership is inactive. Contact CarryOn.")
@@ -276,7 +276,7 @@ async def manager_login(data: ManagerLogin, request: Request):
         )
         raise HTTPException(status_code=401, detail="Invalid username or password.")
     if not manager.get("active", True):
-        raise HTTPException(status_code=403, detail="This manager account has been deactivated.")
+        raise HTTPException(status_code=403, detail="This partner account has been deactivated.")
     partner = await db.b2b_partners.find_one({"id": manager["partner_id"], "active": True}, {"_id": 0})
     if not partner:
         raise HTTPException(status_code=403, detail="This partnership is inactive. Contact CarryOn.")
@@ -363,7 +363,7 @@ async def manager_set_password(data: ManagerSetPassword, request: Request):
         raise HTTPException(status_code=401, detail="Invalid or expired password-change session. Please sign in again.")
     manager = await db.partner_managers.find_one({"id": payload["manager_id"]}, {"_id": 0})
     if not manager or not manager.get("active", True):
-        raise HTTPException(status_code=401, detail="This manager account is no longer active.")
+        raise HTTPException(status_code=401, detail="This partner account is no longer active.")
     if not manager.get("must_change_password"):
         raise HTTPException(status_code=409, detail="Your password was already set — sign in with your new password.")
     partner = await db.b2b_partners.find_one({"id": manager["partner_id"], "active": True}, {"_id": 0})
@@ -471,6 +471,7 @@ async def manager_list_clients(manager: dict = Depends(get_current_manager)):
     )
     member_ids = [m["id"] for m in members]
     grants_by_client: dict = {}
+    active_sub_ids: set = set()
     estates_by_owner: dict = {}
     docs_by_estate: dict = {}
     if member_ids:
@@ -479,6 +480,11 @@ async def manager_list_clients(manager: dict = Depends(get_current_manager)):
             {"_id": 0, "id": 1, "benefactor_id": 1},
         ).to_list(4000)
         grants_by_client = {g["benefactor_id"]: g["id"] for g in grants}
+        subs = await db.user_subscriptions.find(
+            {"user_id": {"$in": member_ids}, "status": "active"},
+            {"_id": 0, "id": 1, "user_id": 1},
+        ).to_list(4000)
+        active_sub_ids = {s["user_id"] for s in subs}
         estates = await db.estates.find({"owner_id": {"$in": member_ids}}, {"_id": 0, "id": 1, "owner_id": 1}).to_list(
             4000
         )
@@ -502,6 +508,7 @@ async def manager_list_clients(manager: dict = Depends(get_current_manager)):
                 "name": m.get("name", ""),
                 "email": m.get("email", ""),
                 "status": "pending_claim" if pending else "active",
+                "subscribed": m["id"] in active_sub_ids,
                 "provisioned": provisioned,
                 "can_enter": m["id"] in grants_by_client,
                 "documents_count": int(docs_by_estate.get(estate_id, 0)),

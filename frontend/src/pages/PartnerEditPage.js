@@ -392,10 +392,10 @@ export default function PartnerEditPage() {
         <SectionCard title="People & Access" subtitle="Who runs this partnership day to day." testid="partner-edit-people">
           <div className="space-y-4">
             <div>
-              <Label className="text-xs text-[var(--t4)] block mb-1.5">Manager Logins (Manager Portal at /manager)</Label>
+              <Label className="text-xs text-[var(--t4)] block mb-1.5">Partner Logins (Partner Portal at /partner)</Label>
               <Button size="sm" variant="outline" className="text-xs border-[var(--gold)]/40 text-[var(--gold)]"
                 onClick={() => setShowManagers(true)} data-testid="partner-edit-managers-btn">
-                <KeyRound className="w-3 h-3 mr-1" /> Manage Manager Logins
+                <KeyRound className="w-3 h-3 mr-1" /> Manage Partner Logins
               </Button>
               <p className="text-[11px] text-[var(--t5)] mt-1.5">Create/copy credentials, regenerate passwords, deactivate.</p>
             </div>

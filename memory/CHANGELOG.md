@@ -9876,3 +9876,18 @@ Founder set RUN_E2E=false; next Save-to-GitHub push will deploy everything.
   same-file edits into one python patcher or sequential calls.
 - QuickStartModal (fresh partner clients) blocks Playwright force-clicks — navigate directly to
   a route to auto-expand its nav section instead.
+
+## 2026-08-13 (later 3) — SUBSCRIBED pill + manager→partner rename + rev-share confirm
+
+- **SUBSCRIBED pill** on the partner portal roster: green (active user_subscriptions doc)
+  vs grey (trial/lapsed/none) per client; backend `subscribed` flag in GET /api/manager/clients
+  (projection includes "id":1 per pre-push invariant). Verified: curl both states + screenshot.
+- **Rename (user-visible only)**: /manager → /partner routes (legacy redirects kept),
+  "Partner Portal" login + portal headers, TrusteeBanner "Return to partner portal",
+  admin: "Partner Logins" labels + /partner portal_path in credential responses, partner-facing
+  API error messages ("partner account/login"). Internal API paths (/api/manager/*),
+  localStorage keys, data-testids, and DB collections deliberately UNCHANGED.
+- **Rev-share %**: confirmed already founder-editable — Admin → Partners → edit page →
+  "Rev Share %" number input (0-100, clamped server-side, partner-edit-revshare testid).
+- Verified: iter173 suite 13 pass, pre-push invariants 8 pass, housekeeping ALL CLEAR,
+  /manager redirect + pills + headers via Playwright screenshot.

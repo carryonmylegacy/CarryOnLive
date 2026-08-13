@@ -33,7 +33,7 @@ export default function ManagerLoginPage() {
   const enterPortal = (data) => {
     localStorage.setItem('carryon_manager_token', data.access_token);
     localStorage.setItem('carryon_manager_info', JSON.stringify(data.manager));
-    navigate('/manager/portal');
+    navigate('/partner/portal');
   };
 
   const submit = async (e) => {
@@ -137,15 +137,15 @@ export default function ManagerLoginPage() {
               <div className="w-14 h-14 mx-auto mb-4 rounded-2xl flex items-center justify-center" style={{ background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.4)' }}>
                 <ShieldCheck className="w-7 h-7 text-[#d4af37]" />
               </div>
-              <h1 className="text-white text-2xl font-semibold mb-1.5" style={{ fontFamily: 'var(--serif)' }}>Partner Manager Portal</h1>
-              <p className="text-white/70 text-sm">Sign in with the manager credentials CarryOn issued to you.</p>
+              <h1 className="text-white text-2xl font-semibold mb-1.5" style={{ fontFamily: 'var(--serif)' }}>Partner Portal</h1>
+              <p className="text-white/70 text-sm">Sign in with the partner credentials CarryOn issued to you.</p>
             </div>
 
             <form onSubmit={submit} className="space-y-3.5">
               <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#334155]" />
                 <Input value={username} onChange={e => setUsername(e.target.value)} required
-                  placeholder="Manager username" autoComplete="username"
+                  placeholder="Username" autoComplete="username"
                   className="h-11 pl-10 bg-[#0B1627] border-[#1A2D48] text-white rounded-lg"
                   data-testid="manager-login-username" />
               </div>

@@ -41,6 +41,19 @@ const StatusChip = ({ status }) => {
   );
 };
 
+const SubscribedPill = ({ subscribed }) => (
+  <span
+    className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold tracking-wide"
+    style={subscribed
+      ? { background: 'rgba(16,185,129,0.14)', color: '#10b981', border: '1px solid rgba(16,185,129,0.35)' }
+      : { background: 'rgba(120,130,150,0.12)', color: 'var(--t5)', border: '1px solid rgba(120,130,150,0.35)' }}
+    title={subscribed ? 'Paying subscriber — current' : 'No active subscription (trial, lapsed, or not yet subscribed)'}
+    data-testid="mgr-client-subscribed-pill"
+  >
+    SUBSCRIBED
+  </span>
+);
+
 const ResetPasswordModal = ({ client, onClose }) => {
   const [busy, setBusy] = useState(null);
   const [tempPassword, setTempPassword] = useState(null);
@@ -152,7 +165,7 @@ export default function ManagerPortalPage() {
     } catch (err) {
       if (err.response?.status === 401 || err.response?.status === 403) {
         localStorage.removeItem('carryon_manager_token');
-        navigate('/manager');
+        navigate('/partner');
         return;
       }
       toast.error(err.response?.data?.detail || 'Failed to load your clients');
@@ -162,14 +175,14 @@ export default function ManagerPortalPage() {
   }, [navigate]);
 
   useEffect(() => {
-    if (!localStorage.getItem('carryon_manager_token')) { navigate('/manager'); return; }
+    if (!localStorage.getItem('carryon_manager_token')) { navigate('/partner'); return; }
     fetchAll();
   }, [fetchAll, navigate]);
 
   const signOut = () => {
     localStorage.removeItem('carryon_manager_token');
     localStorage.removeItem('carryon_manager_info');
-    navigate('/manager');
+    navigate('/partner');
   };
 
   const createClient = async () => {
@@ -250,8 +263,8 @@ export default function ManagerPortalPage() {
         <div className="flex items-center gap-3 min-w-0">
           <img src="/carryon-logo.png" alt="CarryOn" className="h-8 w-auto" />
           <div className="min-w-0">
-            <div className="text-sm font-bold text-[var(--t)] truncate" data-testid="manager-portal-partner-name">{partner?.company_name} — Manager Portal</div>
-            <div className="text-[11px] text-[var(--t4)] truncate">{managerInfo?.name || 'Manager'}</div>
+            <div className="text-sm font-bold text-[var(--t)] truncate" data-testid="manager-portal-partner-name">{partner?.company_name} — Partner Portal</div>
+            <div className="text-[11px] text-[var(--t4)] truncate">{managerInfo?.name || 'Partner'}</div>
           </div>
         </div>
         <Button size="sm" variant="outline" onClick={signOut} className="text-xs border-[var(--b)] flex-shrink-0" data-testid="manager-signout-btn">
@@ -345,6 +358,7 @@ export default function ManagerPortalPage() {
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-sm font-bold text-[var(--t)]" data-testid="mgr-client-name">{client.name}</span>
                     <StatusChip status={client.status} />
+                    <SubscribedPill subscribed={!!client.subscribed} />
                     {!client.provisioned && (
                       <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--t5)]" title="This client signed up on their own through your landing page">self-signup</span>
                     )}

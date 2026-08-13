@@ -711,10 +711,10 @@ function PartnerRow({ partner, columns, gateField, gateMode, fileInputs, onUpdat
                   background: 'rgba(212,175,55,0.10)',
                   border: '1px solid rgba(212,175,55,0.4)',
                 }}
-                title="Manager logins — create/copy credentials for this partner's Manager Portal (/manager)"
+                title="Partner logins — create/copy credentials for this partner's Manager Portal (/manager)"
                 data-testid={`partner-managers-${partner.slug}`}
               >
-                <KeyRound className="w-3 h-3" /> Managers
+                <KeyRound className="w-3 h-3" /> Logins
               </button>
               <span className="text-[var(--t6)]">·</span>
               <a href={url} target="_blank" rel="noopener noreferrer"

@@ -673,8 +673,11 @@ function AppRoutes() {
       {/* Partner Manager Portal — Public shell, self-guarded by the
           manager token (separate principal type; founder-issued
           credentials, /api/manager/* only). */}
-      <Route path="/manager" element={<ManagerLoginPage />} />
-      <Route path="/manager/portal" element={<ManagerPortalPage />} />
+      <Route path="/partner" element={<ManagerLoginPage />} />
+      <Route path="/partner/portal" element={<ManagerPortalPage />} />
+      {/* Legacy /manager links (older emails) keep working */}
+      <Route path="/manager" element={<Navigate to="/partner" replace />} />
+      <Route path="/manager/portal" element={<Navigate to="/partner/portal" replace />} />
 
       {/* Shared Plan - Public (no auth required) */}
       <Route path="/shared/plan/:token" element={<SharedPlanPage />} />

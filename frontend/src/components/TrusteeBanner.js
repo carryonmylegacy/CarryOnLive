@@ -106,7 +106,7 @@ const TrusteeBanner = () => {
       localStorage.removeItem('carryon_token');
       localStorage.removeItem('carryon_manager_return');
     } catch { /* ignore */ }
-    window.location.assign('/manager/portal');
+    window.location.assign('/partner/portal');
   };
 
   return (
@@ -184,7 +184,7 @@ const TrusteeBanner = () => {
             verticalAlign: 'middle',
           }}
         >
-          Return to manager portal
+          Return to partner portal
         </button>
       )}
     </div>
