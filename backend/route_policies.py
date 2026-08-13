@@ -329,6 +329,7 @@ ROUTE_POLICIES: dict = {
     "POST /api/pro/claim/{token}/start": {"auth": "public", "notes": "Client claim start — token-scoped"},
     "POST /api/pro/claim/{token}/complete": {"auth": "public", "notes": "Client claim complete — token + OTP gated"},
     # ── Partner rev-share & rep management (founder-only) ───────────────────
+    "GET /api/admin/partners/{partner_id}": {"auth": "required", "roles": ["admin"]},
     "GET /api/admin/partners/{partner_id}/revshare-report": {"auth": "required", "roles": ["admin"]},
     "POST /api/admin/partners/{partner_id}/link-rep": {"auth": "required", "roles": ["admin"]},
     "DELETE /api/admin/partners/{partner_id}/link-rep": {"auth": "required", "roles": ["admin"]},

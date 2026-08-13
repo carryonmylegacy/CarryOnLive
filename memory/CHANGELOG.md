@@ -9740,3 +9740,20 @@ The Managers key icon lived in the far-right Actions cell, hidden behind ~14 hor
 feature-gate columns. Moved to an always-visible gold "Managers" pill (KeyRound + label) at the start
 of the identity-cell footer row (next to /p/{slug}); far-right duplicate removed. Verified iter174
 (frontend 100%: visible without scroll at 1920x800, opens modal, exactly 1 instance, regressions pass).
+
+### Founder request — full-page Partner Editor (replaces cramped inline row editing)
+- New `/admin/partners/:partnerId/edit` (PartnerEditPage.js, route before /admin/* splat).
+  Sections: Identity & Branding (logo, name, slug + live URL, code, tagline, contact email),
+  Business Terms (discount/revshare/seats + live seat usage + Rev-Share Report),
+  People & Access (Managers modal, rep link/unlink), Feature Set (tailored/free pills + instant
+  toggles), Danger Zone. Explicit Save (disabled until dirty) + mobile-only sticky save bar
+  (safe-area aware) — PWA verified at 390x844, no horizontal overflow.
+- PartnersTab rows are now READ-ONLY; pencil navigates to the editor. All inline-edit inputs
+  and rep-link row UI removed (the too-large-font complaint came from those cramped inputs).
+- New light endpoint `GET /api/admin/partners/{partner_id}` (single partner + feature_columns) —
+  the editor no longer pulls the whole list with every partner's S3 logo inline-encoded.
+- Bugfixes found in iter175 retested in iter176 (ALL FIXED): active toggle + gate switches now
+  optimistic (flip ~100-300ms, revert on failure) and SERIALIZED via a `patching` flag
+  (overlapping PUTs from rapid toggles were completing out of order server-side);
+  Managers modal render 10-15s → 112ms.
+- Housekeeping ALL CLEAR (0 WARN / 0 FAIL). Partner data fully restored post-testing.

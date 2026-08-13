@@ -196,6 +196,33 @@ async def list_partners(current_user: dict = Depends(get_current_user)):
     }
 
 
+@router.get("/admin/partners/{partner_id}")
+async def get_partner(partner_id: str, current_user: dict = Depends(get_current_user)):
+    """Single-partner fetch for the full-page editor. Much lighter than
+    the list endpoint (which inline-encodes EVERY partner's logo from
+    S3 on every call) — one partner, one optional logo download."""
+    _ensure_founder(current_user)
+    partner = await db.b2b_partners.find_one({"id": partner_id}, {"_id": 0})
+    if not partner:
+        raise HTTPException(status_code=404, detail="Partner not found.")
+    partner["active_users_count"] = await db.users.count_documents({"partner_id": partner_id})
+    if not isinstance(partner.get("free_feature_gates"), dict):
+        partner["free_feature_gates"] = _default_gates()
+    if partner.get("logo_key"):
+        import base64
+
+        try:
+            blob = await storage.download(partner["logo_key"])
+            ctype = partner.get("logo_content_type") or "image/png"
+            partner["logo_data_url"] = f"data:{ctype};base64,{base64.b64encode(blob).decode('ascii')}"
+        except Exception:  # noqa: BLE001
+            logger.exception("Inline logo encode failed for partner %s", partner_id)
+    return {
+        "partner": partner,
+        "feature_columns": PARTNER_FEATURE_PILLARS,
+    }
+
+
 class PartnerCreate(BaseModel):
     company_name: str
     slug: str

@@ -13,11 +13,12 @@
  */
 
 import React, { useEffect, useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import apiClient from '../../utils/apiClient';
 import {
   Briefcase, Plus, Trash2, Copy, Check, Loader2, ExternalLink,
   Upload, Image as ImageIcon, Power, Send, Pencil, Users,
-  DollarSign, UserPlus, X, KeyRound,
+  DollarSign, UserPlus, KeyRound,
 } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
@@ -43,7 +44,7 @@ const LOGO_PLACEHOLDER = (
   </div>
 );
 
-const partnerLandingHref = (slug) => `${window.location.origin}/p/${slug}`;
+export const partnerLandingHref = (slug) => `${window.location.origin}/p/${slug}`;
 
 // Strict slug sanitizer — accepts any human-typed input (URLs, pasted
 // text, company names with spaces, etc.) and returns ONLY the
@@ -52,7 +53,7 @@ const partnerLandingHref = (slug) => `${window.location.origin}/p/${slug}`;
 // while typing (live cleanup) AND on blur (final scrub). Designed
 // so non-developer admins can paste literally anything ("Acme Inc.",
 // "https://www.acme.com", "/p/acme") and still get a valid value.
-const sanitizeSlug = (raw) => {
+export const sanitizeSlug = (raw) => {
   if (!raw) return '';
   let s = String(raw).toLowerCase().trim();
   // Drop URL scheme, www, /p/ prefix the user might have copied
@@ -497,7 +498,6 @@ export const PartnersTab = ({ getAuthHeaders }) => {
                     columns={columns}
                     gateField={gateField}
                     gateMode={gateMode}
-                    authHeaders={authHeaders}
                     fileInputs={fileInputs}
                     onUpdate={updatePartner}
                     onToggleGate={toggleGate}
@@ -508,7 +508,6 @@ export const PartnersTab = ({ getAuthHeaders }) => {
                     onSendEmail={sendWelcomeEmail}
                     onOpenRevShare={setRevShareFor}
                     onOpenManagers={setManagersFor}
-                    onRefetch={fetchAll}
                     sending={sending}
                     copied={copied}
                   />
@@ -584,68 +583,12 @@ export const PartnersTab = ({ getAuthHeaders }) => {
   );
 };
 
-function PartnerRow({ partner, columns, gateField, gateMode, authHeaders, fileInputs, onUpdate, onToggleGate, onUploadLogo, onDelete, onCopy, onCopyEmail, onSendEmail, onOpenRevShare, onOpenManagers, onRefetch, sending, copied }) {
-  // Pre-pitch UX (May 20, 2026): default partner rows to a read-only
-  // identity view with pencil + trash icons next to the logo. Tap the
-  // pencil to expand into the editable Input fields. Keeps rows
-  // compact so the founder portal scales to many partner rows.
-  const [editMode, setEditMode] = useState(false);
-  const [draft, setDraft] = useState({
-    company_name: partner.company_name,
-    slug: partner.slug,
-    code: partner.code,
-    discount_percent: partner.discount_percent,
-    revshare_percent: partner.revshare_percent || 0,
-    max_uses: partner.max_uses || 0,
-    tagline: partner.tagline || '',
-    partner_email: partner.partner_email || '',
-  });
-  const [repEmail, setRepEmail] = useState('');
-  const [repBusy, setRepBusy] = useState(false);
-
-  const linkRep = async () => {
-    const email = repEmail.trim();
-    if (!email) { toast.error('Enter the rep\u2019s account email'); return; }
-    setRepBusy(true);
-    try {
-      await apiClient.post(`${API_URL}/admin/partners/${partner.id}/link-rep`, { email }, {
-        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
-      });
-      toast.success('Rep linked — they now see Client Setup in their portal');
-      setRepEmail('');
-      await onRefetch();
-    } catch (err) {
-      toast.error(err.response?.data?.detail || 'Failed to link rep');
-    } finally { setRepBusy(false); }
-  };
-
-  const unlinkRep = async () => {
-    if (!window.confirm(`Remove ${partner.rep_user_email} as ${partner.company_name}'s rep?`)) return;
-    setRepBusy(true);
-    try {
-      await apiClient.delete(`${API_URL}/admin/partners/${partner.id}/link-rep`, { headers: authHeaders() });
-      toast.success('Rep unlinked');
-      await onRefetch();
-    } catch (err) {
-      toast.error(err.response?.data?.detail || 'Failed to unlink rep');
-    } finally { setRepBusy(false); }
-  };
-  // Re-sync local draft state whenever the persisted partner doc
-  // changes from outside (e.g. after a toggle triggers re-fetch).
-  // Without this the row would keep stale slug/code text after edits
-  // elsewhere in the same session.
-  useEffect(() => {
-    setDraft({
-      company_name: partner.company_name,
-      slug: partner.slug,
-      code: partner.code,
-      discount_percent: partner.discount_percent,
-      revshare_percent: partner.revshare_percent || 0,
-      max_uses: partner.max_uses || 0,
-      tagline: partner.tagline || '',
-      partner_email: partner.partner_email || '',
-    });
-  }, [partner.company_name, partner.slug, partner.code, partner.discount_percent, partner.revshare_percent, partner.max_uses, partner.tagline, partner.partner_email]);
+function PartnerRow({ partner, columns, gateField, gateMode, fileInputs, onUpdate, onToggleGate, onUploadLogo, onDelete, onCopy, onCopyEmail, onSendEmail, onOpenRevShare, onOpenManagers, sending, copied }) {
+  // Founder UX (Jun 2026): rows are read-only identity views. The
+  // pencil opens the full-page editor (/admin/partners/:id/edit) with
+  // every parameter in full view — the old cramped inline-edit inputs
+  // were unreadable on the deployed build and error-prone.
+  const navigate = useNavigate();
 
   const url = partnerLandingHref(partner.slug);
   // Logo is now embedded as a base64 data URL in the API response.
@@ -656,11 +599,6 @@ function PartnerRow({ partner, columns, gateField, gateMode, authHeaders, fileIn
     || (partner.logo_key
       ? `${API_URL}/public/partners/${partner.slug}/logo?v=${encodeURIComponent(partner.updated_at || '')}`
       : null);
-
-  const commit = (field) => {
-    if (draft[field] === partner[field] || (draft[field] === '' && !partner[field])) return;
-    onUpdate(partner.id, { [field]: draft[field] });
-  };
 
   return (
     <tr style={{ borderBottom: '1px solid var(--b)' }} data-testid={`partner-row-${partner.slug}`}>
@@ -696,10 +634,10 @@ function PartnerRow({ partner, columns, gateField, gateMode, authHeaders, fileIn
             </button>
             <div className="flex items-center gap-2 mt-0.5">
               <button
-                onClick={() => setEditMode((v) => !v)}
-                className={`p-1 rounded ${editMode ? 'bg-[var(--gold)] text-[#080e1a]' : 'text-[var(--t5)] hover:text-[var(--gold)]'}`}
-                title={editMode ? 'Done editing' : 'Edit partner'}
-                aria-label={editMode ? `Stop editing ${partner.company_name}` : `Edit ${partner.company_name}`}
+                onClick={() => navigate(`/admin/partners/${partner.id}/edit`)}
+                className="p-1 rounded text-[var(--t5)] hover:text-[var(--gold)]"
+                title="Edit partner (full page)"
+                aria-label={`Edit ${partner.company_name}`}
                 data-testid={`partner-edit-${partner.slug}`}
               >
                 <Pencil className="w-3 h-3" />
@@ -715,178 +653,40 @@ function PartnerRow({ partner, columns, gateField, gateMode, authHeaders, fileIn
               </button>
             </div>
           </div>
-          {/* Identity */}
+          {/* Identity — read-only. All editing happens on the full page. */}
           <div className="flex-1 min-w-0 space-y-1.5">
-            {!editMode ? (
-              <>
-                <div className="text-sm font-bold text-[var(--t)] truncate" data-testid={`partner-name-display-${partner.slug}`}>
-                  {partner.company_name}
-                </div>
-                <div className="text-[11px] text-[var(--t5)] flex flex-wrap gap-x-2 gap-y-0.5">
-                  <span className="font-mono">/p/{partner.slug}</span>
-                  <span>·</span>
-                  <span className="font-mono">{partner.code}</span>
-                  <span>·</span>
-                  <span>{partner.discount_percent}% off</span>
-                  {(partner.revshare_percent || 0) > 0 && (
-                    <>
-                      <span>·</span>
-                      <span className="text-[#34d399] font-semibold">{partner.revshare_percent}% rev-share</span>
-                    </>
-                  )}
-                  <span>·</span>
-                  <span>{partner.max_uses > 0 ? `${partner.max_uses} seats` : 'unlimited'}</span>
-                </div>
-                {partner.rep_user_email && (
-                  <div className="text-[11px] text-[var(--t4)] truncate flex items-center gap-1" title={`Rep: ${partner.rep_user_email}`}>
-                    <UserPlus className="w-3 h-3 text-[#34d399]" /> Rep: {partner.rep_user_name || partner.rep_user_email}
-                  </div>
-                )}
-                {partner.tagline && (
-                  <div className="text-[11px] text-[var(--t4)] italic truncate" title={partner.tagline}>
-                    {partner.tagline}
-                  </div>
-                )}
-                {partner.partner_email && (
-                  <div className="text-[11px] text-[var(--t4)] truncate" title={partner.partner_email}>
-                    {partner.partner_email}
-                  </div>
-                )}
-              </>
-            ) : (
-            <>
-            <Input
-              value={draft.company_name}
-              onChange={e => setDraft({ ...draft, company_name: e.target.value })}
-              onBlur={() => commit('company_name')}
-              className="input-field text-sm font-bold h-8"
-              data-testid={`partner-name-${partner.slug}`}
-            />
-            <div className="grid grid-cols-2 gap-1.5">
-              <div>
-                <Input
-                  value={draft.slug}
-                  onChange={e => setDraft({ ...draft, slug: sanitizeSlug(e.target.value) })}
-                  onBlur={() => commit('slug')}
-                  className="input-field text-xs h-7 font-mono"
-                  placeholder="web-page-name"
-                />
-              </div>
-              <div>
-                <Input
-                  value={draft.code}
-                  onChange={e => setDraft({ ...draft, code: e.target.value.toUpperCase() })}
-                  onBlur={() => commit('code')}
-                  className="input-field text-xs h-7 font-mono"
-                  placeholder="CODE"
-                  data-testid={`partner-code-${partner.slug}`}
-                />
-              </div>
+            <div className="text-sm font-bold text-[var(--t)] truncate" data-testid={`partner-name-display-${partner.slug}`}>
+              {partner.company_name}
             </div>
-            <div className="grid grid-cols-2 gap-1.5">
-              <div className="relative">
-                <Input
-                  type="number" min={0} max={100}
-                  value={draft.discount_percent}
-                  onChange={e => setDraft({ ...draft, discount_percent: parseInt(e.target.value) || 0 })}
-                  onBlur={() => commit('discount_percent')}
-                  className="input-field text-xs h-7 pr-12"
-                  placeholder="Discount"
-                  title="Discount the partner receives off retail (100 = free)"
-                  data-testid={`partner-discount-${partner.slug}`}
-                />
-                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[11px] text-[var(--t5)] uppercase font-bold tracking-wider pointer-events-none">% off</span>
-              </div>
-              <div className="relative" title="Number of user subscriptions the partner is paying for (0 = unlimited)">
-                <Input
-                  type="number" min={0}
-                  value={draft.max_uses}
-                  onChange={e => setDraft({ ...draft, max_uses: parseInt(e.target.value) || 0 })}
-                  onBlur={() => commit('max_uses')}
-                  className="input-field text-xs h-7 pr-12"
-                  placeholder="Users"
-                  data-testid={`partner-max-users-${partner.slug}`}
-                />
-                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[11px] text-[var(--t5)] uppercase font-bold tracking-wider pointer-events-none">
-                  <Pencil className="w-2.5 h-2.5 inline -mt-0.5 mr-0.5" /> seats
-                </span>
-              </div>
-            </div>
-            {/* Live seat utilization — count of users currently
-                linked via partner_id (decoded server-side). When
-                max_uses = 0 we show "unlimited". Shown only in edit
-                mode (the read-only header above already shows seat
-                count compactly). */}
-            <div className="text-[11px] text-[var(--t5)] flex items-center gap-1.5 flex-wrap" data-testid={`partner-seats-${partner.slug}`}>
-              <Users className="w-3 h-3" />
-              <span>
-                <span className={`font-bold ${partner.max_uses > 0 && partner.active_users_count >= partner.max_uses ? 'text-[var(--rd)]' : 'text-[var(--gold)]'}`}>
-                  {partner.active_users_count || 0}
-                </span>
-                {' '}of{' '}
-                <span className="font-bold text-[var(--t3)]">
-                  {partner.max_uses > 0 ? partner.max_uses : '∞'}
-                </span>
-                {' '}users active
-              </span>
-              {partner.max_uses > 0 && partner.active_users_count >= partner.max_uses && (
-                <span className="text-[var(--rd)] font-bold">· FULL</span>
+            <div className="text-[11px] text-[var(--t5)] flex flex-wrap gap-x-2 gap-y-0.5">
+              <span className="font-mono">/p/{partner.slug}</span>
+              <span>·</span>
+              <span className="font-mono">{partner.code}</span>
+              <span>·</span>
+              <span>{partner.discount_percent}% off</span>
+              {(partner.revshare_percent || 0) > 0 && (
+                <>
+                  <span>·</span>
+                  <span className="text-[#34d399] font-semibold">{partner.revshare_percent}% rev-share</span>
+                </>
               )}
-              {partner.times_used > (partner.active_users_count || 0) && (
-                <span className="text-[var(--t6)]" title="Lifetime redemptions — some users may have been deleted">
-                  · {partner.times_used} lifetime
-                </span>
-              )}
+              <span>·</span>
+              <span>{partner.max_uses > 0 ? `${partner.max_uses} seats` : 'unlimited'}</span>
             </div>
-            <Input
-              value={draft.tagline}
-              onChange={e => setDraft({ ...draft, tagline: e.target.value })}
-              onBlur={() => commit('tagline')}
-              className="input-field text-xs h-7"
-              placeholder="Landing page tagline (shown under hero)"
-              maxLength={280}
-              data-testid={`partner-tagline-${partner.slug}`}
-            />
-            <Input
-              type="email"
-              value={draft.partner_email}
-              onChange={e => setDraft({ ...draft, partner_email: e.target.value })}
-              onBlur={() => commit('partner_email')}
-              className="input-field text-xs h-7"
-              placeholder="Partner contact email (e.g. ops@acme-insurance.com)"
-              maxLength={120}
-              data-testid={`partner-email-${partner.slug}`}
-            />
-            {/* Partner rep — the user authorized to white-glove-provision
-                client portals via /pro/clients. One rep per partner. */}
-            {partner.rep_user_email ? (
-              <div className="flex items-center gap-1.5 text-[11px]" data-testid={`partner-rep-linked-${partner.slug}`}>
-                <UserPlus className="w-3 h-3 text-[#34d399]" />
-                <span className="text-[var(--t4)] truncate">Rep: <span className="font-semibold text-[var(--t3)]">{partner.rep_user_name || partner.rep_user_email}</span></span>
-                <button onClick={unlinkRep} disabled={repBusy} className="text-[var(--t5)] hover:text-[var(--rd)]"
-                  title="Unlink rep" aria-label={`Unlink rep for ${partner.company_name}`}
-                  data-testid={`partner-rep-unlink-${partner.slug}`}>
-                  <X className="w-3 h-3" />
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-1.5">
-                <Input
-                  type="email"
-                  value={repEmail}
-                  onChange={e => setRepEmail(e.target.value)}
-                  className="input-field text-xs h-7 flex-1"
-                  placeholder="Rep account email (unlocks Client Setup)"
-                  data-testid={`partner-rep-email-${partner.slug}`}
-                />
-                <Button size="sm" variant="outline" onClick={linkRep} disabled={repBusy || !repEmail.trim()}
-                  className="text-[11px] h-7 px-2 border-[var(--gold)]/40 text-[var(--gold)]"
-                  data-testid={`partner-rep-link-${partner.slug}`}>
-                  {repBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <><UserPlus className="w-3 h-3 mr-1" /> Link rep</>}
-                </Button>
+            {partner.rep_user_email && (
+              <div className="text-[11px] text-[var(--t4)] truncate flex items-center gap-1" title={`Rep: ${partner.rep_user_email}`}>
+                <UserPlus className="w-3 h-3 text-[#34d399]" /> Rep: {partner.rep_user_name || partner.rep_user_email}
               </div>
             )}
-            </>
+            {partner.tagline && (
+              <div className="text-[11px] text-[var(--t4)] italic truncate" title={partner.tagline}>
+                {partner.tagline}
+              </div>
+            )}
+            {partner.partner_email && (
+              <div className="text-[11px] text-[var(--t4)] truncate" title={partner.partner_email}>
+                {partner.partner_email}
+              </div>
             )}
             {/* Live seat utilization (always visible) */}
             <div className="text-[11px] text-[var(--t5)] flex items-center gap-1.5 flex-wrap" data-testid={`partner-seats-live-${partner.slug}`}>
