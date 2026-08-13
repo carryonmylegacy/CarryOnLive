@@ -352,7 +352,24 @@ const SignupPage = () => {
     }
   };
 
-  const finishToDashboard = () => {
+  const finishToDashboard = async () => {
+    // Landing-page attribution (founder rule, Aug 2026): anyone who
+    // arrived via /p/{slug} joins that partner's roster even if they
+    // skipped the optional code tile. Awaited BEFORE the reload below
+    // kills in-flight requests. Best-effort — never blocks signup.
+    try {
+      const slug = localStorage.getItem('cy_partner_slug');
+      if (slug && !partnerCodeApplied) {
+        const token = localStorage.getItem('carryon_token');
+        if (token) {
+          await apiClient.post(
+            `${API_URL}/partners/attribute-signup`,
+            { slug },
+            { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } },
+          );
+        }
+      }
+    } catch { /* attribution is best-effort */ }
     // Clear partner stash so a future signup on the same device
     // doesn't accidentally inherit it.
     try {

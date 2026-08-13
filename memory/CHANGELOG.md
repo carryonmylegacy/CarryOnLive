@@ -9891,3 +9891,19 @@ Founder set RUN_E2E=false; next Save-to-GitHub push will deploy everything.
   "Rev Share %" number input (0-100, clamped server-side, partner-edit-revshare testid).
 - Verified: iter173 suite 13 pass, pre-push invariants 8 pass, housekeeping ALL CLEAR,
   /manager redirect + pills + headers via Playwright screenshot.
+
+## 2026-08-13 (later 4) — Landing-page auto-attribution (truth check on email claim)
+
+- Founder asked whether "anyone who signs up on /p/{slug} shows in the partner's roster"
+  was true. It was NOT: attribution only happened via explicit partner-code redemption;
+  code-skippers became unattributed retail users.
+- NEW `POST /api/partners/attribute-signup` (auth-required, admin/partners.py): binds
+  user→partner by slug — attribution ONLY (no discount/tier/overrides; gates read live via
+  partner_id). Idempotent (already_attributed), soft-fails on bad slug / seat limit,
+  increments times_used (seat count).
+- SignupPage.finishToDashboard is now async and awaits attribution (using stashed
+  cy_partner_slug) BEFORE navigate+reload kills in-flight requests — covers BOTH skip paths
+  (blank submit + explicit skip button); post-redeem path no-ops via already_attributed.
+- Verified: attribute→roster E2E (self-signup marker true, grey SUBSCRIBED), idempotency,
+  bad-slug soft-fail, pre-push invariants 8 pass, housekeeping ALL CLEAR. Test data removed,
+  seat count restored.

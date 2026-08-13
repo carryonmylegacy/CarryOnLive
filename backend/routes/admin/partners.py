@@ -734,6 +734,42 @@ async def redeem_partner_code(request: Request, current_user: dict = Depends(get
     }
 
 
+@public_router.post("/partners/attribute-signup")
+async def attribute_partner_signup(request: Request, current_user: dict = Depends(get_current_user)):
+    """Landing-page attribution WITHOUT a code (founder rule, Aug 2026:
+    anyone who signs up via /p/{slug} must appear in that partner's
+    roster). Called by the signup wizard when the visitor arrived via a
+    partner landing page but skipped the optional code tile.
+
+    Attribution-only: NO discount, NO enterprise tier, NO overrides —
+    the member stays on retail plans (white-label gates are read LIVE
+    via partner_id). Soft-fails so signup completion is never blocked."""
+    body = await request.json()
+    slug = (body.get("slug") or "").strip().lower()
+    if not slug:
+        raise HTTPException(status_code=400, detail="Partner slug required.")
+    if current_user.get("partner_id"):
+        return {"attributed": False, "reason": "already_attributed"}
+    partner = await db.b2b_partners.find_one({"slug": slug, "active": True}, {"_id": 0})
+    if not partner:
+        return {"attributed": False, "reason": "partner_not_found"}
+    if partner.get("max_uses", 0) > 0 and partner.get("times_used", 0) >= partner["max_uses"]:
+        return {"attributed": False, "reason": "seat_limit_reached"}
+    await db.users.update_one(
+        {"id": current_user["id"]},
+        {
+            "$set": {
+                "partner_id": partner["id"],
+                "partner_slug": partner["slug"],
+                "partner_company": partner["company_name"],
+                "b2b_partner": partner["company_name"],
+            }
+        },
+    )
+    await db.b2b_partners.update_one({"id": partner["id"]}, {"$inc": {"times_used": 1}})
+    return {"attributed": True, "company_name": partner["company_name"], "slug": partner["slug"]}
+
+
 # ─── Rev-share reporting & partner rep management ─────────────────
 
 
