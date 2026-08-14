@@ -371,6 +371,15 @@ export default function ManagerPortalPage() {
                     <span className="inline-flex items-center gap-1">
                       <FileText className="w-3 h-3" /> {client.documents_count} document{client.documents_count === 1 ? '' : 's'}
                     </span>
+                    <span className="inline-flex items-center gap-1" data-testid="mgr-client-beneficiaries">
+                      <Users className="w-3 h-3" /> {client.beneficiaries_total || 0} beneficiar{(client.beneficiaries_total || 0) === 1 ? 'y' : 'ies'}
+                      {(client.beneficiaries_total || 0) > 0 && (
+                        <span>
+                          · <span style={{ color: client.beneficiaries_linked > 0 ? '#10b981' : 'var(--t5)' }}>{client.beneficiaries_linked || 0} linked</span>
+                          {(client.beneficiaries_invited || 0) > 0 && <span style={{ color: '#3b82f6' }}> · {client.beneficiaries_invited} invited</span>}
+                        </span>
+                      )}
+                    </span>
                     {client.last_login_at && (
                       <span className="text-[var(--t5)]">last active {new Date(client.last_login_at).toLocaleDateString()}</span>
                     )}

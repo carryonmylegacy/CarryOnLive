@@ -342,6 +342,15 @@ ROUTE_POLICIES: dict = {
     },
     "PUT /api/admin/partners/{partner_id}/managers/{manager_id}": {"auth": "required", "roles": ["admin"]},
     "DELETE /api/admin/partners/{partner_id}/managers/{manager_id}": {"auth": "required", "roles": ["admin"]},
+    "POST /api/admin/partners/{partner_id}/managers/{manager_id}/send-guide": {
+        "auth": "required",
+        "roles": ["admin"],
+        "notes": "Emails the one-page partner onboarding guide to a founder-specified address",
+    },
+    "POST /api/manager/send-guide": {
+        "auth": "required",
+        "notes": "Manager-token gated; emails the onboarding guide to a manager-provided address",
+    },
     "POST /api/manager/login": {
         "auth": "public",
         "notes": "Manager credential login — brute-force lockout, bcrypt verify",

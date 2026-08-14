@@ -5,8 +5,13 @@
  *  2. How do beneficiary accounts link up to Estate Chat / text & email comms?
  */
 
-import React, { useState } from 'react';
-import { BookOpen, ChevronDown, KeySquare, MessagesSquare, ShieldOff, CheckCircle2 } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { BookOpen, ChevronDown, KeySquare, Loader2, Mail, MessagesSquare, ShieldOff, CheckCircle2 } from 'lucide-react';
+import apiClient from '../../utils/apiClient';
+import { toast } from '../../utils/toast';
+import { API_URL } from '../../config';
+
+const SEEN_KEY = 'carryon_partner_guide_seen';
 
 const Step = ({ n, children }) => (
   <li className="flex items-start gap-2.5">
@@ -21,7 +26,30 @@ const Step = ({ n, children }) => (
 const B = ({ children }) => <span className="font-bold text-[var(--t)]">{children}</span>;
 
 export const PartnerGuidePanel = () => {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(() => {
+    try { return !window.localStorage.getItem(SEEN_KEY); } catch { return false; }
+  });
+  const [sending, setSending] = useState(false);
+
+  useEffect(() => {
+    try { window.localStorage.setItem(SEEN_KEY, '1'); } catch { /* private mode */ }
+  }, []);
+
+  const emailGuide = async () => {
+    const email = window.prompt('Email the one-page Partner Guide to which address?', '');
+    if (!email || !email.trim()) return;
+    setSending(true);
+    try {
+      const token = window.localStorage.getItem('carryon_manager_token');
+      await apiClient.post(`${API_URL}/manager/send-guide`, { email: email.trim() },
+        { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } });
+      toast.success(`Guide emailed to ${email.trim()}`);
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to send the guide');
+    } finally {
+      setSending(false);
+    }
+  };
 
   return (
     <div className="glass-card mb-5 overflow-hidden" data-testid="partner-guide-panel">
@@ -91,6 +119,20 @@ export const PartnerGuidePanel = () => {
                 automatically.
               </p>
             </div>
+          </div>
+
+          {/* Email-me-this-guide footer */}
+          <div className="lg:col-span-2 flex flex-col sm:flex-row sm:items-center gap-2 justify-between rounded-xl p-3"
+            style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
+            <p className="text-[12px] text-[var(--t4)]">
+              Want a copy for your records or your team? We&apos;ll send this guide as a one-page email.
+            </p>
+            <button onClick={emailGuide} disabled={sending}
+              className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-bold transition-colors"
+              style={{ color: 'var(--gold)', border: '1px solid rgba(var(--gold-rgb),0.4)', background: 'rgba(var(--gold-rgb),0.08)' }}
+              data-testid="partner-guide-email-btn">
+              {sending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />} Email me this guide
+            </button>
           </div>
         </div>
       )}

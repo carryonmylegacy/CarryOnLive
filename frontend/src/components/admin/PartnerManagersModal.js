@@ -8,7 +8,7 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 import apiClient from '../../utils/apiClient';
-import { X, Loader2, KeyRound, Plus, Copy, Check, Power, Trash2, RefreshCw } from 'lucide-react';
+import { X, Loader2, KeyRound, Plus, Copy, Check, Power, Trash2, RefreshCw, Mail } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { toast } from '../../utils/toast';
@@ -117,6 +117,26 @@ export const PartnerManagersModal = ({ partner, authHeaders, onClose }) => {
     }
   };
 
+  const sendGuide = async (m) => {
+    const email = window.prompt(
+      `Email the one-page Partner Onboarding Guide (access + beneficiary steps) for ${m.name} to which address?`,
+      '',
+    );
+    if (!email || !email.trim()) return;
+    setBusy(`guide-${m.id}`);
+    try {
+      await apiClient.post(
+        `${API_URL}/admin/partners/${partner.id}/managers/${m.id}/send-guide`, { email: email.trim() },
+        { headers: { ...authHeaders(), 'Content-Type': 'application/json' } },
+      );
+      toast.success(`Onboarding guide emailed to ${email.trim()}`);
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to send the guide');
+    } finally {
+      setBusy(null);
+    }
+  };
+
   const toggleActive = async (m) => {
     setBusy(`toggle-${m.id}`);
     try {
@@ -206,6 +226,10 @@ export const PartnerManagersModal = ({ partner, authHeaders, onClose }) => {
                     {m.last_login_at && <span className="text-[var(--t5)] font-sans"> · last sign-in {new Date(m.last_login_at).toLocaleDateString()}</span>}
                   </div>
                 </div>
+                <button onClick={() => sendGuide(m)} disabled={!!busy} className="text-[var(--t5)] hover:text-[var(--gold)] p-1.5"
+                  title="Email onboarding guide" data-testid={`manager-send-guide-${m.username}`}>
+                  {busy === `guide-${m.id}` ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
+                </button>
                 <button onClick={() => regenerate(m)} disabled={!!busy} className="text-[var(--t5)] hover:text-[var(--gold)] p-1.5"
                   title="Regenerate password" data-testid={`manager-regen-${m.username}`}>
                   {busy === `regen-${m.id}` ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}

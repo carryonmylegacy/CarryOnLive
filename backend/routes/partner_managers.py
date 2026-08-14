@@ -39,6 +39,7 @@ from routes.admin.partners import _ensure_founder
 from routes.pro_clients import (
     _claim_email_html,
     _claim_url,
+    _frontend_base,
     provision_client_portal,
     refresh_claim_token,
 )
@@ -228,6 +229,126 @@ async def delete_partner_manager(
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Partner login not found.")
     return {"deleted": True}
+
+
+# ─── One-page partner onboarding guide email ────────────────────────────
+
+
+class SendGuidePayload(BaseModel):
+    email: EmailStr
+
+
+def _partner_guide_email_html(manager_name: str, company_name: str, portal_url: str) -> str:
+    first = (manager_name or "there").split(" ")[0]
+    return f"""
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="text-align: center; margin-bottom: 24px;">
+            <h1 style="color: #d4af37; margin: 0;">CarryOn&trade;</h1>
+            <p style="color: #666; margin: 4px 0 0;">{company_name} &mdash; Partner Onboarding Guide</p>
+        </div>
+
+        <p style="color: #555; line-height: 1.6;">Hi {first},</p>
+        <p style="color: #555; line-height: 1.6;">
+            Welcome to your CarryOn&trade; Partner Portal. Here is everything you need to start
+            serving your clients &mdash; on one page.
+        </p>
+
+        <h2 style="color: #333; font-size: 17px; margin: 24px 0 8px;">1. Working in a client's account</h2>
+        <ul style="color: #555; line-height: 1.8; margin: 0; padding-left: 20px;">
+            <li><strong>You are already authorized for every client on your roster.</strong>
+                Open your Partner Portal and tap <strong>Enter Portal</strong> on any client to work
+                inside their account &mdash; upload documents, complete their CarryOn sections, and
+                add beneficiaries on their behalf.</li>
+            <li>Your clients never need to grant or approve anything &mdash; this access is built
+                into your partnership.</li>
+            <li>The <strong>Trustee Access</strong> card clients see in their own Settings is a
+                separate feature for inviting a family member or personal trustee. Nothing there
+                is required for you.</li>
+        </ul>
+
+        <div style="background-color: #fdf3f3; border: 1px solid #f0caca; border-radius: 8px; padding: 12px 16px; margin: 14px 0;">
+            <p style="color: #a94442; font-size: 13px; line-height: 1.6; margin: 0;">
+                <strong>Always off-limits in a client's account:</strong> Milestone Messages
+                (personal letters &mdash; not even viewable), password / email / 2FA changes,
+                billing &amp; subscription changes, and estate deletion. Every action you take
+                is recorded in the client's audit trail.
+            </p>
+        </div>
+
+        <h2 style="color: #333; font-size: 17px; margin: 24px 0 8px;">2. Beneficiary accounts &amp; communications</h2>
+        <ol style="color: #555; line-height: 1.8; margin: 0; padding-left: 20px;">
+            <li>Enter the client's portal and open their <strong>Beneficiaries</strong> section.
+                Add each beneficiary with their email address.</li>
+            <li>Tap <strong>Invite</strong> &mdash; the beneficiary receives an email with a button
+                to create their own CarryOn account.</li>
+            <li>Once they accept, their account links automatically (the card shows
+                <strong>Account Linked</strong>), unlocking <strong>Estate Chat</strong> &mdash;
+                CarryOn's secure communication tool &mdash; plus in-app and email notifications.</li>
+        </ol>
+
+        <div style="background-color: #f0faf5; border: 1px solid #c3e6d4; border-radius: 8px; padding: 12px 16px; margin: 14px 0;">
+            <p style="color: #2d6a4f; font-size: 13px; line-height: 1.6; margin: 0;">
+                <strong>Text &amp; email without an account:</strong> add trusted contacts under
+                <strong>Friends &amp; Family Notification (FFN)</strong> in the client's portal
+                with a mobile number and email &mdash; every Estate Chat message they are included
+                in is relayed to them by text and email automatically.
+            </p>
+        </div>
+
+        <div style="text-align: center; margin: 28px 0;">
+            <a href="{portal_url}"
+               style="background-color: #d4af37;
+                      color: #0B1221;
+                      padding: 14px 32px;
+                      text-decoration: none;
+                      border-radius: 8px;
+                      border: 1px solid #b8962e;
+                      font-weight: bold;
+                      display: inline-block;">
+                Open Your Partner Portal
+            </a>
+        </div>
+
+        <p style="color: #888; font-size: 12px; text-align: center; line-height: 1.6; word-break: break-all;">
+            Button not working? Copy and paste this link into your browser:<br>
+            <a href="{portal_url}" style="color: #b8962e;">{portal_url}</a>
+        </p>
+
+        <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;">
+        <p style="color: #888; font-size: 12px; text-align: center;">
+            Questions? Just reply to this email &mdash; we're happy to help.
+        </p>
+    </div>
+    """
+
+
+async def _send_partner_guide(email: str, manager: dict, partner: dict) -> dict:
+    portal_url = f"{_frontend_base()}/partner"
+    company = partner.get("company_name", "CarryOn")
+    html = _partner_guide_email_html(manager.get("name", ""), company, portal_url)
+    result = await send_email_ex(email, f"Your {company} \u00b7 CarryOn Partner Guide", html)
+    if not result["ok"]:
+        raise HTTPException(status_code=502, detail=result["error"] or "Email delivery failed")
+    return {"sent": True, "to": email}
+
+
+@router.post("/admin/partners/{partner_id}/managers/{manager_id}/send-guide")
+async def send_partner_manager_guide(
+    partner_id: str,
+    manager_id: str,
+    body: SendGuidePayload,
+    current_user: dict = Depends(get_current_user),
+):
+    _ensure_founder(current_user)
+    partner = await db.b2b_partners.find_one({"id": partner_id}, {"_id": 0, "id": 1, "company_name": 1})
+    if not partner:
+        raise HTTPException(status_code=404, detail="Partner not found.")
+    manager = await db.partner_managers.find_one(
+        {"id": manager_id, "partner_id": partner_id}, {"_id": 0, "password": 0}
+    )
+    if not manager:
+        raise HTTPException(status_code=404, detail="Partner login not found.")
+    return await _send_partner_guide(str(body.email), manager, partner)
 
 
 # ─── Manager authentication ─────────────────────────────────────────────
@@ -441,6 +562,12 @@ async def manager_me(manager: dict = Depends(get_current_manager)):
 # ─── Manager operations (partner-scoped) ────────────────────────────────
 
 
+@router.post("/manager/send-guide")
+async def manager_send_guide(body: SendGuidePayload, manager: dict = Depends(get_current_manager)):
+    """Manager self-service — email the one-page onboarding guide anywhere."""
+    return await _send_partner_guide(str(body.email), manager, manager["_partner"])
+
+
 @router.get("/manager/clients")
 async def manager_list_clients(manager: dict = Depends(get_current_manager)):
     """Full at-a-glance roster: EVERY member attributed to the manager's
@@ -474,6 +601,7 @@ async def manager_list_clients(manager: dict = Depends(get_current_manager)):
     active_sub_ids: set = set()
     estates_by_owner: dict = {}
     docs_by_estate: dict = {}
+    bens_by_estate: dict = {}
     if member_ids:
         grants = await db.trustee_grants.find(
             {"benefactor_id": {"$in": member_ids}, "via_pro_setup": True, "status": "active", "revoked_at": None},
@@ -496,6 +624,31 @@ async def manager_list_clients(manager: dict = Depends(get_current_manager)):
                 {"$group": {"_id": "$estate_id", "n": {"$sum": 1}}},
             ]
             docs_by_estate = {row["_id"]: row["n"] async for row in db.documents.aggregate(pipeline)}
+            ben_pipeline = [
+                {"$match": {"estate_id": {"$in": estate_ids}, "deleted_at": None}},
+                {
+                    "$group": {
+                        "_id": "$estate_id",
+                        "total": {"$sum": 1},
+                        "linked": {
+                            "$sum": {
+                                "$cond": [
+                                    {
+                                        "$or": [
+                                            {"$ne": [{"$ifNull": ["$user_id", None]}, None]},
+                                            {"$eq": ["$invitation_status", "accepted"]},
+                                        ]
+                                    },
+                                    1,
+                                    0,
+                                ]
+                            }
+                        },
+                        "invited": {"$sum": {"$cond": [{"$eq": ["$invitation_status", "sent"]}, 1, 0]}},
+                    }
+                },
+            ]
+            bens_by_estate = {row["_id"]: row async for row in db.beneficiaries.aggregate(ben_pipeline)}
 
     clients = []
     for m in members:
@@ -512,6 +665,9 @@ async def manager_list_clients(manager: dict = Depends(get_current_manager)):
                 "provisioned": provisioned,
                 "can_enter": m["id"] in grants_by_client,
                 "documents_count": int(docs_by_estate.get(estate_id, 0)),
+                "beneficiaries_total": int((bens_by_estate.get(estate_id) or {}).get("total", 0)),
+                "beneficiaries_linked": int((bens_by_estate.get(estate_id) or {}).get("linked", 0)),
+                "beneficiaries_invited": int((bens_by_estate.get(estate_id) or {}).get("invited", 0)),
                 "created_at": m.get("created_at", ""),
                 "claimed_at": m.get("claimed_at"),
                 "invite_sent_at": m.get("invite_sent_at"),

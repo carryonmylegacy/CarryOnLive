@@ -9922,3 +9922,21 @@ Founder set RUN_E2E=false; next Save-to-GitHub push will deploy everything.
   invite→Account Linked→Estate Chat flow + FFN text/email relay for non-account contacts.
 - Verified: pytest test_beneficiary_invite_email_iter179.py (3/3), Playwright manager
   login → guide expand/collapse → roster regression, scripts/check.sh ALL CLEAR.
+
+## Jun 2026 (fork) — Partner onboarding trio (iter180, 100%/100%)
+- Partner Onboarding Guide email: one-page email-safe HTML (_partner_guide_email_html in
+  routes/partner_managers.py) covering client access + off-limits list + beneficiary/E-Comm
+  steps + FFN. Two send paths: POST /api/admin/partners/{pid}/managers/{mid}/send-guide
+  (founder, Mail button in PartnerManagersModal, prompts for recipient) and
+  POST /api/manager/send-guide (manager self-service, "Email me this guide" button in
+  PartnerGuidePanel). Both registered in route_policies.py.
+- Guide first-visit auto-open: PartnerGuidePanel opens expanded when localStorage
+  carryon_partner_guide_seen is absent, then marks seen (collapsed on later visits).
+- Beneficiary progress on roster: GET /api/manager/clients now aggregates per-estate
+  beneficiaries_total/linked/invited ($group pipeline); ManagerPortalPage rows show
+  "N beneficiaries · X linked · Y invited" (data-testid mgr-client-beneficiaries).
+- Gotcha hit twice this session: parallel search_replace edits into the same file region
+  clobbered each other (duplicated tails in partner_managers.py + PartnerManagersModal.js).
+  Sequential edits per-file-region from now on.
+- Dana Whitfield password reset to Client1234! (DB-level, documented in test_credentials.md).
+- Verified: iter180 pytest 9/9 + full frontend flow, scripts/check.sh ALL CLEAR.
