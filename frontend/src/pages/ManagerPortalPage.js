@@ -17,6 +17,7 @@ import {
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
+import { PartnerGuidePanel } from '../components/manager/PartnerGuidePanel';
 import { toast } from '../utils/toast';
 import { API_URL } from '../config';
 
@@ -295,6 +296,8 @@ export default function ManagerPortalPage() {
             </div>
           ))}
         </div>
+
+        <PartnerGuidePanel />
 
         {partner && !partner.tma_enabled && (
           <div className="mb-4 p-3 rounded-xl flex items-start gap-2 text-sm"

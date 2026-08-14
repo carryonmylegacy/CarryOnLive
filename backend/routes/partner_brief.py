@@ -795,7 +795,7 @@ def _build_email_html(*, name: str, ai_intro: str, brand_url: str) -> str:
 <p style="font-size:15px;line-height:1.6;color:#CBD5E1;margin:0 0 14px 0;">Your tailored QuickStart Estate Plan Guide is attached as a PDF. Take it, verbatim, to your estate attorney, CPA, financial advisor, and life-insurance agent &mdash; you&rsquo;ll walk in ready.</p>
 <p style="font-size:14px;line-height:1.6;color:#94A3B8;font-style:italic;margin:0 0 22px 0;">{safe_intro}</p>
 <p style="font-size:14px;line-height:1.6;color:#CBD5E1;margin:0 0 8px 0;">When you&rsquo;re ready to keep going &mdash; document vault, milestone messages, beneficiary access, and the rest &mdash; the full CarryOn platform picks up right where this guide leaves off:</p>
-<p style="margin:18px 0 0 0;"><a href="{brand_url}" style="display:inline-block;padding:11px 22px;border-radius:10px;font-weight:700;font-size:14px;background:linear-gradient(135deg,#d4af37,#b8962e);color:#080e1a;text-decoration:none;">Explore CarryOn</a></p>
+<p style="margin:18px 0 0 0;"><a href="{brand_url}" style="display:inline-block;padding:11px 22px;border-radius:10px;font-weight:700;font-size:14px;background-color:#d4af37;border:1px solid #b8962e;color:#080e1a;text-decoration:none;">Explore CarryOn</a></p>
 <p style="font-size:11px;color:#64748B;margin:28px 0 0 0;line-height:1.5;">This guide is a preparation tool, not legal, tax, or financial advice. Confirm specifics with the licensed professionals of your choice.</p>
 </div></body></html>"""
 

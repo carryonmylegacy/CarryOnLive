@@ -448,7 +448,7 @@ def build_audit_digest_html(data, app_url="https://app.carryon.us"):
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#0b1120;padding:20px 0"><tr><td align="center">
 <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#0f1629;border-radius:16px;overflow:hidden;border:1px solid #1e293b">
   <!-- Header -->
-  <tr><td style="background:linear-gradient(135deg,#0f1629,#1a1f3a);padding:24px 20px;text-align:center">
+  <tr><td style="background-color:#131a30;padding:24px 20px;text-align:center">
     <div style="font-size:24px;font-weight:800;color:#d4af37;letter-spacing:-0.5px">CarryOn&#8482;</div>
     <div style="font-size:13px;color:#8895A7;margin-top:4px;letter-spacing:2px;text-transform:uppercase">SOC 2 Audit Digest</div>
     <div style="font-size:12px;color:#525C72;margin-top:8px">{

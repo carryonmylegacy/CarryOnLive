@@ -9907,3 +9907,18 @@ Founder set RUN_E2E=false; next Save-to-GitHub push will deploy everything.
 - Verified: attribute→roster E2E (self-signup marker true, grey SUBSCRIBED), idempotency,
   bad-slug soft-fail, pre-push invariants 8 pass, housekeeping ALL CLEAR. Test data removed,
   seat count restored.
+
+## Jun 2026 (fork) — Jazmine feedback trio (iter179, 100%/100%)
+- Invisible email CTA fix: beneficiary invitation button used background:linear-gradient
+  (stripped by Outlook/Gmail-dark → white-on-white). Now solid background-color:#d4af37 +
+  #0B1221 text + plain-text fallback link paragraph under the button
+  (routes/beneficiaries/invitations.py). Same gradient class of bug fixed in
+  partner_brief.py QuickStart CTA (gold solid) and admin_digest.py header (#131a30 solid).
+- New PartnerGuidePanel (components/manager/PartnerGuidePanel.js) rendered on
+  /partner/portal above the TMA warning: collapsible two-column guide answering
+  (a) delegated access — partners are pre-authorized for roster clients, client-side
+  Settings→Trustee Access is a separate family feature, off-limits list (Milestone
+  Messages, security, billing, estate delete); (b) beneficiary E-Comm — 3-step
+  invite→Account Linked→Estate Chat flow + FFN text/email relay for non-account contacts.
+- Verified: pytest test_beneficiary_invite_email_iter179.py (3/3), Playwright manager
+  login → guide expand/collapse → roster regression, scripts/check.sh ALL CLEAR.

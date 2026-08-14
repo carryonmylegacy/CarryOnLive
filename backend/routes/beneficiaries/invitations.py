@@ -89,16 +89,22 @@ async def send_beneficiary_invitation(beneficiary_id: str, current_user: dict = 
 
                 <div style="text-align: center; margin: 30px 0;">
                     <a href="{invitation_link}"
-                       style="background: linear-gradient(135deg, #d4af37, #c5a028);
-                              color: white;
+                       style="background-color: #d4af37;
+                              color: #0B1221;
                               padding: 14px 32px;
                               text-decoration: none;
                               border-radius: 8px;
+                              border: 1px solid #b8962e;
                               font-weight: bold;
                               display: inline-block;">
-                        Accept Invitation & Create Account
+                        Accept Invitation &amp; Create Account
                     </a>
                 </div>
+
+                <p style="color: #888; font-size: 12px; text-align: center; line-height: 1.6; word-break: break-all;">
+                    Button not working? Copy and paste this link into your browser:<br>
+                    <a href="{invitation_link}" style="color: #b8962e;">{invitation_link}</a>
+                </p>
 
                 <p style="color: #888; font-size: 12px; line-height: 1.6;">
                     <strong>Note:</strong> There's nothing you need to do right now except create your account.
