@@ -9990,3 +9990,14 @@ Founder set RUN_E2E=false; next Save-to-GitHub push will deploy everything.
 - Verified via curl (independent toggles, opted-out alert delivers 0 emails, restore) +
   assertive Playwright screenshot (filter 3→1, no-match, clear, both toggles + toasts).
   scripts/check.sh ALL CLEAR. Preview state: both toggles ON, email jazmine-qa@carryontest.io.
+
+## Jun 2026 (fork) — Roster sorting + private client notes (self-tested, gate pending line above)
+- Roster sorting: 4 pill buttons (Newest / A–Z / Subscribed / Awaiting Claim) beside the
+  search box on ManagerPortalPage; client-side sort over visibleClients (sortedClients).
+- Private client notes: new db.partner_client_notes {partner_id, client_id, note,
+  updated_at, updated_by}; PUT /api/manager/clients/{cid}/note (upsert, 2000 max, 404
+  off-roster); notes batch-fetched into GET /manager/clients ("note" field, no N+1).
+  Frontend: StickyNote button per row (gold "Note" when set, "Add note" otherwise) →
+  inline ClientNoteEditor (textarea + Save/Cancel).
+- Verified via curl (save/round-trip/404/clear) + assertive Playwright (A–Z order check,
+  awaiting-first, note save toast + label flip + clear). Roster left clean (no notes).

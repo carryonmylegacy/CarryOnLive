@@ -363,6 +363,10 @@ ROUTE_POLICIES: dict = {
         "auth": "required",
         "notes": "Manager-token gated; sends/re-sends a beneficiary invitation on the client's behalf",
     },
+    "PUT /api/manager/clients/{client_id}/note": {
+        "auth": "required",
+        "notes": "Manager-token gated; private roster-scoped partner note about one client",
+    },
     "POST /api/admin/partners/digest/send": {
         "auth": "required",
         "roles": ["admin"],

@@ -652,7 +652,13 @@ async def manager_list_clients(manager: dict = Depends(get_current_manager)):
     estates_by_owner: dict = {}
     docs_by_estate: dict = {}
     bens_by_estate: dict = {}
+    notes_by_client: dict = {}
     if member_ids:
+        note_docs = await db.partner_client_notes.find(
+            {"partner_id": partner["id"], "client_id": {"$in": member_ids}},
+            {"_id": 0, "client_id": 1, "note": 1},  # pre-push-invariants: allow-missing-id
+        ).to_list(4000)
+        notes_by_client = {n["client_id"]: n.get("note", "") for n in note_docs}
         grants = await db.trustee_grants.find(
             {"benefactor_id": {"$in": member_ids}, "via_pro_setup": True, "status": "active", "revoked_at": None},
             {"_id": 0, "id": 1, "benefactor_id": 1},
@@ -718,6 +724,7 @@ async def manager_list_clients(manager: dict = Depends(get_current_manager)):
                 "beneficiaries_total": int((bens_by_estate.get(estate_id) or {}).get("total", 0)),
                 "beneficiaries_linked": int((bens_by_estate.get(estate_id) or {}).get("linked", 0)),
                 "beneficiaries_invited": int((bens_by_estate.get(estate_id) or {}).get("invited", 0)),
+                "note": notes_by_client.get(m["id"], ""),
                 "created_at": m.get("created_at", ""),
                 "claimed_at": m.get("claimed_at"),
                 "invite_sent_at": m.get("invite_sent_at"),
@@ -989,3 +996,25 @@ async def manager_invite_beneficiary(
         severity="info",
     )
     return {"sent": True, "email": beneficiary["email"]}
+
+
+class ClientNotePayload(BaseModel):
+    note: str = Field("", max_length=2000)
+
+
+@router.put("/manager/clients/{client_id}/note")
+async def manager_set_client_note(
+    client_id: str, body: ClientNotePayload, manager: dict = Depends(get_current_manager)
+):
+    """Private partner note about a roster client (never visible to the client)."""
+    await _manager_client_or_404(manager, client_id)
+    note = body.note.strip()
+    await db.partner_client_notes.update_one(
+        {"partner_id": manager["partner_id"], "client_id": client_id},
+        {
+            "$set": {"note": note, "updated_at": _now_iso(), "updated_by": manager["id"]},
+            "$setOnInsert": {"id": str(uuid.uuid4())},
+        },
+        upsert=True,
+    )
+    return {"saved": True, "note": note}
