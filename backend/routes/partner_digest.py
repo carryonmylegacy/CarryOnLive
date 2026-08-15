@@ -209,7 +209,12 @@ async def send_client_signup_alert(partner: dict, user: dict) -> None:
     """Instant email to partner managers when a new client self-attributes
     via the partner landing page (codeless or code redemption)."""
     managers = await db.partner_managers.find(
-        {"partner_id": partner["id"], "active": True, "email": {"$type": "string", "$ne": ""}},
+        {
+            "partner_id": partner["id"],
+            "active": True,
+            "email": {"$type": "string", "$ne": ""},
+            "alerts_opt_out": {"$ne": True},
+        },
         {"_id": 0, "name": 1, "email": 1},  # pre-push-invariants: allow-missing-id
     ).to_list(50)
     if not managers:

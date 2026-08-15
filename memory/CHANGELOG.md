@@ -9978,3 +9978,15 @@ Founder set RUN_E2E=false; next Save-to-GitHub push will deploy everything.
 - Verified: iter182 pytest 6/6 + Playwright (toggle persistence, cooldown toast,
   full HTTP signup→attribution→alert log proof), scripts/check.sh ALL CLEAR.
 - Tester ideas parked: BackgroundTasks for alert send; dirty-check on digest Save button.
+
+## Jun 2026 (fork) — Alert opt-out + roster search (self-tested, gate ALL CLEAR)
+- Alert opt-out: manager doc alerts_opt_out; POST /api/manager/digest-settings now takes
+  optional opt_out / alerts_opt_out (None = untouched — keeps iter182 tests compatible);
+  /manager/me returns alerts_opt_out; send_client_signup_alert filters it. Card renamed
+  "Email Notifications" with two ToggleRows (digest-toggle, alerts-toggle) + shared email.
+- Roster search: client-side filter (name/email/username) on ManagerPortalPage —
+  mgr-roster-search input + clear btn + mgr-search-no-match empty state; visibleClients
+  derived from search state.
+- Verified via curl (independent toggles, opted-out alert delivers 0 emails, restore) +
+  assertive Playwright screenshot (filter 3→1, no-match, clear, both toggles + toasts).
+  scripts/check.sh ALL CLEAR. Preview state: both toggles ON, email jazmine-qa@carryontest.io.

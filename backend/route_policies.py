@@ -353,7 +353,7 @@ ROUTE_POLICIES: dict = {
     },
     "POST /api/manager/digest-settings": {
         "auth": "required",
-        "notes": "Manager-token gated; weekly digest opt-in/out + contact email update",
+        "notes": "Manager-token gated; weekly digest + instant alert opt-in/out and contact email update",
     },
     "GET /api/manager/clients/{client_id}/beneficiaries": {
         "auth": "required",

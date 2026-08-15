@@ -563,6 +563,7 @@ async def manager_me(manager: dict = Depends(get_current_manager)):
         "username": manager["username"],
         "email": manager.get("email") or "",
         "digest_opt_out": bool(manager.get("digest_opt_out")),
+        "alerts_opt_out": bool(manager.get("alerts_opt_out")),
         "partner": {
             "id": partner["id"],
             "company_name": partner["company_name"],
@@ -584,21 +585,37 @@ async def manager_send_guide(body: SendGuidePayload, manager: dict = Depends(get
 
 
 class DigestSettingsPayload(BaseModel):
-    opt_out: bool
+    opt_out: bool | None = None
+    alerts_opt_out: bool | None = None
     email: str = Field("", max_length=200)
 
 
 @router.post("/manager/digest-settings")
 async def manager_digest_settings(body: DigestSettingsPayload, manager: dict = Depends(get_current_manager)):
-    """Weekly digest opt-in/out + optional contact email update."""
-    update: dict = {"digest_opt_out": bool(body.opt_out)}
+    """Weekly digest / instant alert opt-in/out + optional contact email update."""
+    update: dict = {}
+    if body.opt_out is not None:
+        update["digest_opt_out"] = bool(body.opt_out)
+    if body.alerts_opt_out is not None:
+        update["alerts_opt_out"] = bool(body.alerts_opt_out)
     email = (body.email or "").strip().lower()
     if email:
         if "@" not in email or "." not in email.split("@")[-1]:
             raise HTTPException(status_code=422, detail="Enter a valid email address.")
         update["email"] = email
+    if not update:
+        raise HTTPException(status_code=422, detail="Nothing to save.")
     await db.partner_managers.update_one({"id": manager["id"]}, {"$set": update})
-    return {"saved": True, "digest_opt_out": update["digest_opt_out"], "email": email or manager.get("email") or ""}
+    fresh = await db.partner_managers.find_one(
+        {"id": manager["id"]},
+        {"_id": 0, "email": 1, "digest_opt_out": 1, "alerts_opt_out": 1},  # pre-push-invariants: allow-missing-id
+    )
+    return {
+        "saved": True,
+        "digest_opt_out": bool(fresh.get("digest_opt_out")),
+        "alerts_opt_out": bool(fresh.get("alerts_opt_out")),
+        "email": fresh.get("email") or "",
+    }
 
 
 @router.get("/manager/clients")

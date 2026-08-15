@@ -12,7 +12,7 @@ import { useNavigate } from 'react-router-dom';
 import apiClient from '../utils/apiClient';
 import {
   Briefcase, Plus, Loader2, Send, Copy, Check, LogIn, LogOut, KeyRound,
-  ShieldAlert, FileText, UserPlus, Clock, CheckCircle2, Users, X, Mail, ChevronDown,
+  ShieldAlert, FileText, UserPlus, Clock, CheckCircle2, Users, X, Mail, ChevronDown, Search,
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -155,6 +155,12 @@ export default function ManagerPortalPage() {
   const [copied, setCopied] = useState(null);
   const [resetFor, setResetFor] = useState(null);
   const [bensFor, setBensFor] = useState(null);
+  const [search, setSearch] = useState('');
+
+  const q = search.trim().toLowerCase();
+  const visibleClients = q
+    ? clients.filter(c => [c.name, c.email, c.username].some(v => (v || '').toLowerCase().includes(q)))
+    : clients;
 
   const managerInfo = (() => {
     try { return JSON.parse(localStorage.getItem('carryon_manager_info') || 'null'); } catch { return null; }
@@ -349,6 +355,21 @@ export default function ManagerPortalPage() {
           </div>
         )}
 
+        {clients.length > 0 && (
+          <div className="relative mb-3">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[var(--t5)] pointer-events-none" />
+            <Input value={search} onChange={e => setSearch(e.target.value)}
+              placeholder="Search clients by name, email, or username…"
+              className="input-field text-sm pl-9" data-testid="mgr-roster-search" />
+            {search && (
+              <button onClick={() => setSearch('')} data-testid="mgr-roster-search-clear"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--t5)] hover:text-[var(--t)]">
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+        )}
+
         {clients.length === 0 ? (
           <div className="glass-card p-10 text-center" data-testid="mgr-clients-empty">
             <Briefcase className="w-10 h-10 mx-auto text-[var(--t5)] mb-3" />
@@ -358,7 +379,12 @@ export default function ManagerPortalPage() {
           </div>
         ) : (
           <div className="space-y-3">
-            {clients.map(client => (
+            {visibleClients.length === 0 && (
+              <div className="glass-card p-6 text-center" data-testid="mgr-search-no-match">
+                <p className="text-sm text-[var(--t4)]">No clients match &ldquo;{search}&rdquo;.</p>
+              </div>
+            )}
+            {visibleClients.map(client => (
               <div key={client.id} className="glass-card p-4" data-testid={`mgr-client-row-${client.id}`}>
                 <div className="flex flex-col lg:flex-row lg:items-center gap-3">
                 <div className="flex-1 min-w-0">
