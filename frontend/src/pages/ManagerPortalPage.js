@@ -12,7 +12,7 @@ import { useNavigate } from 'react-router-dom';
 import apiClient from '../utils/apiClient';
 import {
   Briefcase, Plus, Loader2, Send, Copy, Check, LogIn, LogOut, KeyRound,
-  ShieldAlert, FileText, UserPlus, Clock, CheckCircle2, Users, X, Mail, ChevronDown, Search, StickyNote,
+  ShieldAlert, FileText, UserPlus, Clock, CheckCircle2, Users, X, Mail, ChevronDown, Search, StickyNote, Download,
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -170,6 +170,27 @@ export default function ManagerPortalPage() {
     if (sortBy === 'awaiting') return (a.status === 'pending_claim' ? 0 : 1) - (b.status === 'pending_claim' ? 0 : 1);
     return (b.created_at || '').localeCompare(a.created_at || '');
   });
+
+  const exportCsv = () => {
+    const esc = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const header = ['Name', 'Email', 'Status', 'Subscribed', 'Documents', 'Beneficiaries', 'Linked', 'Invited', 'Last Active', 'Created', 'Private Note'];
+    const rows = sortedClients.map(c => [
+      c.name, c.email,
+      c.status === 'pending_claim' ? 'Awaiting Claim' : 'Claimed',
+      c.subscribed ? 'Yes' : 'No',
+      c.documents_count || 0, c.beneficiaries_total || 0, c.beneficiaries_linked || 0, c.beneficiaries_invited || 0,
+      c.last_login_at ? c.last_login_at.slice(0, 10) : '',
+      c.created_at ? c.created_at.slice(0, 10) : '',
+      c.note || '',
+    ].map(esc).join(','));
+    const csv = [header.map(esc).join(','), ...rows].join('\r\n');
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `carryon-roster-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
 
   const managerInfo = (() => {
     try { return JSON.parse(localStorage.getItem('carryon_manager_info') || 'null'); } catch { return null; }
@@ -388,6 +409,12 @@ export default function ManagerPortalPage() {
                   {label}
                 </button>
               ))}
+              <button onClick={exportCsv} data-testid="mgr-roster-export"
+                title="Download the current view as a CSV (statuses, counts, and your private notes)"
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-colors"
+                style={{ color: 'var(--gold)', border: '1px solid rgba(var(--gold-rgb),0.4)', background: 'rgba(var(--gold-rgb),0.08)' }}>
+                <Download className="w-3 h-3" /> Export CSV
+              </button>
             </div>
           </div>
         )}

@@ -10001,3 +10001,11 @@ Founder set RUN_E2E=false; next Save-to-GitHub push will deploy everything.
   inline ClientNoteEditor (textarea + Save/Cancel).
 - Verified via curl (save/round-trip/404/clear) + assertive Playwright (A–Z order check,
   awaiting-first, note save toast + label flip + clear). Roster left clean (no notes).
+
+## Jun 2026 (fork) — Roster CSV export (self-tested)
+- Export CSV button (mgr-roster-export) beside sort pills on ManagerPortalPage; frontend-
+  only Blob download of the CURRENT view (respects search+sort): Name, Email, Status,
+  Subscribed, Documents, Beneficiaries/Linked/Invited, Last Active, Created, Private Note.
+  UTF-8 BOM for Excel; filename carryon-roster-YYYY-MM-DD.csv.
+- Verified via Playwright expect_download: header + 3 client rows, statuses and note
+  column correct. Gate ALL CLEAR.
