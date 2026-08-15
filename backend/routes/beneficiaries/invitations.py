@@ -37,11 +37,17 @@ async def send_beneficiary_invitation(beneficiary_id: str, current_user: dict = 
     if beneficiary.get("invitation_status") == "accepted":
         raise HTTPException(status_code=400, detail="Beneficiary has already accepted the invitation")
 
-    # Generate new token if needed
-    invitation_token = beneficiary.get("invitation_token") or str(uuid.uuid4())
+    await deliver_invitation(beneficiary, current_user, actor_id=current_user["id"], actor_name=current_user["name"])
+    return {"message": "Invitation sent successfully", "email": beneficiary["email"]}
 
-    # Get benefactor info for the email
-    benefactor = current_user
+
+async def deliver_invitation(beneficiary: dict, benefactor: dict, *, actor_id: str, actor_name: str) -> str:
+    """Send (or re-send) the invitation email and mark it sent. Shared by the
+    benefactor endpoint above and the partner-manager roster nudge."""
+    beneficiary_id = beneficiary["id"]
+    first = benefactor.get("first_name") or (benefactor.get("name") or "Your benefactor").split(" ")[0]
+    benefactor = {**benefactor, "first_name": first}
+    invitation_token = beneficiary.get("invitation_token") or str(uuid.uuid4())
 
     # Send invitation email
     try:
@@ -149,14 +155,14 @@ async def send_beneficiary_invitation(beneficiary_id: str, current_user: dict = 
     # Log activity
     await log_activity(
         estate_id=beneficiary["estate_id"],
-        user_id=current_user["id"],
-        user_name=current_user["name"],
+        user_id=actor_id,
+        user_name=actor_name,
         action="invitation_sent",
         description=f"Sent invitation to {beneficiary['name']} ({beneficiary['email']})",
         metadata={"beneficiary_id": beneficiary_id, "email": beneficiary["email"]},
     )
 
-    return {"message": "Invitation sent successfully", "email": beneficiary["email"]}
+    return invitation_token
 
 
 @router.get("/invitations/{token}")
@@ -211,7 +217,13 @@ async def accept_invitation(data: AcceptInvitationRequest):
         # Link existing account to this beneficiary record
         await db.beneficiaries.update_one(
             {"id": beneficiary["id"]},
-            {"$set": {"user_id": existing_user["id"], "invitation_status": "accepted"}},
+            {
+                "$set": {
+                    "user_id": existing_user["id"],
+                    "invitation_status": "accepted",
+                    "invitation_accepted_at": datetime.now(timezone.utc).isoformat(),
+                }
+            },
         )
         # Add to estate's beneficiary list
         await db.estates.update_one(
@@ -313,7 +325,13 @@ async def accept_invitation(data: AcceptInvitationRequest):
     # Update beneficiary record
     await db.beneficiaries.update_one(
         {"id": beneficiary["id"]},
-        {"$set": {"user_id": user_id, "invitation_status": "accepted"}},
+        {
+            "$set": {
+                "user_id": user_id,
+                "invitation_status": "accepted",
+                "invitation_accepted_at": datetime.now(timezone.utc).isoformat(),
+            }
+        },
     )
 
     # Add to estate's beneficiary list
@@ -402,7 +420,13 @@ async def accept_invitation_existing(data: LinkExistingAccountRequest):
     # Link the existing account to this beneficiary record
     await db.beneficiaries.update_one(
         {"id": beneficiary["id"]},
-        {"$set": {"user_id": user["id"], "invitation_status": "accepted"}},
+        {
+            "$set": {
+                "user_id": user["id"],
+                "invitation_status": "accepted",
+                "invitation_accepted_at": datetime.now(timezone.utc).isoformat(),
+            }
+        },
     )
 
     # Add to estate's beneficiary list

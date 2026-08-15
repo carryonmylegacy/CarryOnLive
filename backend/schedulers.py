@@ -60,6 +60,14 @@ async def weekly_digest_scheduler():
         except Exception as e:
             logger.error(f"Voices social brief failed: {e}")
 
+        try:
+            from routes.partner_digest import send_partner_weekly_digest
+
+            partner_result = await send_partner_weekly_digest()
+            logger.info(f"Partner weekly digest sent: {partner_result}")
+        except Exception as e:
+            logger.error(f"Partner weekly digest failed: {e}")
+
 
 async def daily_dob_check_scheduler():
     """Run DOB-based subscription event checks once daily."""

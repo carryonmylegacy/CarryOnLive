@@ -73,6 +73,14 @@ if ! ruff format --check . > /dev/null 2>&1; then
   PREFLIGHT_FIXES=$((PREFLIGHT_FIXES + 1))
 fi
 
+# 1b. Guard: formatting must never break py311 syntax (ruff may rewrite
+# f-string quotes into 3.12-only syntax — see iter181 backend outage)
+if ! python -m compileall -q routes services . > /tmp/hk_compile.log 2>&1; then
+  echo -e "  ${RED}post-format compile ......... FAIL — backend would not boot${NC}"
+  cat /tmp/hk_compile.log
+  exit 1
+fi
+
 # 2. Auto-fix lint issues (safe fixes everywhere, unsafe in tests)
 if ! ruff check . > /dev/null 2>&1; then
   ruff check --fix . > /dev/null 2>&1 || true

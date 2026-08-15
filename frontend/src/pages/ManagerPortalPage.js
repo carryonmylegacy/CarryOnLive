@@ -12,12 +12,13 @@ import { useNavigate } from 'react-router-dom';
 import apiClient from '../utils/apiClient';
 import {
   Briefcase, Plus, Loader2, Send, Copy, Check, LogIn, LogOut, KeyRound,
-  ShieldAlert, FileText, UserPlus, Clock, CheckCircle2, Users, X, Mail,
+  ShieldAlert, FileText, UserPlus, Clock, CheckCircle2, Users, X, Mail, ChevronDown,
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { PartnerGuidePanel } from '../components/manager/PartnerGuidePanel';
+import { ClientBeneficiariesPanel } from '../components/manager/ClientBeneficiariesPanel';
 import { toast } from '../utils/toast';
 import { API_URL } from '../config';
 
@@ -152,6 +153,7 @@ export default function ManagerPortalPage() {
   const [busy, setBusy] = useState(null);
   const [copied, setCopied] = useState(null);
   const [resetFor, setResetFor] = useState(null);
+  const [bensFor, setBensFor] = useState(null);
 
   const managerInfo = (() => {
     try { return JSON.parse(localStorage.getItem('carryon_manager_info') || 'null'); } catch { return null; }
@@ -356,7 +358,8 @@ export default function ManagerPortalPage() {
         ) : (
           <div className="space-y-3">
             {clients.map(client => (
-              <div key={client.id} className="glass-card p-4 flex flex-col lg:flex-row lg:items-center gap-3" data-testid={`mgr-client-row-${client.id}`}>
+              <div key={client.id} className="glass-card p-4" data-testid={`mgr-client-row-${client.id}`}>
+                <div className="flex flex-col lg:flex-row lg:items-center gap-3">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-sm font-bold text-[var(--t)]" data-testid="mgr-client-name">{client.name}</span>
@@ -371,7 +374,9 @@ export default function ManagerPortalPage() {
                     <span className="inline-flex items-center gap-1">
                       <FileText className="w-3 h-3" /> {client.documents_count} document{client.documents_count === 1 ? '' : 's'}
                     </span>
-                    <span className="inline-flex items-center gap-1" data-testid="mgr-client-beneficiaries">
+                    <button onClick={() => setBensFor(v => (v === client.id ? null : client.id))}
+                      className="inline-flex items-center gap-1 hover:text-[var(--gold)] transition-colors"
+                      title="View beneficiaries & send invites" data-testid="mgr-client-beneficiaries">
                       <Users className="w-3 h-3" /> {client.beneficiaries_total || 0} beneficiar{(client.beneficiaries_total || 0) === 1 ? 'y' : 'ies'}
                       {(client.beneficiaries_total || 0) > 0 && (
                         <span>
@@ -379,7 +384,8 @@ export default function ManagerPortalPage() {
                           {(client.beneficiaries_invited || 0) > 0 && <span style={{ color: '#3b82f6' }}> · {client.beneficiaries_invited} invited</span>}
                         </span>
                       )}
-                    </span>
+                      <ChevronDown className={`w-3 h-3 transition-transform ${bensFor === client.id ? 'rotate-180' : ''}`} />
+                    </button>
                     {client.last_login_at && (
                       <span className="text-[var(--t5)]">last active {new Date(client.last_login_at).toLocaleDateString()}</span>
                     )}
@@ -419,6 +425,8 @@ export default function ManagerPortalPage() {
                     </Button>
                   )}
                 </div>
+                </div>
+                {bensFor === client.id && <ClientBeneficiariesPanel clientId={client.id} onInvited={fetchAll} />}
               </div>
             ))}
           </div>

@@ -58,6 +58,7 @@ export const PartnerManagersModal = ({ partner, authHeaders, onClose }) => {
   const [name, setName] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('');
   const [busy, setBusy] = useState(null);
   const [creds, setCreds] = useState(null);
 
@@ -80,15 +81,18 @@ export const PartnerManagersModal = ({ partner, authHeaders, onClose }) => {
     try {
       const { data } = await apiClient.post(
         `${API_URL}/admin/partners/${partner.id}/managers`,
-        { name: name.trim(), username: username.trim(), password: password.trim() },
+        { name: name.trim(), username: username.trim(), password: password.trim(), email: email.trim() },
         { headers: { ...authHeaders(), 'Content-Type': 'application/json' } },
       );
       setCreds(data.credentials);
       setName('');
       setUsername('');
       setPassword('');
+      setEmail('');
       await fetchAll();
-      toast.success('Manager login created — copy the credentials now');
+      toast.success(data.guide_sent
+        ? 'Partner login created — onboarding guide emailed automatically'
+        : 'Manager login created — copy the credentials now');
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Failed to create manager');
     } finally {
@@ -195,6 +199,10 @@ export const PartnerManagersModal = ({ partner, authHeaders, onClose }) => {
               className="input-field text-sm flex-1" data-testid="manager-name-input" />
             <Input value={username} onChange={e => setUsername(e.target.value)} placeholder="Username (optional — auto)"
               className="input-field text-sm sm:w-48" data-testid="manager-username-input" />
+          </div>
+          <div className="flex flex-col sm:flex-row gap-2 mt-2">
+            <Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Email (optional — auto-sends the onboarding guide)"
+              className="input-field text-sm flex-1" data-testid="manager-email-input" />
           </div>
           <div className="flex flex-col sm:flex-row gap-2 mt-2">
             <Input value={password} onChange={e => setPassword(e.target.value)} placeholder="Password (optional — auto-generated if blank)"

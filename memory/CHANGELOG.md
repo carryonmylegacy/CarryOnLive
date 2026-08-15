@@ -9940,3 +9940,24 @@ Founder set RUN_E2E=false; next Save-to-GitHub push will deploy everything.
   Sequential edits per-file-region from now on.
 - Dana Whitfield password reset to Client1234! (DB-level, documented in test_credentials.md).
 - Verified: iter180 pytest 9/9 + full frontend flow, scripts/check.sh ALL CLEAR.
+
+## Jun 2026 (fork) — Partner automation trio (iter181, 100%/100%)
+- Auto-send onboarding guide: ManagerCreate accepts optional email; create endpoint stores
+  it and auto-emails the guide (response guide_sent). Admin manual send-guide now persists
+  the address onto the manager doc if none stored. Admin modal gained an email input.
+- Roster beneficiary nudge: GET /api/manager/clients/{cid}/beneficiaries +
+  POST .../beneficiaries/{bid}/invite (roster-scoped, reuses new shared
+  deliver_invitation() extracted from routes/beneficiaries/invitations.py; benefactor
+  endpoint regression-tested). Frontend: roster beneficiary count is now a button that
+  expands ClientBeneficiariesPanel (status chips + Send/Resend Invite inline).
+- Partner weekly digest: routes/partner_digest.py (gather_partner_week, email-safe HTML,
+  send_partner_weekly_digest batched managers lookup) + founder endpoints
+  POST /api/admin/partners/digest/send and GET .../digest/preview; wired into
+  schedulers.py Monday block. Accept flows now stamp invitation_accepted_at.
+- CRITICAL LEARNING (iter181 outage): housekeeping.sh auto-runs `ruff format`, which
+  rewrites f-string quotes into py312-only nested-quote syntax on our py311 runtime —
+  killed backend boot mid-test. Fix: never nest same-context quotes in f-strings
+  (precompute vars); added post-format `python -m compileall` guard to housekeeping.sh.
+- jazmine-manager now has email jazmine-qa@carryontest.io on file (digest recipient).
+- Verified: iter181 pytest 9/9 + full UI flows, digest send {sent:1,skipped:0},
+  scripts/check.sh ALL CLEAR (N+1 + projection invariants fixed in partner_digest.py).

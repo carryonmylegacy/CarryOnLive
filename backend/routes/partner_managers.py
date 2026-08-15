@@ -84,6 +84,7 @@ def _manager_public(m: dict) -> dict:
         "last_login_at": m.get("last_login_at"),
         "password_rotated_at": m.get("password_rotated_at"),
         "must_change_password": bool(m.get("must_change_password")),
+        "email": m.get("email"),
     }
 
 
@@ -94,6 +95,7 @@ class ManagerCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=80)
     username: str = Field("", max_length=40)
     password: str = Field("", max_length=200)
+    email: str = Field("", max_length=200)
 
 
 @router.get("/admin/partners/{partner_id}/managers")
@@ -144,10 +146,19 @@ async def create_partner_manager(
         "created_by": current_user["id"],
         "last_login_at": None,
         "password_rotated_at": None,
+        "email": (body.email or "").strip().lower() or None,
     }
     await db.partner_managers.insert_one(manager)
+    guide_sent = False
+    if manager["email"] and "@" in manager["email"]:
+        try:
+            await _send_partner_guide(manager["email"], manager, partner)
+            guide_sent = True
+        except HTTPException as e:
+            logger.warning(f"Onboarding guide auto-send failed for {manager['email']}: {e.detail}")
     return {
         "manager": _manager_public(manager),
+        "guide_sent": guide_sent,
         "credentials": {
             "username": username,
             "password": password,  # shown once to founder; bcrypt at rest (hk-14 reviewed)
@@ -348,6 +359,8 @@ async def send_partner_manager_guide(
     )
     if not manager:
         raise HTTPException(status_code=404, detail="Partner login not found.")
+    if not manager.get("email"):
+        await db.partner_managers.update_one({"id": manager_id}, {"$set": {"email": str(body.email).lower()}})
     return await _send_partner_guide(str(body.email), manager, partner)
 
 
@@ -870,3 +883,72 @@ async def manager_reset_client_password(
     )
     logger.info("[MANAGER] Password reset (%s) client=%s manager=%s", body.mode, client_id, manager["id"])
     return result
+
+
+# ─── Roster beneficiary nudge ────────────────────────────────────────────
+
+
+@router.get("/manager/clients/{client_id}/beneficiaries")
+async def manager_client_beneficiaries(client_id: str, manager: dict = Depends(get_current_manager)):
+    """Beneficiary invite statuses for one roster client."""
+    client = await _manager_client_or_404(manager, client_id)
+    estate = await db.estates.find_one({"owner_id": client["id"]}, {"_id": 0, "id": 1})
+    if not estate:
+        return {"beneficiaries": []}
+    bens = await db.beneficiaries.find(
+        {"estate_id": estate["id"], "deleted_at": None},
+        {"_id": 0, "id": 1, "name": 1, "email": 1, "invitation_status": 1, "invitation_sent_at": 1, "user_id": 1},
+    ).to_list(200)
+    out = []
+    for b in bens:
+        linked = bool(b.get("user_id")) or b.get("invitation_status") == "accepted"
+        out.append(
+            {
+                "id": b["id"],
+                "name": b.get("name", ""),
+                "email": b.get("email", ""),
+                "status": "linked" if linked else ("sent" if b.get("invitation_status") == "sent" else "not_invited"),
+                "invitation_sent_at": b.get("invitation_sent_at"),
+            }
+        )
+    return {"beneficiaries": out}
+
+
+@router.post("/manager/clients/{client_id}/beneficiaries/{beneficiary_id}/invite")
+async def manager_invite_beneficiary(
+    client_id: str,
+    beneficiary_id: str,
+    request: Request,
+    manager: dict = Depends(get_current_manager),
+):
+    """Send or re-send a beneficiary invitation on the client's behalf."""
+    client = await _manager_client_or_404(manager, client_id)
+    estate = await db.estates.find_one({"owner_id": client["id"]}, {"_id": 0, "id": 1})
+    beneficiary = None
+    if estate:
+        beneficiary = await db.beneficiaries.find_one(
+            {"id": beneficiary_id, "estate_id": estate["id"], "deleted_at": None}, {"_id": 0}
+        )
+    if not beneficiary:
+        raise HTTPException(status_code=404, detail="Beneficiary not found for this client.")
+    if beneficiary.get("user_id") or beneficiary.get("invitation_status") == "accepted":
+        raise HTTPException(status_code=400, detail="This beneficiary has already linked their account.")
+
+    from routes.beneficiaries.invitations import deliver_invitation
+
+    await deliver_invitation(
+        beneficiary, client, actor_id=manager["id"], actor_name=f"{manager.get('name', 'Partner')} (partner)"
+    )
+    await log_audit_event(
+        actor_id=manager["id"],
+        actor_email=manager["username"],
+        actor_role="partner_manager",
+        action="manager_beneficiary_invite",
+        category="data_access",
+        resource_type="beneficiary",
+        resource_id=beneficiary_id,
+        details={"client_id": client_id, "partner_id": manager["partner_id"]},
+        ip_address=get_client_ip(request),
+        severity="info",
+    )
+    return {"sent": True, "email": beneficiary["email"]}

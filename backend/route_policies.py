@@ -351,6 +351,24 @@ ROUTE_POLICIES: dict = {
         "auth": "required",
         "notes": "Manager-token gated; emails the onboarding guide to a manager-provided address",
     },
+    "GET /api/manager/clients/{client_id}/beneficiaries": {
+        "auth": "required",
+        "notes": "Manager-token gated; roster-scoped beneficiary invite statuses for one client",
+    },
+    "POST /api/manager/clients/{client_id}/beneficiaries/{beneficiary_id}/invite": {
+        "auth": "required",
+        "notes": "Manager-token gated; sends/re-sends a beneficiary invitation on the client's behalf",
+    },
+    "POST /api/admin/partners/digest/send": {
+        "auth": "required",
+        "roles": ["admin"],
+        "notes": "Founder-only manual trigger for the weekly partner digest",
+    },
+    "GET /api/admin/partners/digest/preview": {
+        "auth": "required",
+        "roles": ["admin"],
+        "notes": "Founder-only digest HTML/stats preview for one partner",
+    },
     "POST /api/manager/login": {
         "auth": "public",
         "notes": "Manager credential login — brute-force lockout, bcrypt verify",
