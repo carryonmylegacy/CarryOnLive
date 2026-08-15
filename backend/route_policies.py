@@ -351,6 +351,10 @@ ROUTE_POLICIES: dict = {
         "auth": "required",
         "notes": "Manager-token gated; emails the onboarding guide to a manager-provided address",
     },
+    "POST /api/manager/digest-settings": {
+        "auth": "required",
+        "notes": "Manager-token gated; weekly digest opt-in/out + contact email update",
+    },
     "GET /api/manager/clients/{client_id}/beneficiaries": {
         "auth": "required",
         "notes": "Manager-token gated; roster-scoped beneficiary invite statuses for one client",

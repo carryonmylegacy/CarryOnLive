@@ -140,6 +140,7 @@ async def send_partner_weekly_digest() -> dict:
                 "partner_id": {"$in": [p["id"] for p in partners]},
                 "active": True,
                 "email": {"$type": "string", "$ne": ""},
+                "digest_opt_out": {"$ne": True},
             },
             {"_id": 0, "partner_id": 1, "name": 1, "email": 1},  # pre-push-invariants: allow-missing-id
         ).to_list(2000)
@@ -166,6 +167,61 @@ async def send_partner_weekly_digest() -> dict:
             else:
                 logger.error(f"Partner digest failed for {mgr['email']}: {result['error']}")
     return {"sent": sent, "skipped": skipped}
+
+
+def _signup_alert_html(company: str, manager_name: str, client_name: str, client_email: str, portal_url: str) -> str:
+    first = (manager_name or "there").split(" ")[0]
+    who = client_name or client_email or "A new client"
+    email_part = f" ({client_email})" if client_email else ""
+    return f"""
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="text-align: center; margin-bottom: 24px;">
+            <h1 style="color: #d4af37; margin: 0;">CarryOn&trade;</h1>
+            <p style="color: #666; margin: 4px 0 0;">{company} &mdash; New Client Alert</p>
+        </div>
+        <p style="color: #555; line-height: 1.6;">Hi {first},</p>
+        <p style="color: #555; line-height: 1.6;">
+            <strong>{who}</strong>{email_part} just joined your roster through your landing page.
+            Their portal is live and you can start preparing their account right away.
+        </p>
+        <div style="text-align: center; margin: 28px 0;">
+            <a href="{portal_url}"
+               style="background-color: #d4af37;
+                      color: #0B1221;
+                      padding: 14px 32px;
+                      text-decoration: none;
+                      border-radius: 8px;
+                      border: 1px solid #b8962e;
+                      font-weight: bold;
+                      display: inline-block;">
+                Open Your Partner Portal
+            </a>
+        </div>
+        <p style="color: #888; font-size: 12px; text-align: center; line-height: 1.6; word-break: break-all;">
+            Button not working? Copy and paste this link into your browser:<br>
+            <a href="{portal_url}" style="color: #b8962e;">{portal_url}</a>
+        </p>
+    </div>
+    """
+
+
+async def send_client_signup_alert(partner: dict, user: dict) -> None:
+    """Instant email to partner managers when a new client self-attributes
+    via the partner landing page (codeless or code redemption)."""
+    managers = await db.partner_managers.find(
+        {"partner_id": partner["id"], "active": True, "email": {"$type": "string", "$ne": ""}},
+        {"_id": 0, "name": 1, "email": 1},  # pre-push-invariants: allow-missing-id
+    ).to_list(50)
+    if not managers:
+        return
+    portal_url = f"{_frontend_base()}/partner"
+    company = partner.get("company_name", "CarryOn")
+    subject = f"New client on your roster — {user.get('name') or user.get('email', '')}"
+    for mgr in managers:
+        html = _signup_alert_html(company, mgr.get("name", ""), user.get("name", ""), user.get("email", ""), portal_url)
+        result = await send_email_ex(mgr["email"], subject, html)
+        if not result["ok"]:
+            logger.warning(f"Signup alert failed for {mgr['email']}: {result['error']}")
 
 
 @router.post("/admin/partners/digest/send")

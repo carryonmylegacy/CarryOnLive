@@ -19,6 +19,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { PartnerGuidePanel } from '../components/manager/PartnerGuidePanel';
 import { ClientBeneficiariesPanel } from '../components/manager/ClientBeneficiariesPanel';
+import { PartnerDigestSettings } from '../components/manager/PartnerDigestSettings';
 import { toast } from '../utils/toast';
 import { API_URL } from '../config';
 
@@ -431,6 +432,8 @@ export default function ManagerPortalPage() {
             ))}
           </div>
         )}
+
+        <PartnerDigestSettings />
       </div>
 
       {resetFor && <ResetPasswordModal client={resetFor} onClose={() => setResetFor(null)} />}

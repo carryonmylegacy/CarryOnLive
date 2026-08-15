@@ -45,6 +45,15 @@ async def deliver_invitation(beneficiary: dict, benefactor: dict, *, actor_id: s
     """Send (or re-send) the invitation email and mark it sent. Shared by the
     benefactor endpoint above and the partner-manager roster nudge."""
     beneficiary_id = beneficiary["id"]
+    if beneficiary.get("invitation_sent_at"):
+        try:
+            last_dt = datetime.fromisoformat(beneficiary["invitation_sent_at"])
+            if (datetime.now(timezone.utc) - last_dt).total_seconds() < 60:
+                raise HTTPException(
+                    status_code=429, detail="Invitation just sent — please wait a minute before resending."
+                )
+        except ValueError:
+            pass
     first = benefactor.get("first_name") or (benefactor.get("name") or "Your benefactor").split(" ")[0]
     benefactor = {**benefactor, "first_name": first}
     invitation_token = beneficiary.get("invitation_token") or str(uuid.uuid4())

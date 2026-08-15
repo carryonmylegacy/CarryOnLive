@@ -9961,3 +9961,20 @@ Founder set RUN_E2E=false; next Save-to-GitHub push will deploy everything.
 - jazmine-manager now has email jazmine-qa@carryontest.io on file (digest recipient).
 - Verified: iter181 pytest 9/9 + full UI flows, digest send {sent:1,skipped:0},
   scripts/check.sh ALL CLEAR (N+1 + projection invariants fixed in partner_digest.py).
+
+## Jun 2026 (fork) — Digest opt-out, signup alerts, resend cooldown (iter182, 100%/100%)
+- Digest opt-out: POST /api/manager/digest-settings (opt_out + optional email, 422 on bad
+  email); /api/manager/me returns email + digest_opt_out; weekly sender filters
+  digest_opt_out:{$ne:true}. Frontend: PartnerDigestSettings card (toggle + email + Save)
+  at bottom of /partner/portal.
+- Client signup alert: send_client_signup_alert()/_signup_alert_html in partner_digest.py;
+  hooked (lazy import, try/except soft-fail) into redeem_partner_code and
+  attribute_partner_signup in routes/admin/partners.py. Emails all active managers with
+  an email on file, instantly.
+- Resend cooldown: deliver_invitation() raises 429 if invitation_sent_at < 60s old —
+  covers benefactor + manager endpoints in one place. Note: Dana-tier auto-invites on
+  beneficiary creation, so an immediate manual resend correctly 429s.
+- Preview state: jazmine-manager email=jazmine-qa@carryontest.io, digest ON.
+- Verified: iter182 pytest 6/6 + Playwright (toggle persistence, cooldown toast,
+  full HTTP signup→attribution→alert log proof), scripts/check.sh ALL CLEAR.
+- Tester ideas parked: BackgroundTasks for alert send; dirty-check on digest Save button.

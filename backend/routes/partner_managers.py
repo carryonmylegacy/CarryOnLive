@@ -561,6 +561,8 @@ async def manager_me(manager: dict = Depends(get_current_manager)):
         "id": manager["id"],
         "name": manager.get("name", ""),
         "username": manager["username"],
+        "email": manager.get("email") or "",
+        "digest_opt_out": bool(manager.get("digest_opt_out")),
         "partner": {
             "id": partner["id"],
             "company_name": partner["company_name"],
@@ -579,6 +581,24 @@ async def manager_me(manager: dict = Depends(get_current_manager)):
 async def manager_send_guide(body: SendGuidePayload, manager: dict = Depends(get_current_manager)):
     """Manager self-service — email the one-page onboarding guide anywhere."""
     return await _send_partner_guide(str(body.email), manager, manager["_partner"])
+
+
+class DigestSettingsPayload(BaseModel):
+    opt_out: bool
+    email: str = Field("", max_length=200)
+
+
+@router.post("/manager/digest-settings")
+async def manager_digest_settings(body: DigestSettingsPayload, manager: dict = Depends(get_current_manager)):
+    """Weekly digest opt-in/out + optional contact email update."""
+    update: dict = {"digest_opt_out": bool(body.opt_out)}
+    email = (body.email or "").strip().lower()
+    if email:
+        if "@" not in email or "." not in email.split("@")[-1]:
+            raise HTTPException(status_code=422, detail="Enter a valid email address.")
+        update["email"] = email
+    await db.partner_managers.update_one({"id": manager["id"]}, {"$set": update})
+    return {"saved": True, "digest_opt_out": update["digest_opt_out"], "email": email or manager.get("email") or ""}
 
 
 @router.get("/manager/clients")

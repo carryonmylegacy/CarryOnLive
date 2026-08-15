@@ -725,6 +725,13 @@ async def redeem_partner_code(request: Request, current_user: dict = Depends(get
 
     await db.b2b_partners.update_one({"id": partner["id"]}, {"$inc": {"times_used": 1}})
 
+    try:
+        from routes.partner_digest import send_client_signup_alert
+
+        await send_client_signup_alert(partner, current_user)
+    except Exception as e:
+        logger.warning(f"Client signup alert failed: {e}")
+
     return {
         "applied": True,
         "company_name": partner["company_name"],
@@ -767,6 +774,12 @@ async def attribute_partner_signup(request: Request, current_user: dict = Depend
         },
     )
     await db.b2b_partners.update_one({"id": partner["id"]}, {"$inc": {"times_used": 1}})
+    try:
+        from routes.partner_digest import send_client_signup_alert
+
+        await send_client_signup_alert(partner, current_user)
+    except Exception as e:
+        logger.warning(f"Client signup alert failed: {e}")
     return {"attributed": True, "company_name": partner["company_name"], "slug": partner["slug"]}
 
 
