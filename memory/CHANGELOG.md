@@ -10009,3 +10009,39 @@ Founder set RUN_E2E=false; next Save-to-GitHub push will deploy everything.
   UTF-8 BOM for Excel; filename carryon-roster-YYYY-MM-DD.csv.
 - Verified via Playwright expect_download: header + 3 client rows, statuses and note
   column correct. Gate ALL CLEAR.
+
+## Jun 2026 (fork) — Build-time prerendering for public pages (self-tested E2E)
+- New frontend/scripts/prerender.js: after `yarn build`, serves build/ locally and
+  snapshots 19 PUBLIC routes with Playwright chromium (serviceWorkers blocked) into
+  static HTML — build/<route>/index.html, '/' into index.html. Waits for #root
+  innerText > 40 chars + 600ms settle. Fail-soft (PRERENDER_STRICT=1 to fail hard);
+  PRERENDER_PORT env for the local server (default 4173).
+- build-prod.sh: after successful build → cp index.html shell.html (pristine SPA
+  shell, UNCONDITIONAL so the rewrite target always exists) → npx playwright install
+  --with-deps chromium (fallback plain) → node scripts/prerender.js (non-fatal).
+- vercel.json: replaced the long per-route rewrite list with ONE catch-all
+  /:path* → /shell.html. Vercel serves filesystem first, so prerendered pages +
+  assets win; every logged-in/app route gets the pristine shell (no marketing-markup
+  flash). Routes: / login signup about voices security wind-down-promise privacy
+  terms speak-with-us home landing-consumer our-promise founder-about founder
+  get-started partner-brief quickstart/try partner.
+- Verified in pod: full CRA build + prerender 19/19 OK (~15s/route), crawler curl
+  shows real text on /about + /privacy, /dashboard returns empty shell, React
+  hydrates over prerendered /about with zero duplication (screenshot). index.js
+  keeps createRoot().render() (no hydrateRoot) by design — safest with lazy routes.
+- NOTE for prod deploy: first Vercel build downloads Chromium (~1-2 min extra) and
+  prerender adds ~4-5 min. If Chromium can't launch on Vercel's build image the
+  deploy still succeeds un-prerendered (loud WARNING in build log).
+
+## Jun 2026 (fork) — Deploy-blocker lint fixes (platform pre-completion gate)
+- uploads_chunked.py: chunk buffering moved from pod-local /tmp (CHUNK_ROOT) to object
+  storage — storage.upload_raw to chunked-tmp/{upload_id}/part-NNNNNN per chunk,
+  storage.download + b"".join at complete, storage.purge_prefix in finally. All 4
+  finalizers refactored from `assembled_path: Path` to `data: bytes` (same RAM profile
+  as before — they already read_bytes()'d the whole file). E2E curl-verified: init →
+  chunk (Content-Range) → complete created an encrypted document; S3 logs show
+  part upload, final upload, and temp-prefix purge. NOTE: mid-flight uploads spanning
+  the deploy will 500 at complete (old chunks on disk) — clients re-init.
+- sw-push.js: bare SW globals `clients` → `self.clients` (4 spots, oxlint no-undef).
+- test_subscription_pending_intent.py: duplicate `$ne` key → `$nin: [None, ""]` (F601).
+- scripts/check.sh ALL CLEAR after all fixes.

@@ -15,7 +15,7 @@
 // ── Versioning ──────────────────────────────────────────────────────────────
 // Bump SHELL_VERSION whenever the list of precached shell assets or the
 // caching strategy changes — triggers a cache purge on next SW activation.
-const SHELL_VERSION = 'build-2026-08-15-mstqdsxs';
+const SHELL_VERSION = 'build-2026-08-28-mtcbe0sa';
 const SHELL_CACHE = `carryon-shell-${SHELL_VERSION}`;
 const RUNTIME_CACHE = `carryon-runtime-${SHELL_VERSION}`;
 const API_CACHE = `carryon-api-${SHELL_VERSION}`;
@@ -284,7 +284,7 @@ self.addEventListener('activate', (event) => {
     if (self.registration.navigationPreload) {
       try { await self.registration.navigationPreload.enable(); } catch {}
     }
-    await clients.claim();
+    await self.clients.claim();
   })());
 });
 
@@ -750,7 +750,7 @@ self.addEventListener('notificationclick', (event) => {
           else navigator.clearAppBadge();
         }
       })
-      .then(() => clients.matchAll({ type: 'window', includeUncontrolled: true }))
+      .then(() => self.clients.matchAll({ type: 'window', includeUncontrolled: true }))
       .then((clientList) => {
         for (const client of clientList) {
           if (client.url.includes(self.location.origin) && 'focus' in client) {
@@ -758,7 +758,7 @@ self.addEventListener('notificationclick', (event) => {
             return client.focus();
           }
         }
-        if (clients.openWindow) return clients.openWindow(urlToOpen);
+        if (self.clients.openWindow) return self.clients.openWindow(urlToOpen);
       })
   );
 });

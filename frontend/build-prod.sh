@@ -82,6 +82,18 @@ mv /tmp/index.html.carryon.bak public/index.html
 
 if [ $BUILD_EXIT -eq 0 ]; then
     echo "Production build complete! Output in ./build/"
+
+    # ── SEO prerender ────────────────────────────────────────────────────
+    # 1) Keep a pristine SPA shell: vercel.json rewrites every non-static
+    #    route (all logged-in pages) to /shell.html, so app routes never
+    #    serve prerendered marketing markup.
+    cp build/index.html build/shell.html
+    # 2) Snapshot every public page into static HTML with real text so
+    #    crawlers and AI agents don't see an empty shell. Fail-soft: a
+    #    Chromium problem must never block a deploy.
+    echo "Installing headless Chromium for prerender..."
+    (npx playwright install --with-deps chromium || npx playwright install chromium) >/dev/null 2>&1 || true
+    node scripts/prerender.js || echo "WARNING: prerender failed — deploying un-prerendered SPA (public pages fall back to the shell)"
 else
     echo "Build failed with exit code $BUILD_EXIT"
     exit $BUILD_EXIT

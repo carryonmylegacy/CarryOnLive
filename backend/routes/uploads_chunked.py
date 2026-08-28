@@ -21,18 +21,16 @@ Flow:
      → routes reassembled file to the right feature and returns the
        canonical resource record.
 
-Chunks live under /tmp/carryon-uploads/{upload_id}/part-N. The upload_id
+Chunks are buffered in object storage under chunked-tmp/{upload_id}/part-N —
+never on the pod's local disk, which is ephemeral in deployment. The upload_id
 is a UUID and the owner is recorded in a Mongo `chunked_uploads` doc so a
 malicious user cannot finalize someone else's partial upload.
 """
 
 from __future__ import annotations
 
-import os
 import uuid
-import shutil
 from datetime import datetime, timezone
-from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
@@ -56,9 +54,13 @@ KIND_MAX_BYTES = {
     "milestone_audio": 50 * 1024 * 1024,  # audio recordings: 50 MB plenty for 5 min
     "chat_media": 50 * 1024 * 1024,
 }
-# Where chunks live on-disk while the upload is in progress.
-CHUNK_ROOT = Path(os.environ.get("CARRYON_CHUNK_UPLOAD_DIR", "/tmp/carryon-uploads"))
-CHUNK_ROOT.mkdir(parents=True, exist_ok=True)
+# Chunks are buffered in object storage (S3 in deployment) under this
+# prefix while the upload is in progress — never on pod-local disk.
+CHUNK_PREFIX = "chunked-tmp"
+
+
+def _part_key(upload_id: str, index: int) -> str:
+    return f"{CHUNK_PREFIX}/{upload_id}/part-{index:06d}"
 
 
 class InitRequest(BaseModel):
@@ -96,8 +98,6 @@ async def init_chunked_upload(body: InitRequest, user: dict = Depends(get_curren
             detail=f"{body.kind} uploads capped at {kind_cap // (1024 * 1024)} MB (got {body.total_bytes // (1024 * 1024)} MB)",
         )
     upload_id = str(uuid.uuid4())
-    folder = CHUNK_ROOT / upload_id
-    folder.mkdir(parents=True, exist_ok=True)
     await db.chunked_uploads.insert_one(
         {
             "id": upload_id,
@@ -150,10 +150,13 @@ async def upload_chunk(upload_id: str, request: Request, user: dict = Depends(ge
     if len(body) != chunk_bytes:
         raise HTTPException(status_code=400, detail=f"Body length {len(body)} != range {chunk_bytes}")
 
+    from services.storage import storage
+
     chunk_index = start // MAX_CHUNK_BYTES
-    folder = CHUNK_ROOT / upload_id
-    part_path = folder / f"part-{chunk_index:06d}"
-    part_path.write_bytes(body)
+    try:
+        await storage.upload_raw(body, _part_key(upload_id, chunk_index), "application/octet-stream")
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Failed to store chunk: {exc}")
 
     await db.chunked_uploads.update_one(
         {"id": upload_id}, {"$addToSet": {"chunks_received": chunk_index}, "$inc": {"bytes_received": chunk_bytes}}
@@ -171,39 +174,42 @@ async def complete_chunked_upload(upload_id: str, body: CompleteRequest, user: d
     if record["status"] != "pending":
         raise HTTPException(status_code=409, detail=f"Upload is {record['status']}")
 
-    folder = CHUNK_ROOT / upload_id
-    if not folder.exists():
-        raise HTTPException(status_code=500, detail="Chunk folder missing")
+    from services.storage import storage
 
-    # Reassemble in order.
+    # Reassemble in order from object storage.
     expected_count = (record["total_bytes"] + MAX_CHUNK_BYTES - 1) // MAX_CHUNK_BYTES
     received = sorted(record.get("chunks_received", []))
     missing = [i for i in range(expected_count) if i not in received]
     if missing:
         raise HTTPException(status_code=422, detail=f"Missing chunks: {missing[:5]}{'...' if len(missing) > 5 else ''}")
 
-    assembled = folder / "_assembled.bin"
-    with assembled.open("wb") as out:
-        for i in range(expected_count):
-            part = folder / f"part-{i:06d}"
-            out.write(part.read_bytes())
+    parts = []
+    for i in range(expected_count):
+        try:
+            parts.append(await storage.download(_part_key(upload_id, i)))
+        except Exception:
+            raise HTTPException(status_code=500, detail=f"Chunk {i} missing from storage")
+    data = b"".join(parts)
+    del parts
+    if len(data) != record["total_bytes"]:
+        raise HTTPException(status_code=422, detail="Reassembled size mismatch")
 
     # Feature-specific routing. We keep routing light: this endpoint returns
     # a URL/path the client can reference; the per-feature finalizer handlers
     # are intentionally isolated below so each feature team can evolve their
     # own storage strategy.
     try:
-        result = await _finalize_by_kind(body.kind, body.metadata or {}, assembled, record, user)
+        result = await _finalize_by_kind(body.kind, body.metadata or {}, data, record, user)
     except HTTPException:
         raise
     except Exception as exc:
         logger.exception(f"[upload] finalize kind={body.kind} id={upload_id} failed")
         raise HTTPException(status_code=500, detail=f"Finalize failed: {exc}")
     finally:
-        # Always clean up local chunks even if finalize failed — they'd
-        # otherwise fill the pod's /tmp.
+        # Always clean up buffered chunks even if finalize failed — they'd
+        # otherwise accumulate under the chunked-tmp/ storage prefix.
         try:
-            shutil.rmtree(folder)
+            await storage.purge_prefix(f"{CHUNK_PREFIX}/{upload_id}/")
         except Exception:
             pass
 
@@ -213,7 +219,7 @@ async def complete_chunked_upload(upload_id: str, body: CompleteRequest, user: d
     return JSONResponse(content={"ok": True, "upload_id": upload_id, "result": result})
 
 
-async def _finalize_by_kind(kind: str, metadata: dict, assembled_path: Path, record: dict, user: dict):
+async def _finalize_by_kind(kind: str, metadata: dict, data: bytes, record: dict, user: dict):
     """
     Route reassembled bytes to the correct feature finalizer.
     Each branch returns a small JSON-serializable dict describing where
@@ -229,17 +235,17 @@ async def _finalize_by_kind(kind: str, metadata: dict, assembled_path: Path, rec
       chat_media       → {estate_id, channel_id}  (reserved — not wired yet)
     """
     if kind == "document":
-        return await _finalize_document(metadata, assembled_path, record, user)
+        return await _finalize_document(metadata, data, record, user)
     if kind == "milestone_video":
-        return await _finalize_milestone_media(metadata, assembled_path, record, user, media="video")
+        return await _finalize_milestone_media(metadata, data, record, user, media="video")
     if kind == "milestone_audio":
-        return await _finalize_milestone_media(metadata, assembled_path, record, user, media="audio")
+        return await _finalize_milestone_media(metadata, data, record, user, media="audio")
     if kind == "chat_media":
-        return await _finalize_chat_media(metadata, assembled_path, record, user)
+        return await _finalize_chat_media(metadata, data, record, user)
     raise HTTPException(status_code=400, detail=f"Unknown kind '{kind}'")
 
 
-async def _finalize_chat_media(metadata: dict, assembled_path: Path, record: dict, user: dict):
+async def _finalize_chat_media(metadata: dict, data: bytes, record: dict, user: dict):
     """Attach reassembled bytes to an estate-chat message.
 
     Mirrors the essential pipeline from
@@ -271,12 +277,11 @@ async def _finalize_chat_media(metadata: dict, assembled_path: Path, record: dic
 
     content_type = (metadata or {}).get("content_type") or record.get("mime_type") or "application/octet-stream"
     filename = (metadata or {}).get("filename") or record.get("filename") or "attachment"
-    size = assembled_path.stat().st_size
+    size = len(data)
     file_id = str(uuid.uuid4())
     estate_id = channel.get("estate_id", "unknown")
     storage_key = f"chat/{estate_id}/{file_id}"
 
-    data = assembled_path.read_bytes()
     try:
         await storage.upload_raw(data, storage_key, content_type)
     except Exception as exc:
@@ -345,7 +350,7 @@ async def _finalize_chat_media(metadata: dict, assembled_path: Path, record: dic
 # ── Per-feature finalizers ─────────────────────────────────────────────────
 
 
-async def _finalize_document(metadata: dict, assembled_path: Path, record: dict, user: dict):
+async def _finalize_document(metadata: dict, data: bytes, record: dict, user: dict):
     """Create a Document row + encrypted blob from reassembled chunks.
 
     Mirrors the essential pipeline from `routes.documents.upload_document`
@@ -385,12 +390,12 @@ async def _finalize_document(metadata: dict, assembled_path: Path, record: dict,
     if not estate:
         raise HTTPException(status_code=403, detail="Access denied — you do not own this estate")
 
-    size = assembled_path.stat().st_size
+    size = len(data)
     MAX_DOC_SIZE = 25 * 1024 * 1024
     if size > MAX_DOC_SIZE:
         raise HTTPException(status_code=413, detail="Document too large. Max 25 MB.")
 
-    content = assembled_path.read_bytes()
+    content = data
     estate_salt = await get_estate_salt(estate_id)
     encrypted_b64 = encrypt_aes256(content, estate_salt)
 
@@ -464,7 +469,7 @@ async def _finalize_document(metadata: dict, assembled_path: Path, record: dict,
     return result
 
 
-async def _finalize_milestone_media(metadata: dict, assembled_path: Path, record: dict, user: dict, *, media: str):
+async def _finalize_milestone_media(metadata: dict, data: bytes, record: dict, user: dict, *, media: str):
     """Attach reassembled bytes to a milestone message as video or voice.
 
     Supports two modes:
@@ -542,7 +547,7 @@ async def _finalize_milestone_media(metadata: dict, assembled_path: Path, record
         created_new = True
 
     # Encrypt + upload the reassembled blob.
-    blob = assembled_path.read_bytes()
+    blob = data
     estate_salt = await get_estate_salt(estate_id)
     encrypted = encrypt_aes256(blob, estate_salt)
     if media == "video":
@@ -563,7 +568,7 @@ async def _finalize_milestone_media(metadata: dict, assembled_path: Path, record
         resource_type="message",
         resource_id=message_id,
         estate_id=estate_id,
-        details={"size": assembled_path.stat().st_size, "encrypted": True, "source": "chunked"},
+        details={"size": len(data), "encrypted": True, "source": "chunked"},
     )
     if created_new:
         await log_activity(
@@ -580,7 +585,7 @@ async def _finalize_milestone_media(metadata: dict, assembled_path: Path, record
         "message_id": message_id,
         "media_id": media_id,
         "created_new_message": created_new,
-        "size_bytes": assembled_path.stat().st_size,
+        "size_bytes": len(data),
         "estate_id": estate_id,
         # Echo back the client's optimistic id (set in MessagesPage's
         # offline branch) so the frontend can swap the `pending_*` row
