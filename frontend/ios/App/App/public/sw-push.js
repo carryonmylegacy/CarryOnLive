@@ -40,7 +40,7 @@ self.addEventListener('notificationclick', function(event) {
   const urlToOpen = event.notification.data?.url || '/';
 
   event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(clientList) {
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(clientList) {
       // Check if there's already a window open
       for (let i = 0; i < clientList.length; i++) {
         const client = clientList[i];
@@ -50,8 +50,8 @@ self.addEventListener('notificationclick', function(event) {
         }
       }
       // If no window is open, open a new one
-      if (clients.openWindow) {
-        return clients.openWindow(urlToOpen);
+      if (self.clients.openWindow) {
+        return self.clients.openWindow(urlToOpen);
       }
     })
   );
@@ -64,5 +64,5 @@ self.addEventListener('install', function(event) {
 
 self.addEventListener('activate', function(event) {
   console.log('[Service Worker] Activating...');
-  event.waitUntil(clients.claim());
+  event.waitUntil(self.clients.claim());
 });

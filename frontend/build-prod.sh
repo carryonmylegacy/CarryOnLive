@@ -89,11 +89,20 @@ if [ $BUILD_EXIT -eq 0 ]; then
     #    serve prerendered marketing markup.
     cp build/index.html build/shell.html
     # 2) Snapshot every public page into static HTML with real text so
-    #    crawlers and AI agents don't see an empty shell. Fail-soft: a
-    #    Chromium problem must never block a deploy.
-    echo "Installing headless Chromium for prerender..."
-    (npx playwright install --with-deps chromium || npx playwright install chromium) >/dev/null 2>&1 || true
-    node scripts/prerender.js || echo "WARNING: prerender failed — deploying un-prerendered SPA (public pages fall back to the shell)"
+    #    crawlers and AI agents don't see an empty shell. Chromium comes
+    #    from @sparticuz/chromium (built for Vercel/AWS build machines).
+    #    Fail-soft: a Chromium problem must never block a deploy.
+    echo "Prerendering public pages..."
+    node scripts/prerender.js || true
+    if [ -f build/about/index.html ] && ! grep -q '<div id="root"></div>' build/about/index.html; then
+        echo "PRERENDER VERIFIED: public pages contain real static HTML"
+    else
+        echo "############################################################"
+        echo "# WARNING: PRERENDER DID NOT PRODUCE STATIC HTML.          #"
+        echo "# Public pages will be client-rendered only (empty shell   #"
+        echo "# for crawlers). Check the prerender log lines above.      #"
+        echo "############################################################"
+    fi
 else
     echo "Build failed with exit code $BUILD_EXIT"
     exit $BUILD_EXIT

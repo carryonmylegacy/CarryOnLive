@@ -207,7 +207,7 @@
        * bNoDetach is required for events which cause an exception which needs to be caught in native code
        */
       fireDocumentEvent: function (type, data, bNoDetach) {
-        var evt = Capacitor.createEvent(type, data);
+        var evt = window.Capacitor.createEvent(type, data);
         if (typeof documentEventHandlers[type] !== 'undefined') {
           if (bNoDetach) {
             documentEventHandlers[type].fire(evt);
@@ -225,7 +225,7 @@
         }
       },
       fireWindowEvent: function (type, data) {
-        var evt = Capacitor.createEvent(type, data);
+        var evt = window.Capacitor.createEvent(type, data);
         if (typeof windowEventHandlers[type] !== 'undefined') {
           setTimeout(function () {
             windowEventHandlers[type].fire(evt);
@@ -1441,7 +1441,7 @@
 
   define('cordova/platform', function (require, exports, module) {
     module.exports = {
-      id: Capacitor.platform,
+      id: window.Capacitor.platform,
       bootstrap: function () {
         require('cordova/channel').onNativeReady.fire();
       },

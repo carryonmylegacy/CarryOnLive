@@ -4,6 +4,12 @@
  * they fall back to the pristine SPA shell (build/shell.html) via the
  * vercel.json catch-all rewrite.
  *
+ * Chromium strategy (in order):
+ *   1. PRERENDER_CHROME env override (path to a chrome binary)
+ *   2. @sparticuz/chromium — a Chromium build made for Vercel/AWS build
+ *      machines (Amazon Linux), bundled as a regular dependency
+ *   3. A Playwright-cache chromium if one is installed (local dev)
+ *
  * Runs after `yarn build` (see build-prod.sh). Fail-soft by default so a
  * Chromium hiccup never blocks a deploy; set PRERENDER_STRICT=1 to fail hard.
  */
@@ -11,6 +17,7 @@
 const fs = require('fs');
 const path = require('path');
 const http = require('http');
+const puppeteer = require('puppeteer-core');
 
 const BUILD_DIR = path.resolve(__dirname, '..', 'build');
 const PORT = process.env.PRERENDER_PORT ? Number(process.env.PRERENDER_PORT) : 4173;
@@ -48,7 +55,7 @@ const MIME = {
   '.xml': 'application/xml', '.webmanifest': 'application/manifest+json',
 };
 
-// Tiny static server over build/ with SPA fallback to the ORIGINAL shell so
+// Tiny static server over build/ with SPA fallback to the PRISTINE shell so
 // every route renders the un-prerendered app during snapshotting.
 function startServer(shellHtml) {
   const server = http.createServer((req, res) => {
@@ -65,9 +72,36 @@ function startServer(shellHtml) {
   return new Promise((resolve) => server.listen(PORT, '127.0.0.1', () => resolve(server)));
 }
 
+async function chromiumCandidates() {
+  const candidates = [];
+  if (process.env.PRERENDER_CHROME) {
+    candidates.push({ name: 'env override', executablePath: process.env.PRERENDER_CHROME, extraArgs: [] });
+  }
+  // @sparticuz/chromium ships x86_64 Linux binaries (Vercel/AWS build machines).
+  if (process.platform === 'linux' && process.arch === 'x64') {
+    try {
+      const mod = require('@sparticuz/chromium');
+      const sparticuz = mod && mod.default ? mod.default : mod;
+      const executablePath = await sparticuz.executablePath();
+      if (executablePath && fs.existsSync(executablePath)) {
+        candidates.push({ name: '@sparticuz/chromium', executablePath, extraArgs: sparticuz.args || [] });
+      }
+    } catch (e) {
+      console.warn(`prerender: @sparticuz/chromium unavailable (${e.message.split('\n')[0]})`);
+    }
+  }
+  // Playwright-managed chromium (local dev / CI).
+  try {
+    const { chromium } = require('@playwright/test');
+    const p = chromium.executablePath();
+    if (p && fs.existsSync(p)) candidates.push({ name: 'playwright chromium', executablePath: p, extraArgs: [] });
+  } catch (e) { /* playwright not installed — fine */ }
+  return candidates;
+}
+
 async function snapshot(page, route) {
   const url = `http://127.0.0.1:${PORT}${route}`;
-  await page.goto(url, { waitUntil: 'networkidle', timeout: 45000 }).catch(() => {});
+  await page.goto(url, { waitUntil: 'networkidle0', timeout: 45000 }).catch(() => {});
   // Wait for React to paint real content into #root.
   await page.waitForFunction(
     () => {
@@ -76,7 +110,7 @@ async function snapshot(page, route) {
     },
     { timeout: 20000 },
   );
-  await page.waitForTimeout(600); // settle animations / late effects
+  await new Promise((r) => setTimeout(r, 600)); // settle animations / late effects
   return page.evaluate(() => '<!DOCTYPE html>\n' + document.documentElement.outerHTML);
 }
 
@@ -85,29 +119,51 @@ async function snapshot(page, route) {
     console.error('prerender: build/index.html not found — run yarn build first');
     process.exit(STRICT ? 1 : 0);
   }
-  const shellHtml = fs.readFileSync(path.join(BUILD_DIR, 'index.html'), 'utf8');
+  // Prefer the pristine shell (build-prod.sh copies it before we run) so a
+  // re-run never uses an already-prerendered index.html as the SPA fallback.
+  const shellPath = fs.existsSync(path.join(BUILD_DIR, 'shell.html'))
+    ? path.join(BUILD_DIR, 'shell.html')
+    : path.join(BUILD_DIR, 'index.html');
+  const shellHtml = fs.readFileSync(shellPath, 'utf8');
 
-  let chromium;
-  try {
-    ({ chromium } = require('@playwright/test'));
-  } catch (e) {
-    console.error(`prerender: @playwright/test unavailable (${e.message}) — skipping`);
+  const candidates = await chromiumCandidates();
+  if (!candidates.length) {
+    console.error('prerender: no Chromium executable found — skipping');
     process.exit(STRICT ? 1 : 0);
   }
 
-  let browser;
-  try {
-    browser = await chromium.launch({
-      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
-    });
-  } catch (e) {
-    console.error(`prerender: Chromium failed to launch (${e.message}) — skipping`);
+  let browser = null;
+  for (const c of candidates) {
+    try {
+      browser = await puppeteer.launch({
+        executablePath: c.executablePath,
+        args: [
+          ...c.extraArgs,
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+        ],
+        headless: true,
+      });
+      console.log(`prerender: using ${c.name} (${c.executablePath})`);
+      break;
+    } catch (e) {
+      console.warn(`prerender: ${c.name} failed to launch (${e.message.split('\n')[0]})`);
+    }
+  }
+  if (!browser) {
+    console.error('prerender: every Chromium candidate failed to launch — skipping');
     process.exit(STRICT ? 1 : 0);
   }
 
   const server = await startServer(shellHtml);
-  const context = await browser.newContext({ serviceWorkers: 'block' });
-  const page = await context.newPage();
+  const page = await browser.newPage();
+  // Keep the service worker out of the way during snapshotting.
+  await page.evaluateOnNewDocument(() => {
+    if (navigator.serviceWorker) {
+      navigator.serviceWorker.register = () => Promise.reject(new Error('prerender: SW disabled'));
+    }
+  });
 
   const results = {};
   const failures = [];

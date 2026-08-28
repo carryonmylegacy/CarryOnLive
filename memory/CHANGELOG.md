@@ -10045,3 +10045,26 @@ Founder set RUN_E2E=false; next Save-to-GitHub push will deploy everything.
 - sw-push.js: bare SW globals `clients` → `self.clients` (4 spots, oxlint no-undef).
 - test_subscription_pending_intent.py: duplicate `$ne` key → `$nin: [None, ""]` (F601).
 - scripts/check.sh ALL CLEAR after all fixes.
+
+## Jun 2026 (fork) — Prerender fix #2: Vercel-compatible Chromium (self-tested)
+- ROOT CAUSE of "AI agents still see nothing" after deploy: build ran (shell.html live
+  in prod, rewrites active) but the prerender step failed on Vercel — Playwright's
+  downloaded Chromium doesn't run on Vercel's Amazon Linux build image. Fail-soft
+  deployed the empty shell.
+- Fix: prerender.js now uses puppeteer-core with a candidate chain:
+  PRERENDER_CHROME env → @sparticuz/chromium (x64-only, purpose-built for Vercel/AWS;
+  note require(...).default — it's a static class) → @playwright/test executablePath
+  (local dev). Tries launching each in order. SW disabled via evaluateOnNewDocument.
+  Shell source prefers build/shell.html (rerun-safe).
+- puppeteer-core + @sparticuz/chromium added as REGULAR dependencies (immune to
+  prod-only installs). Dropped `npx playwright install` from build-prod.sh; added a
+  loud post-prerender verification: "PRERENDER VERIFIED" vs WARNING box if
+  build/about/index.html is missing or still an empty shell.
+- Pod gotchas: pod is aarch64 (sparticuz Exec format error here — expected, skipped
+  by arch guard); PLAYWRIGHT_BROWSERS_PATH=/pw-browsers and pod restarts wipe
+  newly-installed browser revisions (needed re-install of chromium-1234).
+- Verified locally: 19/19 routes prerendered via the puppeteer-core path; gate ALL
+  CLEAR. Remaining unknown until next deploy: sparticuz launch on Vercel (its home
+  turf) — user must check Vercel build log for "PRERENDER VERIFIED", then
+  curl -s https://www.carryon.us/about | grep -c 'div id="root"></div>' → expect 0.
+note: ios/App/App/public/* are cap-sync artifacts — window-qualified globals patch (cordova.js, cordova_plugins.js, sw-push.js) must be re-applied if 'npx cap sync' regenerates them (oxlint no-undef)
