@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import apiClient from '../../utils/apiClient';
-import { Save, ExternalLink, Play, Loader2, MapPin, Monitor, Smartphone, Gift } from 'lucide-react';
+import { Save, ExternalLink, Play, Loader2, MapPin, Monitor, Smartphone, Gift, User, Upload, Trash2 } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { toast } from '../../utils/toast';
 import { API_URL } from '../../config';
@@ -17,6 +17,9 @@ export const SiteContentTab = ({ getAuthHeaders }) => {
   const [savedFooter, setSavedFooter] = useState({ line1: '', line2: '', phone: '' });
   const [referralEnabled, setReferralEnabled] = useState(false);
   const [referralBusy, setReferralBusy] = useState(false);
+  const [headshotExists, setHeadshotExists] = useState(true);
+  const [headshotVersion, setHeadshotVersion] = useState(() => Date.now());
+  const [headshotBusy, setHeadshotBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savingFooter, setSavingFooter] = useState(false);
@@ -110,6 +113,46 @@ export const SiteContentTab = ({ getAuthHeaders }) => {
       toast.error('Failed to update referral program');
     }
     setReferralBusy(false);
+  };
+
+  const handleHeadshotUpload = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      toast.error('Please choose a JPG, PNG, or WebP image');
+      return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      toast.error('Image is too large (max 8 MB)');
+      return;
+    }
+    setHeadshotBusy(true);
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      await apiClient.post(`${API_URL}/admin/site-content/founder-headshot`, form, getAuthHeaders());
+      setHeadshotVersion(Date.now());
+      setHeadshotExists(true);
+      toast.success('Founder headshot updated — live on the About page');
+    } catch (err) {
+      toast.error(err?.response?.data?.detail || 'Failed to upload headshot');
+    }
+    setHeadshotBusy(false);
+  };
+
+  const handleHeadshotRemove = async () => {
+    if (!window.confirm('Remove the founder headshot? The About page will show the placeholder again.')) return;
+    setHeadshotBusy(true);
+    try {
+      await apiClient.delete(`${API_URL}/admin/site-content/founder-headshot`, getAuthHeaders());
+      setHeadshotExists(false);
+      setHeadshotVersion(Date.now());
+      toast.success('Founder headshot removed');
+    } catch {
+      toast.error('Failed to remove headshot');
+    }
+    setHeadshotBusy(false);
   };
 
   if (loading) return <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-[var(--t4)]" /></div>;
@@ -224,6 +267,79 @@ export const SiteContentTab = ({ getAuthHeaders }) => {
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             Save Videos
           </button>
+        </CardContent>
+      </Card>
+
+      {/* Founder Headshot */}
+      <Card className="border-[var(--b)] bg-[var(--s)]">
+        <CardContent className="p-5 space-y-4">
+          <div className="flex items-center gap-2">
+            <User className="w-4 h-4 text-[var(--gold)]" />
+            <h3 className="text-base font-bold text-[var(--t)]">Founder Headshot</h3>
+          </div>
+          <p className="text-sm text-[var(--t4)]">
+            The photo shown in the <strong>Founder</strong> section of the public About page.
+            Uploads are automatically cropped to a square and resized — a clear, well-lit photo
+            works best. Until one is uploaded, the page shows a &ldquo;coming soon&rdquo; placeholder.
+          </p>
+          <div className="flex flex-col sm:flex-row items-center gap-5 p-4 rounded-xl" style={{ background: 'var(--b)', border: '1px solid var(--b2)' }}>
+            {headshotExists ? (
+              <img
+                src={`${API_URL}/public/founder-headshot?v=${headshotVersion}`}
+                alt="Current founder headshot"
+                className="w-28 h-28 rounded-full object-cover flex-shrink-0"
+                style={{ border: '2px solid rgba(212,175,55,0.4)' }}
+                onError={() => setHeadshotExists(false)}
+                data-testid="founder-headshot-preview"
+              />
+            ) : (
+              <div
+                className="w-28 h-28 rounded-full flex-shrink-0 flex items-center justify-center text-center text-[10px] leading-tight px-2"
+                style={{ background: 'rgba(212,175,55,0.06)', border: '1px dashed rgba(212,175,55,0.35)', color: 'var(--t4)' }}
+                data-testid="founder-headshot-empty"
+              >
+                No headshot uploaded yet
+              </div>
+            )}
+            <div className="flex flex-col gap-2.5 w-full sm:w-auto">
+              <label
+                className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-bold cursor-pointer transition-all"
+                style={{ background: 'var(--gold)', color: '#0F1629', opacity: headshotBusy ? 0.5 : 1, pointerEvents: headshotBusy ? 'none' : 'auto' }}
+                data-testid="founder-headshot-upload-btn"
+              >
+                {headshotBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                {headshotExists ? 'Replace Photo' : 'Upload Photo'}
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={handleHeadshotUpload}
+                  className="hidden"
+                  disabled={headshotBusy}
+                  data-testid="founder-headshot-input"
+                />
+              </label>
+              {headshotExists && (
+                <button
+                  onClick={handleHeadshotRemove}
+                  disabled={headshotBusy}
+                  className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all disabled:opacity-40"
+                  style={{ background: 'var(--b2)', color: 'var(--t3)' }}
+                  data-testid="founder-headshot-remove-btn"
+                >
+                  <Trash2 className="w-4 h-4" /> Remove
+                </button>
+              )}
+              <a
+                href="/about"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-1 text-xs text-[var(--t4)] hover:text-[var(--gold)] transition-colors"
+                data-testid="founder-headshot-view-about"
+              >
+                <ExternalLink className="w-3 h-3" /> View About page
+              </a>
+            </div>
+          </div>
         </CardContent>
       </Card>
 

@@ -8,12 +8,30 @@ unauthenticated — otherwise visitors get 401 and the page falls back to a stal
 hardcoded default video.
 """
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException, Response
 
 from config import db
 from routes.admin.trial_policy import get_trial_days
 
 router = APIRouter()
+
+
+@router.get("/public/founder-headshot")
+async def get_founder_headshot():
+    """Public — founder headshot image for the About page (managed in the
+    admin portal's Site Content tab). 404 until one is uploaded, which the
+    About page treats as 'show the placeholder'."""
+    asset = await db.site_assets.find_one({"_id": "founder_headshot"})
+    if not asset:
+        raise HTTPException(status_code=404, detail="No headshot uploaded")
+    return Response(
+        content=bytes(asset["data"]),
+        media_type=asset.get("content_type", "image/jpeg"),
+        headers={
+            "Cache-Control": "public, max-age=300",
+            "ETag": f'"{asset.get("updated_at", "")}"',
+        },
+    )
 
 
 @router.get("/public/site-content")

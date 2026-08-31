@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import SEO from '../components/SEO';
 import PublicFooter from '../components/PublicFooter';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
+import { API_URL } from '../config';
 
 /* ─── scroll-reveal hook ─── */
 const useReveal = (threshold = 0.15) => {
@@ -33,6 +34,7 @@ const RevealSection = ({ children, className = '', delay = 0, direction = 'up', 
 };
 
 const AboutPage = () => {
+  const [headshotOk, setHeadshotOk] = useState(true);
 
   return (
     <div className="min-h-screen" style={{ background: '#0d1b2a' }}>
@@ -226,14 +228,27 @@ const AboutPage = () => {
             </RevealSection>
             <RevealSection delay={0.1}>
               <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6" data-testid="about-founder-section">
-                {/* <<< PLACEHOLDER: FOUNDER HEADSHOT — replace this block with the approved image >>> */}
-                <div
-                  className="w-28 h-28 rounded-full flex-shrink-0 flex items-center justify-center text-center text-[10px] leading-tight px-2"
-                  style={{ background: 'rgba(212,175,55,0.06)', border: '1px dashed rgba(212,175,55,0.35)', color: '#7b879e' }}
-                  data-testid="founder-headshot-placeholder"
-                >
-                  Founder headshot coming soon
-                </div>
+                {/* Founder headshot — uploaded via Admin Portal → Site Content tab */}
+                {headshotOk ? (
+                  <img
+                    src={`${API_URL}/public/founder-headshot`}
+                    alt="Barnet Harris, Founder of CarryOn"
+                    className="w-28 h-28 rounded-full object-cover flex-shrink-0"
+                    style={{ border: '2px solid rgba(212,175,55,0.4)' }}
+                    loading="lazy"
+                    decoding="async"
+                    onError={() => setHeadshotOk(false)}
+                    data-testid="founder-headshot"
+                  />
+                ) : (
+                  <div
+                    className="w-28 h-28 rounded-full flex-shrink-0 flex items-center justify-center text-center text-[10px] leading-tight px-2"
+                    style={{ background: 'rgba(212,175,55,0.06)', border: '1px dashed rgba(212,175,55,0.35)', color: '#7b879e' }}
+                    data-testid="founder-headshot-placeholder"
+                  >
+                    Founder headshot coming soon
+                  </div>
+                )}
                 <p className="text-[#7b879e] text-base leading-relaxed">
                   CarryOn was founded by Barnet Harris, a retired 24-year military veteran.
                   He &ldquo;boot-strapped&rdquo; CarryOn from inception to what it is today

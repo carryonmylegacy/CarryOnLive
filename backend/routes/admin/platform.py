@@ -1,8 +1,12 @@
 """CarryOn™ Backend — Admin: Platform Settings, Site Content, Code Health & Photo Migration"""
 
 import base64
+import io
+from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends
+from bson import Binary
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from PIL import Image, ImageOps
 
 from config import db, logger
 from guards import require_admin
@@ -85,6 +89,56 @@ async def update_platform_settings(data: dict, current_user: dict = Depends(requ
         "platform_free_mode": False,
         "ai_burn_guard_enabled": False,
     }
+
+
+# ===================== FOUNDER HEADSHOT (About page) =====================
+
+
+@router.post("/admin/site-content/founder-headshot")
+async def upload_founder_headshot(file: UploadFile = File(...), current_user: dict = Depends(require_admin)):
+    """Upload/replace the founder headshot shown on the public About page.
+    Image is center-cropped square, resized to 512px, stored as JPEG in Mongo."""
+    if file.content_type not in {"image/jpeg", "image/png", "image/webp"}:
+        raise HTTPException(status_code=400, detail="Please upload a JPG, PNG, or WebP image.")
+    raw = await file.read()
+    if len(raw) > 8 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="Image is too large (max 8 MB).")
+    try:
+        img = Image.open(io.BytesIO(raw))
+        img = ImageOps.exif_transpose(img).convert("RGB")
+    except Exception:
+        raise HTTPException(status_code=400, detail="That file doesn't look like a valid image.")
+    side = min(img.size)
+    left = (img.width - side) // 2
+    top = (img.height - side) // 2
+    img = img.crop((left, top, left + side, top + side))
+    if side > 512:
+        img = img.resize((512, 512), Image.LANCZOS)
+    buf = io.BytesIO()
+    img.save(buf, "JPEG", quality=88, optimize=True)
+    data = buf.getvalue()
+    updated_at = datetime.now(timezone.utc).isoformat()
+    await db.site_assets.replace_one(
+        {"_id": "founder_headshot"},
+        {
+            "_id": "founder_headshot",
+            "data": Binary(data),
+            "content_type": "image/jpeg",
+            "updated_at": updated_at,
+            "uploaded_by": current_user.get("email", ""),
+        },
+        upsert=True,
+    )
+    logger.info(f"Founder headshot uploaded by {current_user.get('email')} ({len(data)} bytes)")
+    return {"ok": True, "updated_at": updated_at, "size_bytes": len(data)}
+
+
+@router.delete("/admin/site-content/founder-headshot")
+async def delete_founder_headshot(current_user: dict = Depends(require_admin)):
+    """Remove the founder headshot — the About page falls back to its placeholder."""
+    result = await db.site_assets.delete_one({"_id": "founder_headshot"})
+    logger.info(f"Founder headshot removed by {current_user.get('email')}")
+    return {"ok": True, "removed": result.deleted_count == 1}
 
 
 # ===================== CODE HEALTH =====================
