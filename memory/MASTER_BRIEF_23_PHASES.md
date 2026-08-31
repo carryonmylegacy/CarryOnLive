@@ -463,11 +463,43 @@ The four-pillar section presents roughly twelve named systems with acronyms — 
 
 # STATUS TRACKER (maintained by agent — update after every phase)
 
-- [x] Phase 1B — record-destruction bullet removed (prev session, verified by grep)
-- [ ] Phase 0 — audit report IN PROGRESS (this session)
-- [ ] Phase 1A (STOP GATE), 1C, 1D, 1E, 1F
+- [x] Phase 0 — audit report delivered & APPROVED by founder
+- [x] Phase 1B — record-destruction bullet removed (repo clean, verified by grep; NOT YET DEPLOYED — still in live bundle main.300fdb9a.js until founder pushes to GitHub)
+- [x] Phase 1C — financial-institutions sentence replaced w/ approved copy + /security link (LandingContent.js)
+- [x] Phase 1D — "Bank-grade security · 256-bit SSL" → "AES-256 encryption · Per-estate keys · TLS 1.3" (LoginPage ×3, SignupPage, PartnerPortalPage)
+- [x] Phase 1E — SOC 2 bullet → "SOC 2 Type II audit in progress — …", linked to /security
+- [x] Phase 1F — security section now links to /security + /wind-down-promise
+- [ ] Phase 1A (STOP GATE) — findings + proposed copy DELIVERED, awaiting founder approval
 - [ ] Phase 2, 3
 - [ ] Phase 4 (STOP GATE)
 - [ ] Phase 5–15
 - [ ] Phase 16 (STOP GATE), 17 (STOP GATE)
 - [ ] Phase 18–23
+
+# AMENDMENTS — approved by founder (June 2026 message), BINDING
+
+## B. xAI terms
+- NO DPA / enterprise agreement with xAI exists. PROHIBITED words: "contractual(ly)", "under contract", "enterprise agreement", "DPA", "zero-knowledge", "air-gapped", "no data ever leaves", "never leaves your vault" (in EGA/BEC context).
+- PERMITTED: AI analysis performed by xAI; content transmitted to xAI's API; xAI's PUBLISHED API policy excludes API inputs/outputs from model training by default (attribute to xAI's policy, never to an agreement).
+- Lead 1A copy with the ai_eligible fail-closed gate (only flagged docs transmitted; unflagged excluded entirely incl. names).
+- Privacy Policy AI section must disclose FULL payload: benefactor name+street address, marital status, beneficiary names/ages/genders/emails — not just "document contents".
+- xAI ZDR: team-level setting in xAI console (Team Settings → Zero Data Retention); default = 30-day retention for abuse audit then deletion; no per-request header. REPORTED, not changed.
+
+## C. Describe implemented reality, never intended policy
+- C1: 51% rule DOES NOT EXIST — never mention it. Reality: beneficiaries free while benefactor living → verified transition → 30-day grace w/ email → beneficiary selects ben_* plan ($1.99–$4.99/mo).
+- C2: NO post-trial deletion clock. Trial = 30 days → paywall only; data stays exportable. The 90-day grace/purge applies ONLY on Stripe subscription cancellation (notices 90/60/30/15/10/5/4/3/2/1; purge removes file content, keeps metadata, MMs untouched). Flag unfired `trial_ended` trigger (grace_period.py:34) in final report; do NOT wire it.
+- C3: Family bundle reality: benefactor discount 0%, beneficiaries on family plan 100% free. Homepage card at LandingContent.js:113 promising percentage-based household discounts is FALSE — rewrite (copy proposed at 1A stop).
+
+## D. Amendments
+- D1: seven extra routes in scope: /our-promise /voices /get-started /speak-with-us /landing-consumer /partner-brief /quickstart/try — claims folded into Phase 1, footer (Ph5) + metadata (Ph9) treatment; titles/descriptions proposed for approval.
+- D2: Schema.org — REMOVE aggregateRating entirely; fix-or-remove SoftwareApplication offers (stale $0/$9/$19); confirm support@carryon.us inbox live or replace w/ info@carryon.us. (Founder must confirm inbox.)
+- D3: sitemap — remove /login+/signup, add approved D1 routes, no tokened/auth routes.
+- D4: "Powered by CarryOn Enterprises Inc." on partner pages — report context + recommend only. SMS consent entity must match A2P 10DLC registration — founder to confirm registered entity before any change.
+- D5: soft-deleted docs — preview: 0/13 rows hold inline file_data; 13 dangling storage_key strings (blobs hard-deleted at delete time). Production unverifiable from pod; needs founder-run check.
+- D6: EGA/BEC transcripts plaintext — remediation proposal delivered (report only). Constrains 1A: no unqualified "staff cannot read" claims.
+
+## E. Pricing pre-Phase-16 items (reported)
+- Seniors $12.99 = Standard feature set (no Premium extras); price justification needed from founder.
+- paired_price NOT self-healed (admin-set or legacy); ben_price/features/quarterly/annual ARE force-synced from code+ben plans on every settings read (plans.py:490-536) — admin edits to those fields get silently overwritten.
+- beta_mode=True → everyone has access free (guards.py:65), checkout records preference w/o charging.
+- Hospice: benefactor $0 forever; ben_hospice $4.99 applies to beneficiaries only post-transition.

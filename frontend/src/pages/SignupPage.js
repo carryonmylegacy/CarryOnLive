@@ -1157,7 +1157,7 @@ const SignupPage = () => {
                     {/* Security footer inside card */}
                     <div className="mt-3 flex items-center justify-center gap-2">
                       <Shield className="w-3.5 h-3.5 text-[#10b981]" />
-                      <span className="text-[#3a4a63] text-xs">Bank-grade security &middot; 256-bit SSL</span>
+                      <span className="text-[#3a4a63] text-xs">AES-256 encryption &middot; Per-estate keys &middot; TLS 1.3</span>
                     </div>
                   </div>
                 </div>

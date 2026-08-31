@@ -271,7 +271,7 @@ const PartnerPortalPage = () => {
                 </div>
                 <div className="mt-5 pt-4 border-t flex items-center justify-center gap-2" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
                   <Shield className="w-3.5 h-3.5 text-[#10b981]" />
-                  <span className="text-white/80 text-xs font-bold">Bank-grade security &middot; 256-bit SSL</span>
+                  <span className="text-white/80 text-xs font-bold">AES-256 encryption &middot; Per-estate keys &middot; TLS 1.3</span>
                 </div>
               </div>
             </div>

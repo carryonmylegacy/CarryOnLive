@@ -132,7 +132,7 @@ const SECURITY_ITEMS = [
   { icon: Sparkles, text: 'Estate Guardian\u2122 AI operates entirely within your encrypted vault \u2014 no data ever leaves' },
   { icon: Shield, text: 'Two-factor authentication on every login with device trust options for your family' },
   { icon: Users, text: 'Transition verification by a human team \u2014 not algorithms, not AI. Real people confirming real events.' },
-  { icon: FileCheck, text: 'SOC 2 compliance architecture with full audit trail and GDPR data rights built in' },
+  { icon: FileCheck, text: 'SOC 2 Type II audit in progress \u2014 full audit trail and GDPR data rights built in', link: '/security' },
 ];
 
 /**
@@ -469,20 +469,48 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
               The most important things your family<br className="hidden sm:block" /> will ever share. Protected like it.
             </h2>
             <p className="text-[#7b879e] text-base max-w-[700px] mx-auto mb-14 leading-relaxed">
-              Every layer of CarryOn&#8482; is built with the same security standards that protect financial institutions and government systems &mdash; because the people you love deserve nothing less.
+              Every layer of CarryOn&#8482; is built on the encryption, key-management, and access controls we{' '}
+              <a href="/security" onClick={(e) => { e.preventDefault(); navigateWithFade('/security'); }}
+                className="text-[#d4af37] underline underline-offset-2 hover:brightness-110 transition-all"
+                data-testid={`security-document-publicly-link${testIdSuffix}`}>document publicly</a>
+              {' '}&mdash; because the people you love deserve nothing less.
             </p>
           </RevealSection>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {SECURITY_ITEMS.map(({ icon: Icon, text }, i) => (
-              <RevealSection key={i} delay={i * 0.08}>
-                <div className="rounded-xl p-6 text-center h-full backdrop-blur-sm"
+            {SECURITY_ITEMS.map(({ icon: Icon, text, link }, i) => {
+              const card = (
+                <div className={`rounded-xl p-6 text-center h-full backdrop-blur-sm${link ? ' cursor-pointer transition-colors duration-300 hover:border-[#d4af37]/40' : ''}`}
                   style={{ background: 'rgba(14,24,41,0.25)', border: '1.5px solid rgba(255,255,255,0.15)', boxShadow: '0 8px 48px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08)' }}>
                   <Icon className="w-6 h-6 text-[#7b879e] mx-auto mb-4 transition-colors duration-300 group-hover:text-[#d4af37]" />
                   <p className="text-[#94a3b8] text-sm leading-relaxed">{text}</p>
                 </div>
-              </RevealSection>
-            ))}
+              );
+              return (
+                <RevealSection key={i} delay={i * 0.08}>
+                  {link ? (
+                    <a href={link} onClick={(e) => { e.preventDefault(); navigateWithFade(link); }} className="block h-full"
+                      data-testid={`security-item-link-${i}${testIdSuffix}`}>{card}</a>
+                  ) : card}
+                </RevealSection>
+              );
+            })}
           </div>
+          <RevealSection delay={0.45}>
+            <div className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-4">
+              <a href="/security" onClick={(e) => { e.preventDefault(); navigateWithFade('/security'); }}
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-semibold text-[#d4af37] transition-colors duration-300 hover:border-[#d4af37]/60"
+                style={{ border: '1.5px solid rgba(var(--gold-rgb), 0.35)', background: 'rgba(var(--gold-rgb), 0.05)' }}
+                data-testid={`security-page-cta${testIdSuffix}`}>
+                Read our full Security &amp; Trust documentation <ChevronRight className="w-4 h-4" />
+              </a>
+              <a href="/wind-down-promise" onClick={(e) => { e.preventDefault(); navigateWithFade('/wind-down-promise'); }}
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-semibold text-[#d4af37] transition-colors duration-300 hover:border-[#d4af37]/60"
+                style={{ border: '1.5px solid rgba(var(--gold-rgb), 0.35)', background: 'rgba(var(--gold-rgb), 0.05)' }}
+                data-testid={`wind-down-promise-cta${testIdSuffix}`}>
+                Our Wind-Down &amp; Data Portability Promise <ChevronRight className="w-4 h-4" />
+              </a>
+            </div>
+          </RevealSection>
         </div>
       </div>
     </section>
