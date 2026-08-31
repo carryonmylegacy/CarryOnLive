@@ -164,7 +164,7 @@ const LoginPage = () => {
   const [installBannerDismissed, setInstallBannerDismissed] = useState(() => !!localStorage.getItem('carryon_install_dismissed'));
   const isPWAMode = isPWA();
   const isMobileNonPWA = isMobileBrowser();
-  const [footerInfo, setFooterInfo] = useState({ line1: '1550 Wilson Boulevard 7th Floor', line2: 'Arlington, VA 22209 U.S.A.', phone: '(703) 889-0017' });
+  const [footerInfo, setFooterInfo] = useState({ line1: '1550 Wilson Boulevard 7th Floor', line2: 'Arlington, VA 22209', phone: '(703) 889-0017' });
   // When the platform is in Free Mode, the hero surfaces the "CarryOn is
   // free right now" tile (same copy as the in-app Free banner).
   const [platformFreeMode, setPlatformFreeMode] = useState(false);

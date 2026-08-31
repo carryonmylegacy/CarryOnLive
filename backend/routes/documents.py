@@ -601,17 +601,10 @@ async def unlock_document(
                 pass
             else:
                 raise HTTPException(status_code=401, detail="Invalid password")
-    elif lock_type == "backup":
+    elif lock_type in ["backup", "voice"]:
+        # legacy "voice" locks degrade safely to their backup code
         if not unlock_data.backup_code:
             raise HTTPException(status_code=400, detail="Backup code required")
-        if document.get("backup_code") != unlock_data.backup_code:
-            raise HTTPException(status_code=401, detail="Invalid backup code")
-    elif lock_type == "voice":
-        if not unlock_data.backup_code:
-            raise HTTPException(
-                status_code=400,
-                detail="Voice verification not available. Use backup code.",
-            )
         if document.get("backup_code") != unlock_data.backup_code:
             raise HTTPException(status_code=401, detail="Invalid backup code")
 

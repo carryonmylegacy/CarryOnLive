@@ -17,7 +17,7 @@ const iconMap = {
   stripe: CreditCard, apple_iap: Smartphone, xai: Bot, resend: Mail,
   twilio: MessageSquare, capgo: RefreshCw, capacitor: Smartphone,
   google_places: MapPin, webauthn: Key, vapid: Bell, jwt: Shield,
-  voice_biometrics: Mic, pdf_tools: FileText,
+  pdf_tools: FileText,
   firebase: BarChart3, meta_pixel: Crosshair,
   social_instagram: Globe, social_facebook: Globe, social_linkedin: Globe,
 };

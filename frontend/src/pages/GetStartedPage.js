@@ -643,6 +643,11 @@ export default function GetStartedPage() {
                   ))}
                 </div>
 
+                <p className="text-center mb-6" style={{ fontSize: '0.8125rem', color: '#64748b', fontWeight: 600, lineHeight: 1.6 }} data-testid="get-started-trust-line">
+                  Built by a 24-year military veteran. Bootstrapped and independent. Backed by a{' '}
+                  <a href="/wind-down-promise" style={{ color: '#b8962e', textDecoration: 'underline' }} data-testid="trust-line-winddown-link">binding wind-down promise</a>.
+                </p>
+
                 {/* What's included — personalized */}
                 <div style={{
                   background: 'rgba(255,255,255,0.7)', borderRadius: '1rem',

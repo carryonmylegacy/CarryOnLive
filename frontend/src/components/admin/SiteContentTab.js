@@ -32,7 +32,7 @@ export const SiteContentTab = ({ getAuthHeaders }) => {
         setVideoIdVertical(idV);
         setSavedVideoIdVertical(idV);
         const l1 = res.data?.footer_address_line1 || '1550 Wilson Boulevard 7th Floor';
-        const l2 = res.data?.footer_address_line2 || 'Arlington, VA 22209 U.S.A.';
+        const l2 = res.data?.footer_address_line2 || 'Arlington, VA 22209';
         const ph = res.data?.footer_phone || '(703) 889-0017';
         setFooterLine1(l1);
         setFooterLine2(l2);
@@ -248,7 +248,7 @@ export const SiteContentTab = ({ getAuthHeaders }) => {
             <div>
               <label className="text-xs font-bold text-[var(--t4)] block mb-1">Address Line 2</label>
               <input type="text" value={footerLine2} onChange={e => setFooterLine2(e.target.value)}
-                placeholder="e.g. Arlington, VA 22209 U.S.A."
+                placeholder="e.g. Arlington, VA 22209"
                 className="w-full px-3 py-2.5 rounded-lg bg-[var(--b)] border border-[var(--b2)] text-[var(--t)] text-base focus:outline-none focus:border-[var(--gold)]"
                 data-testid="footer-line2-input" />
             </div>

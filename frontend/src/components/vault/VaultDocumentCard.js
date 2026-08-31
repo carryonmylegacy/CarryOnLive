@@ -69,8 +69,7 @@ const VaultDocumentCard = ({
             <Lock className="w-8 h-8 text-[var(--gold)] mx-auto mb-2" />
             <p className="text-white font-medium">Protected Document</p>
             <p className="text-[#94a3b8] text-sm">
-              {doc.lock_type === 'password' ? 'Password Required' :
-               doc.lock_type === 'voice' ? 'Voice Verification' : 'Backup Key Required'}
+              {doc.lock_type === 'password' ? 'Password Required' : 'Backup Key Required'}
             </p>
             <Button
               variant="outline"

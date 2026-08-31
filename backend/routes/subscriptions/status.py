@@ -208,6 +208,8 @@ async def get_subscription_status(current_user: dict = Depends(get_current_user)
                 "military": "ben_military",
                 "hospice": "ben_hospice",
                 "veteran": "ben_veteran",
+                "seniors": "ben_seniors",
+                "new_adult": "ben_new_adult",
                 "enterprise": "ben_enterprise",
             }
             # Source-of-truth precedence for the beneficiary's locked tier:
@@ -256,20 +258,6 @@ async def get_subscription_status(current_user: dict = Depends(get_current_user)
                 is_minor = True
         except (ValueError, TypeError):
             pass
-
-    # Determine paired pricing if estate has transitioned
-    paired_price = None
-    if estate_transitioned and benefactor_id:
-        settings = await get_subscription_settings()
-        benefactor_plan_id = None
-        ben_sub_doc = await db.user_subscriptions.find_one({"user_id": benefactor_id}, {"_id": 0, "plan_id": 1})
-        if ben_sub_doc:
-            benefactor_plan_id = ben_sub_doc.get("plan_id")
-        if benefactor_plan_id:
-            for p in settings.get("plans", DEFAULT_PLANS):
-                if p["id"] == benefactor_plan_id:
-                    paired_price = p.get("paired_price")
-                    break
 
     # ── Optimistic checkout intent ───────────────────────────────────
     # If the user clicked "Subscribe" within the last 30 minutes,
@@ -323,7 +311,6 @@ async def get_subscription_status(current_user: dict = Depends(get_current_user)
         "user_role": current_user.get("role", "benefactor"),
         "beneficiary_locked_tier": beneficiary_locked_tier,
         "estate_transitioned": estate_transitioned,
-        "paired_price": paired_price,
         # Top-level admin attribution — always set whenever the founder
         # has assigned a tier to this user's estate (benefactor) or the
         # benefactor's estate (beneficiary). Read by the paywall to

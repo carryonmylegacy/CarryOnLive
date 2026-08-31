@@ -60,6 +60,16 @@ const TrialLockdownBanner = () => {
           Choose a Plan
         </button>
       )}
+      {!trustee && (
+        <button
+          onClick={() => navigate('/settings')}
+          className="text-xs font-bold px-3 py-1.5 rounded-full flex-shrink-0 active:scale-95 transition-transform"
+          style={{ background: 'transparent', color: '#d4af37', border: '1px solid rgba(212,175,55,0.5)' }}
+          data-testid="lockdown-export-link"
+        >
+          Export everything
+        </button>
+      )}
     </div>
   );
 };

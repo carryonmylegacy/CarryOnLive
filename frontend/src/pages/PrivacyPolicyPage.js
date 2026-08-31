@@ -38,7 +38,6 @@ const PrivacyPolicyPage = () => {
                 <li>Personal identification information (name, email address, phone number)</li>
                 <li>Account credentials (encrypted passwords)</li>
                 <li>Estate planning data (beneficiary information, documents, checklists)</li>
-                <li>Voice biometric data (voiceprints for identity verification)</li>
                 <li>Payment information (processed securely through Stripe)</li>
                 <li>Communications (support messages, feedback)</li>
               </ul>

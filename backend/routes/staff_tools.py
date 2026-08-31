@@ -502,21 +502,6 @@ async def _build_integrations_data():
             ],
         },
         {
-            "id": "voice_biometrics",
-            "name": "Voice Biometrics",
-            "status": "free/self-hosted",
-            "category": "local_processing",
-            "dashboard_url": None,
-            "cost_monthly": 0.00,
-            "cost_note": "$0/mo (CPU absorbed by Render web service)",
-            "cost_verified": True,
-            "details": [
-                {"label": "Purpose", "value": "Voice-based identity verification", "verified": True},
-                {"label": "Libraries", "value": "librosa, scipy, numpy", "verified": True},
-                {"label": "Processing", "value": "130-dim voiceprints, local CPU", "verified": True},
-            ],
-        },
-        {
             "id": "pdf_tools",
             "name": "PDF Tools",
             "status": "free/self-hosted",
@@ -718,7 +703,6 @@ async def _build_integrations_data():
         "webauthn",
         "vapid",
         "jwt",
-        "voice_biometrics",
         "pdf_tools",
         "capacitor",
         "firebase",
@@ -904,7 +888,7 @@ async def generate_soc2_report(data: IntegrationsPinRequest, current_user: dict 
             "and compliance posture as required for SOC 2 Type II certification. "
             "The platform implements AES-256-GCM encryption at rest, TLS 1.3 in transit, "
             "role-based access control (RBAC), WebAuthn/FIDO2 passkey-based authentication, "
-            "voice biometric verification, and comprehensive audit logging."
+            "and comprehensive audit logging."
         ),
     )
     pdf.ln(5)
@@ -915,7 +899,7 @@ async def generate_soc2_report(data: IntegrationsPinRequest, current_user: dict 
     criteria = [
         (
             "Security",
-            "AES-256-GCM encryption, TLS 1.3, RBAC, WebAuthn/FIDO2, voice biometrics, JWT tokens, VAPID push auth",
+            "AES-256-GCM encryption, TLS 1.3, RBAC, WebAuthn/FIDO2, JWT tokens, VAPID push auth",
         ),
         (
             "Availability",

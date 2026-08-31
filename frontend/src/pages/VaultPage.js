@@ -127,18 +127,11 @@ const VaultPage = () => {
   const [previewUrl, setPreviewUrl] = useState(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   
-  // Voice verification state
-  const [isListening, setIsListening] = useState(false);
-  const [spokenText, setSpokenText] = useState('');
-  const [voiceHint, setVoiceHint] = useState('');
-  const recognitionRef = useRef(null);
-  
   // Upload form state (text fields persisted; file ref is NOT persisted)
   const [uploadName, setUploadName, clearUploadNameDraft] = useDraftState(draftBase ? `${draftBase}:name` : null, '');
   const [uploadCategory, setUploadCategory, clearUploadCategoryDraft] = useDraftState(draftBase ? `${draftBase}:category` : null, 'legal');
   const [uploadLockType, setUploadLockType, clearUploadLockTypeDraft] = useDraftState(draftBase ? `${draftBase}:lockType` : null, 'none');
   const [uploadLockPassword, setUploadLockPassword] = useState('');
-  const [uploadVoicePassphrase, setUploadVoicePassphrase] = useState('');
   const [uploadFile, setUploadFile] = useState(null);
   const clearSDVDraft = () => {
     clearShowUploadDraft();
@@ -390,11 +383,6 @@ const VaultPage = () => {
       return;
     }
     
-    if (uploadLockType === 'voice' && !uploadVoicePassphrase) {
-      toast.error('Voice passphrase is required for voice-verified documents');
-      return;
-    }
-    
     setUploading(true);
     try {
       // Tier B wiring (flag-agnostic): if the user is offline, queue the
@@ -466,15 +454,6 @@ const VaultPage = () => {
           'Content-Type': 'multipart/form-data'
         }
       });
-      
-      // If voice lock, set up the passphrase
-      if (uploadLockType === 'voice' && uploadVoicePassphrase) {
-        await apiClient.post(
-          `${API_URL}/documents/${response.data.id}/voice/setup?passphrase=${encodeURIComponent(uploadVoicePassphrase)}`,
-          {},
-          getAuthHeaders()
-        );
-      }
       
       // toast removed
       
@@ -883,7 +862,6 @@ const VaultPage = () => {
     setUploadCategory('legal');
     setUploadLockType('none');
     setUploadLockPassword('');
-    setUploadVoicePassphrase('');
     setUploadFile(null);
   };
 
@@ -996,95 +974,6 @@ const VaultPage = () => {
     setPreviewUrl(null);
     setShowPreviewModal(false);
     setSelectedDoc(null);
-  };
-
-  // Voice verification functions
-  const startVoiceRecognition = async () => {
-    // Check for browser support
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      toast.error('Voice recognition is not supported in your browser. Please use Chrome or Edge.');
-      return;
-    }
-    
-    // Get voice hint first
-    if (selectedDoc) {
-      try {
-        const hintRes = await apiClient.get(`${API_URL}/documents/${selectedDoc.id}/voice/hint`, getAuthHeaders());
-        setVoiceHint(hintRes.data.hint);
-        if (!hintRes.data.has_passphrase) {
-          toast.error('Voice passphrase not set up for this document. Use backup code.');
-          return;
-        }
-      } catch (error) {
-        console.error('Failed to get voice hint:', error);
-      }
-    }
-    
-    recognitionRef.current = new SpeechRecognition();
-    recognitionRef.current.continuous = false;
-    recognitionRef.current.interimResults = true;
-    recognitionRef.current.lang = 'en-US';
-    
-    recognitionRef.current.onstart = () => {
-      setIsListening(true);
-      setSpokenText('');
-    };
-    
-    recognitionRef.current.onresult = (event) => {
-      const transcript = Array.from(event.results)
-        .map(result => result[0].transcript)
-        .join('');
-      setSpokenText(transcript);
-    };
-    
-    recognitionRef.current.onend = () => {
-      setIsListening(false);
-    };
-    
-    recognitionRef.current.onerror = (event) => {
-      console.error('Speech recognition error:', event.error);
-      setIsListening(false);
-      if (event.error === 'not-allowed') {
-        toast.error('Microphone access denied. Please allow microphone access.');
-      }
-    };
-    
-    recognitionRef.current.start();
-  };
-
-  const stopVoiceRecognition = () => {
-    if (recognitionRef.current) {
-      recognitionRef.current.stop();
-    }
-  };
-
-  const verifyVoice = async () => {
-    if (!spokenText || !selectedDoc) {
-      toast.error('Please speak your passphrase first');
-      return;
-    }
-    
-    setUnlocking(true);
-    try {
-      await apiClient.post(
-        `${API_URL}/documents/${selectedDoc.id}/voice/verify`,
-        { document_id: selectedDoc.id, spoken_text: spokenText },
-        getAuthHeaders()
-      );
-      
-      // toast removed
-      setShowLockModal(false);
-      setSpokenText('');
-      
-      // Download with voice verification passed (use backup code internally)
-      handleDownload(selectedDoc, null, selectedDoc.backup_code);
-    } catch (error) {
-      console.error('Voice verification failed:', error);
-      toast.error(error.response?.data?.detail || 'Voice verification failed. Try again or use backup code.');
-    } finally {
-      setUnlocking(false);
-    }
   };
 
   const formatFileSize = (bytes) => {
@@ -1318,8 +1207,6 @@ const VaultPage = () => {
         setUploadLockType={setUploadLockType}
         uploadLockPassword={uploadLockPassword}
         setUploadLockPassword={setUploadLockPassword}
-        uploadVoicePassphrase={uploadVoicePassphrase}
-        setUploadVoicePassphrase={setUploadVoicePassphrase}
         uploadFile={uploadFile}
         setUploadFile={setUploadFile}
         showPwEye={showPwEye}
@@ -1338,11 +1225,6 @@ const VaultPage = () => {
           if (!open) {
             setUnlockPassword('');
             setUnlockBackupCode('');
-            setSpokenText('');
-            setIsListening(false);
-            if (recognitionRef.current) {
-              recognitionRef.current.stop();
-            }
           }
         }}
         selectedDoc={selectedDoc}
@@ -1352,12 +1234,6 @@ const VaultPage = () => {
         setUnlockBackupCode={setUnlockBackupCode}
         showUnlockPwEye={showUnlockPwEye}
         setShowUnlockPwEye={setShowUnlockPwEye}
-        isListening={isListening}
-        spokenText={spokenText}
-        voiceHint={voiceHint}
-        startVoiceRecognition={startVoiceRecognition}
-        stopVoiceRecognition={stopVoiceRecognition}
-        verifyVoice={verifyVoice}
         handleUnlock={handleUnlock}
         unlocking={unlocking}
       />

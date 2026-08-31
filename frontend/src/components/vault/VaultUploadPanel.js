@@ -20,8 +20,6 @@ const VaultUploadPanel = ({
   setUploadLockType,
   uploadLockPassword,
   setUploadLockPassword,
-  uploadVoicePassphrase,
-  setUploadVoicePassphrase,
   uploadFile,
   setUploadFile,
   showPwEye,
@@ -93,7 +91,6 @@ const VaultUploadPanel = ({
               <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)]">
                 <SelectItem value="none">No Lock</SelectItem>
                 <SelectItem value="password">Password Protected</SelectItem>
-                <SelectItem value="voice">Voice Verification</SelectItem>
                 <SelectItem value="backup">Backup Key Required</SelectItem>
               </SelectContent>
             </Select>
@@ -120,23 +117,6 @@ const VaultUploadPanel = ({
               </div>
               <p className="text-[#64748b] text-xs">
                 This password will be required to access the document. A backup code will also be generated.
-              </p>
-            </div>
-          )}
-          
-          {uploadLockType === 'voice' && (
-            <div className="space-y-2">
-            <Label className="text-[#94a3b8]">Set Voice Passphrase <span className="text-red-400">*</span></Label>
-              <Input
-                type="text"
-                value={uploadVoicePassphrase}
-                onChange={(e) => setUploadVoicePassphrase(e.target.value)}
-                placeholder="e.g., 'Open sesame' or 'Family first'"
-                className="input-field"
-                data-testid="upload-voice-passphrase-input"
-              />
-              <p className="text-[#64748b] text-xs">
-                You'll need to speak this phrase to unlock the document. A backup code will also be generated.
               </p>
             </div>
           )}
@@ -218,7 +198,7 @@ const VaultUploadPanel = ({
           </Button>
           <Button
             onClick={handleUpload}
-            disabled={uploading || !uploadFile || !uploadName || (uploadLockType === 'password' && !uploadLockPassword) || (uploadLockType === 'voice' && !uploadVoicePassphrase)}
+            disabled={uploading || !uploadFile || !uploadName || (uploadLockType === 'password' && !uploadLockPassword)}
             className="gold-button"
             data-testid="upload-submit-button"
           >

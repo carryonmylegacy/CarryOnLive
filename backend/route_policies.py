@@ -73,7 +73,6 @@ ROUTE_POLICIES: dict = {
     "PUT /api/admin/beneficiary-plans/{plan_id}/price": {"auth": "required", "roles": ["admin"]},
     "GET /api/admin/family-discount-settings": {"auth": "required", "roles": ["admin"]},
     "PUT /api/admin/family-discount-settings": {"auth": "required", "roles": ["admin"]},
-    "PUT /api/admin/plans/{plan_id}/paired-price": {"auth": "required", "roles": ["admin"]},
     # ── Estates (covered by ownership/admin checks inside handlers) ─────────
     "GET /api/estates": {"auth": "required", "roles": "self"},
     "POST /api/estates": {"auth": "required", "roles": ["benefactor", "admin"]},
@@ -227,21 +226,6 @@ ROUTE_POLICIES: dict = {
         "estate_id_source": "path.estate_id",
     },
     "POST /api/documents/upload": {"auth": "required", "estate_access": "owner", "estate_id_source": "body.estate_id"},
-    "POST /api/documents/{document_id}/voice/setup": {
-        "auth": "required",
-        "estate_access": "owner",
-        "estate_id_source": "path.document_id(documents)",
-    },
-    "POST /api/documents/{document_id}/voice/verify": {
-        "auth": "required",
-        "estate_access": "member",
-        "estate_id_source": "path.document_id(documents)",
-    },
-    "GET /api/documents/{document_id}/voice/hint": {
-        "auth": "required",
-        "estate_access": "member",
-        "estate_id_source": "path.document_id(documents)",
-    },
     # ── Guardian (EGA) ─────────────────────────────────────────────────────
     "POST /api/chat/guardian": {"auth": "required", "estate_access": "owner", "estate_id_source": "body.estate_id"},
     "POST /api/guardian/export-todo": {

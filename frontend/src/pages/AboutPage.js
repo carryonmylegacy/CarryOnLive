@@ -292,7 +292,7 @@ const AboutPage = () => {
             </div>
             <div className="text-right text-[#3a4a63] text-xs leading-relaxed">
               <p>1550 Wilson Boulevard 7th Floor</p>
-              <p>Arlington, VA 22209 U.S.A.</p>
+              <p>Arlington, VA 22209</p>
               <p>(703) 889-0017</p>
             </div>
           </div>

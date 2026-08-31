@@ -147,7 +147,6 @@ DEFAULT_PLANS = [
         "quarterly_price": 8.99,
         "annual_price": 7.99,
         "ben_price": 2.99,
-        "paired_price": 4.99,
         "adjustable": True,
         "features": [
             "Everything in Standard",
@@ -162,7 +161,6 @@ DEFAULT_PLANS = [
         "quarterly_price": 8.09,
         "annual_price": 7.19,
         "ben_price": 3.99,
-        "paired_price": 5.99,
         "adjustable": True,
         "features": [
             "Everything in Base",
@@ -178,7 +176,6 @@ DEFAULT_PLANS = [
         "quarterly_price": 7.19,
         "annual_price": 6.39,
         "ben_price": 4.99,
-        "paired_price": 6.99,
         "adjustable": True,
         "features": [
             "Immediate Action Checklist",
@@ -193,7 +190,6 @@ DEFAULT_PLANS = [
         "quarterly_price": 3.59,
         "annual_price": 3.19,
         "ben_price": 1.99,
-        "paired_price": 3.99,
         "adjustable": False,
         "note": "Ages 18–25 · Requires verification",
         "requires_verification": True,
@@ -215,7 +211,6 @@ DEFAULT_PLANS = [
         "quarterly_price": 5.39,
         "annual_price": 4.79,
         "ben_price": 1.99,
-        "paired_price": 3.99,
         "adjustable": False,
         "note": "Requires verification",
         "requires_verification": True,
@@ -233,7 +228,6 @@ DEFAULT_PLANS = [
         "quarterly_price": 5.39,
         "annual_price": 4.79,
         "ben_price": 1.99,
-        "paired_price": 3.99,
         "adjustable": False,
         "note": "Requires verification",
         "requires_verification": True,
@@ -251,7 +245,6 @@ DEFAULT_PLANS = [
         "quarterly_price": 11.69,
         "annual_price": 10.39,
         "ben_price": 1.99,
-        "paired_price": 3.99,
         "adjustable": False,
         "note": "Ages 65+ · Requires verification",
         "requires_verification": True,
@@ -274,7 +267,6 @@ DEFAULT_PLANS = [
         "quarterly_price": 0.00,
         "annual_price": 0.00,
         "ben_price": 4.99,
-        "paired_price": 6.99,
         "adjustable": False,
         "note": "Requires hospice verification",
         "requires_verification": True,
@@ -292,7 +284,6 @@ DEFAULT_PLANS = [
         "quarterly_price": 0.00,
         "annual_price": 0.00,
         "ben_price": 0.00,
-        "paired_price": 0.00,
         "adjustable": False,
         "note": "Requires partner code",
         "requires_verification": True,
@@ -518,6 +509,12 @@ async def get_subscription_settings():
                             stored_plan["annual_price"] = expected_a
                             needs_update = True
                         break
+        # Ensure any new beneficiary plans from code are added to stored settings
+        stored_ben_ids = {p["id"] for p in settings.get("beneficiary_plans", [])}
+        for bplan in BENEFICIARY_PLANS:
+            if bplan["id"] not in stored_ben_ids:
+                settings.setdefault("beneficiary_plans", []).append(bplan)
+                needs_update = True
         # Self-heal ben_price on benefactor plans from beneficiary plan prices
         ben_plans = settings.get("beneficiary_plans", [])
         ben_price_map = {}
@@ -532,12 +529,16 @@ async def get_subscription_settings():
         if needs_update:
             await db.subscription_settings.update_one(
                 {"_id": "global"},
-                {"$set": {"plans": settings["plans"]}},
+                {"$set": {"plans": settings["plans"], "beneficiary_plans": settings.get("beneficiary_plans", [])}},
             )
     # Always re-sort the returned plan lists into the canonical paywall
     # order. The user wants symmetry across every paywall (landing, main
     # paywall modal, beneficiary paywall, admin) and this is the single
     # source of truth so they cannot drift apart.
+    # paired_price was removed from the pricing model (Jun 2026) — strip any
+    # stored copies so it never reaches API consumers again.
+    for pl in settings.get("plans", []):
+        pl.pop("paired_price", None)
     if settings.get("plans"):
         settings["plans"] = _sort_by_canonical_order(settings["plans"], PLAN_ORDER)
     if settings.get("beneficiary_plans"):

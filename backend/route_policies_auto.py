@@ -1750,11 +1750,6 @@ AUTO_IMPORTED_POLICIES = {
         "notes": "CERTIFIED: transition flow \u2014 owner-gated",
     },
     "POST /api/verification/upload": {"auth": "required", "notes": "CERTIFIED: verification upload \u2014 self"},
-    "POST /api/voice/transcribe": {"auth": "required", "notes": "CERTIFIED: voice transcribe \u2014 self"},
-    "POST /api/voice/verify-passphrase": {
-        "auth": "required",
-        "notes": "CERTIFIED: voice passphrase verify \u2014 self",
-    },
     "POST /api/warmup": {"auth": "public", "notes": "CERTIFIED: warmup ping \u2014 public"},
     "POST /api/webhook/apple": {"auth": "required", "notes": "CERTIFIED: Apple App Store signed webhook"},
     "POST /api/{upload_id}/complete": {
