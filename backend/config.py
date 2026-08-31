@@ -170,9 +170,25 @@ if SENTRY_DSN:
         from sentry_sdk.integrations.fastapi import FastApiIntegration
         from sentry_sdk.integrations.starlette import StarletteIntegration
 
+        def _scrub_export_events(event, hint):
+            # The data-export flow must never leak payloads/codes into Sentry:
+            # drop request bodies/headers/cookies for those endpoints entirely.
+            try:
+                req = event.get("request") or {}
+                url = req.get("url", "") or ""
+                if "/compliance/data-export" in url or "/compliance/export/step-up" in url:
+                    req.pop("data", None)
+                    req.pop("cookies", None)
+                    req.pop("headers", None)
+                    event["request"] = req
+            except Exception:
+                pass
+            return event
+
         sentry_sdk.init(
             dsn=SENTRY_DSN,
             environment=SENTRY_ENVIRONMENT,
+            before_send=_scrub_export_events,
             traces_sample_rate=float(os.environ.get("SENTRY_TRACES_SAMPLE_RATE", "0.05")),
             profiles_sample_rate=float(os.environ.get("SENTRY_PROFILES_SAMPLE_RATE", "0.0")),
             send_default_pii=False,

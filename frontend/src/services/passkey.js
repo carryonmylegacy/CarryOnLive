@@ -115,6 +115,29 @@ export async function authenticateWithPasskey(email = '') {
   return await loginRes.json();
 }
 
+export async function getPasskeyAssertion(options) {
+  const assertion = await navigator.credentials.get({
+    publicKey: {
+      challenge: base64urlToBuffer(options.challenge),
+      rpId: options.rpId,
+      timeout: options.timeout || 60000,
+      userVerification: options.userVerification || 'required',
+      allowCredentials: (options.allowCredentials || []).map(c => ({ ...c, id: base64urlToBuffer(c.id) })),
+    },
+  });
+  return {
+    id: assertion.id,
+    rawId: bufferToBase64url(assertion.rawId),
+    type: assertion.type,
+    response: {
+      authenticatorData: bufferToBase64url(assertion.response.authenticatorData),
+      clientDataJSON: bufferToBase64url(assertion.response.clientDataJSON),
+      signature: bufferToBase64url(assertion.response.signature),
+      userHandle: assertion.response.userHandle ? bufferToBase64url(assertion.response.userHandle) : null,
+    },
+  };
+}
+
 export function clearPasskeyFlag() {
   localStorage.removeItem('carryon_passkey_registered');
 }

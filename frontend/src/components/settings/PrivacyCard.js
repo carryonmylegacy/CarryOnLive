@@ -3,6 +3,7 @@ import apiClient from '../../utils/apiClient';
 import { toast } from '../../utils/toast';
 import { iosSafeDownload } from '../../utils/iosSafeDownload';
 import { useAuth } from '../../contexts/AuthContext';
+import { getPasskeyAssertion } from '../../services/passkey';
 import { Shield, Download, FileText, AlertTriangle, Trash2, ChevronRight, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Switch } from '../ui/switch';
@@ -17,6 +18,11 @@ const PrivacyCard = () => {
   const [consent, setConsent] = useState(null);
   const [consentLoading, setConsentLoading] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
+  const [exportStage, setExportStage] = useState(null); // null | 'warn' | 'password' | 'otp'
+  const [exportAck, setExportAck] = useState(false);
+  const [exportPassword, setExportPassword] = useState('');
+  const [exportOtp, setExportOtp] = useState('');
+  const [exportSentTo, setExportSentTo] = useState('');
   const [retentionPolicy, setRetentionPolicy] = useState(null);
   const [showRetention, setShowRetention] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -53,16 +59,47 @@ const PrivacyCard = () => {
     finally { setConsentLoading(false); }
   }, [consent, getAuthHeaders]);
 
-  const handleDataExport = useCallback(async () => {
+  const closeExportModal = useCallback(() => {
+    setExportStage(null);
+    setExportAck(false);
+    setExportPassword('');
+    setExportOtp('');
+    setExportSentTo('');
+  }, []);
+
+  const downloadExport = useCallback(async (proof) => {
     setExportLoading(true);
     try {
-      const res = await apiClient.get(`${API_URL}/compliance/data-export`, getAuthHeaders());
+      const res = await apiClient.post(`${API_URL}/compliance/data-export`, proof, getAuthHeaders());
       const blob = new Blob([JSON.stringify(res.data, null, 2)], { type: 'application/json' });
       const filename = `carryon-data-export-${new Date().toISOString().split('T')[0]}.json`;
       await iosSafeDownload(blob, filename, 'Data export', 'privacy_data_export');
-    } catch { toast.error('Failed to export data'); }
-    finally { setExportLoading(false); }
-  }, [getAuthHeaders]);
+      closeExportModal();
+      toast.success('Export downloaded — store it somewhere safe.');
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to export data');
+    } finally { setExportLoading(false); }
+  }, [getAuthHeaders, closeExportModal]);
+
+  const submitExportPassword = useCallback(async () => {
+    setExportLoading(true);
+    try {
+      const res = await apiClient.post(`${API_URL}/compliance/export/step-up`, { password: exportPassword }, getAuthHeaders());
+      if (res.data.method === 'passkey') {
+        const credential = await getPasskeyAssertion(res.data.options);
+        await downloadExport({ credential });
+      } else {
+        setExportSentTo(res.data.sent_to || '');
+        setExportStage('otp');
+      }
+    } catch (err) {
+      if (err.name === 'NotAllowedError' || err.name === 'AbortError') {
+        toast.error('Passkey verification was cancelled');
+      } else {
+        toast.error(err.response?.data?.detail || 'Verification failed');
+      }
+    } finally { setExportLoading(false); }
+  }, [exportPassword, getAuthHeaders, downloadExport]);
 
   const fetchRetentionPolicy = useCallback(async () => {
     try {
@@ -164,7 +201,7 @@ const PrivacyCard = () => {
               <Button
                 variant="outline"
                 className="w-full border-[var(--b)] text-[var(--t)] justify-between"
-                onClick={handleDataExport}
+                onClick={() => setExportStage('warn')}
                 disabled={exportLoading}
                 data-testid="gdpr-export-data"
               >
@@ -174,7 +211,7 @@ const PrivacyCard = () => {
                 </span>
                 {exportLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ChevronRight className="w-4 h-4" />}
               </Button>
-              <p className="text-[var(--t5)] text-[11px] pl-1">GDPR Article 15/20 — Export all your personal data as JSON</p>
+              <p className="text-[var(--t5)] text-[11px] pl-1">GDPR Article 15/20 — Export all your personal data as JSON. Requires your password + a verification step.</p>
 
               <Button
                 variant="outline"
@@ -206,6 +243,96 @@ const PrivacyCard = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Export Step-Up Modal */}
+      {exportStage && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-start justify-center pt-[8vh] px-4" onClick={closeExportModal}>
+          <div className="glass-card p-6 max-w-md w-full border border-[var(--b2)]" onClick={e => e.stopPropagation()} data-testid="export-stepup-modal">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-[#d4af37]/10 flex items-center justify-center">
+                <AlertTriangle className="w-5 h-5 text-[#d4af37]" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-[var(--t)]">Download My Data</h3>
+                <p className="text-[var(--t4)] text-xs">
+                  {exportStage === 'warn' && 'Before you continue'}
+                  {exportStage === 'password' && 'Confirm it\'s you'}
+                  {exportStage === 'otp' && `Enter the code sent to ${exportSentTo || 'your email'}`}
+                </p>
+              </div>
+            </div>
+
+            {exportStage === 'warn' && (
+              <>
+                <div className="rounded-lg p-3 mb-4" style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.2)' }}>
+                  <p className="text-[var(--t3)] text-xs leading-relaxed" data-testid="export-warning-copy">
+                    This file will contain your personal data in <strong>readable form</strong> — anyone
+                    with the file can read it. Store it encrypted and delete it after use.
+                  </p>
+                </div>
+                <label className="flex items-start gap-2 mb-4 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={exportAck}
+                    onChange={e => setExportAck(e.target.checked)}
+                    className="mt-0.5"
+                    data-testid="export-ack-checkbox"
+                  />
+                  <span className="text-[var(--t3)] text-xs leading-relaxed">I understand this export contains sensitive data and I'll store it securely.</span>
+                </label>
+                <div className="flex gap-2">
+                  <Button variant="outline" className="flex-1 border-[var(--b)] text-[var(--t)]" onClick={closeExportModal} data-testid="export-modal-cancel">Cancel</Button>
+                  <Button className="flex-1 bg-[#d4af37] hover:bg-[#c9a22e] text-[#0B1221]" disabled={!exportAck} onClick={() => setExportStage('password')} data-testid="export-warning-continue">Continue</Button>
+                </div>
+              </>
+            )}
+
+            {exportStage === 'password' && (
+              <>
+                <label className="text-[var(--t4)] text-xs block mb-1">Account password</label>
+                <input
+                  type="password"
+                  value={exportPassword}
+                  onChange={e => setExportPassword(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter' && exportPassword && !exportLoading) submitExportPassword(); }}
+                  autoFocus
+                  className="w-full px-3 py-2 mb-4 bg-[var(--s)] border border-[var(--b)] rounded-lg text-[var(--t)] text-sm outline-none focus:border-[#d4af37]/50"
+                  data-testid="export-password-input"
+                />
+                <div className="flex gap-2">
+                  <Button variant="outline" className="flex-1 border-[var(--b)] text-[var(--t)]" onClick={closeExportModal} data-testid="export-password-cancel">Cancel</Button>
+                  <Button className="flex-1 bg-[#d4af37] hover:bg-[#c9a22e] text-[#0B1221]" disabled={!exportPassword || exportLoading} onClick={submitExportPassword} data-testid="export-password-submit">
+                    {exportLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Verify'}
+                  </Button>
+                </div>
+              </>
+            )}
+
+            {exportStage === 'otp' && (
+              <>
+                <label className="text-[var(--t4)] text-xs block mb-1">6-digit verification code</label>
+                <input
+                  inputMode="numeric"
+                  maxLength={6}
+                  value={exportOtp}
+                  onChange={e => setExportOtp(e.target.value.replace(/\D/g, ''))}
+                  onKeyDown={e => { if (e.key === 'Enter' && exportOtp.length === 6 && !exportLoading) downloadExport({ otp: exportOtp }); }}
+                  autoFocus
+                  className="w-full px-3 py-2 mb-1 bg-[var(--s)] border border-[var(--b)] rounded-lg text-[var(--t)] text-lg tracking-[0.4em] text-center outline-none focus:border-[#d4af37]/50"
+                  data-testid="export-otp-input"
+                />
+                <p className="text-[var(--t5)] text-[11px] mb-4">The code expires in 10 minutes and works once.</p>
+                <div className="flex gap-2">
+                  <Button variant="outline" className="flex-1 border-[var(--b)] text-[var(--t)]" onClick={closeExportModal} data-testid="export-otp-cancel">Cancel</Button>
+                  <Button className="flex-1 bg-[#d4af37] hover:bg-[#c9a22e] text-[#0B1221]" disabled={exportOtp.length !== 6 || exportLoading} onClick={() => downloadExport({ otp: exportOtp })} data-testid="export-otp-submit">
+                    {exportLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Download export'}
+                  </Button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Retention Policy Modal */}
       {showRetention && retentionPolicy && (

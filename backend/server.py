@@ -32,6 +32,7 @@ from routes.auth import router as auth_router
 from routes.beneficiaries import router as beneficiaries_router
 from routes.checklist import router as checklist_router
 from routes.compliance import router as compliance_router
+from routes.export_stepup import router as export_stepup_router
 from routes.digest import router as digest_router
 from routes.digital_wallet import router as digital_wallet_router
 from routes.documents import router as documents_router
@@ -379,6 +380,7 @@ api_router.include_router(auth_router)
 api_router.include_router(beneficiaries_router)
 api_router.include_router(checklist_router)
 api_router.include_router(compliance_router)
+api_router.include_router(export_stepup_router)
 api_router.include_router(digest_router)
 api_router.include_router(digital_wallet_router)
 api_router.include_router(documents_router)

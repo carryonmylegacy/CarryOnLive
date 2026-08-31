@@ -22,9 +22,13 @@ router = APIRouter()
 # ===================== GDPR: RIGHT TO ACCESS / DATA PORTABILITY =====================
 
 
-@router.get("/compliance/data-export")
-async def export_user_data(current_user: dict = Depends(get_current_user)):
-    """GDPR Article 15/20: Export all personal data associated with this user."""
+async def build_user_export(current_user: dict) -> dict:
+    """GDPR Article 15/20: build the full personal-data export for this user.
+
+    NOT an endpoint. The download route lives in routes/export_stepup.py and
+    requires step-up authentication (password + passkey/OTP) before calling
+    this builder — the export must never be reachable with a bearer token
+    alone."""
     user_id = current_user["id"]
 
     # Collect all user data across collections

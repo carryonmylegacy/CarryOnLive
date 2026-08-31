@@ -130,6 +130,7 @@ def build_trial_expired_email(user_name, app_url, trial_days):
           <ul style="color: #A0AABF; font-size: 13px; padding-left: 18px; margin: 0; line-height: 1.8;">
             <li>All your existing data (read-only)</li>
             <li>Your account and login credentials</li>
+            <li>Your complete data export — download every document, message, and note anytime from Settings → Privacy</li>
           </ul>
         </div>
 
