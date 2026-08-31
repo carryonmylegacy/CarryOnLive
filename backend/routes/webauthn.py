@@ -12,6 +12,7 @@ import webauthn
 from webauthn.helpers import bytes_to_base64url, base64url_to_bytes
 from webauthn.helpers.structs import (
     AuthenticatorSelectionCriteria,
+    PublicKeyCredentialDescriptor,
     ResidentKeyRequirement,
     UserVerificationRequirement,
     AuthenticatorAttachment,
@@ -166,12 +167,7 @@ async def webauthn_login_options(data: LoginOptionsRequest):
                 {"user_id": user["id"]}, {"_id": 0, "id": 1, "credential_id": 1}
             ).to_list(10)
             for c in creds:
-                allow_credentials.append(
-                    {
-                        "id": base64url_to_bytes(c["credential_id"]),
-                        "type": "public-key",
-                    }
-                )
+                allow_credentials.append(PublicKeyCredentialDescriptor(id=base64url_to_bytes(c["credential_id"])))
 
     options = webauthn.generate_authentication_options(
         rp_id=RP_ID,
