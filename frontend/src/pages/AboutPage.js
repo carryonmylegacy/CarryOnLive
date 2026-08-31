@@ -293,7 +293,7 @@ const AboutPage = () => {
             <div className="text-right text-[#3a4a63] text-xs leading-relaxed">
               <p>1550 Wilson Boulevard 7th Floor</p>
               <p>Arlington, VA 22209 U.S.A.</p>
-              <p>(703) 884-1527</p>
+              <p>(703) 889-0017</p>
             </div>
           </div>
           <p className="text-center text-[#2d3d55] text-xs mt-6">&copy; {new Date().getFullYear()} CarryOn Technologies LLC. All rights reserved.</p>

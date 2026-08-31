@@ -11,10 +11,11 @@ OPERATING_ENTITY:    CarryOn Technologies LLC
 PARENT_ENTITY:       CarryOn Enterprises Inc. (Delaware corporation)
 STREET_ADDRESS:      1550 Wilson Boulevard, 7th Floor
 CITY_STATE_ZIP:      Arlington, VA 22209 USA
-PHONE:               +1 (703) 884-1527
+PHONE:               (703) 889-0017   ← CANONICAL as of Jun 2026 founder reversal. (703) 884-1527 is SUPERSEDED.
 GENERAL_EMAIL:       info@carryon.us
-PRIVACY_EMAIL:       privacy@carryon.us
-SECURITY_EMAIL:      security@carryon.us
+PRIVACY_EMAIL:       privacy@carryon.us   (alias live, routes to founder@)
+SECURITY_EMAIL:      security@carryon.us  (alias live)
+SUPPORT_EMAIL:       support@carryon.us   (alias live — Schema.org keeps it; earlier replace instruction WITHDRAWN)
 PRIMARY_DOMAIN:      https://www.carryon.us
 APP_SUBDOMAIN:       https://app.carryon.us
 OPERATIONS_COUNTY:   Arlington County, Virginia
@@ -514,7 +515,16 @@ The four-pillar section presents roughly twelve named systems with acronyms — 
 - paired_price NOT self-healed (admin-set); ben_price/features/quarterly/annual ARE force-synced from code+ben plans on every settings read (plans.py:490-536).
 - C3 REDRAFT NEEDED from prod values: family bundle claim is half-true (percentage-based yes 30/50; "more you save" scaling no). Proposed: "save 30% on your own subscription and 50% on every family member you add" — pending founder approval.
 
-## SESSION LOG — production re-verification (Jun 2026)
+## SESSION LOG 2 — phone reversal + B/C/E investigations (Jun 2026)
+- PHONE CANONICAL REVERSED by founder: (703) 889-0017 is canonical; 884-1527 superseded. All 9 code hits of 884-1527 corrected (fallbacks, AboutPage, Schema.org index.html, founder-story.html, SiteContentTab) + preview DB synced. Unbounded grep = 0 hits.
+- " USA" on footer line2: PENDING founder decision.
+- "130+ Families Protected" REMOVED from GetStartedPage (grid now 2 cols). Replacement trust line APPROVED in copy but placement awaiting founder choice (proposed: trust line beneath stat grid). Only traction figure sitewide (rest are internal admin metrics).
+- 51% RULE FORMALLY STRUCK by founder. Intended model = benefactor pays while living; post-transition each beneficiary pays price tied to benefactor's tier — ALREADY IMPLEMENTED via beneficiary_locked_tier (status.py:204-227, plan_map benefactor tier → ben_* plan).
+- paired_price VERDICT: dead configuration — read only in status.py:261-272 (returned as API field when estate transitioned), consumed by NOTHING (zero frontend reads; mobile = Capacitor wrapping same frontend). Never used in checkout/charging. Seniors inversion harmless today. Recommend removal (not removed).
+- plan_map GAP: missing "seniors" and "new_adult" → their beneficiaries lock to ben_base ($4.99) while catalog displays seniors ben_price $1.99. Display-vs-charge mismatch flagged to founder.
+- E2 CORRECTION: expired-trial benefactors do NOT hit the non-dismissible paywall — sdv_only_lockdown (status.py:308 + middleware_subscription_lock.py) keeps dashboard + full SDV; middleware blocks only WRITES on 14 feature prefixes; ALL reads open; /api/compliance/data-export + document downloads + Settings (PrivacyCard export) all reachable when expired. Wind-down export promise = KEPT for expired benefactors (discoverability could improve). require_active_subscription in guards.py is DEAD CODE (never applied to any route).
+- Sealed accounts (transitioned benefactor): login refused entirely — cannot export by design; support path exists (support.py:477).
+- Section C1 export design + D deferred /pricing build: see chat report. Vercel deploy-hook design approved-in-principle, DEFERRED.
 - Footer (Section A): prod platform_settings held 1509 N Scott/889-0017; founder fixed via portal — line1 now canonical (missing comma), line2 missing " USA", **phone STILL (703) 889-0017 — founder must update to +1 (703) 884-1527**. Static prerendered HTML keeps old values until next Vercel rebuild.
 - Founder prod password ROTATED (test_credentials.md flagged). No admin API access.
 - Atlas query pack delivered to founder for: voiceprint counts, soft-deleted file_data residue, chat_history/BEC counts, trial policy, section_security voice residue. AWAITING RESULTS — Phase 4 purge plan blocked on these.

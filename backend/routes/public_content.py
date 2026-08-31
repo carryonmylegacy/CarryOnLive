@@ -24,7 +24,7 @@ async def get_public_site_content():
         "homepage_video_id_vertical": settings.get("homepage_video_id_vertical", "5fDJ9e7bEUo"),
         "footer_address_line1": settings.get("footer_address_line1", "1550 Wilson Boulevard 7th Floor"),
         "footer_address_line2": settings.get("footer_address_line2", "Arlington, VA 22209 U.S.A."),
-        "footer_phone": settings.get("footer_phone", "(703) 884-1527"),
+        "footer_phone": settings.get("footer_phone", "(703) 889-0017"),
         # Public, non-sensitive feature flags (mirrors prior admin/platform behavior).
         "offline_mode": settings.get("offline_mode", "off"),
         "subscriptions_enabled": settings.get("subscriptions_enabled", True),
