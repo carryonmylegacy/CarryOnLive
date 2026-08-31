@@ -10132,3 +10132,6 @@ Founder-approved completion of the A–Q public-site backlog (A–M shipped in t
 
 ## Jun 2026 — Hero scroll link renamed "Discover More" → "Explore CarryOn" (founder pick)
 All 3 instances (LoginPage desktop scroll-explore-desktop + mobile scroll-explore-mobile, HomePage scroll-explore-home). Target unchanged (#about in-page anchor); "About" now only ever refers to the /about page in visible copy. Verified: click scrolls, both pages show new label, build green.
+
+## Jun 2026 — PRODUCTION VERIFIED (founder pushed)
+www.carryon.us confirmed live: 0 SOURCE NEEDED / <<< markers on / + /about + /wind-down-promise (prerendered + hydrated); figures intact; wind-down 3 states live with zero ZIP/CSV claims; og-image.jpg 200 @ exactly 1200×630, referenced ×2; "Explore CarryOn" live; "Start your family's plan" CTA live; Five Steps above Pillars + 4 accordions + 0 eager YouTube iframes in prerendered HTML; flag-bg 63KB jpg + 12KB webp serving; security.txt live (security@carryon.us); app.carryon.us x-robots-tag noindex confirmed. Founder still to do: iMessage visual check + LinkedIn Post Inspector cache-bust.
