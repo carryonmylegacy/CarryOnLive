@@ -12,7 +12,6 @@ export const HOW_IT_WORKS = [
   '4. Provide payment (charged only upon transition)',
   '5. Add any required credentials',
   '6. Task executes after verified transition',
-  '7. All records permanently destroyed',
 ];
 
 // Stripe Card Element styles
@@ -43,7 +42,7 @@ export const typeConfig = {
 };
 
 export const confConfig = {
-  full: { label: 'Fully Confidential', desc: 'No one will ever know. All records permanently destroyed.', color: '#F98080', bg: 'rgba(240,82,82,0.1)' },
+  full: { label: 'Fully Confidential', desc: 'No one you have not named will be told about this task.', color: '#F98080', bg: 'rgba(240,82,82,0.1)' },
   partial: { label: 'Partial Disclosure', desc: 'Specific individuals you name will be notified upon completion.', color: '#FFCB57', bg: 'rgba(245,166,35,0.1)' },
   timed: { label: 'Timed Release', desc: 'Confidential for a set period, then disclosed to designated people.', color: '#7AABFD', bg: 'rgba(59,123,247,0.1)' },
 };

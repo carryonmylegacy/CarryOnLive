@@ -1,0 +1,473 @@
+# MASTER BRIEF — 23-Phase Corrections (VERBATIM, re-pasted by founder Jun 2026)
+# Status tracker at bottom. DO NOT LOSE THIS FILE. Execute phases IN ORDER.
+# STOP-AND-REPORT gates: Phase 0, 1A, 4, 16, 17.
+
+You are making a sequence of corrections to the CarryOn production platform: public marketing pages, legal pages, metadata, one backend feature removal, and one signup-flow change. Read this entire brief before making a single edit. Some phases correct public claims that are currently inaccurate. Those come first and matter more than anything cosmetic.
+
+## CANONICAL FACTS — single source of truth
+
+```
+OPERATING_ENTITY:    CarryOn Technologies LLC
+PARENT_ENTITY:       CarryOn Enterprises Inc. (Delaware corporation)
+STREET_ADDRESS:      1550 Wilson Boulevard, 7th Floor
+CITY_STATE_ZIP:      Arlington, VA 22209 USA
+PHONE:               +1 (703) 884-1527
+GENERAL_EMAIL:       info@carryon.us
+PRIVACY_EMAIL:       privacy@carryon.us
+SECURITY_EMAIL:      security@carryon.us
+PRIMARY_DOMAIN:      https://www.carryon.us
+APP_SUBDOMAIN:       https://app.carryon.us
+OPERATIONS_COUNTY:   Arlington County, Virginia
+```
+
+Create one shared constants module (e.g. `src/config/companyInfo.js`, matching this codebase's conventions), export these values, import it everywhere contact information renders, and delete every hardcoded duplicate. All three email addresses are live and monitored — keep all three published and route them as they are today.
+
+**Corporate structure — read carefully.** CarryOn Technologies LLC owns and operates the platform. CarryOn Enterprises Inc., a Delaware corporation, owns the LLC. The LLC is the party that contracts with users.
+
+Therefore: **`OPERATING_ENTITY` is correct in footers, copyright lines, Terms of Service, and Privacy Policy, and stays as-is.** Do not replace it with the parent. The only change required is that the Terms and Privacy Policy should identify the LLC as a wholly owned subsidiary of `PARENT_ENTITY`, since users are entitled to know who ultimately controls their data. Flag the LLC's state of formation as `<<< COUNSEL — LLC STATE OF FORMATION >>>`; do not assume it matches the parent's.
+
+## RULES OF ENGAGEMENT
+
+1. **Execute phases in order.** Finish, verify, report, then move on. Never batch.
+2. **Phases 0, 1A, 4, 16, and 17 require you to stop and report before editing.** They are marked. Do not proceed past a stop point without explicit approval. **The stop in 1A applies only to 1A.** Sub-phases 1B through 1F execute immediately in the same pass and must not be deferred, blocked, or bundled into the 1A approval request.
+3. **Only Phase 4 modifies backend code, and its scope is fixed.** No other phase may touch authentication, encryption, key derivation, session handling, Stripe, or schemas. If you believe one does, stop and ask.
+4. **Do not split the marketing site from the login experience.** The combined homepage — sign-in above, marketing copy below — is intentional and stays. Do not propose otherwise.
+5. **Do not refactor anything not named here.** No renames, no folder restructuring, no dependency upgrades, no reformatting untouched files.
+6. **Print the file path and target block before each edit; print the diff after.**
+7. **Run the production build after every phase.** Zero errors, no new warnings. If a build breaks, revert that phase and report — do not work around it by touching other files.
+8. **Copy in this brief is exact.** Do not paraphrase, improve, or expand it.
+9. **Never invent a fact, price, statistic, source, date, or legal term.** Use `<<< PLACEHOLDER >>>` and report it.
+
+---
+
+# PHASE 0 — Discovery and audit (NO EDITS — stop and report)
+
+Produce a written report covering all of the following. Make no changes.
+
+### 0A. Estate Guardian data flow (highest priority — be exhaustive)
+
+Trace the complete code path for Estate Guardian™ AI analysis and report precisely:
+
+1. What data is read from the Secure Document Vault, and in what form — is it decrypted to plaintext before analysis?
+2. Where does analysis execute? Name every external endpoint contacted, including the model provider (expected: xAI / Grok) and any web-search or retrieval service.
+3. Exactly what payload leaves CarryOn infrastructure. Full document text? Extracted fields? Embeddings? Prompts containing user content?
+4. Is conversation or thread history retained? Where, for how long, encrypted or not, and is prior thread content resent on subsequent turns?
+5. What contractual or configuration controls exist on the provider side — is training-data exclusion enabled, and what is the provider's stated retention?
+6. Are provider API keys and calls server-side only, or can any vault content reach a third party from the browser?
+7. Does the same path apply to the Beneficiary Estate Concierge (BEC)? Report separately if it differs.
+
+### 0B. Retention and destruction reality
+
+The homepage claims sensitive records are permanently eliminated after tasks complete. Report what is actually deleted anywhere in the system, on what trigger, with what verification — including trustee task artifacts, EGA threads, uploaded documents, and soft-deleted records still present in the database.
+
+### 0C. Voice biometrics footprint
+
+Report every location where voiceprint or voice-biometric functionality exists: the triple security lock optional feature set in security settings, enrollment and verification endpoints, database fields and collections, stored voiceprint records, and the count of accounts that currently have it enrolled.
+
+### 0D. Pricing
+
+Report every subscription tier that exists in the codebase and platform config: exact tier names, prices, billing cadence, trial length, feature allocations, the family-bundle discount structure, the military/veteran discount, the 18–25 New Adult tier, the hospice program, and Founders Circle Lifetime terms. Report where each value is stored — hardcoded, database, or founder-portal config. **This is the source for Phase 16; do not invent any part of it.**
+
+### 0E. Free-tier and beneficiary billing logic
+
+Report the implemented behavior for: trial length and where it is configured; what happens at trial expiration; the 90-day post-trial retention window and what notice is sent during it; what is deleted at day 90; and the beneficiary billing rule that sets a beneficiary's tier based on the tier held for 51% of the benefactor's enrolled time. Report where and when beneficiaries are told about that obligation.
+
+### 0F. Infrastructure
+
+Report actual current hosting from config and deployment files: backend host, frontend host, database, and any change from Railway. Report the backend version and build tag.
+
+### 0G. Routing, metadata, and duplication
+
+1. Router library, route declarations, and the full public route list. Report whether `/founder` and `/founder-about` both resolve.
+2. Whether `app.carryon.us` serves the same application as `www.carryon.us`, how it is configured, and whether it is indexable.
+3. `index.html` path and every meta tag it declares.
+4. Whether `react-helmet-async` or any head-management library is installed.
+5. Whether page content is fetched client-side from `/api/public/site-content`, and what is present in the initial HTML before JavaScript executes.
+6. Existing Schema.org markup — location, types, and every value it contains, especially addresses and phone numbers.
+7. The PWA manifest path and its current `name`, `short_name`, and `description`.
+8. Whether `sitemap.xml`, `robots.txt`, and `/.well-known/security.txt` exist and what they contain.
+
+### 0H. Frontend specifics
+
+1. The file rendering `BUILD V2026.05.27.AUTHSRC` and what controls its visibility.
+2. Whether the homepage hero is duplicated for breakpoints, and the heading level of each copy.
+3. The signup flow: file path, step structure, fields per step, and validation.
+4. **Where the account-holder `gender` value collected at signup is consumed.** Name every read. If relationship terms (son, daughter, grandmother) derive from a per-beneficiary relationship field instead, say so explicitly.
+5. Every file containing a street address, phone number, email address, or the string `carryon.com`.
+6. How many distinct footer components exist.
+
+**Stop. Present this report. Wait for approval.**
+
+---
+
+# PHASE 1 — Correct inaccurate public claims (highest priority)
+
+Several live public statements appear to be untrue. This phase corrects them.
+
+## 1A — Estate Guardian claims (stop and report before editing)
+
+Based on the Phase 0A findings, report which of the following current statements are inaccurate:
+
+- Homepage: "Estate Guardian™ AI operates entirely within your encrypted vault — no data ever leaves"
+- Homepage: "AES-256 per-estate encryption — your family's data is never accessed by our team"
+- `/about`: "Zero-knowledge encryption. Air-gapped AI. No backdoors. No exceptions."
+- `/security`: "Zero-knowledge vault contents. Engineering staff cannot read your stored documents."
+- `/privacy`: the data security section's use of "zero-knowledge"
+
+If vault content is transmitted to a third-party model provider, then "no data ever leaves," "air-gapped AI," and unqualified "zero-knowledge" are false as written and must change.
+
+**Then propose replacement copy derived strictly from the Phase 0A findings.** Do not write aspirational language. The replacement must state accurately: how documents are encrypted, who on staff can and cannot access them, that AI analysis involves a named third-party provider under contract, what leaves the system, what the provider is contractually barred from doing with it, and what is retained. Present the proposed copy and wait for approval before editing.
+
+Suggested structure for `/about` values bullet, to be adjusted to fit the facts:
+
+> Per-estate AES-256 encryption. No staff access to your documents. AI analysis performed by a contracted provider under strict data-handling terms, with your content excluded from model training. No backdoors. No exceptions.
+
+Then grep for "zero-knowledge," "air-gapped," and "no data ever leaves" sitewide and report every instance with its file and line.
+
+## 1B — Remove the record-destruction claim (EXECUTE NOW — do not wait for 1A approval)
+
+**DONE in previous session (removed from LandingContent.js + trusteePageConstants.js, verified by grep).**
+
+The homepage security section contains this bullet:
+
+> Post-execution record destruction — sensitive records are permanently eliminated after tasks complete
+
+Delete the entire bullet, surgically. Verify: grep `Post-execution`, `permanently eliminated`, and `record destruction` across the frontend, the backend, and any content collection — all zero hits.
+
+## 1C — Qualify the financial-institutions claim
+
+The homepage security section opens by claiming the same security standards that protect financial institutions and government systems. This is unverifiable. Replace the sentence with:
+
+> Every layer of CarryOn™ is built on the encryption, key-management, and access controls we document publicly — because the people you love deserve nothing less.
+
+Make "document publicly" a link to `/security`.
+
+## 1D — Replace the dated security tagline
+
+Beneath the sign-in form, "Bank-grade security · 256-bit SSL" is both dated and imprecise — you run TLS 1.3, not SSL. Replace with:
+
+> AES-256 encryption · Per-estate keys · TLS 1.3
+
+## 1E — Align the SOC 2 claim
+
+The homepage bullet asserting "SOC 2 compliance architecture with full audit trail and GDPR data rights built in" conflicts with `/security`, which correctly states the Type II audit is in progress and explicitly declines to claim attestation. Replace the homepage bullet with:
+
+> SOC 2 Type II audit in progress — full audit trail and GDPR data rights built in
+
+Link it to `/security`.
+
+## 1F — Add a homepage path to the security page
+
+There is currently no link from the homepage to `/security` or `/wind-down-promise`. Add a prominent link to both at the end of the homepage security section.
+
+---
+
+# PHASE 2 — Contact and entity data integrity
+
+1. Build the constants module described in CANONICAL FACTS.
+2. Replace `support@carryon.com` in both the Privacy Policy and Terms of Service contact sections with `GENERAL_EMAIL`. Grep for `carryon.com` and report every remaining hit — there must be zero in rendered code.
+3. Replace every street address and phone number sitewide with the constants. The values `1509 N Scott St., Unit B` and `(703) 889-0017` are superseded and must not appear anywhere.
+4. **Entity naming: `OPERATING_ENTITY` stays.** Do not change "CarryOn Technologies LLC" in footers, copyright lines, or legal pages. Confirm it renders consistently everywhere and comes from the constants module rather than hardcoded strings. Report any page naming a different entity.
+5. In the Privacy Policy, designate `PRIVACY_EMAIL` for data access, correction, deletion, and portability requests, alongside `GENERAL_EMAIL` for general inquiries.
+6. Verify existing Schema.org markup carries `OPERATING_ENTITY` and does not contain a superseded address or phone number.
+
+**Verify:** grep for both superseded addresses, both superseded phone numbers, and `carryon.com` — all zero hits.
+
+---
+
+# PHASE 3 — Correct the infrastructure claim on /security
+
+The platform migrated to Render approximately two months ago. `/security` still states Railway (US East). That page declares itself the source of truth and promises it changes before practice does, so a stale entry undermines the page's core commitment.
+
+1. Using the Phase 0F findings, correct the infrastructure section to name actual current hosting for backend, frontend, and database. Do not assume — use what you found in config.
+2. Add a changelog entry at the bottom of `/security` in this format:
+
+> **Changelog**
+> `<<< DATE >>>` — Updated infrastructure section to reflect migration of backend services to Render. Corrected AI-processing disclosure. Removed voice biometric references.
+
+3. Update the "Last updated" date.
+4. Add a subprocessor list to `/security` naming every third party that processes user data — the model provider identified in Phase 0A, Stripe, the email provider, Twilio, the database host, and error monitoring. This is expected under GDPR and is a genuine trust asset.
+
+---
+
+# PHASE 4 — Remove voice biometrics (backend — stop and report)
+
+Voice biometrics are not part of the product. They must be removed from code, from the database, and from the Privacy Policy.
+
+**Before editing, report:** the number of accounts with a voiceprint enrolled, every database field and collection holding voiceprint data, and every endpoint involved. Present a removal and data-purge plan. Wait for approval.
+
+Then, on approval:
+
+1. Remove the voice biometric option from the **triple security lock optional feature set** in security settings.
+2. Ensure any account with it enrolled degrades safely to its remaining security factors. **No account may be left unable to authenticate.** State explicitly how you verified this.
+3. Purge stored voiceprint records from the database. Confirm no soft-deleted copies remain.
+4. Remove associated endpoints and dead code.
+5. Remove every voice-biometric and voiceprint reference from the Privacy Policy and Terms of Service.
+
+**Do not touch any other authentication factor, the remaining lock options, 2FA, or WebAuthn.**
+
+---
+
+# PHASE 5 — Footer parity
+
+The homepage footer links only Privacy, Terms, and a non-functional "Accessibility" label. `/about` additionally links Security and Wind-Down Promise. Result: your two strongest trust pages are unreachable from your highest-traffic page — an external reviewer with a crawler failed to find either.
+
+1. Consolidate to a single `<Footer />` used by every public route. Delete duplicates.
+2. Link order: Privacy Policy → Terms of Service → Security → Wind-Down Promise → Pricing → Accessibility.
+3. "Accessibility" currently renders as inert text on every page. Make it link to `/accessibility` (Phase 13).
+4. Render `OPERATING_ENTITY`, `STREET_ADDRESS`, `CITY_STATE_ZIP`, `PHONE`, and the copyright line from constants.
+
+---
+
+# PHASE 6 — Hide the build badge in production
+
+Gate `BUILD V2026.05.27.AUTHSRC` behind an environment check so it renders only in development and preview. Do not delete the component. Use the existing environment variable; report which.
+
+---
+
+# PHASE 7 — Terminology consistency
+
+1. Canonical name is **Immediate Action Checklist (IAC)**. On `/wind-down-promise`, the export bullet reads "Important Account Checklist" — correct it.
+2. Grep for "Important Account Checklist" and report remaining hits.
+3. Report, without changing, any other feature name appearing with two expansions.
+
+---
+
+# PHASE 8 — Stop app.carryon.us competing with www
+
+`app.carryon.us` serves a complete, indexable copy of the public marketing site. Two identical sites compete for the same searches and split ranking signals.
+
+**Do not change routing or redirects — the login flow must not be touched.** Instead:
+
+1. Serve `X-Robots-Tag: noindex` for all responses on `APP_SUBDOMAIN`, or emit a `noindex` meta tag when the app detects it is running on that host. Use whichever is supported by current hosting config.
+2. Ensure canonical tags on `APP_SUBDOMAIN` point to the corresponding `PRIMARY_DOMAIN` page — not the root. This depends on Phase 9 and may be implemented alongside it.
+3. Confirm `www.carryon.us` remains fully indexable.
+
+---
+
+# PHASE 9 — Per-route metadata, canonicals, and structured data
+
+Every route currently serves an identical title, identical description, and a canonical pointing at the root, so every subpage declares itself a duplicate of the homepage.
+
+1. If no head-management library exists, add `react-helmet-async` and wrap the root in `HelmetProvider`. If one exists, use it.
+2. Build a reusable `<SEO />` component taking `title`, `description`, `path`, `noindex`. It renders title, description, `<link rel="canonical" href={PRIMARY_DOMAIN + path}>`, plus matching `og:` and `twitter:` tags. Global static tags stay in `index.html`.
+3. Remove the hardcoded title, description, canonical, and per-page `og:`/`twitter:` tags from `index.html` **only after** per-route rendering is confirmed working.
+4. Apply to every public route:
+
+| Route | Title | Description |
+|---|---|---|
+| `/` | CarryOn™ — The Family Continuity Platform | If something happens tomorrow, your family knows exactly what to do. The complete continuity system for every disruption — hospital stay, deployment, disaster, or the final day. |
+| `/about` | About CarryOn — Readiness for Every Family | Why CarryOn exists: secure, affordable family continuity infrastructure built for every household. Our mission, values, founder, and the teams behind the platform. |
+| `/security` | Security & Trust — CarryOn | AES-256-GCM encryption, per-estate keys, 2FA, subprocessors, and our full security posture — documented honestly and updated before practice changes. |
+| `/wind-down-promise` | Wind-Down & Data Portability Promise — CarryOn | Our binding written commitment: 90 days notice, full self-service export, and an open-source decryption tool. Your family's data always comes home with you. |
+| `/pricing` | Pricing — CarryOn | Transparent pricing for family continuity. Free to start, free for hospice patients, military and veteran discounts, family bundle savings, and a dedicated tier for ages 18–25. |
+| `/privacy` | Privacy Policy — CarryOn | How CarryOn collects, uses, protects, shares, and returns your family's data. |
+| `/terms` | Terms of Service — CarryOn | The terms governing your use of the CarryOn family continuity platform. |
+| `/accessibility` | Accessibility — CarryOn | Our commitment to WCAG 2.1 AA conformance and how to report an accessibility barrier. |
+
+5. Apply `noindex` to `/signup`, `/login`, `/founder-about` (and `/founder` if it resolves), and all authenticated routes.
+6. Remove the `<meta name="keywords">` tag.
+7. **Audit — do not duplicate — the existing Schema.org Organization and SoftwareApplication markup.** Correct every value against CANONICAL FACTS. Report what it contained before. If Phase 0G found no markup, add Organization JSON-LD on `/` only.
+8. Add or correct `public/robots.txt`: allow crawlers, disallow authenticated paths, reference the sitemap.
+9. Add or correct `public/sitemap.xml` covering the eight indexable routes above.
+10. **Fix the PWA manifest.** It currently describes CarryOn as "Secure estate planning and legacy management for every American family," which is the superseded positioning and is user-visible in install prompts. Replace the description with:
+
+> The family continuity platform. Keep your family ready, connected, and clear through any disruption.
+
+Update `name` and `short_name` if they carry the old positioning.
+
+**Verify:** view source on each route — unique title, unique description, self-referencing canonical. `/signup` and `/login` carry `noindex`.
+
+---
+
+# PHASE 10 — Crawlability assessment (REPORT ONLY — no implementation)
+
+Marketing copy appears to be fetched client-side from `/api/public/site-content`, meaning page content may not exist in the initial HTML at all. If so, per-route metadata alone will not fix indexing.
+
+Report: exactly what a crawler receives before JavaScript executes on each public route; whether the current host supports prerendering or static generation for these routes; and two or three viable options with their tradeoffs. **Implement nothing.** This is an architectural decision requiring approval.
+
+---
+
+# PHASE 11 — Restore pinch-zoom
+
+The viewport meta tag contains `maximum-scale=1, user-scalable=no`, disabling pinch-to-zoom. This is a WCAG 2.1 AA failure (SC 1.4.4) and is especially harmful for an audience that is often older and frequently reading under stress.
+
+1. Change the viewport tag to exactly: `width=device-width, initial-scale=1, viewport-fit=cover`
+2. Check every page at 200% zoom on a 375px viewport. **Report** any horizontal overflow, clipped text, overlap, or unreachable control — do not silently restyle.
+
+---
+
+# PHASE 12 — Heading structure and hero duplication
+
+1. Determine whether both homepage hero blocks are in the DOM simultaneously or conditionally rendered.
+2. If both are present, ensure exactly one is exposed to assistive technology: `aria-hidden="true"` on the hidden variant, hidden via `display: none` rather than opacity or off-screen positioning.
+3. Exactly one `<h1>` exposed per page sitewide.
+4. Audit for skipped heading levels. Fix only where the fix is a heading-level change with no visual change; otherwise report.
+5. Confirm the "Skip to main content" link targets a real, focusable `#main-content` on every page.
+
+---
+
+# PHASE 13 — Accessibility statement page
+
+Create `/accessibility`, styled to match `/security`:
+
+- Heading: **Accessibility at CarryOn**
+- Commitment: CarryOn targets WCAG 2.1 Level AA. Because families often use the platform during medical crises, evacuations, and bereavement, accessibility is treated as a core requirement rather than a compliance exercise.
+- In place: keyboard navigation, skip links, visible focus indicators, text resizing and pinch-zoom support, semantic headings and landmarks, contrast targeting AA.
+- Known limitations: state plainly that no third-party audit has been completed and that findings will be published here when one is. Claim no unverified conformance.
+- Reporting: `GENERAL_EMAIL` and `PHONE`, with a five-business-day response commitment.
+- "Last updated" date.
+
+---
+
+# PHASE 14 — Founder visibility on /about
+
+`/founder-about` stays gated — that is intentional and is not to be changed. But the Wind-Down Promise already names the founder publicly and states his service, so those facts are not confidential today, while `/about` describes an unnamed team.
+
+1. Add a brief "Founder" section to `/about` before "Who We Are": name Barnet Harris, the 24-year military service line, and the bootstrapped-from-inception line already used on `/wind-down-promise`. Three or four sentences. Reuse existing wording; write no new biography.
+2. Leave a clearly marked placeholder for a headshot. Do not generate or source an image.
+3. Add one neutral public sentence above the gate on `/founder-about` so a first-time visitor understands what they are requesting rather than hitting a dead end.
+4. If both `/founder` and `/founder-about` resolve, canonicalize to one and report which.
+
+---
+
+# PHASE 15 — Cite or remove statistics
+
+The 76% figure on `/about` and the hospice population figure on the homepage are uncited. Add an inline source and year to each, or remove the figure. **Insert `<<< SOURCE NEEDED >>>` markers — do not invent citations.** Report both locations.
+
+---
+
+# PHASE 16 — Pricing page (stop and report before building)
+
+The site references family-bundle discounts, military and veteran pricing, an 18–25 tier, hospice access, Founders Circle Lifetime, and "Free to start" — with no pricing page anywhere. This is the largest conversion gap on the site.
+
+**First, present the complete tier structure discovered in Phase 0D and confirm it before building.** Do not invent any price, tier name, or allocation.
+
+Then create `/pricing`, linked from primary navigation and footer:
+
+1. Tier comparison built from confirmed values.
+2. **Free to start** — explain accurately: a person can sign up, upload documents, and never pay.
+3. **The 90-day retention rule, stated plainly and prominently.** After the trial period expires, an unconverted account has 90 days to download everything before the profile is deleted. This is the deletion of a family's wills and directives, so it must be conspicuous, not fine print. State the trigger (trial expiration), the window, what notice is sent, and how to export.
+4. **Beneficiary billing, stated plainly.** Beneficiaries are free while their benefactor is living. On transition, a beneficiary's tier is set by the tier the benefactor held for at least 51% of their enrolled time. Write this in plain English — a beneficiary inheriting a paid obligation must be able to understand it before accepting an invitation.
+5. **Hospice program** — free full platform access for U.S. citizens and resident aliens in certified hospice care. Reuse existing homepage copy verbatim.
+6. **Military and veteran** and **18–25 New Adult** sections — reuse existing homepage copy verbatim.
+8. FAQ: what happens when a subscription lapses, whether beneficiaries keep access, how to cancel, how to export. Answer from confirmed implementation; placeholder anything unknown.
+9. **No Stripe or checkout wiring in this phase.** Static page only.
+
+---
+
+# PHASE 17 — Beneficiary obligation disclosure (report, then implement copy only)
+
+A beneficiary who accepts an invitation may later inherit a paid subscription obligation under the 51% rule. Report where and when a beneficiary is currently told this — invitation email, acceptance screen, or nowhere.
+
+If disclosure is absent or unclear, draft plain-English copy for the invitation and acceptance flow explaining that beneficiary access is free while the benefactor is living, and what happens at transition. **Present the copy and the proposed placement; implement only after approval, and only copy — no billing logic.**
+
+---
+
+# PHASE 18 — Legal pages (DRAFT ONLY — attorney review required)
+
+Mark every new or modified section with `<!-- DRAFT — PENDING ATTORNEY REVIEW -->`. Do not remove an existing clause without flagging it.
+
+## 18A — Terms of Service
+
+1. Confirm the contracting party is `OPERATING_ENTITY`, with its principal place of business in `OPERATIONS_COUNTY`, and add a sentence identifying it as a wholly owned subsidiary of `PARENT_ENTITY`. Mark its state of formation `<<< COUNSEL — LLC STATE OF FORMATION >>>`.
+2. **Governing law.** The current clause names "the laws of the United States" with no state, which is not enforceable as drafted. The operating entity is an LLC with a Delaware-incorporated parent and operations in Virginia, so present the standard constructions as commented alternatives for counsel to select — the LLC's state of formation, or Virginia — each with exclusive venue. Do not choose. Leave arbitration and class-action-waiver language as `<<< COUNSEL DECISION >>>`.
+3. **Section 2 service description.** It currently defines CarryOn as an estate planning and estate plan management platform, which contradicts the continuity positioning throughout the site. Replace with: a family continuity platform enabling users to organize, secure, and share critical information with designated beneficiaries, including document storage, beneficiary management, checklist tools, guided response protocols, and AI-assisted analysis. **The disclaimer that CarryOn does not provide legal, financial, or tax advice must survive verbatim.**
+4. **Add a subscription, renewal, and cancellation section.** Recurring billing without explicit renewal, cancellation, and refund disclosure creates exposure under state automatic-renewal statutes. Cover trial length, renewal cadence, automatic renewal until cancelled, how and when cancellation takes effect, and refund policy. Refund specifics: `<<< PLACEHOLDER >>>`.
+5. **Add a data retention and deletion section** covering the 90-day post-trial window: the trigger, the notice schedule, the export right, and that the profile and its contents are deleted at the end of the window. This is the most consequential clause in the document — a user must not encounter it for the first time at day 89.
+6. **Add a beneficiary obligations section** describing the 51% tier rule.
+7. **Add a death-or-incapacity-of-account-holder section.** Cover what happens on verified transition, who may act, the Transition Verification Team process contractually, and beneficiary entitlements. Specifics: `<<< PLACEHOLDER >>>`.
+8. **Incorporate the Wind-Down Promise by reference**, citing its URL — it currently calls itself binding while living outside the contract.
+9. **Add Founders Circle Lifetime terms**: what "lifetime" is measured against, transferability, and treatment on wind-down.
+10. Add dispute resolution and a DMCA/copyright-agent section.
+11. Remove all voice biometric references. Update "Last updated."
+
+## 18B — Privacy Policy
+
+1. **Remove every reference to voice biometric data and voiceprints.** The feature is not part of the product and the language creates regulatory obligations under Illinois BIPA, Texas CUBI, and Washington law for no benefit.
+2. **Add a subprocessor section** naming every third party processing user data, including the AI model provider identified in Phase 0A.
+3. **Add an AI processing section** describing, accurately and per Phase 0A: what content is sent for analysis, to whom, whether it is used for training, what is retained, and for how long.
+4. Add a cookies and tracking section.
+5. Add data retention periods, including the 90-day post-trial deletion window.
+6. Add CCPA/CPRA: California rights, do-not-sell-or-share statement, authorized-agent process, non-discrimination.
+7. Add GDPR: legal bases, controller identity, international transfer mechanism.
+8. Add children's data: platform is 18+, no knowing collection from minors, and how minor beneficiaries are handled.
+9. Add breach notification commitments.
+10. Reconcile all "zero-knowledge" language with the Phase 1A outcome.
+11. Update "Last updated" and align the date convention with `/security`.
+
+---
+
+# PHASE 19 — Signup flow
+
+The page promises account creation in seconds, then opens with legal name, middle name, suffix, gender, and date of birth before collecting an email address — maximizing drop-off at the moment of least commitment.
+
+1. **Step 1 collects email and password only.** Move legal name, middle name, suffix, date of birth, and gender to step 2.
+2. **Gender stays** — it is required for relationship terminology. Move it to step 2 with helper text: "Used for relationship terms in your family plan." If Phase 0H found the account-holder value is never read, report that finding and recommend accordingly, but change nothing beyond the move.
+3. Update the sub-headline from "Create your account in seconds" to: **"Start in under a minute. Build the rest at your pace."**
+4. Persist partial progress **only if** a mechanism already exists. If not, report as a recommendation and change nothing.
+5. **Do not change validation rules, password requirements, the account-creation API call, or 2FA behavior.**
+
+**Verify:** full signup completes end to end in a test environment; no validation weakened.
+
+---
+
+# PHASE 20 — CTA and positioning consistency
+
+1. Standardize the primary signup CTA sitewide to **"Start your family's plan."** Replace "Open Account" and "Get Started" wherever they invoke signup. Keep "Create Account" on the login form only, where it contrasts with "Sign In."
+2. Replace the `/signup` headline "Join CarryOn. Protect Your Estate Plan." with **"Join CarryOn. Get your family ready."**
+3. Report every remaining sitewide instance of "estate planning platform" or equivalent superseded positioning.
+
+---
+
+# PHASE 21 — Homepage information architecture
+
+The four-pillar section presents roughly twelve named systems with acronyms — Beneficiaries, MM, FFN, DTS, EPT, SDV, DAV, EGA, CFP, CES, IAC, CCP, ECT, BEC. This demonstrates depth to an insider and complexity to a first-time visitor, contradicting the calm the page promises.
+
+1. **Keep all four pillars.** Under each, surface only the one or two strongest capabilities in full. Collapse the remainder behind a per-pillar "See everything in this pillar" disclosure — accordion or link to a detail page. **No content is deleted; it is relocated.**
+2. Remove parenthetical acronyms from the primary visible copy. Keep full names. Acronyms may remain inside the expanded detail.
+3. **Move a condensed version of the five-step "You don't have to do it all at once" section above the four pillars**, so a visitor learns what they actually do before being shown the full system. Condense to four short steps: invite your people → add what matters → set what should happen → live your life. The full five-step section stays where it is.
+4. Do not change the design system, color palette, or typography.
+
+---
+
+# PHASE 22 — Performance and assets
+
+1. Replace the eager YouTube iframe with a click-to-load facade — static thumbnail plus play button that swaps in the iframe on click. Hand-roll it; add no video library.
+2. `flag-bg.jpg` is a full-bleed background on multiple pages. Serve modern formats via `<picture>`, add responsive `srcset`, and set `loading="lazy"` below the fold. **Do not change visual appearance.**
+3. `og:image` points at `carryon-icon.jpg` while declaring 1200×630. Verify actual dimensions and report a mismatch. Do not create a replacement image.
+4. Confirm `/.well-known/security.txt` resolves, points to `SECURITY_EMAIL`, and has not expired.
+
+---
+
+# PHASE 23 — Final verification
+
+- [ ] Production build: zero errors, no new warnings.
+- [ ] All public routes load: `/`, `/about`, `/founder-about`, `/security`, `/wind-down-promise`, `/pricing`, `/privacy`, `/terms`, `/accessibility`, `/signup`, `/login`.
+- [ ] Zero console errors on any route.
+- [ ] Every footer link resolves on every page.
+- [ ] Grep returns zero hits: `carryon.com`, `1509 N Scott`, `889-0017`, `Important Account Checklist`, `voiceprint`, `voice biometric`, `air-gapped`, `Bank-grade`.
+- [ ] The record-destruction bullet is gone from the homepage (Phase 1B). Confirm by grepping `Post-execution` and `permanently eliminated` — both zero hits.
+- [ ] No unqualified "zero-knowledge" or "no data ever leaves" remains anywhere.
+- [ ] View source per route: unique title, unique description, self-referencing canonical.
+- [ ] `/signup`, `/login`, `/founder-about` carry `noindex`; `app.carryon.us` is noindexed; `www.carryon.us` is indexable.
+- [ ] PWA manifest carries current positioning.
+- [ ] Pinch-zoom works; no horizontal overflow at 375px; exactly one `<h1>` exposed per page.
+- [ ] Signup completes end to end; login, 2FA, and session behavior unchanged.
+- [ ] Every account previously using voice biometrics can still authenticate. State how this was verified.
+- [ ] No backend file modified outside Phase 4.
+
+**Final report:** every file changed; every `<<< PLACEHOLDER >>>` with file path and line; every item flagged rather than fixed; anything you could not complete and why.
+
+---
+
+# STATUS TRACKER (maintained by agent — update after every phase)
+
+- [x] Phase 1B — record-destruction bullet removed (prev session, verified by grep)
+- [ ] Phase 0 — audit report IN PROGRESS (this session)
+- [ ] Phase 1A (STOP GATE), 1C, 1D, 1E, 1F
+- [ ] Phase 2, 3
+- [ ] Phase 4 (STOP GATE)
+- [ ] Phase 5–15
+- [ ] Phase 16 (STOP GATE), 17 (STOP GATE)
+- [ ] Phase 18–23

@@ -13,7 +13,6 @@ import {
   Plus,
   ChevronRight,
   ChevronLeft,
-  Flame,
   CheckCircle2,
   XCircle,
   AlertTriangle,
@@ -595,19 +594,12 @@ const TrusteePage = () => {
           <div className="rounded-xl p-4" style={{ background: 'rgba(240,82,82,0.05)', border: '1px solid rgba(240,82,82,0.12)' }}>
             <div className="text-sm font-bold text-[var(--rd2)] mb-2">Maximum Security</div>
             <p className="text-sm text-[var(--t3)] leading-relaxed">
-              Credentials are stored in a separate encrypted Trustee Vault, completely isolated from your primary Secure Document Vault. Only the assigned DTS agent will access these credentials during task execution. All credentials are permanently destroyed after task completion.
+              Credentials are stored in a separate encrypted Trustee Vault, completely isolated from your primary Secure Document Vault. Only the assigned DTS agent will access these credentials during task execution.
             </p>
           </div>
         )}
 
-        {/* Post-execution destruction notice */}
-        <div className="rounded-xl p-4" style={{ background: 'rgba(240,82,82,0.04)', border: '1px solid rgba(240,82,82,0.1)' }}>
-          <div className="text-sm font-bold text-[#F98080] mb-2 flex items-center gap-2"><Flame className="w-4 h-4" /> Post-Execution Record Destruction</div>
-          <p className="text-sm text-[var(--t3)] leading-relaxed">
-            After confirmed task execution, ALL records — instructions, credentials, payment logs, and execution notes — are permanently and irrecoverably destroyed from every CarryOn™ system. No evidence of this task will exist.
-          </p>
-        </div>
-        
+        {/* Edit Task Modal */}
         {/* Edit Task Modal */}
         <Dialog open={showEditModal} onOpenChange={(open) => {
           setShowEditModal(open);

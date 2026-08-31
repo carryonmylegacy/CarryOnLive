@@ -1,5 +1,5 @@
 import React from 'react';
-import { Shield, Users, ChevronRight, Lock as LockIcon, Sparkles, FileCheck, UserCheck, Trash2, Layers, Smartphone, MapPin, ShieldAlert, ArrowUpDown, SlidersHorizontal, Landmark, Heart, Clock, Sun, LifeBuoy, Sunrise, Activity, Plane, Briefcase, CloudRain, Truck } from 'lucide-react';
+import { Shield, Users, ChevronRight, Lock as LockIcon, Sparkles, FileCheck, UserCheck, Layers, Smartphone, MapPin, ShieldAlert, ArrowUpDown, SlidersHorizontal, Landmark, Heart, Clock, Sun, LifeBuoy, Sunrise, Activity, Plane, Briefcase, CloudRain, Truck } from 'lucide-react';
 import { RevealSection } from './RevealSection';
 import HomeVoicesStrip from '../HomeVoicesStrip';
 
@@ -132,7 +132,6 @@ const SECURITY_ITEMS = [
   { icon: Sparkles, text: 'Estate Guardian\u2122 AI operates entirely within your encrypted vault \u2014 no data ever leaves' },
   { icon: Shield, text: 'Two-factor authentication on every login with device trust options for your family' },
   { icon: Users, text: 'Transition verification by a human team \u2014 not algorithms, not AI. Real people confirming real events.' },
-  { icon: Trash2, text: 'Post-execution record destruction \u2014 sensitive records are permanently eliminated after tasks complete' },
   { icon: FileCheck, text: 'SOC 2 compliance architecture with full audit trail and GDPR data rights built in' },
 ];
 
