@@ -1,4 +1,6 @@
+import { FlagBackdrop } from '../components/FlagBackdrop';
 import React, { useState, useEffect, useRef } from 'react';
+import SEO from '../components/SEO';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { Loader2, ShieldX, Lock, Eye, EyeOff, Send, ArrowLeft } from 'lucide-react';
 import { API_URL } from '../config';
@@ -101,6 +103,7 @@ const FounderAboutPage = () => {
   if (status === 'verifying') {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center" style={{ background: '#0d1b2a', paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }} data-testid="founder-page-loading">
+        <SEO title="Founder — CarryOn" description="About the founder of CarryOn." path="/founder-about" noindex />
         <Loader2 className="w-10 h-10 text-[#d4af37] animate-spin mb-4" />
         <p className="text-[#9aa5b4] text-sm">Verifying your invitation...</p>
       </div>
@@ -196,8 +199,9 @@ const FounderAboutPage = () => {
   // Gate page — request access or sign in
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-5 relative" style={{ background: '#0d1b2a', paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }} data-testid="founder-page-gate">
+      <SEO title="Founder — CarryOn" description="About the founder of CarryOn." path="/founder-about" noindex />
       <div className="absolute inset-0 z-0">
-        <img src="/flag-bg.jpg" alt="" className="w-full h-full object-cover" style={{ filter: 'brightness(0.35) contrast(1.05) saturate(0.8)' }} />
+        <FlagBackdrop style={{ filter: 'brightness(0.35) contrast(1.05) saturate(0.8)' }} />
       </div>
       <div className="absolute inset-0 z-[1]" style={{ background: 'radial-gradient(ellipse 80% 60% at 50% 50%, rgba(13,27,42,0.5) 0%, rgba(13,27,42,0.85) 100%)' }} />
 
@@ -206,6 +210,10 @@ const FounderAboutPage = () => {
         <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-[#6b7a90] text-xs hover:text-[#d4af37] transition-colors mb-4 py-1" data-testid="founder-back-btn">
           <ArrowLeft className="w-3.5 h-3.5" /> Back
         </button>
+
+        <p className="text-[#9aa5b4] text-xs sm:text-sm leading-relaxed mb-4" data-testid="founder-gate-intro">
+          This page holds the personal story of CarryOn&#8217;s founder, Barnet Harris, a retired 24-year military veteran &mdash; shared on request rather than published publicly.
+        </p>
 
         <div className="rounded-2xl p-6 sm:p-8" style={{ background: 'rgba(13,27,42,0.8)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border: '1px solid rgba(var(--gold-rgb), 0.12)', boxShadow: '0 24px 80px rgba(0,0,0,0.5)' }}>
 

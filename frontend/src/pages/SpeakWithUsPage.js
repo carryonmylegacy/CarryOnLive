@@ -1,4 +1,6 @@
+import { YouTubeFacade } from '../components/YouTubeFacade';
 import React, { useState, useEffect } from 'react';
+import SEO from '../components/SEO';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../utils/apiClient';
 import { RevealSection } from '../components/landing/RevealSection';
@@ -19,7 +21,6 @@ const useIsMobileViewport = (breakpoint = 768) => {
 
 const SpeakWithUsPage = () => {
   const navigate = useNavigate();
-  const [footerInfo, setFooterInfo] = useState({ line1: '1550 Wilson Boulevard 7th Floor', line2: 'Arlington, VA 22209', phone: '(703) 889-0017' });
 
   const [homepageVideoId, setHomepageVideoId] = useState('KlZ8egF_Nyw');
   const [verticalVideoId, setVerticalVideoId] = useState('5fDJ9e7bEUo');
@@ -27,7 +28,6 @@ const SpeakWithUsPage = () => {
 
   useEffect(() => {
     apiClient.get(`${API_URL}/public/site-content`).then(r => {
-      setFooterInfo({ line1: r.data.footer_address_line1, line2: r.data.footer_address_line2, phone: r.data.footer_phone });
       if (r.data?.homepage_video_id) setHomepageVideoId(r.data.homepage_video_id);
       if (r.data?.homepage_video_id_vertical) setVerticalVideoId(r.data.homepage_video_id_vertical);
     }).catch(() => {});
@@ -45,6 +45,7 @@ const SpeakWithUsPage = () => {
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg)' }}>
+      <SEO title="Speak With Us — CarryOn" description="Talk to a real person about your family’s continuity plan — by phone, email, or a scheduled conversation." path="/speak-with-us" />
       {/* ═══════════════════ HERO ═══════════════════ */}
       <section id="speak-calendar" className="relative overflow-hidden" style={{ minHeight: '100vh' }}>
         {/* Dark gradient background — no flag */}
@@ -94,7 +95,6 @@ const SpeakWithUsPage = () => {
       {/* ═══════════════════ LANDING CONTENT — video + Built for Real Families onward ═══════════════════ */}
       <LandingContent
         navigateWithFade={navigateWithFade}
-        footerInfo={footerInfo}
         testIdSuffix="-speak"
         skipToRealFamilies
         ctaOverride={{ onClick: scrollToCalendar, label: 'Book a Demo' }}
@@ -112,27 +112,13 @@ const SpeakWithUsPage = () => {
                 {showVertical ? (
                   <div className="relative rounded-2xl overflow-hidden mx-auto" style={{ border: '1px solid rgba(var(--gold-rgb), 0.15)', boxShadow: '0 8px 60px rgba(0,0,0,0.4)', maxWidth: '360px' }}>
                     <div style={{ position: 'relative', paddingBottom: '177.78%', height: 0 }}>
-                      <iframe
-                        src={`https://www.youtube.com/embed/${activeVideoId}?rel=0&modestbranding=1&color=white`}
-                        title="CarryOn - The Family Continuity Platform (vertical)"
-                        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0 }}
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                        data-testid="speak-video"
-                      />
+                      <YouTubeFacade videoId={activeVideoId} title="CarryOn - The Family Continuity Platform (vertical)" testId="speak-video" />
                     </div>
                   </div>
                 ) : (
                   <div className="relative rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(var(--gold-rgb), 0.15)', boxShadow: '0 8px 60px rgba(0,0,0,0.4)' }}>
                     <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0 }}>
-                      <iframe
-                        src={`https://www.youtube.com/embed/${activeVideoId}?rel=0&modestbranding=1&color=white`}
-                        title="CarryOn - The Family Continuity Platform"
-                        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0 }}
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                        data-testid="speak-video"
-                      />
+                      <YouTubeFacade videoId={activeVideoId} title="CarryOn - The Family Continuity Platform" testId="speak-video" />
                     </div>
                   </div>
                 )}

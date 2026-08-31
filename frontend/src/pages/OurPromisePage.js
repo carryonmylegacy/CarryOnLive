@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import SEO from '../components/SEO';
+import PublicFooter from '../components/PublicFooter';
 import { Link } from 'react-router-dom';
 import { ShieldCheck, Lock, ExternalLink, Loader2 } from 'lucide-react';
 import { API_URL } from '../config';
@@ -42,6 +44,7 @@ const OurPromisePage = () => {
         padding: '64px 24px 96px',
       }}
     >
+      <SEO title="Our Promise — CarryOn" description="The CarryOn Prime Directive: the standing commitment that governs every decision we make for the families who trust us." path="/our-promise" />
       <div style={{ maxWidth: 720, margin: '0 auto' }}>
         {/* Eyebrow */}
         <div
@@ -248,6 +251,7 @@ const OurPromisePage = () => {
           </a>
         </div>
       </div>
+      <PublicFooter />
     </div>
   );
 };

@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import SEO from '../components/SEO';
+import PublicFooter from '../components/PublicFooter';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Lock, Shield, ArrowRight, Users, KeyRound, ChevronDown, Landmark,
@@ -113,6 +115,7 @@ const LandingPage = () => {
 
   return (
     <div className="min-h-screen overflow-x-hidden" style={{ background: 'var(--bg)', color: 'var(--t)' }}>
+      <SEO title="Total Estate Readiness — CarryOn" description="One system for your family's documents, finances, people, and plan — ready for any disruption." path="/landing-consumer" />
       {/* Top nav */}
       <header
         className="fixed top-0 inset-x-0 z-40 transition-all duration-200"
@@ -389,21 +392,7 @@ const LandingPage = () => {
       </section>
 
       {/* Footer */}
-      <footer className="py-10 px-5 sm:px-8 border-t" style={{ borderColor: 'var(--b)' }}>
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-sm" style={{ color: 'var(--t5)' }}>
-          <div className="flex items-center gap-2">
-            <img src="/carryon-logo.png" alt="CarryOn" className="w-5 h-5 rounded-sm opacity-80" />
-            <span>© {new Date().getFullYear()} CarryOn. All rights reserved.</span>
-          </div>
-          <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
-            <Link to="/privacy" className="hover:text-white transition-colors">Privacy</Link>
-            <Link to="/terms" className="hover:text-white transition-colors">Terms</Link>
-            <Link to="/security" className="hover:text-white transition-colors">Security</Link>
-            <Link to="/wind-down-promise" className="hover:text-white transition-colors">Wind-Down Promise</Link>
-            <a href="mailto:hello@carryon.us" className="hover:text-white transition-colors">Contact</a>
-          </div>
-        </div>
-      </footer>
+      <PublicFooter />
     </div>
   );
 };

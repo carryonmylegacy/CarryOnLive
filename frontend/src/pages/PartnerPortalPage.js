@@ -13,6 +13,7 @@
  * fallback (if the slug doesn't exist).
  */
 
+import { FlagBackdrop } from '../components/FlagBackdrop';
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import apiClient from '../utils/apiClient';
@@ -157,7 +158,7 @@ const PartnerPortalPage = () => {
     <div className="min-h-screen relative overflow-hidden" style={{ background: 'var(--bg)' }} data-testid="partner-portal-page">
       {/* Flag bg — identical to LoginPage hero */}
       <div className="absolute inset-0 z-0">
-        <img src="/flag-bg.jpg" alt="" className="w-full h-full object-cover" style={{ filter: 'brightness(1.25) contrast(1.05) saturate(1.1)' }} />
+        <FlagBackdrop style={{ filter: 'brightness(1.25) contrast(1.05) saturate(1.1)' }} />
       </div>
       <div className="absolute inset-0 z-[1]" style={{ background: 'linear-gradient(180deg, rgba(11,18,33,0.10) 0%, rgba(11,18,33,0.35) 50%, rgba(14,24,41,0.65) 100%)' }} />
       <div className="absolute inset-0 z-[1]" style={{ background: 'radial-gradient(ellipse 90% 80% at 20% 80%, rgba(255,255,255,0.10) 0%, transparent 60%)' }} />
@@ -302,7 +303,7 @@ function PartnerNotFoundTile({ slug, reason }) {
   return (
     <div className="min-h-screen relative overflow-hidden flex items-center justify-center" style={{ background: 'var(--bg)' }} data-testid="partner-portal-error">
       <div className="absolute inset-0 z-0">
-        <img src="/flag-bg.jpg" alt="" className="w-full h-full object-cover" style={{ filter: 'brightness(0.55) contrast(1.05)' }} />
+        <FlagBackdrop style={{ filter: 'brightness(0.55) contrast(1.05)' }} />
       </div>
       <div className="absolute inset-0 z-[1]" style={{ background: 'linear-gradient(180deg, rgba(11,18,33,0.55) 0%, rgba(11,18,33,0.85) 100%)' }} />
       <div className="relative z-10 max-w-lg w-full mx-6 rounded-2xl p-8 text-center" style={{

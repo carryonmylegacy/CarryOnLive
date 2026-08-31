@@ -1,5 +1,8 @@
+import { YouTubeFacade } from '../components/YouTubeFacade';
+import { FlagBackdrop } from '../components/FlagBackdrop';
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import SEO from '../components/SEO';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import apiClient from '../utils/apiClient';
 import { Mail, Lock, Eye, EyeOff, Loader2, Shield, ChevronRight, ChevronDown, Sparkles, ExternalLink, WifiOff, Menu, X } from 'lucide-react';
@@ -98,6 +101,7 @@ const useIsMobileViewport = (breakpoint = 768) => {
 };
 
 const LoginPage = () => {
+  const isLoginPath = useLocation().pathname === '/login';
   const navigate = useNavigate();
   const { login, verifyOtp, resendOtp, loginWithToken: authLoginWithToken } = useAuth();
   const [email, setEmail] = useState('');
@@ -164,14 +168,12 @@ const LoginPage = () => {
   const [installBannerDismissed, setInstallBannerDismissed] = useState(() => !!localStorage.getItem('carryon_install_dismissed'));
   const isPWAMode = isPWA();
   const isMobileNonPWA = isMobileBrowser();
-  const [footerInfo, setFooterInfo] = useState({ line1: '1550 Wilson Boulevard 7th Floor', line2: 'Arlington, VA 22209', phone: '(703) 889-0017' });
   // When the platform is in Free Mode, the hero surfaces the "CarryOn is
   // free right now" tile (same copy as the in-app Free banner).
   const [platformFreeMode, setPlatformFreeMode] = useState(false);
 
   useEffect(() => {
     apiClient.get(`${API_URL}/public/site-content`).then(r => {
-      setFooterInfo({ line1: r.data.footer_address_line1, line2: r.data.footer_address_line2, phone: r.data.footer_phone });
       setPlatformFreeMode(!!r.data.platform_free_mode);
     }).catch(() => {});
   }, []);
@@ -693,7 +695,7 @@ const LoginPage = () => {
       }} data-testid="pwa-login-view">
         {/* Flag background */}
         <div className="fixed inset-0 z-0">
-          <img src="/flag-bg.jpg" alt="" className="w-full h-full object-cover" style={{ filter: 'brightness(1.3) contrast(1.05) saturate(1.1)' }} />
+          <FlagBackdrop style={{ filter: 'brightness(1.3) contrast(1.05) saturate(1.1)' }} />
         </div>
         <div className="fixed inset-0 z-[1]" style={{ background: 'linear-gradient(180deg, rgba(11,18,33,0.15) 0%, rgba(11,18,33,0.35) 40%, rgba(14,24,41,0.6) 100%)' }} />
         <div className="fixed inset-0 z-[1]" style={{ background: 'radial-gradient(ellipse 90% 80% at 20% 80%, rgba(255,255,255,0.08) 0%, transparent 60%)' }} />
@@ -870,6 +872,7 @@ const LoginPage = () => {
       ...(exiting ? { transform: 'scale(0.98)' } : {}),
       transition: 'opacity 0.45s ease, transform 0.45s ease',
     }}>
+      <SEO title="CarryOn™ — The Family Continuity Platform" description="If something happens tomorrow, your family knows exactly what to do. The complete continuity system for every disruption — hospital stay, deployment, disaster, or the final day." path="/" noindex={isLoginPath} />
 
       {/* NAV BAR */}
       <nav className="fixed top-0 w-full z-[100]" style={{ borderBottom: '1px solid rgba(14,165,233,0.06)', background: 'rgba(11,18,33,0.97)', paddingTop: 'env(safe-area-inset-top, 0px)' }}>
@@ -901,7 +904,7 @@ const LoginPage = () => {
               {mobileNavOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
             <button onClick={() => navigateWithFade('/signup')} className="text-[#d4af37] text-sm font-semibold hover:text-[#fcd34d] transition-colors flex items-center gap-1">
-              Open Account <ChevronRight className="w-3.5 h-3.5" />
+              Start your family&apos;s plan <ChevronRight className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
@@ -953,7 +956,7 @@ const LoginPage = () => {
       <section className="min-h-screen flex items-start sm:items-center relative overflow-hidden" style={{ paddingTop: 'calc(5rem + env(safe-area-inset-top, 0px))' }}>
         {/* Flag background that fades on scroll */}
         <div ref={flagRef} className="absolute inset-0 z-0" style={{ opacity: 0.85 }}>
-          <img src="/flag-bg.jpg" alt="" className="w-full h-full object-cover" style={{ filter: 'brightness(1.3) contrast(1.05) saturate(1.1)' }} />
+          <FlagBackdrop style={{ filter: 'brightness(1.3) contrast(1.05) saturate(1.1)' }} />
         </div>
         {/* Dark gradient overlay */}
         <div className="absolute inset-0 z-[1]" style={{ background: 'linear-gradient(180deg, rgba(11,18,33,0.0) 0%, rgba(11,18,33,0.05) 50%, rgba(14,24,41,0.25) 100%)' }} />
@@ -1161,13 +1164,12 @@ const LoginPage = () => {
 
       <LandingContent
         navigateWithFade={navigateWithFade}
-        footerInfo={footerInfo}
         beforeAbout={
           /* ═══════════════════ VIDEO — See CarryOn in Action ═══════════════════ */
           <section className="relative z-10">
             <div className="py-16 lg:py-24 relative overflow-hidden">
               <div className="absolute inset-0 z-0">
-                <img src="/flag-bg.jpg" alt="" className="w-full h-full object-cover" style={{ filter: 'brightness(0.7) contrast(1.05) saturate(0.9)' }} />
+                <FlagBackdrop style={{ filter: 'brightness(0.7) contrast(1.05) saturate(0.9)' }} />
               </div>
               <div className="absolute inset-0 z-[1]" style={{ background: 'linear-gradient(180deg, rgba(8,14,26,1) 0%, rgba(8,14,26,0.97) 80px, rgba(11,18,33,0.6) 50%, rgba(11,18,33,0.8) 100%)' }} />
               <div className="absolute inset-0 z-[1]" style={{ background: 'radial-gradient(ellipse 80% 60% at 50% 50%, rgba(var(--gold-rgb), 0.04) 0%, transparent 70%)' }} />
@@ -1181,27 +1183,13 @@ const LoginPage = () => {
                 {showVertical ? (
                   <div className="relative rounded-2xl overflow-hidden mx-auto" style={{ border: '1px solid rgba(var(--gold-rgb), 0.15)', boxShadow: '0 8px 60px rgba(0,0,0,0.4), 0 0 40px rgba(var(--gold-rgb), 0.05)', maxWidth: '360px' }}>
                     <div style={{ position: 'relative', paddingBottom: '177.78%', height: 0 }}>
-                      <iframe
-                        src={`https://www.youtube.com/embed/${activeVideoId}?rel=0&modestbranding=1&color=white`}
-                        title="CarryOn — The Family Continuity Platform (vertical)"
-                        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0 }}
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                        data-testid="homepage-video"
-                      />
+                      <YouTubeFacade videoId={activeVideoId} title="CarryOn — The Family Continuity Platform (vertical)" testId="homepage-video" />
                     </div>
                   </div>
                 ) : (
                 <div className="relative rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(var(--gold-rgb), 0.15)', boxShadow: '0 8px 60px rgba(0,0,0,0.4), 0 0 40px rgba(var(--gold-rgb), 0.05)' }}>
                   <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0 }}>
-                    <iframe
-                      src={`https://www.youtube.com/embed/${activeVideoId}?rel=0&modestbranding=1&color=white`}
-                      title="CarryOn — The Family Continuity Platform"
-                      style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0 }}
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                      data-testid="homepage-video"
-                    />
+                    <YouTubeFacade videoId={activeVideoId} title="CarryOn — The Family Continuity Platform" testId="homepage-video" />
                   </div>
                 </div>
                 )}

@@ -18,6 +18,12 @@ Disallow: /verify-otp
 Disallow: /security-settings
 Disallow: /support
 Disallow: /debug/
+Disallow: /dashboard
+Disallow: /vault
+Disallow: /settings
+Disallow: /messages
+Disallow: /financials
+Disallow: /estate-chat
 
 # Allow major search engines + AI crawlers explicitly
 User-agent: Googlebot

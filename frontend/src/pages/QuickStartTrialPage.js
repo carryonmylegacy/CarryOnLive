@@ -20,6 +20,7 @@
  *     `routes/partner_brief.py::_check_try_rate_limit`).
  */
 import React, { useState } from 'react';
+import SEO from '../components/SEO';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, CheckCircle2, Loader2, Mail, Sparkles, ShieldCheck } from 'lucide-react';
 import axios from 'axios';
@@ -118,6 +119,7 @@ export default function QuickStartTrialPage() {
   if (success) {
     return (
       <div data-testid="qs-trial-success" style={{ minHeight: '100vh', background: 'var(--bg)', color: '#E5E7EB' }}>
+        <SEO title="QuickStart Trial — CarryOn" description="Try the CarryOn QuickStart experience." path="/quickstart/try" noindex />
         <TrialTopBar />
         <div style={{ maxWidth: 760, margin: '0 auto', padding: '48px 24px 80px', textAlign: 'center' }}>
           <CheckCircle2 className="mx-auto" style={{ width: 56, height: 56, color: '#d4af37' }} />
@@ -231,6 +233,7 @@ export default function QuickStartTrialPage() {
 
   return (
     <div data-testid="qs-trial-page" style={{ minHeight: '100vh', background: 'var(--bg)', color: '#E5E7EB' }}>
+      <SEO title="QuickStart Trial — CarryOn" description="Try the CarryOn QuickStart experience." path="/quickstart/try" noindex />
       <TrialTopBar />
       <div style={{ maxWidth: 720, margin: '0 auto', padding: '32px 20px 60px' }}>
         {/* Trial banner */}

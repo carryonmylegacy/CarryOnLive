@@ -9,6 +9,7 @@
  * manager must create their own password before a portal session exists.
  */
 
+import { FlagBackdrop } from '../components/FlagBackdrop';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../utils/apiClient';
@@ -84,7 +85,7 @@ export default function ManagerLoginPage() {
   return (
     <div className="min-h-screen relative overflow-hidden flex items-center justify-center py-10" style={{ background: 'var(--bg)' }} data-testid="manager-login-page">
       <div className="absolute inset-0 z-0">
-        <img src="/flag-bg.jpg" alt="" className="w-full h-full object-cover" style={{ filter: 'brightness(0.55) contrast(1.05)' }} />
+        <FlagBackdrop style={{ filter: 'brightness(0.55) contrast(1.05)' }} />
       </div>
       <div className="absolute inset-0 z-[1]" style={{ background: 'linear-gradient(180deg, rgba(11,18,33,0.55) 0%, rgba(11,18,33,0.85) 100%)' }} />
       <div className="relative z-10 max-w-md w-full mx-6 rounded-2xl p-8" style={{

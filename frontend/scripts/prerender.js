@@ -38,6 +38,7 @@ const PUBLIC_ROUTES = [
   '/home',
   '/landing-consumer',
   '/our-promise',
+  '/accessibility',
   '/founder-about',
   '/founder',
   '/get-started',

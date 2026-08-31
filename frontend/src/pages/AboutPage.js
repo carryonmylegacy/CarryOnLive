@@ -1,4 +1,7 @@
+import { FlagBackdrop } from '../components/FlagBackdrop';
 import React, { useState, useEffect, useRef } from 'react';
+import SEO from '../components/SEO';
+import PublicFooter from '../components/PublicFooter';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
 
 /* ─── scroll-reveal hook ─── */
@@ -33,6 +36,7 @@ const AboutPage = () => {
 
   return (
     <div className="min-h-screen" style={{ background: '#0d1b2a' }}>
+      <SEO title="About CarryOn — Readiness for Every Family" description="Why CarryOn exists: secure, affordable family continuity infrastructure built for every household. Our mission, values, founder, and the teams behind the platform." path="/about" />
 
       {/* NAV BAR */}
       <nav className="fixed top-0 w-full z-50" style={{ borderBottom: '1px solid rgba(30,48,80,0.3)', background: 'rgba(13,27,42,0.97)', paddingTop: 'env(safe-area-inset-top, 0px)' }}>
@@ -59,7 +63,7 @@ const AboutPage = () => {
       {/* HERO */}
       <section className="pb-20 lg:pb-28 relative overflow-hidden" style={{ paddingTop: 'calc(8rem + env(safe-area-inset-top, 0px))' }}>
         <div className="absolute inset-0 z-0">
-          <img src="/flag-bg.jpg" alt="" className="w-full h-full object-cover" style={{ filter: 'brightness(1.3) contrast(1.05) saturate(1.1)' }} />
+          <FlagBackdrop style={{ filter: 'brightness(1.3) contrast(1.05) saturate(1.1)' }} />
         </div>
         <div className="absolute inset-0 z-[1]" style={{ background: 'linear-gradient(180deg, rgba(13,27,42,0.0) 0%, rgba(13,27,42,0.05) 50%, rgba(13,27,42,0.25) 100%)' }} />
         <div className="absolute inset-0 z-[2]" style={{ background: 'radial-gradient(ellipse 90% 80% at 20% 80%, rgba(255,255,255,0.12) 0%, transparent 60%)' }} />
@@ -94,7 +98,7 @@ const AboutPage = () => {
             </RevealSection>
             <RevealSection delay={0.15}>
               <p className="text-[#7b879e] text-base leading-relaxed mb-10">
-                76% of American families will face exactly this. Not because they didn&apos;t care &mdash; but because no one gave them a simple, secure, affordable way to get ready.
+                76% of American families will face exactly this. {'<<< SOURCE NEEDED >>>'} Not because they didn&apos;t care &mdash; but because no one gave them a simple, secure, affordable way to get ready.
               </p>
             </RevealSection>
 
@@ -182,7 +186,7 @@ const AboutPage = () => {
               ].map(({ title, desc }, i) => (
                 <RevealSection key={title} delay={i * 0.1}>
                   <div className="rounded-xl p-6 h-full transition-all duration-500 hover:-translate-y-1 hover:border-[#d4af37]/20 hover:shadow-[0_8px_40px_rgba(var(--gold-rgb), 0.04)]" style={{ background: 'rgba(15,26,46,0.65)', border: '1px solid rgba(14,165,233,0.06)' }}>
-                    <h4 className="text-white text-base font-bold mb-3">{title}</h4>
+                    <h3 className="text-white text-base font-bold mb-3">{title}</h3>
                     <p className="text-[#7b879e] text-sm leading-relaxed">{desc}</p>
                   </div>
                 </RevealSection>
@@ -201,12 +205,44 @@ const AboutPage = () => {
               ].map(({ title, desc }, i) => (
                 <RevealSection key={title} delay={0.3 + i * 0.12} direction={i === 0 ? 'left' : 'right'}>
                   <div className="rounded-xl p-6 h-full transition-all duration-500 hover:-translate-y-1 hover:border-[#d4af37]/20 hover:shadow-[0_8px_40px_rgba(var(--gold-rgb), 0.04)]" style={{ background: 'rgba(15,26,46,0.65)', border: '1px solid rgba(14,165,233,0.06)' }}>
-                    <h4 className="text-white text-base font-bold mb-3">{title}</h4>
+                    <h3 className="text-white text-base font-bold mb-3">{title}</h3>
                     <p className="text-[#7b879e] text-sm leading-relaxed">{desc}</p>
                   </div>
                 </RevealSection>
               ))}
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FOUNDER */}
+      <section className="relative z-40 -mt-1">
+        <div className="py-14 lg:py-16" style={{ background: '#0d1b2a' }}>
+          <div className="max-w-[800px] mx-auto px-6">
+            <RevealSection>
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white text-center mb-8" style={{ fontFamily: 'var(--sans)' }}>
+                Founder
+              </h2>
+            </RevealSection>
+            <RevealSection delay={0.1}>
+              <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6" data-testid="about-founder-section">
+                {/* <<< PLACEHOLDER: FOUNDER HEADSHOT — replace this block with the approved image >>> */}
+                <div
+                  className="w-28 h-28 rounded-full flex-shrink-0 flex items-center justify-center text-center text-[10px] leading-tight px-2"
+                  style={{ background: 'rgba(212,175,55,0.06)', border: '1px dashed rgba(212,175,55,0.35)', color: '#7b879e' }}
+                  data-testid="founder-headshot-placeholder"
+                >
+                  Founder headshot coming soon
+                </div>
+                <p className="text-[#7b879e] text-base leading-relaxed">
+                  CarryOn was founded by Barnet Harris, a retired 24-year military veteran.
+                  He &ldquo;boot-strapped&rdquo; CarryOn from inception to what it is today
+                  because he believes this work matters. That conviction &mdash; that every
+                  family deserves to be ready &mdash; is the standard the rest of the team
+                  is held to.
+                </p>
+              </div>
+            </RevealSection>
           </div>
         </div>
       </section>
@@ -224,7 +260,7 @@ const AboutPage = () => {
             </RevealSection>
             <RevealSection delay={0.1}>
               <p className="text-[#7b879e] text-base leading-relaxed mb-6">
-                CarryOn is led by a small, focused team that believes this work matters. Our leadership brings deep experience across operations, legal, finance, and technology &mdash; but what unites us isn&apos;t our r&eacute;sum&eacute;s. It&apos;s the shared conviction that 76% is an unacceptable number, and that every family &mdash; regardless of who they are, where they live, or what they look like &mdash; deserves to be ready.
+                CarryOn is led by a small, focused team that believes this work matters. Our leadership brings deep experience across operations, legal, finance, and technology &mdash; but what unites us isn&apos;t our r&eacute;sum&eacute;s. It&apos;s the shared conviction that 76% {'<<< SOURCE NEEDED >>>'} is an unacceptable number, and that every family &mdash; regardless of who they are, where they live, or what they look like &mdash; deserves to be ready.
               </p>
             </RevealSection>
             <RevealSection delay={0.15}>
@@ -251,7 +287,7 @@ const AboutPage = () => {
               ].map(({ title, desc }, i) => (
                 <RevealSection key={title} delay={0.2 + i * 0.1}>
                   <div className="rounded-xl p-6 text-center h-full transition-all duration-500 hover:-translate-y-1 hover:border-[#d4af37]/20" style={{ background: 'rgba(15,26,46,0.65)', border: '1px solid rgba(14,165,233,0.06)' }}>
-                    <h4 className="text-[#d4af37] text-sm font-bold mb-2 leading-snug">{title}</h4>
+                    <h3 className="text-[#d4af37] text-sm font-bold mb-2 leading-snug">{title}</h3>
                     <p className="text-[#7b879e] text-xs leading-relaxed">{desc}</p>
                   </div>
                 </RevealSection>
@@ -272,33 +308,14 @@ const AboutPage = () => {
             </h2>
             <a href="/signup" className="inline-flex items-center gap-2 px-8 py-3.5 rounded-lg font-semibold text-sm transition-all hover:brightness-110 hover:scale-105 active:scale-95"
               style={{ background: '#d4af37', color: '#0B1221', transition: 'all 0.3s' }}>
-              Get Started <ChevronRight className="w-4 h-4" />
+              Start your family&apos;s plan <ChevronRight className="w-4 h-4" />
             </a>
           </RevealSection>
         </div>
       </section>
 
       {/* FOOTER */}
-      <footer className="relative z-[60] py-10" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
-        <div className="max-w-[1400px] mx-auto px-6 lg:px-10">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
-            <a href="/login"><img src="/carryon-logo.png" alt="CarryOn" className="h-8 opacity-60" /></a>
-            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
-              <a href="/privacy" className="text-[#3a4a63] text-xs hover:text-[#7b879e] transition-colors">Privacy Policy</a>
-              <a href="/terms" className="text-[#3a4a63] text-xs hover:text-[#7b879e] transition-colors">Terms of Service</a>
-              <a href="/security" className="text-[#3a4a63] text-xs hover:text-[#7b879e] transition-colors">Security</a>
-              <a href="/wind-down-promise" className="text-[#3a4a63] text-xs hover:text-[#7b879e] transition-colors">Wind-Down Promise</a>
-              <span className="text-[#3a4a63] text-xs">Accessibility</span>
-            </div>
-            <div className="text-right text-[#3a4a63] text-xs leading-relaxed">
-              <p>1550 Wilson Boulevard 7th Floor</p>
-              <p>Arlington, VA 22209</p>
-              <p>(703) 889-0017</p>
-            </div>
-          </div>
-          <p className="text-center text-[#2d3d55] text-xs mt-6">&copy; {new Date().getFullYear()} CarryOn Technologies LLC. All rights reserved.</p>
-        </div>
-      </footer>
+      <PublicFooter />
     </div>
   );
 };

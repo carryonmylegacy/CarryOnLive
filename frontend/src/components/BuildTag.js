@@ -11,7 +11,16 @@ import React from 'react';
 
 export const BUILD_VERSION = 'V2026.05.27.AUTHSRC';
 
-const BuildTag = () => (
+// Visible only in development and preview. NODE_ENV is 'production' in BOTH
+// Vercel prod and preview pod builds, so the preview/prod distinction comes
+// from REACT_APP_BACKEND_URL (inlined at build time by CRA).
+const IS_PRODUCTION_SITE =
+  process.env.NODE_ENV === 'production' &&
+  !(process.env.REACT_APP_BACKEND_URL || '').includes('preview.emergentagent.com');
+
+const BuildTag = () => {
+  if (IS_PRODUCTION_SITE) return null;
+  return (
   <div
     aria-hidden="true"
     style={{
@@ -32,6 +41,7 @@ const BuildTag = () => (
   >
     BUILD {BUILD_VERSION}
   </div>
-);
+  );
+};
 
 export default BuildTag;

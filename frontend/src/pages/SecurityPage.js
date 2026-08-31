@@ -9,6 +9,8 @@
  * isn't claimed here.
  */
 import React, { useEffect } from 'react';
+import SEO from '../components/SEO';
+import PublicFooter from '../components/PublicFooter';
 import { Link } from 'react-router-dom';
 import {
   Shield, Lock, KeyRound, FileCheck, Server, AlertTriangle,
@@ -53,6 +55,7 @@ const SecurityPage = () => {
   useEffect(() => { window.scrollTo(0, 0); }, []);
   return (
   <div className="min-h-screen" style={{ background: 'var(--bg)', color: 'var(--t)' }} data-testid="security-page">
+    <SEO title="Security & Trust — CarryOn" description="AES-256-GCM encryption, per-estate keys, 2FA, subprocessors, and our full security posture — documented honestly and updated before practice changes." path="/security" />
     <div className="max-w-3xl mx-auto px-5 sm:px-8 pt-12 pb-24" style={{ paddingTop: 'calc(48px + env(safe-area-inset-top, 0px))' }}>
       {/* Back link */}
       <Link
@@ -203,6 +206,7 @@ const SecurityPage = () => {
         CarryOn's security posture. We change it before we change practice.
       </p>
     </div>
+    <PublicFooter />
   </div>
   );
 };

@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import SEO from '../components/SEO';
+import PublicFooter from '../components/PublicFooter';
 import apiClient from '../utils/apiClient';
 import { API_URL } from '../config';
 
@@ -62,6 +64,7 @@ export default function PartnerBriefPage() {
 
   return (
     <div style={shellStyle} data-testid="partner-brief-page">
+      <SEO title="Partner Brief — CarryOn" description="How CarryOn partners with advisors, planners, and organizations to bring family continuity to their clients." path="/partner-brief" />
       <style>{`
         @media print {
           .no-print { display: none !important; }
@@ -217,7 +220,7 @@ export default function PartnerBriefPage() {
             <div style={{ display: 'grid', gap: 10 }}>
               {(c.capabilities.items || []).map((cap, i) => (
                 <div key={i} style={pillarCardStyle}>
-                  <h4 style={{ fontSize: 15, fontWeight: 700, color: '#F8FAFC', margin: 0, marginBottom: 6 }}>{cap.name}</h4>
+                  <h3 style={{ fontSize: 15, fontWeight: 700, color: '#F8FAFC', margin: 0, marginBottom: 6 }}>{cap.name}</h3>
                   <p style={{ fontSize: 14, color: '#CBD5E1', margin: 0, lineHeight: 1.6 }}>{cap.desc}</p>
                 </div>
               ))}
@@ -261,7 +264,7 @@ export default function PartnerBriefPage() {
           <div style={{ display: 'grid', gap: 12 }}>
             {(c.adjacent?.items || []).map((a, i) => (
               <div key={i} style={pillarCardStyle}>
-                <h4 style={{ fontSize: 15, fontWeight: 700, color: '#F8FAFC', margin: 0, marginBottom: 6 }}>{a.name}</h4>
+                <h3 style={{ fontSize: 15, fontWeight: 700, color: '#F8FAFC', margin: 0, marginBottom: 6 }}>{a.name}</h3>
                 <p style={{ fontSize: 14, color: '#CBD5E1', margin: 0, lineHeight: 1.6 }}>{a.frame}</p>
               </div>
             ))}
@@ -300,6 +303,7 @@ export default function PartnerBriefPage() {
           {c.footer?.line2 && <p style={{ margin: '8px 0 0 0' }}>{c.footer.line2}</p>}
         </footer>
       </div>
+      <PublicFooter />
     </div>
   );
 }

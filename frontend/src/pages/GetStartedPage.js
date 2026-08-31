@@ -1,4 +1,7 @@
+import { FlagBackdrop } from '../components/FlagBackdrop';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import SEO from '../components/SEO';
+import PublicFooter from '../components/PublicFooter';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { ArrowLeft, ArrowRight, ChevronRight, Check, X, Users, Shield, FileText, Heart, Key, UserCheck, Send, Sparkles } from 'lucide-react';
@@ -306,13 +309,14 @@ export default function GetStartedPage() {
 
   return (
     <div className="min-h-screen relative overflow-hidden" data-testid="get-started-page" style={{ fontFamily: "'Nunito', 'Segoe UI', system-ui, -apple-system, sans-serif" }}>
+      <SEO title="Get Started — CarryOn" description="Find your starting point: a guided path to organizing your family’s documents, people, and plan." path="/get-started" />
 
       {/* Google Font */}
       <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 
       {/* American flag background — brighter, more vivid */}
       <div className="fixed inset-0 z-0">
-        <img src="/flag-bg.jpg" alt="" className="w-full h-full object-cover" style={{ opacity: 1, filter: 'brightness(1.3) contrast(1.05) saturate(1.1)' }} />
+        <FlagBackdrop style={{ opacity: 1, filter: 'brightness(1.3) contrast(1.05) saturate(1.1)' }} />
       </div>
       {/* Minimal gradient — just enough to anchor the bottom, much lighter overall */}
       <div className="fixed inset-0 z-[1]" style={{ background: 'linear-gradient(180deg, rgba(11,18,33,0.0) 0%, rgba(11,18,33,0.05) 50%, rgba(14,24,41,0.25) 100%)' }} />
@@ -773,6 +777,7 @@ export default function GetStartedPage() {
           </span>
         </div>
       </div>
+      <PublicFooter />
     </div>
   );
 }

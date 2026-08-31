@@ -9,6 +9,8 @@
  * decision, and date the change.
  */
 import React, { useEffect } from 'react';
+import SEO from '../components/SEO';
+import PublicFooter from '../components/PublicFooter';
 import { Link } from 'react-router-dom';
 import {
   HeartHandshake, Download, Calendar, Code2, Mail, ArrowLeft, CheckCircle2,
@@ -51,6 +53,7 @@ const WindDownPromisePage = () => {
   useEffect(() => { window.scrollTo(0, 0); }, []);
   return (
   <div className="min-h-screen" style={{ background: 'var(--bg)', color: 'var(--t)' }} data-testid="wind-down-page">
+    <SEO title="Wind-Down & Data Portability Promise — CarryOn" description="Our binding written commitment: 90 days notice, full self-service export, and an open-source decryption tool. Your family’s data always comes home with you." path="/wind-down-promise" />
     <div className="max-w-3xl mx-auto px-5 sm:px-8 pt-12 pb-24" style={{ paddingTop: 'calc(48px + env(safe-area-inset-top, 0px))' }}>
       <Link
         to="/"
@@ -104,7 +107,7 @@ const WindDownPromisePage = () => {
         <ul className="space-y-2">
           <Bullet>Export every uploaded document in its original file format (PDF, JPG, MP4, WAV, etc.).</Bullet>
           <Bullet>Export every milestone message in original audio/video format with delivery metadata.</Bullet>
-          <Bullet>Export your Important Account Checklist as CSV and PDF.</Bullet>
+          <Bullet>Export your Immediate Action Checklist as CSV and PDF.</Bullet>
           <Bullet>Export your CarryOn Contingency Protocols and Estate Plan Timeline as PDF.</Bullet>
           <Bullet>Export your full beneficiary roster, including invitation status and contact info.</Bullet>
           <Bullet>Request a single ZIP of <em>everything</em> via the in-app data-portability tool, or by writing to <a href="mailto:privacy@carryon.us" className="underline" style={{ color: 'var(--gold)' }}>privacy@carryon.us</a>.</Bullet>
@@ -168,6 +171,7 @@ const WindDownPromisePage = () => {
         active members.
       </p>
     </div>
+    <PublicFooter />
   </div>
   );
 };

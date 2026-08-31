@@ -1,11 +1,9 @@
 Contact: mailto:security@carryon.us
-Contact: https://carryon.us/security
-Expires: 2027-12-31T23:59:59Z
-Encryption: https://carryon.us/.well-known/pgp-key.txt
+Contact: https://www.carryon.us/security
+Expires: 2027-06-01T00:00:00Z
 Preferred-Languages: en
-Canonical: https://carryon.us/.well-known/security.txt
-Policy: https://carryon.us/security
-Acknowledgments: https://carryon.us/security/hall-of-fame
+Canonical: https://www.carryon.us/.well-known/security.txt
+Policy: https://www.carryon.us/security
 
 # Responsible disclosure
 # We take vulnerability reports seriously. If you discover a security issue,

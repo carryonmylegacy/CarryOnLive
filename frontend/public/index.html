@@ -3,13 +3,12 @@
     <head>
         <meta charset="utf-8" />
         <link rel="icon" href="%PUBLIC_URL%/carryon-app-icon-square-512.png" />
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         <meta name="theme-color" content="#0B1221" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="CarryOn" />
         <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
-        <meta name="description" content="CarryOn keeps your family ready, connected, and clear through any disruption — a hospital stay, a deployment, a disaster, or the final day. The complete family continuity platform. Be ready for anything." />
         <!-- Apple-touch-icon family: declaring explicit sizes lets Safari pick
              the best-matching source instead of downscaling the 512px master
              (which produces aliased/blurry glyphs in the macOS notification
@@ -24,25 +23,16 @@
              them, causing old splash images to persist through deploys.
              We draw the flag-hero splash entirely in HTML below so every
              launch shows exactly what the current code defines. -->
-        <link rel="canonical" href="https://www.carryon.us/" />
-        <meta property="og:type" content="website" />
-        <meta property="og:title" content="CarryOn™ — The Family Continuity Platform" />
-        <meta property="og:description" content="If something happens tomorrow, your family knows exactly what to do. The complete continuity system that keeps your family ready, connected, and clear through any disruption — a hospital stay, a deployment, a disaster, or the final day." />
-        <meta property="og:image" content="https://www.carryon.us/carryon-icon.jpg" />
+        <meta property="og:image" content="https://www.carryon.us/og-image.jpg" />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
         <meta property="og:image:alt" content="CarryOn — the family continuity platform" />
-        <meta property="og:url" content="https://www.carryon.us/" />
         <meta property="og:site_name" content="CarryOn" />
         <meta property="og:locale" content="en_US" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:site" content="@carryonus" />
-        <meta name="twitter:title" content="CarryOn™ — The Family Continuity Platform" />
-        <meta name="twitter:description" content="If something happens tomorrow, your family knows exactly what to do. One continuity system for every disruption — hospital, deployment, disaster, transition. Same family. Same plan. Ready every time." />
-        <meta name="twitter:image" content="https://www.carryon.us/carryon-icon.jpg" />
+        <meta name="twitter:image" content="https://www.carryon.us/og-image.jpg" />
         <meta name="author" content="CarryOn" />
-        <meta name="keywords" content="family continuity, family continuity platform, family preparedness, household readiness, family emergency plan, incapacity planning, caregiver coordination, deployment readiness, hurricane preparedness, secure document vault, milestone messages, beneficiary management, estate planning, end of life planning, digital legacy" />
-        <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
 
         <!-- Schema.org structured data: Organization + WebSite + SoftwareApplication.
              These three blocks let Google show a rich card with logo, search box,
@@ -71,7 +61,7 @@
                 "@type": "ContactPoint",
                 "telephone": "+1-703-889-0017",
                 "contactType": "Customer Support",
-                "email": "support@carryon.us",
+                "email": "info@carryon.us",
                 "areaServed": "US",
                 "availableLanguage": ["English"]
               }, {
@@ -96,25 +86,14 @@
               "@type": "SoftwareApplication",
               "name": "CarryOn",
               "applicationCategory": "LifestyleApplication",
-              "operatingSystem": "Web, iOS, Android",
-              "offers": [
-                { "@type": "Offer", "name": "Base", "price": "0", "priceCurrency": "USD" },
-                { "@type": "Offer", "name": "Standard", "price": "9", "priceCurrency": "USD" },
-                { "@type": "Offer", "name": "Premium", "price": "19", "priceCurrency": "USD" }
-              ],
-              "aggregateRating": {
-                "@type": "AggregateRating",
-                "ratingValue": "5.0",
-                "reviewCount": "1",
-                "bestRating": "5"
-              }
+              "operatingSystem": "Web, iOS, Android"
             }
           ]
         }
         </script>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-        <link rel="preload" href="%PUBLIC_URL%/flag-bg.jpg" as="image" />
+        <link rel="preload" href="%PUBLIC_URL%/flag-bg.jpg" as="image" imagesrcset="%PUBLIC_URL%/flag-bg-800.webp 800w, %PUBLIC_URL%/flag-bg-1280.webp 1280w" imagesizes="100vw" />
         <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Cormorant+Garamond:wght@400;500;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'" />
         <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Cormorant+Garamond:wght@400;500;600;700&display=swap" rel="stylesheet" /></noscript>
         <link rel="dns-prefetch" href="https://places.googleapis.com" />
@@ -131,7 +110,6 @@
         work correctly both with client-side routing and a non-root public URL.
         Learn how to configure a non-root public URL by running `npm run build`.
         -->
-        <title>CarryOn™ — The Family Continuity Platform</title>
         <script>
             if (window.location.hostname.includes('emergentagent.com')) {
                 var ems = document.createElement('script');
@@ -185,18 +163,6 @@
         src="https://www.facebook.com/tr?id=%REACT_APP_META_PIXEL_ID%&ev=PageView&noscript=1"
         /></noscript>
         <!-- End Meta Pixel Code -->
-        <script type="application/ld+json">
-        {
-          "@context": "https://schema.org",
-          "@type": "SoftwareApplication",
-          "name": "CarryOn",
-          "applicationCategory": "FinanceApplication",
-          "description": "The family continuity platform. Keep your family ready, connected, and clear through any disruption — coordinate people, plans, documents, finances, and guided next steps before, during, and after life changes.",
-          "url": "https://carryon.us",
-          "operatingSystem": "Web, iOS, Android",
-          "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
-        }
-        </script>
         <!-- Boot-splash CSS — placed in <head> so it applies during HTML
              parse, BEFORE #carryon-boot-splash paints. The splash ALWAYS
              draws the flag-hero scene (flag bg + floating logo + caption
@@ -237,8 +203,11 @@
         <div id="carryon-boot-splash" role="status" aria-label="Loading CarryOn"
              style="position:fixed;inset:0;z-index:2147483000;overflow:hidden;background:#0B1221;color:#F4E7C1;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;transition:opacity 0.45s ease-out,visibility 0s linear 0.45s;">
             <div class="carryon-splash-scene" aria-hidden="true">
-                <img src="%PUBLIC_URL%/flag-bg.jpg" alt="" aria-hidden="true"
-                     style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0.95;filter:brightness(1.45) contrast(1.1) saturate(1.35);" />
+                <picture>
+                    <source type="image/webp" srcset="%PUBLIC_URL%/flag-bg-800.webp 800w, %PUBLIC_URL%/flag-bg-1280.webp 1280w" sizes="100vw" />
+                    <img src="%PUBLIC_URL%/flag-bg.jpg" alt="" aria-hidden="true"
+                         style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0.95;filter:brightness(1.45) contrast(1.1) saturate(1.35);" />
+                </picture>
                 <div aria-hidden="true" style="position:absolute;inset:0;background:linear-gradient(180deg, rgba(11,18,33,0.0) 0%, rgba(11,18,33,0.05) 55%, rgba(14,24,41,0.35) 100%);"></div>
                 <div aria-hidden="true" style="position:absolute;inset:0;background:radial-gradient(ellipse 70% 40% at 50% 50%, rgba(212,175,55,0.08) 0%, transparent 70%);"></div>
                 <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 24px calc(28vh + env(safe-area-inset-bottom, 0px)) 24px;">

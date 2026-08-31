@@ -538,7 +538,12 @@ bug — fix it in the preview DB immediately (snippet in
 - Hardcoded `rgba(212,175,55,…)` → `var(--gold-rgb)` sweep.
 
 ### Last verified end-to-end working item
-**Partner Manager Portal (Jun 2026 fork part 2, iter173: backend 14/14 + 9/9 regression, frontend pass after z-index fix):**
+**Public-site backlog Sections N–Q (Jun 2026 fork, iteration_184: frontend 12/12 PASS, housekeeping ALL CLEAR):**
+CTA standardized to "Start your family's plan" sitewide; YouTube click-to-load facades (`YouTubeFacade.js`);
+flag-bg optimized (1.16 MB → 63 KB jpg + webp `<picture>` via `FlagBackdrop.js`); branded 1200×630 og-image.jpg;
+security.txt dead references fixed (contact security@carryon.us); homepage IA reordered (Five Steps above Four
+Pillars) with per-pillar collapsed accordions. See CHANGELOG Jun 2026 entry.
+- **Prior:** Partner Manager Portal (Jun 2026 fork part 2, iter173: backend 14/14 + 9/9 regression, frontend pass after z-index fix):
 founder-issued manager credentials per partner (Partners tab key icon — create/regenerate/deactivate,
 password shown once, copyable portal URL), dedicated manager portal at /manager →
 /manager/portal (roster at a glance, create client portals, Enter Portal in trustee mode with

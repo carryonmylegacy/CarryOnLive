@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import SEO from '../components/SEO';
+import PublicFooter from '../components/PublicFooter';
 import apiClient from '../utils/apiClient';
 import { Link } from 'react-router-dom';
 import { Crown, Sparkles, Quote, ArrowRight } from 'lucide-react';
@@ -76,6 +78,7 @@ export default function VoicesPage() {
       style={{ background: 'var(--bg)', color: 'var(--t)' }}
       data-testid="public-voices-page"
     >
+      <SEO title="Voices — CarryOn" description="Real families on what readiness feels like — stories from the people CarryOn was built for." path="/voices" />
       {/* Top nav — mirrors LandingPage.js */}
       <header
         className="fixed top-0 inset-x-0 z-40 transition-all duration-200"
@@ -112,7 +115,7 @@ export default function VoicesPage() {
               className="inline-flex items-center gap-1.5 px-4 py-2 text-[22px] font-semibold rounded-lg btn-gold-cta"
               data-testid="voices-cta-header"
             >
-              Start Free <ArrowRight className="w-4 h-4" />
+              Start your family&apos;s plan <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
         </div>
@@ -235,27 +238,13 @@ export default function VoicesPage() {
             className="inline-flex items-center gap-2 px-8 py-4 text-[22px] font-semibold rounded-xl btn-gold-cta"
             data-testid="voices-footer-cta"
           >
-            Start your CarryOn <ArrowRight className="w-5 h-5" />
+            Start your family&apos;s plan <ArrowRight className="w-5 h-5" />
           </Link>
         </div>
       </section>
 
-      {/* Footer — mirrors LandingPage.js */}
-      <footer className="py-10 px-5 sm:px-8 border-t" style={{ borderColor: 'var(--b)' }}>
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-[22px]" style={{ color: 'var(--t5)' }}>
-          <div className="flex items-center gap-2">
-            <img src="/carryon-logo.png" alt="CarryOn" className="w-5 h-5 rounded-sm opacity-80" />
-            <span>&copy; {new Date().getFullYear()} CarryOn. All rights reserved.</span>
-          </div>
-          <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
-            <Link to="/privacy" className="hover:text-white transition-colors">Privacy</Link>
-            <Link to="/terms" className="hover:text-white transition-colors">Terms</Link>
-            <Link to="/security" className="hover:text-white transition-colors">Security</Link>
-            <Link to="/wind-down-promise" className="hover:text-white transition-colors">Wind-Down Promise</Link>
-            <a href="mailto:hello@carryon.us" className="hover:text-white transition-colors">Contact</a>
-          </div>
-        </div>
-      </footer>
+      {/* Footer — shared public footer */}
+      <PublicFooter />
 
       <style>{`
         @keyframes voiceFadeUp {

@@ -16,6 +16,13 @@
       "headers": [
         { "key": "Content-Type", "value": "application/json" }
       ]
+    },
+    {
+      "source": "/(.*)",
+      "has": [{ "type": "host", "value": "app.carryon.us" }],
+      "headers": [
+        { "key": "X-Robots-Tag", "value": "noindex" }
+      ]
     }
   ]
 }

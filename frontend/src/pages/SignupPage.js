@@ -1,4 +1,6 @@
+import { FlagBackdrop } from '../components/FlagBackdrop';
 import React, { useState, useEffect, useRef } from 'react';
+import SEO from '../components/SEO';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import {
@@ -178,6 +180,7 @@ const SignupPage = () => {
     })();
 
     const steps = [
+      { id: 'credentials', label: 'Login', icon: Lock },
       { id: 'name', label: 'About You', icon: User },
     ];
     if (isMinor) {
@@ -189,14 +192,14 @@ const SignupPage = () => {
     if (!arrivedViaPartnerLanding) {
       // Standard signup — show the Military/First Responder/Hospice/
       // B2B-Code chooser. This is where self-found B2B codes get
-      // entered.
+      // entered. Account creation fires when this (last) step advances.
       steps.push({ id: 'eligibility', label: 'Eligibility', icon: Shield });
     }
-    steps.push({ id: 'credentials', label: 'Login', icon: Lock });
     if (arrivedViaPartnerLanding) {
       // White-label arrival — show the dedicated, pre-populated
-      // enterprise-code tile as the closing step. Sits after
-      // credentials because /partners/redeem-code is auth-required.
+      // enterprise-code tile as the closing step. Account creation
+      // fires when leaving the step before it because
+      // /partners/redeem-code is auth-required.
       steps.push({ id: 'partner_code', label: 'Enterprise Code', icon: Briefcase });
     }
     return steps;
@@ -299,21 +302,25 @@ const SignupPage = () => {
       }
       return;
     }
-    // Credentials step → create the account. We DON'T advance the
-    // visible step here — handleSignup does it after the token is
-    // in localStorage so the final partner_code tile can call the
-    // auth-required `/partners/redeem-code`.
-    if (currentStep?.id === 'credentials') {
-      handleSignup();
-      return;
-    }
     // Partner-code step → submit or skip.
     if (currentStep?.id === 'partner_code') {
       handlePartnerCodeSubmit();
       return;
     }
-    if (step < STEPS.length - 1) goTo(step + 1);
-    else handleSignup();
+    // Account creation fires when the NEXT step is the auth-required
+    // partner_code tile, or when this is the last data step. We DON'T
+    // advance the visible step for the partner flow here — handleSignup
+    // does it after the token is in localStorage so the final
+    // partner_code tile can call the auth-required `/partners/redeem-code`.
+    if (step < STEPS.length - 1) {
+      if (STEPS[step + 1]?.id === 'partner_code') {
+        handleSignup();
+        return;
+      }
+      goTo(step + 1);
+    } else {
+      handleSignup();
+    }
   };
 
   // Final-tile post-account-creation handler. If the visitor entered
@@ -609,6 +616,7 @@ const SignupPage = () => {
       background: 'var(--bg)',
       animation: 'signupPageEnter 0.6s cubic-bezier(0.16,1,0.3,1) both',
     }}>
+      <SEO title="Create Your Account — CarryOn" description="Create your CarryOn account and start your family's continuity plan." path="/signup" noindex />
       <style>{`
         @keyframes signupPageEnter {
           from { opacity: 0; transform: scale(1.02); }
@@ -628,7 +636,7 @@ const SignupPage = () => {
 
       {/* Flag background */}
       <div className="absolute inset-0 z-0">
-        <img src="/flag-bg.jpg" alt="" className="w-full h-full object-cover" style={{ filter: 'brightness(1.3) contrast(1.05) saturate(1.1)' }} />
+        <FlagBackdrop style={{ filter: 'brightness(1.3) contrast(1.05) saturate(1.1)' }} />
       </div>
       <div className="absolute inset-0 z-[1]" style={{ background: 'linear-gradient(180deg, rgba(11,18,33,0.0) 0%, rgba(11,18,33,0.05) 50%, rgba(14,24,41,0.25) 100%)' }} />
       <div className="absolute inset-0 z-[2]" style={{ background: 'radial-gradient(ellipse 90% 80% at 20% 80%, rgba(255,255,255,0.12) 0%, transparent 60%)' }} />
@@ -653,10 +661,10 @@ const SignupPage = () => {
                 <div className="flex-1 pt-2">
                   <h1 className="text-5xl font-bold text-white leading-[1.08] mb-3" style={{ fontFamily: 'var(--sans)' }}>
                     Join {partnerLandingCompany || 'CarryOn'}.
-                    <span className="block text-[#d4af37] mt-1">Protect Your Estate Plan.</span>
+                    <span className="block text-[#d4af37] mt-1">Get your family ready.</span>
                   </h1>
                   <p className="text-[#7b879e] text-base max-w-sm leading-relaxed mb-6">
-                    Create your account in seconds. Your family's readiness starts here.
+                    Start in under a minute. Build the rest at your pace.
                   </p>
 
                   <div className="flex items-center gap-4">
@@ -677,9 +685,9 @@ const SignupPage = () => {
               transition: 'opacity 0.6s ease 0.1s',
             }}>
               <h1 className="text-xl sm:text-2xl font-bold text-white leading-tight mb-0.5" style={{ fontFamily: 'var(--sans)' }}>
-                Join {partnerLandingCompany || 'CarryOn'}. <span className="text-[#d4af37]">Protect Your Estate Plan.</span>
+                Join {partnerLandingCompany || 'CarryOn'}. <span className="text-[#d4af37]">Get your family ready.</span>
               </h1>
-              <p className="text-[#6b7a90] text-xs">Create your account in seconds</p>
+              <p className="text-[#6b7a90] text-xs">Start in under a minute. Build the rest at your pace.</p>
             </div>
 
             {/* RIGHT — Wizard Card */}
@@ -776,6 +784,7 @@ const SignupPage = () => {
                                 {genderOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
                               </SelectContent>
                             </Select>
+                            <p className="text-[#6b7a90] text-xs" data-testid="signup-gender-helper">Used for relationship terms in your family plan.</p>
                           </div>
                           <div className="space-y-1.5">
                             <Label className="text-[#7b879e] text-sm font-medium">Date of Birth</Label>
@@ -1136,8 +1145,6 @@ const SignupPage = () => {
                         <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Applying...</>
                       ) : usernameChecking && currentStep?.id === 'credentials' ? (
                         <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Checking username...</>
-                      ) : currentStep?.id === 'credentials' ? (
-                        <>Create Account <ChevronRight className="w-4 h-4 ml-1" /></>
                       ) : currentStep?.id === 'partner_code' ? (
                         partnerCodeApplied ? (
                           <>Continue <ArrowRight className="w-4 h-4 ml-1" /></>
@@ -1146,8 +1153,12 @@ const SignupPage = () => {
                         ) : (
                           <>Skip — No Code <ArrowRight className="w-4 h-4 ml-1" /></>
                         )
-                      ) : currentStep?.id === 'eligibility' && specialStatus.length === 0 ? (
-                        <>Skip — None Apply <ArrowRight className="w-4 h-4 ml-1" /></>
+                      ) : (step === STEPS.length - 1 && currentStep?.id !== 'minor_blocked') || STEPS[step + 1]?.id === 'partner_code' ? (
+                        currentStep?.id === 'eligibility' && specialStatus.length === 0 ? (
+                          <>None Apply — Create Account <ChevronRight className="w-4 h-4 ml-1" /></>
+                        ) : (
+                          <>Create Account <ChevronRight className="w-4 h-4 ml-1" /></>
+                        )
                       ) : (
                         <>Continue <ArrowRight className="w-4 h-4 ml-1" /></>
                       )}

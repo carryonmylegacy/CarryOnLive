@@ -22,6 +22,7 @@ import PendingSyncChip from './components/PendingSyncChip';
 import ScrollRestorationProvider from './components/ScrollRestorationProvider';
 import PartnerHeadBranding from './components/PartnerHeadBranding';
 import BuildTag from './components/BuildTag';
+import { NoIndex } from './components/SEO';
 import UpdatePrompt from './components/UpdatePrompt';
 import { AmberAlertProvider } from './components/AmberAlert';
 import { initErrorReporter, reportError } from './utils/errorReporter';
@@ -132,6 +133,7 @@ const VoicesPage = lazy(() => import('./pages/VoicesPage'));
 const PartnerBriefPage = lazy(() => import('./pages/PartnerBriefPage'));
 const QuickStartTrialPage = lazy(() => import('./pages/QuickStartTrialPage'));
 const SecurityPage = lazy(() => import('./pages/SecurityPage'));
+const AccessibilityPage = lazy(() => import('./pages/AccessibilityPage'));
 const WindDownPromisePage = lazy(() => import('./pages/WindDownPromisePage'));
 
 const SharedPlanPage = lazy(() => import('./pages/SharedPlanPage'));
@@ -449,12 +451,13 @@ class RouteErrorBoundary extends React.Component {
 
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles }) => {
-  const { user, loading, isAuthenticated, subscriptionStatus } = useAuth();
+  const { user, loading, isAuthenticated, subscriptionStatus, partnerBranding } = useAuth();
   const [showPaywall, setShowPaywall] = useState(() => sessionStorage.getItem('paywall_dismissed') === 'true');
 
   if (loading) {
     return (
       <div className="min-h-screen bg-[#0F1629] flex items-center justify-center">
+        <NoIndex />
         <div className="w-8 h-8 border-4 border-[#d4af37] border-t-transparent rounded-full animate-spin" />
       </div>
     );
@@ -522,7 +525,15 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     return <SubscriptionPaywall onDismiss={() => { setShowPaywall(true); sessionStorage.setItem('paywall_dismissed', 'true'); }} />;
   }
 
-  return children;
+  return (
+    <>
+      <NoIndex />
+      {/* Default app title; suppressed for partner-branded sessions so
+          PartnerHeadBranding keeps ownership of document.title. */}
+      {!partnerBranding?.companyName && <title>CarryOn™ — The Family Continuity Platform</title>}
+      {children}
+    </>
+  );
 };
 
 // Public Route (redirect if logged in)
@@ -614,6 +625,8 @@ function AppRoutes() {
         "Remember scroll position" preference enabled. No-op when
         the pref is OFF. */}
     <ScrollRestorationProvider />
+    {/* Real, focusable target for the "Skip to main content" link in index.html */}
+    <div id="main-content" tabIndex={-1} style={{ outline: 'none' }}>
     <Routes>
       {/* Public Routes */}
       <Route path="/login" element={
@@ -655,6 +668,7 @@ function AppRoutes() {
           B2B-first strategic pivot (Feb 2026), `/` now lands on Login. */}
       <Route path="/landing-consumer" element={<LandingPage />} />
       <Route path="/security" element={<SecurityPage />} />
+      <Route path="/accessibility" element={<AccessibilityPage />} />
       <Route path="/wind-down-promise" element={<WindDownPromisePage />} />
       <Route path="/get-started" element={<GetStartedPage />} />
       <Route path="/speak-with-us" element={<SpeakWithUsPage />} />
@@ -849,6 +863,7 @@ function AppRoutes() {
       <Route path="/" element={<RootRoute />} />
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
+    </div>
     </Suspense>
     </RouteErrorBoundary>
   );

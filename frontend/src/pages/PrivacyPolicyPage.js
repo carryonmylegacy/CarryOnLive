@@ -1,4 +1,6 @@
 import React from 'react';
+import SEO from '../components/SEO';
+import PublicFooter from '../components/PublicFooter';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Shield } from 'lucide-react';
 
@@ -8,6 +10,7 @@ const PrivacyPolicyPage = () => {
       className="min-h-screen py-12 px-4"
       style={{ background: 'linear-gradient(145deg, #0F1629, #141C33 40%, #0F1629)' }}
     >
+      <SEO title="Privacy Policy — CarryOn" description="How CarryOn collects, uses, protects, shares, and returns your family's data." path="/privacy" />
       <div className="max-w-3xl mx-auto relative z-10">
         <Link to="/login" className="inline-flex items-center gap-2 text-[#A0AABF] hover:text-white mb-8 transition-colors" data-testid="privacy-back-link">
           <ArrowLeft className="w-4 h-4" />
@@ -114,7 +117,10 @@ const PrivacyPolicyPage = () => {
             <section>
               <h2 className="text-lg font-semibold text-[var(--t)] mb-3">10. Contact Us</h2>
               <p>
-                If you have questions about this Privacy Policy or our data practices, please contact us at: <a href="mailto:support@carryon.com" className="text-[#7AABFD] hover:text-[#A5C6FE] transition-colors">support@carryon.com</a>
+                For data access, correction, deletion, or portability requests, contact: <a href="mailto:privacy@carryon.us" className="text-[#7AABFD] hover:text-[#A5C6FE] transition-colors" data-testid="privacy-dsr-email">privacy@carryon.us</a>
+              </p>
+              <p className="mt-2">
+                For general questions about this Privacy Policy or our data practices, contact: <a href="mailto:info@carryon.us" className="text-[#7AABFD] hover:text-[#A5C6FE] transition-colors" data-testid="privacy-general-email">info@carryon.us</a>
               </p>
             </section>
           </div>
@@ -126,6 +132,7 @@ const PrivacyPolicyPage = () => {
           <Link to="/login" className="text-[#7AABFD] text-sm hover:text-[#A5C6FE] transition-colors">Sign In</Link>
         </div>
       </div>
+      <PublicFooter />
     </div>
   );
 };

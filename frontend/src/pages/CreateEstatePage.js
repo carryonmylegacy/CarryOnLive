@@ -1,3 +1,4 @@
+import { FlagBackdrop } from '../components/FlagBackdrop';
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -355,7 +356,7 @@ const CreateEstatePage = () => {
 
       {/* Background */}
       <div className="absolute inset-0 z-0">
-        <img src="/flag-bg.jpg" alt="" className="w-full h-full object-cover" style={{ filter: 'brightness(1.3) contrast(1.05) saturate(1.1)' }} />
+        <FlagBackdrop style={{ filter: 'brightness(1.3) contrast(1.05) saturate(1.1)' }} />
       </div>
       <div className="absolute inset-0 z-[1]" style={{ background: 'linear-gradient(180deg, rgba(11,18,33,0.0) 0%, rgba(11,18,33,0.05) 50%, rgba(14,24,41,0.25) 100%)' }} />
       <div className="absolute inset-0 z-[2]" style={{ background: 'radial-gradient(ellipse 90% 80% at 20% 80%, rgba(255,255,255,0.12) 0%, transparent 60%)' }} />

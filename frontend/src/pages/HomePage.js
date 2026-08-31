@@ -1,4 +1,7 @@
+import { YouTubeFacade } from '../components/YouTubeFacade';
+import { FlagBackdrop } from '../components/FlagBackdrop';
 import React, { useState, useEffect } from 'react';
+import SEO from '../components/SEO';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../utils/apiClient';
 import { ChevronRight, ChevronDown } from 'lucide-react';
@@ -22,7 +25,6 @@ const HomePage = () => {
   const navigate = useNavigate();
   const [flagOpacity, setFlagOpacity] = useState(1);
   const [exiting, setExiting] = useState(false);
-  const [footerInfo, setFooterInfo] = useState({ line1: '1550 Wilson Boulevard 7th Floor', line2: 'Arlington, VA 22209', phone: '(703) 889-0017' });
   const [landscapeVideoId, setLandscapeVideoId] = useState('KlZ8egF_Nyw');
   const [verticalVideoId, setVerticalVideoId] = useState('5fDJ9e7bEUo');
 
@@ -30,7 +32,6 @@ const HomePage = () => {
 
   useEffect(() => {
     apiClient.get(`${API_URL}/public/site-content`).then(r => {
-      setFooterInfo({ line1: r.data.footer_address_line1, line2: r.data.footer_address_line2, phone: r.data.footer_phone });
       if (r.data.homepage_video_id) setLandscapeVideoId(r.data.homepage_video_id);
       if (r.data.homepage_video_id_vertical) setVerticalVideoId(r.data.homepage_video_id_vertical);
     }).catch(() => {});
@@ -61,6 +62,7 @@ const HomePage = () => {
       ...(exiting ? { transform: 'scale(0.98)' } : {}),
       transition: 'opacity 0.45s ease, transform 0.45s ease',
     }}>
+      <SEO title="CarryOn™ — The Family Continuity Platform" description="If something happens tomorrow, your family knows exactly what to do. The complete continuity system for every disruption — hospital stay, deployment, disaster, or the final day." path="/" />
 
       {/* NAV BAR */}
       <nav className="fixed top-0 w-full z-[100]" style={{ borderBottom: '1px solid rgba(14,165,233,0.06)', background: 'rgba(11,18,33,0.97)', paddingTop: 'env(safe-area-inset-top, 0px)' }}>
@@ -84,7 +86,7 @@ const HomePage = () => {
       {/* HERO */}
       <section className="min-h-screen flex items-center relative overflow-hidden" style={{ paddingTop: 'calc(5rem + env(safe-area-inset-top, 0px))' }}>
         <div className="absolute inset-0 z-0" style={{ opacity: flagOpacity * 0.85 }}>
-          <img src="/flag-bg.jpg" alt="" className="w-full h-full object-cover" style={{ filter: 'brightness(1.3) contrast(1.05) saturate(1.1)' }} />
+          <FlagBackdrop style={{ filter: 'brightness(1.3) contrast(1.05) saturate(1.1)' }} />
         </div>
         <div className="absolute inset-0 z-[1]" style={{ background: 'linear-gradient(180deg, rgba(11,18,33,0.0) 0%, rgba(11,18,33,0.05) 50%, rgba(14,24,41,0.25) 100%)' }} />
         <div className="absolute inset-0 z-[2]" style={{ background: 'radial-gradient(ellipse 90% 80% at 20% 80%, rgba(255,255,255,0.12) 0%, transparent 60%)' }} />
@@ -106,7 +108,7 @@ const HomePage = () => {
             <div className="flex items-center gap-4 justify-center flex-wrap mb-8">
               <button onClick={() => navigateWithFade('/signup')} className="gold-keep-dark inline-flex items-center gap-2 px-8 py-3.5 rounded-lg font-bold text-base transition-transform duration-150 active:scale-95" data-testid="home-get-started-hero"
                 style={{ background: '#d4af37', color: '#0B1221' }}>
-                Get Started <ChevronRight className="w-4 h-4" />
+                Start your family&apos;s plan <ChevronRight className="w-4 h-4" />
               </button>
               <button onClick={() => navigateWithFade('/login')} className="inline-flex items-center gap-2 px-8 py-3.5 rounded-lg font-semibold text-sm transition-all active:scale-95" data-testid="home-sign-in-hero"
                 style={{ background: 'rgba(255,255,255,0.08)', color: '#e2e8f0', border: '1px solid rgba(255,255,255,0.12)' }}>
@@ -137,13 +139,12 @@ const HomePage = () => {
 
       <LandingContent
         navigateWithFade={navigateWithFade}
-        footerInfo={footerInfo}
         testIdSuffix="-home"
         beforeAbout={
           <section className="relative z-10">
             <div className="py-16 lg:py-24 relative overflow-hidden">
               <div className="absolute inset-0 z-0">
-                <img src="/flag-bg.jpg" alt="" className="w-full h-full object-cover" style={{ filter: 'brightness(0.7) contrast(1.05) saturate(0.9)' }} />
+                <FlagBackdrop style={{ filter: 'brightness(0.7) contrast(1.05) saturate(0.9)' }} />
               </div>
               <div className="absolute inset-0 z-[1]" style={{ background: 'linear-gradient(180deg, rgba(14,24,41,1) 0%, rgba(14,24,41,0.97) 80px, rgba(11,18,33,0.6) 50%, rgba(11,18,33,0.8) 100%)' }} />
               <div className="absolute inset-0 z-[1]" style={{ background: 'radial-gradient(ellipse 80% 60% at 50% 50%, rgba(var(--gold-rgb), 0.04) 0%, transparent 70%)' }} />
@@ -158,28 +159,14 @@ const HomePage = () => {
                   /* Vertical (portrait) video for mobile PWA */
                   <div className="relative rounded-2xl overflow-hidden mx-auto" style={{ border: '1px solid rgba(var(--gold-rgb), 0.15)', boxShadow: '0 8px 60px rgba(0,0,0,0.4), 0 0 40px rgba(var(--gold-rgb), 0.05)', maxWidth: '360px' }}>
                     <div style={{ position: 'relative', paddingBottom: '177.78%', height: 0 }}>
-                      <iframe
-                        src={`https://www.youtube.com/embed/${activeVideoId}?rel=0&modestbranding=1&color=white`}
-                        title="CarryOn — The Family Continuity Platform (vertical)"
-                        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0 }}
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                        data-testid="homepage-video-home"
-                      />
+                      <YouTubeFacade videoId={activeVideoId} title="CarryOn — The Family Continuity Platform (vertical)" testId="homepage-video-home" />
                     </div>
                   </div>
                 ) : (
                   /* Landscape (16:9) video for desktop */
                   <div className="relative rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(var(--gold-rgb), 0.15)', boxShadow: '0 8px 60px rgba(0,0,0,0.4), 0 0 40px rgba(var(--gold-rgb), 0.05)' }}>
                     <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0 }}>
-                      <iframe
-                        src={`https://www.youtube.com/embed/${activeVideoId}?rel=0&modestbranding=1&color=white`}
-                        title="CarryOn — The Family Continuity Platform"
-                        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0 }}
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                        data-testid="homepage-video-home"
-                      />
+                      <YouTubeFacade videoId={activeVideoId} title="CarryOn — The Family Continuity Platform" testId="homepage-video-home" />
                     </div>
                   </div>
                 )}

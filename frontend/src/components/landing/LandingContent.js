@@ -1,6 +1,8 @@
 import React from 'react';
+import PublicFooter from '../PublicFooter';
 import { Shield, Users, ChevronRight, Lock as LockIcon, Sparkles, FileCheck, UserCheck, Layers, Smartphone, MapPin, ShieldAlert, ArrowUpDown, SlidersHorizontal, Landmark, Heart, Clock, Sun, LifeBuoy, Sunrise, Activity, Plane, Briefcase, CloudRain, Truck } from 'lucide-react';
 import { RevealSection } from './RevealSection';
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '../ui/accordion';
 import HomeVoicesStrip from '../HomeVoicesStrip';
 
 /* ── data: the continuity timeline (before / during / after) ── */
@@ -139,11 +141,10 @@ const SECURITY_ITEMS = [
  * LandingContent — all shared marketing sections rendered below the hero.
  *
  * @param {Function} navigateWithFade  — (path) => void
- * @param {{ line1: string, line2: string, phone: string }} footerInfo
  * @param {string}  [testIdSuffix='']  — appended to data-testid values (e.g. '-home')
  * @param {React.ReactNode} [beforeAbout]  — optional slot rendered before the About section (e.g. video)
  */
-const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', beforeAbout, skipToRealFamilies = false, ctaOverride }) => (
+const LandingContent = ({ navigateWithFade, testIdSuffix = '', beforeAbout, skipToRealFamilies = false, ctaOverride }) => (
   <>
     {beforeAbout}
 
@@ -284,7 +285,48 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
         </div>
       </div>
     </section>
+    </>
+    )}
 
+    {/* ═══════════════════ FIVE STEPS ═══════════════════ */}
+    <section id="steps" className="relative z-[29] -mt-1">
+      <div className="rounded-t-[2rem] py-24 lg:py-32 relative overflow-hidden" style={{ background: 'linear-gradient(180deg, #111F34, #0E1829)', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
+        <div className="absolute top-0 left-0 right-0 h-[320px] sm:hidden opacity-[0.85]" style={{ backgroundImage: 'url(/texture-pathway.jpg)', backgroundSize: '140%', backgroundPosition: 'center 40%' }} />
+        <div className="absolute top-0 left-0 right-0 h-[320px] sm:hidden" style={{ background: 'linear-gradient(180deg, transparent 50%, #111F34 100%)' }} />
+        <div className="absolute inset-0 opacity-[0.4] hidden sm:block" style={{ backgroundImage: 'url(/texture-pathway.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
+        <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 60% 60% at 50% 30%, rgba(var(--gold-rgb), 0.03) 0%, transparent 70%)' }} />
+        <div className="max-w-[800px] mx-auto px-6 text-center relative z-10">
+          <RevealSection>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold text-white mb-5 tracking-tight" style={{ fontFamily: 'var(--serif)' }}>
+              You don&apos;t have to do it all at once.
+            </h2>
+            <p className="text-[#7b879e] text-base max-w-[600px] mx-auto mb-14 leading-relaxed">
+              Start with what matters most. Build your family&apos;s readiness over time &mdash; a little at a time is enough.
+            </p>
+          </RevealSection>
+          <div className="space-y-12 text-left">
+            {FIVE_STEPS.map(({ step, title, desc }, i) => (
+              <RevealSection key={step} delay={i * 0.15}>
+                <div className="flex gap-5 group">
+                  <div className="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center font-bold text-base" style={{ background: 'rgba(var(--gold-rgb), 0.15)', color: '#d4af37', border: '1px solid rgba(var(--gold-rgb), 0.25)' }}>
+                    {step}
+                  </div>
+                  <div>
+                    <p className="text-white text-base leading-relaxed">
+                      <span className="font-bold">Step {step} &mdash; {title}.</span>{' '}
+                      <span className="text-[#7b879e]">{desc}</span>
+                    </p>
+                  </div>
+                </div>
+              </RevealSection>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+
+    {!skipToRealFamilies && (
+    <>
     {/* ═══════════════════ FOUR PILLARS — capabilities as outcomes ═══════════════════ */}
     <section id="features" className="relative z-30 -mt-1">
       <div className="rounded-t-[2rem] py-24 lg:py-32 relative overflow-hidden" style={{ background: 'linear-gradient(180deg, #0f1d30 0%, #132240 50%, #0f1d30 100%)', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
@@ -327,24 +369,37 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex flex-col sm:flex-row sm:items-baseline gap-x-3 gap-y-1 mb-2">
-                            <h4 className="text-white text-2xl font-semibold leading-tight tracking-tight" style={{ fontFamily: 'var(--serif)' }}>{title}</h4>
+                            <h3 className="text-white text-2xl font-semibold leading-tight tracking-tight" style={{ fontFamily: 'var(--serif)' }}>{title}</h3>
                             <span className="text-[#8b97ab] text-xs font-semibold tracking-wider uppercase break-words min-w-0">{abbr}</span>
                           </div>
                           <p className="text-sm font-medium leading-relaxed" style={{ color: '#e8c972' }}>{blurb}</p>
                         </div>
                       </div>
-                      <ul className="space-y-2.5 sm:ml-[68px] ml-0">
-                        {functions.map((fn) => (
-                          <li key={fn.abbr} className="flex items-start gap-3 text-sm leading-relaxed">
-                            <span className="flex-shrink-0 mt-[3px] w-1.5 h-1.5 rounded-full" style={{ background: color }} />
-                            <span className="text-[#cbd5e1]">
-                              <span className="font-semibold text-white">{fn.name}</span>
-                              <span className="text-[#8b97ab] font-medium"> ({fn.abbr})</span>
-                              <span className="text-[#a0aec0]"> &mdash; {fn.desc}</span>
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
+                      <Accordion type="single" collapsible className="sm:ml-[68px] ml-0">
+                        <AccordionItem value={`pillar-${num}-systems`} className="border-none">
+                          <AccordionTrigger
+                            data-testid={`pillar-${num}-systems-toggle${testIdSuffix}`}
+                            className="py-2.5 px-4 rounded-lg text-sm font-semibold hover:no-underline [&>svg]:text-current"
+                            style={{ color, background: `${color}14`, border: `1px solid ${color}40` }}
+                          >
+                            See what&apos;s inside ({functions.length} systems)
+                          </AccordionTrigger>
+                          <AccordionContent className="pt-4 pb-1">
+                            <ul className="space-y-2.5">
+                              {functions.map((fn) => (
+                                <li key={fn.abbr} className="flex items-start gap-3 text-sm leading-relaxed">
+                                  <span className="flex-shrink-0 mt-[3px] w-1.5 h-1.5 rounded-full" style={{ background: color }} />
+                                  <span className="text-[#cbd5e1]">
+                                    <span className="font-semibold text-white">{fn.name}</span>
+                                    <span className="text-[#8b97ab] font-medium"> ({fn.abbr})</span>
+                                    <span className="text-[#a0aec0]"> &mdash; {fn.desc}</span>
+                                  </span>
+                                </li>
+                              ))}
+                            </ul>
+                          </AccordionContent>
+                        </AccordionItem>
+                      </Accordion>
                     </div>
                   </RevealSection>
                 ))}
@@ -411,45 +466,8 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
                   <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-3" style={{ background: 'rgba(var(--gold-rgb), 0.1)', border: '1px solid rgba(var(--gold-rgb), 0.12)' }}>
                     <Icon className="w-4 h-4 text-[#d4af37]" />
                   </div>
-                  <h4 className="text-white text-sm font-semibold mb-1.5">{title}</h4>
+                  <h3 className="text-white text-sm font-semibold mb-1.5">{title}</h3>
                   <p className="text-[#6b7a90] text-xs leading-relaxed">{desc}</p>
-                </div>
-              </RevealSection>
-            ))}
-          </div>
-        </div>
-      </div>
-    </section>
-
-    {/* ═══════════════════ FIVE STEPS ═══════════════════ */}
-    <section id="steps" className="relative z-40 -mt-1">
-      <div className="rounded-t-[2rem] py-24 lg:py-32 relative overflow-hidden" style={{ background: 'linear-gradient(180deg, #111F34, #0E1829)', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
-        <div className="absolute top-0 left-0 right-0 h-[320px] sm:hidden opacity-[0.85]" style={{ backgroundImage: 'url(/texture-pathway.jpg)', backgroundSize: '140%', backgroundPosition: 'center 40%' }} />
-        <div className="absolute top-0 left-0 right-0 h-[320px] sm:hidden" style={{ background: 'linear-gradient(180deg, transparent 50%, #111F34 100%)' }} />
-        <div className="absolute inset-0 opacity-[0.4] hidden sm:block" style={{ backgroundImage: 'url(/texture-pathway.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
-        <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 60% 60% at 50% 30%, rgba(var(--gold-rgb), 0.03) 0%, transparent 70%)' }} />
-        <div className="max-w-[800px] mx-auto px-6 text-center relative z-10">
-          <RevealSection>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold text-white mb-5 tracking-tight" style={{ fontFamily: 'var(--serif)' }}>
-              You don&apos;t have to do it all at once.
-            </h2>
-            <p className="text-[#7b879e] text-base max-w-[600px] mx-auto mb-14 leading-relaxed">
-              Start with what matters most. Build your family&apos;s readiness over time &mdash; a little at a time is enough.
-            </p>
-          </RevealSection>
-          <div className="space-y-12 text-left">
-            {FIVE_STEPS.map(({ step, title, desc }, i) => (
-              <RevealSection key={step} delay={i * 0.15}>
-                <div className="flex gap-5 group">
-                  <div className="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center font-bold text-base" style={{ background: 'rgba(var(--gold-rgb), 0.15)', color: '#d4af37', border: '1px solid rgba(var(--gold-rgb), 0.25)' }}>
-                    {step}
-                  </div>
-                  <div>
-                    <p className="text-white text-base leading-relaxed">
-                      <span className="font-bold">Step {step} &mdash; {title}.</span>{' '}
-                      <span className="text-[#7b879e]">{desc}</span>
-                    </p>
-                  </div>
                 </div>
               </RevealSection>
             ))}
@@ -528,7 +546,7 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
               Readiness shouldn&apos;t depend on your circumstances.
             </h2>
             <p className="text-[#7b879e] text-base leading-relaxed mb-6">
-              At any given time, over 300,000 Americans are in hospice &mdash; and the vast majority have no plan in place for their families. CarryOn&#8482; is offered at no cost to all U.S. citizens and resident aliens enrolled in certified hospice care. Full platform access. No exceptions.
+              At any given time, over 300,000 Americans are in hospice {'<<< SOURCE NEEDED >>>'} &mdash; and the vast majority have no plan in place for their families. CarryOn&#8482; is offered at no cost to all U.S. citizens and resident aliens enrolled in certified hospice care. Full platform access. No exceptions.
             </p>
             <p className="text-white text-base font-semibold italic leading-relaxed">
               No one should be denied the ability to prepare their family &mdash; simply because of their circumstances.
@@ -539,7 +557,7 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
           <div className="grid sm:grid-cols-2 gap-5">
             <RevealSection delay={0.35} distance={50} duration={0.8}>
             <div className="rounded-xl p-6 text-center transition-all duration-500 hover:-translate-y-1 hover:border-[#d4af37]/20 backdrop-blur-md" style={{ background: 'rgba(15,26,46,0.55)', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 4px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)' }}>
-              <h4 className="text-white text-base font-bold mb-2" style={{ fontFamily: 'var(--sans)' }}>Military &amp; Veteran Families</h4>
+              <h3 className="text-white text-base font-bold mb-2" style={{ fontFamily: 'var(--sans)' }}>Military &amp; Veteran Families</h3>
               <p className="text-[#7b879e] text-sm leading-relaxed">
                 Reduced pricing for active-duty service members, veterans, and their families. Your service prepared you for everything &mdash; let CarryOn help prepare your family for anything else.
               </p>
@@ -547,7 +565,7 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
             </RevealSection>
             <RevealSection delay={0.45} distance={50} duration={0.8}>
             <div className="rounded-xl p-6 text-center transition-all duration-500 hover:-translate-y-1 hover:border-[#d4af37]/20 backdrop-blur-md" style={{ background: 'rgba(15,26,46,0.55)', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 4px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)' }}>
-              <h4 className="text-white text-base font-bold mb-2" style={{ fontFamily: 'var(--sans)' }}>New Adult Tier (18&ndash;25)</h4>
+              <h3 className="text-white text-base font-bold mb-2" style={{ fontFamily: 'var(--sans)' }}>New Adult Tier (18&ndash;25)</h3>
               <p className="text-[#7b879e] text-sm leading-relaxed">
                 A dedicated tier for young Americans just starting out. Because preparedness shouldn&apos;t start when you think you need it &mdash; it should start the day you&apos;re responsible for yourself.
               </p>
@@ -584,24 +602,7 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
     </section>
 
     {/* ═══════════════════ FOOTER ═══════════════════ */}
-    <footer className="relative z-[80] py-10" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
-      <div className="max-w-[1400px] mx-auto px-6 lg:px-10">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
-          <img src="/carryon-logo.png" alt="CarryOn" className="h-8 opacity-60" />
-          <div className="flex items-center gap-6">
-            <a href="/privacy" className="text-[#94a3b8] text-xs hover:text-[#cbd5e1] transition-colors" data-testid={`landing-footer-privacy-link${testIdSuffix}`}>Privacy Policy</a>
-            <a href="/terms" className="text-[#94a3b8] text-xs hover:text-[#cbd5e1] transition-colors" data-testid={`landing-footer-terms-link${testIdSuffix}`}>Terms of Service</a>
-            <span className="text-[#94a3b8] text-xs">Accessibility</span>
-          </div>
-          <div className="text-right text-[#94a3b8] text-xs leading-relaxed">
-            <p>{footerInfo.line1}</p>
-            <p>{footerInfo.line2}</p>
-            <p>{footerInfo.phone}</p>
-          </div>
-        </div>
-        <p className="text-center text-[#94a3b8] text-xs mt-6">&copy; {new Date().getFullYear()} CarryOn Technologies LLC. All rights reserved.</p>
-      </div>
-    </footer>
+    <PublicFooter />
   </>
 );
 
