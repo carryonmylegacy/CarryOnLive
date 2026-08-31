@@ -50,7 +50,7 @@ const FEATURES = [
 const FAQS = [
   {
     q: 'What happens to my data if CarryOn shuts down?',
-    a: 'Your data is yours. At any time you can export every document, message, and note in their original formats — encrypted vaults stay decryptable with your master key. We publish a wind-down promise: 90 days minimum notice, full export tooling, and an open-source decryption utility.',
+    a: 'Your data is yours. At any time you can export every document, message, and note — original file formats plus one complete, readable JSON export. We publish a wind-down promise: 90 days minimum notice, every export path open for the whole window, and no proprietary formats that ever need our servers to read.',
   },
   {
     q: 'How is this different from a will or LegalZoom?',

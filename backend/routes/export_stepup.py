@@ -269,7 +269,14 @@ async def export_user_data(data: ExportRequest, request: Request, current_user: 
     export_data = await build_user_export(current_user)
     export_data["sensitivity"] = "PERSONAL DATA — anyone with this file can read it. Store it encrypted."
 
-    counts = {k: len(v) for k, v in export_data.items() if isinstance(v, list)}
+    counts: dict = {}
+    for k, v in export_data.items():
+        if isinstance(v, list):
+            counts[k] = len(v)
+        elif isinstance(v, dict):
+            sub = {sk: len(sv) for sk, sv in v.items() if isinstance(sv, list)}
+            if sub:
+                counts[k] = sub
     now_iso = datetime.now(timezone.utc).isoformat()
     ip = get_client_ip(request)
     await _audit(

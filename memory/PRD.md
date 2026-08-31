@@ -538,7 +538,11 @@ bug — fix it in the preview DB immediately (snippet in
 - Hardcoded `rgba(212,175,55,…)` → `var(--gold-rgb)` sweep.
 
 ### Last verified end-to-end working item
-**Public-site backlog Sections N–Q (Jun 2026 fork, iteration_184: frontend 12/12 PASS, housekeeping ALL CLEAR):**
+**B1/B3 export field-inclusion + Wind-Down three-state rewrite (Jun 2026 fork, iteration_185: backend 17/17, frontend 16/16, check.sh ALL CLEAR):**
+GDPR export now includes decrypted MM bodies + DAV secret values + financial picture + entities + CCP + FFN +
+plan timeline (behind deployed B2 step-up). /wind-down-promise rewritten to founder-approved three-state copy;
+false ZIP/CSV/decryption-CLI claims removed. NOT PUSHED — awaiting founder deploy; share-card check blocked on deploy.
+- **Prior:** Public-site backlog Sections N–Q (iteration_184: frontend 12/12 PASS).
 CTA standardized to "Start your family's plan" sitewide; YouTube click-to-load facades (`YouTubeFacade.js`);
 flag-bg optimized (1.16 MB → 63 KB jpg + webp `<picture>` via `FlagBackdrop.js`); branded 1200×630 og-image.jpg;
 security.txt dead references fixed (contact security@carryon.us); homepage IA reordered (Five Steps above Four

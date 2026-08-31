@@ -558,3 +558,8 @@ The four-pillar section presents roughly twelve named systems with acronyms — 
 - EXPORT REMINDER: NO separate email — if shipped, one line inside existing trial-expired notice (build_trial_expired_email, trial_reminders.py:97 "What's still accessible" box). Wording proposed, NOT implemented.
 - SEQUENCE (founder E): 1) regression ✔ 2) founder pushes; verify prod frontend+backend 3) founder runs F1,F2,F3 — report outputs 4) prod dry run must show 70 chat_history + 1 BEC — STOP if different 5) --apply 6) full prod E2E verify (API, sessions, both PDFs, BEC history+titles). Migration NEVER before deploy completes.
 - Phases 2, 3, 5–23 remain unauthorized. After B2+B1/B3: wind-down 3-state rewrite, then withholding.
+
+## SESSION LOG 5 — B1/B3 + wind-down rewrite EXECUTED (Jun 2026 fork)
+- B1/B3 FIELD INCLUSION BUILT + fully regressed (iteration_185: backend 17/17, frontend 16/16; check.sh ALL CLEAR). build_user_export now returns decrypted MM bodies ("messages" key), DAV secret values, financial_picture, entities_structures, contingency_protocols, ffn list, estate_plan_timeline. D1 EXPORT GATE now PASSES — D2 restriction unblock candidate after founder approves/pushes.
+- WIND-DOWN 3-STATE REWRITE SHIPPED (founder approved copy + option (a) for decryption card): ZIP claim + IAC-CSV claim removed; States = today / announced wind-down / after last day; "No proprietary formats — ever" card replaces CLI-for-ZIP promise. LandingPage FAQ echo fixed. Footer dated "Last revised: June 2026".
+- NEXT (per founder picks): share-card validation after deploy. Withholding gate still UNAUTHORIZED. Register-options struct twin bug still awaiting approval. Transcript migration still awaiting founder Render run.

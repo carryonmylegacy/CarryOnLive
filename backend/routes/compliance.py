@@ -14,6 +14,9 @@ from pydantic import BaseModel
 
 from config import db
 from guards import require_admin
+from routes.digital_wallet import _decrypt_wallet_entry
+from routes.messages import _decrypt_message
+from services.encryption import get_estate_salt
 from utils import get_current_user
 
 router = APIRouter()
@@ -54,6 +57,16 @@ async def build_user_export(current_user: dict) -> dict:
 
     estate_ids = [e["id"] for e in estates]
 
+    # Per-estate salts for decrypting the user's own encrypted fields (B1/B3:
+    # the export must hand back message bodies and DAV secret values in
+    # plaintext — the step-up gate in export_stepup.py protects the endpoint).
+    salt_by_estate: dict = {}
+    for eid in estate_ids:
+        try:
+            salt_by_estate[eid] = await get_estate_salt(eid)
+        except Exception:
+            salt_by_estate[eid] = None
+
     documents_meta = await db.documents.find(
         {"estate_id": {"$in": estate_ids}},
         {
@@ -67,10 +80,16 @@ async def build_user_export(current_user: dict) -> dict:
         },
     ).to_list(1000)
 
-    messages = await db.messages.find(
-        {"estate_id": {"$in": estate_ids}},
-        {"_id": 0, "encrypted_content": 0, "encrypted_title": 0},
-    ).to_list(1000)
+    messages_raw = await db.messages.find({"estate_id": {"$in": estate_ids}}, {"_id": 0}).to_list(1000)
+    messages = []
+    for msg in messages_raw:
+        salt = salt_by_estate.get(msg.get("estate_id"))
+        if salt:
+            msg = await _decrypt_message(msg, salt)
+        else:
+            msg.pop("encrypted_title", None)
+            msg.pop("encrypted_content", None)
+        messages.append(msg)
 
     beneficiaries = await db.beneficiaries.find({"estate_id": {"$in": estate_ids}}, {"_id": 0}).to_list(500)
 
@@ -80,19 +99,53 @@ async def build_user_export(current_user: dict) -> dict:
 
     subscriptions = await db.user_subscriptions.find_one({"user_id": user_id}, {"_id": 0})
 
-    digital_wallet = await db.digital_wallet.find(
-        {"estate_id": {"$in": estate_ids}},
-        {
-            "_id": 0,
-            "encrypted_value": 0,
-            "encrypted_password": 0,
-            "encrypted_additional": 0,
-            "password": 0,
-            "additional_access": 0,
-        },
-    ).to_list(500)
+    dav_raw = await db.digital_wallet.find({"estate_id": {"$in": estate_ids}}, {"_id": 0}).to_list(500)
+    digital_wallet = []
+    for entry in dav_raw:
+        salt = salt_by_estate.get(entry.get("estate_id"))
+        if salt:
+            entry = _decrypt_wallet_entry(entry, salt)
+        entry.pop("encrypted_value", None)
+        entry.pop("encrypted_password", None)
+        entry.pop("encrypted_additional", None)
+        digital_wallet.append(entry)
 
     dts_tasks = await db.dts_tasks.find({"estate_id": {"$in": estate_ids}}, {"_id": 0}).to_list(500)
+
+    in_estates = {"estate_id": {"$in": estate_ids}}
+
+    ffn_contacts = await db.ffn_contacts.find(in_estates, {"_id": 0}).to_list(1000)
+
+    financial_picture = {
+        "bills": await db.bills.find(in_estates, {"_id": 0}).to_list(2000),
+        "bill_payments": await db.bill_payments.find(in_estates, {"_id": 0}).to_list(5000),
+        "debts": await db.debts.find(in_estates, {"_id": 0}).to_list(2000),
+        "accounts": await db.financial_accounts.find(in_estates, {"_id": 0}).to_list(2000),
+        "property_assets": await db.property_assets.find(in_estates, {"_id": 0}).to_list(2000),
+        "custom_categories": await db.financial_custom_categories.find(in_estates, {"_id": 0}).to_list(500),
+    }
+
+    entities_structures = {
+        "entities": await db.cfp_entities.find(in_estates, {"_id": 0}).to_list(2000),
+        "external_people": await db.cfp_external_people.find(in_estates, {"_id": 0}).to_list(2000),
+        "relationships": await db.cfp_entity_relationships.find(in_estates, {"_id": 0}).to_list(5000),
+    }
+
+    contingency_protocols = {
+        "emergency_plans": await db.emergency_plans.find(in_estates, {"_id": 0}).to_list(500),
+        "activations": await db.emergency_activations.find(in_estates, {"_id": 0}).to_list(500),
+        "member_checkins": await db.member_checkins.find(in_estates, {"_id": 0}).to_list(2000),
+        "plans": await db.ccp_plans.find(in_estates, {"_id": 0}).to_list(500),
+        "household": await db.ccp_household.find(in_estates, {"_id": 0}).to_list(100),
+        "go_bag": await db.ccp_go_bag.find(in_estates, {"_id": 0}).to_list(100),
+        "rendezvous": await db.ccp_rendezvous.find(in_estates, {"_id": 0}).to_list(100),
+        "out_of_area": await db.ccp_out_of_area.find(in_estates, {"_id": 0}).to_list(100),
+        "risk_profile": await db.ccp_risk_profile.find(in_estates, {"_id": 0}).to_list(100),
+        "ccp_activations": await db.ccp_activations.find(in_estates, {"_id": 0}).to_list(500),
+        "drill_runs": await db.ccp_drill_runs.find(in_estates, {"_id": 0}).to_list(500),
+    }
+
+    plan_timeline = await db.edit_history.find(in_estates, {"_id": 0}).to_list(5000)
 
     consent_history = await db.consent_audit_log.find({"user_id": user_id}, {"_id": 0}).to_list(500)
 
@@ -162,17 +215,22 @@ async def build_user_export(current_user: dict) -> dict:
             "data_subject": user_profile,
             "estates": estates,
             "documents_metadata": documents_meta,
-            "messages_metadata": messages,
+            "messages": messages,
             "beneficiaries": beneficiaries,
             "beneficiary_memberships": beneficiary_memberships,
             "checklists": checklists,
             "digital_wallet_entries": digital_wallet,
+            "friends_family_notification": ffn_contacts,
+            "financial_picture": financial_picture,
+            "entities_structures": entities_structures,
+            "contingency_protocols": contingency_protocols,
+            "estate_plan_timeline": plan_timeline,
             "trustee_service_tasks": dts_tasks,
             "activity_logs": activity_logs,
             "subscription": subscriptions,
             "consent_preferences": user_consent,
             "consent_history": consent_history,
-            "note": "Encrypted document content, message bodies, credential secrets, OTP secrets, and password hashes are excluded from this export. 'beneficiary_memberships' lists estates where you are a named beneficiary; only your own personal data is included, never the estate owner's private contents.",
+            "note": "Milestone Message bodies, Digital Access Vault secret values, your financial picture, entities & structures, FFN contacts, contingency protocols, and your estate plan timeline ARE included in plaintext — store this file securely. Vault document FILE CONTENTS (including wills) are excluded; download them individually from the Secure Document Vault. OTP secrets and password hashes are never exported. 'beneficiary_memberships' lists estates where you are a named beneficiary; only your own personal data is included, never the estate owner's private contents.",
         }
     )
 

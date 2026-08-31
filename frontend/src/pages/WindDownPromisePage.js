@@ -7,13 +7,14 @@
  * The page is itself a public, written commitment. We treat it as a
  * binding promise document — change it ONLY with an explicit founder
  * decision, and date the change.
+ * Three-state rewrite approved by founder, June 2026.
  */
 import React, { useEffect } from 'react';
 import SEO from '../components/SEO';
 import PublicFooter from '../components/PublicFooter';
 import { Link } from 'react-router-dom';
 import {
-  HeartHandshake, Download, Calendar, Code2, Mail, ArrowLeft, CheckCircle2,
+  HeartHandshake, Download, Calendar, Archive, Code2, ArrowLeft, CheckCircle2,
 } from 'lucide-react';
 
 const Card = ({ icon: Icon, title, children, testid }) => (
@@ -53,7 +54,7 @@ const WindDownPromisePage = () => {
   useEffect(() => { window.scrollTo(0, 0); }, []);
   return (
   <div className="min-h-screen" style={{ background: 'var(--bg)', color: 'var(--t)' }} data-testid="wind-down-page">
-    <SEO title="Wind-Down & Data Portability Promise — CarryOn" description="Our binding written commitment: 90 days notice, full self-service export, and an open-source decryption tool. Your family’s data always comes home with you." path="/wind-down-promise" />
+    <SEO title="Wind-Down & Data Portability Promise — CarryOn" description="Our binding written commitment in three states: what you can export today, what happens if a wind-down is ever announced (90 days minimum notice), and what stays yours after — in formats that never need our servers." path="/wind-down-promise" />
     <div className="max-w-3xl mx-auto px-5 sm:px-8 pt-12 pb-24" style={{ paddingTop: 'calc(48px + env(safe-area-inset-top, 0px))' }}>
       <Link
         to="/"
@@ -88,69 +89,53 @@ const WindDownPromisePage = () => {
         </p>
       </div>
 
-      <Card icon={Calendar} title="1. Ninety days minimum notice" testid="winddown-notice">
-        <p>
-          If CarryOn is ever sunsetting — voluntarily, due to acquisition, or for
-          any other reason — every active account will receive at least{' '}
-          <strong>90 calendar days of advance written notice</strong> via email
-          and in-app banner before any service degradation.
-        </p>
-        <p>
-          During that 90-day window, all features remain fully functional. Your
-          documents stay accessible. Your beneficiaries keep their access.
-          Nothing is removed early "to save costs."
-        </p>
-      </Card>
-
-      <Card icon={Download} title="2. Full self-service export — at any time" testid="winddown-export">
-        <p>You don't have to wait for a wind-down to take your data home. Today, while we are healthy and growing, you can already:</p>
+      <Card icon={Download} title="State 1 — Today, while CarryOn is healthy" testid="winddown-state1">
+        <p>You can take your data home right now, without asking us:</p>
         <ul className="space-y-2">
-          <Bullet>Export every uploaded document in its original file format (PDF, JPG, MP4, WAV, etc.).</Bullet>
-          <Bullet>Export every milestone message in original audio/video format with delivery metadata.</Bullet>
-          <Bullet>Export your Immediate Action Checklist as CSV and PDF.</Bullet>
-          <Bullet>Export your CarryOn Contingency Protocols and Estate Plan Timeline as PDF.</Bullet>
-          <Bullet>Export your full beneficiary roster, including invitation status and contact info.</Bullet>
-          <Bullet>Request a single ZIP of <em>everything</em> via the in-app data-portability tool, or by writing to <a href="mailto:privacy@carryon.us" className="underline" style={{ color: 'var(--gold)' }}>privacy@carryon.us</a>.</Bullet>
+          <Bullet>
+            A complete data export from Settings &rarr; Privacy (protected by step-up
+            verification) &mdash; your profile, estates, milestone message text, Digital
+            Access Vault entries including their secret values, your full financial
+            picture (bills, debts, accounts, property), entities &amp; structures,
+            Friends &amp; Family contacts, contingency protocols, Immediate Action
+            Checklist, and your estate plan timeline &mdash; one readable JSON file.
+          </Bullet>
+          <Bullet>Every uploaded document, downloadable individually in its original file format (PDF, JPG, MP4, WAV&hellip;).</Bullet>
+          <Bullet>Milestone message audio and video in original format.</Bullet>
+          <Bullet>
+            Formatted PDFs from your Estate Binder &mdash; Immediate Action Checklist,
+            Contingency Protocols, Financial Picture hand-off package, Estate Guardian
+            plan and transcript, Emergency Card, Family Readiness Report.
+          </Bullet>
+          <Bullet>Or write to <a href="mailto:privacy@carryon.us" className="underline" style={{ color: 'var(--gold)' }}>privacy@carryon.us</a> and we assemble it with you.</Bullet>
         </ul>
       </Card>
 
-      <Card icon={Code2} title="3. Open-source decryption utility" testid="winddown-decrypt">
-        <p>
-          CarryOn vaults are encrypted with AES-256-GCM and a per-estate salt. In
-          a wind-down event, we will publish a stand-alone, open-source CLI tool
-          to GitHub under a permissive license that accepts:
-        </p>
+      <Card icon={Calendar} title="State 2 — If a wind-down is ever announced" testid="winddown-state2">
+        <p>No silent shutdown. Ever. If CarryOn is ever sunsetting &mdash; voluntarily, due to acquisition, or for any other reason:</p>
         <ul className="space-y-2">
-          <Bullet>Your exported encrypted archive (ZIP).</Bullet>
-          <Bullet>Your master password.</Bullet>
+          <Bullet>Every active account receives at least <strong>90 calendar days of advance written notice</strong> (email + in-app banner) before any service degradation.</Bullet>
+          <Bullet>Every feature stays fully functional for the whole window. Nothing removed early "to save costs."</Bullet>
+          <Bullet>Every export path in State 1 stays open all 90 days, and we actively remind you to use them.</Bullet>
+          <Bullet>Founders Circle Lifetime members get <strong>concierge migration support</strong> &mdash; a real person walks you through your export and confirms you have everything.</Bullet>
+          <Bullet>If we are acquired, the acquirer must honor this entire promise as a condition of the deal. If the founder is ever unable to operate the company, his own estate plan includes hand-off instructions to a successor with these same commitments.</Bullet>
         </ul>
+      </Card>
+
+      <Card icon={Archive} title="State 3 — After the last day" testid="winddown-state3">
         <p>
-          and outputs every document in plaintext on your own computer — no
-          servers, no accounts, no internet connection required. The tool is
-          ours to publish; the data is yours to keep forever.
+          Everything you downloaded stays readable forever on your own computer &mdash;
+          original file formats and plain JSON. No proprietary formats, no CarryOn
+          servers, no accounts, no internet connection required.
         </p>
       </Card>
 
-      <Card icon={HeartHandshake} title="4. Founders Circle members are protected first" testid="winddown-fc">
+      <Card icon={Code2} title="No proprietary formats — ever" testid="winddown-decrypt">
         <p>
-          If you are a Founders Circle Lifetime member, we owe you more than a
-          ZIP file. In a wind-down, FC members get <strong>concierge migration
-          support</strong> — a real person walks you through your export,
-          confirms decryption, and helps you load your data into whichever
-          successor platform you choose.
+          Nothing we give you ever needs our servers to read. If we ever offer
+          encrypted archive downloads, we commit to publishing an open-source
+          decryption tool on GitHub at the same time, under a permissive license.
         </p>
-      </Card>
-
-      <Card icon={Mail} title="5. We will never silently disappear" testid="winddown-noghost">
-        <p>
-          The single worst thing a platform like ours can do is go offline
-          without warning. We commit, in writing:
-        </p>
-        <ul className="space-y-2">
-          <Bullet>No silent shutdown. Ever.</Bullet>
-          <Bullet>If I (the founder) am ever unable to operate the company personally, my own estate plan includes hand-off instructions for CarryOn to a successor founder or acquirer with these same commitments.</Bullet>
-          <Bullet>If we are acquired, the acquirer must agree to honor this entire promise as a condition of the deal. We will not sign a term sheet that doesn't include it.</Bullet>
-        </ul>
       </Card>
 
       <div
@@ -166,9 +151,9 @@ const WindDownPromisePage = () => {
       </div>
 
       <p className="text-xs mt-10 text-center" style={{ color: 'var(--t5)' }}>
-        First published: April 29, 2026. Any change to this page must be
-        accompanied by an updated changelog entry and 30 days' notice to
-        active members.
+        First published: April 29, 2026. Last revised: June 2026 (three-state
+        rewrite). Any change to this page must be accompanied by an updated
+        changelog entry and 30 days' notice to active members.
       </p>
     </div>
     <PublicFooter />
