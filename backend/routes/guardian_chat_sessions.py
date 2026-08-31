@@ -20,6 +20,7 @@ Mounted in `server.py` alongside the rest of the guardian routers.
 from fastapi import APIRouter, Depends, HTTPException
 
 from config import db
+from services.transcript_crypto import dec, salt_for
 from utils import get_current_user
 
 router = APIRouter()
@@ -33,6 +34,14 @@ async def get_chat_history(session_id: str, current_user: dict = Depends(get_cur
         .sort("created_at", 1)
         .to_list(100)
     )
+    salts = {}
+    for m in history:
+        if m.get("enc_v"):
+            eid = m.get("estate_id")
+            if eid not in salts:
+                salts[eid] = await salt_for(eid)
+            m["content"] = dec(m.get("content"), salts[eid], m.get("enc_v"))
+            m.pop("enc_v", None)
     return history
 
 
@@ -49,7 +58,9 @@ async def get_chat_sessions(current_user: dict = Depends(get_current_user)):
                 "first_role": {"$first": "$role"},
                 "last_message_at": {"$last": "$created_at"},
                 "message_count": {"$sum": 1},
-                "messages": {"$push": {"role": "$role", "content": "$content"}},
+                "messages": {
+                    "$push": {"role": "$role", "content": "$content", "enc_v": "$enc_v", "estate_id": "$estate_id"}
+                },
             }
         },
         {"$sort": {"last_message_at": -1}},
@@ -58,10 +69,21 @@ async def get_chat_sessions(current_user: dict = Depends(get_current_user)):
     sessions_raw = await db.chat_history.aggregate(pipeline).to_list(100)
 
     sessions = []
+    salts = {}
     for s in sessions_raw:
         # Find the first user message for the title
         user_msgs = [m for m in s["messages"] if m["role"] == "user"]
-        title = user_msgs[0]["content"][:80] if user_msgs else "New conversation"
+        if user_msgs:
+            fm = user_msgs[0]
+            content = fm.get("content") or ""
+            if fm.get("enc_v"):
+                eid = fm.get("estate_id")
+                if eid not in salts:
+                    salts[eid] = await salt_for(eid)
+                content = dec(content, salts[eid], fm.get("enc_v")) or ""
+            title = content[:80]
+        else:
+            title = "New conversation"
         # Truncate with ellipsis
         if len(title) > 60:
             title = title[:60].rsplit(" ", 1)[0] + "..."

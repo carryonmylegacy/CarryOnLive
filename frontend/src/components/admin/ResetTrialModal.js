@@ -87,7 +87,7 @@ export const ResetTrialModal = ({
             data-testid="reset-trial-confirm-btn"
           >
             {resetting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <RotateCcw className="w-4 h-4 mr-2" />}
-            Reset 30-Day Trial
+            Reset {trialDays}-Day Trial
           </Button>
         </div>
       </div>

@@ -42,6 +42,7 @@ from routes.guardian import extract_document_text
 from services.access_control import can_access_document, resolve_estate_actor
 from services.ai_burn_guard import require_ai_burn_budget
 from services.ai_safety import hardened_system_prompt
+from services.transcript_crypto import dec, enc, salt_for
 from utils import get_current_user
 
 router = APIRouter()
@@ -573,15 +574,20 @@ async def concierge_ask(
     answer = re.sub(r" {2,}", " ", answer).strip()
 
     # Persist conversation turn so the beneficiary has a transcript later.
+    # Question/answer are encrypted at rest with the estate's AES-256 key.
     now = datetime.now(timezone.utc).isoformat()
     session_id = payload.session_id or f"sess_{current_user['id']}_{payload.estate_id}"
+    bec_salt = await salt_for(payload.estate_id)
+    q_stored, q_enc = enc(question, bec_salt)
+    a_stored, a_enc = enc(answer, bec_salt)
     await db.beneficiary_concierge_messages.insert_one(
         {
             "session_id": session_id,
             "estate_id": payload.estate_id,
             "user_id": current_user["id"],
-            "question": question,
-            "answer": answer,
+            "question": q_stored,
+            "answer": a_stored,
+            "enc_v": q_enc or a_enc,
             "citations": citations,
             "doc_count": len(docs),
             "is_fallback": is_fallback,
@@ -686,6 +692,7 @@ async def concierge_sessions(
             "$group": {
                 "_id": "$session_id",
                 "title": {"$first": "$question"},
+                "title_enc_v": {"$first": "$enc_v"},
                 "first_at": {"$first": "$created_at"},
                 "last_at": {"$last": "$created_at"},
                 "count": {"$sum": 1},
@@ -695,8 +702,13 @@ async def concierge_sessions(
         {"$limit": 50},
     ]
     sessions = []
+    salts: dict[str, Any] = {}
     async for row in db.beneficiary_concierge_messages.aggregate(pipeline):
         title = (row.get("title") or "").strip()
+        if row.get("title_enc_v"):
+            if estate_id not in salts:
+                salts[estate_id] = await salt_for(estate_id)
+            title = (dec(title, salts[estate_id], row.get("title_enc_v")) or "").strip()
         if len(title) > 80:
             title = title[:77] + "…"
         sessions.append(
@@ -758,4 +770,13 @@ async def concierge_history(
         query["session_id"] = session_id
     cursor = db.beneficiary_concierge_messages.find(query, {"_id": 0}).sort("created_at", 1).limit(200)
     messages = [m async for m in cursor]
+    salts: dict[str, Any] = {}
+    for m in messages:
+        if m.get("enc_v"):
+            eid = m.get("estate_id")
+            if eid not in salts:
+                salts[eid] = await salt_for(eid)
+            m["question"] = dec(m.get("question"), salts[eid], m.get("enc_v"))
+            m["answer"] = dec(m.get("answer"), salts[eid], m.get("enc_v"))
+            m.pop("enc_v", None)
     return {"messages": messages}

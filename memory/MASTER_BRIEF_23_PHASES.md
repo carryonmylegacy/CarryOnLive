@@ -540,3 +540,12 @@ The four-pillar section presents roughly twelve named systems with acronyms — 
 - Master-key investigation DONE: master key = user support phrase (bcrypt hash), admin unlock removes app-level doc locks only, never decrypts/returns content; no admin endpoint returns file content. Rows 1&4 of 1A table cleared for approval.
 - /landing-consumer renders LIVE prod pricing via public plans APIs (LandingPricing.js) — already a de-facto public pricing surface; "30-day free trial" copy ×5 on it.
 - /speak-with-us embeds full LandingContent (import) — carries all homepage claims + footer.
+
+## SESSION LOG 4 — CI fix + A2/A3 + D6 paths (Aug 31, 2026)
+- CI ruff F821 FIXED (guardian_chat_sessions.py import). check.sh ALL CLEAR — SAFE TO PUSH.
+- A2/A3 EXECUTED: dynamic trial copy live in repo (useTrialDays hook; LandingPage ×4, LandingPricing CTA, GetStartedPage ×2, ResetTrialModal button). Verified against trial_days=10 on preview then preview reverted to 30. Prod will show 10 on next deploy (client-side; prerendered HTML stale until Vercel rebuild).
+- D6 read/write COMPLETE across ALL transcript surfaces: guardian.py (write, already), guardian_chat_sessions.py (history+titles), guardian_exports.py (2 PDF exports — added), beneficiary_concierge.py (write+history+titles — added). Legacy plaintext passthrough everywhere. E2E-verified decrypt via API + PDF.
+- D6 MIGRATION SCRIPT in repo: backend/scripts/migrate_encrypt_transcripts.py (dry-run default, --apply gate, enc_v:1 marker, enc_v:0 for no-estate/no-salt rows). NOT RUN in apply mode. ORDER: deploy code FIRST, then run --apply on Render.
+- TTL RECOMMENDATION: Mongo TTL indexes need BSON dates but created_at is an ISO string → recommend a daily janitor (delete transcripts >180d) instead of a TTL index; not implemented, awaiting founder decision.
+- B2 EXPORT SECURITY DESIGN delivered (step-up password+OTP, POST not GET, per-user 5/24h limit, audit fields, UI plaintext warning, no-store headers, Sentry scrub). STOP — B1/B3 blocked on founder approval.
+- F ONE-LINERS delivered (voice row, paired_price $[] unset, ben_base mislock read-only check) — all validated on preview DB.

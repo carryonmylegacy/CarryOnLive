@@ -7,6 +7,7 @@ import {
 import { recordFunnelEvent } from '../utils/funnelTelemetry';
 import { API_URL } from '../config';
 import LandingPricing from '../components/landing/LandingPricing';
+import useTrialDays from '../hooks/useTrialDays';
 
 const TRUST_BADGES = [
   { label: 'AES-256 Encrypted' },
@@ -63,12 +64,13 @@ const FAQS = [
   },
   {
     q: 'What\'s included in the free trial?',
-    a: 'Full Premium tier for 30 days. No credit card required. If you don\'t love it, your account quietly downgrades to Base at the end. No surprise charges, ever.',
+    a: 'Full Premium tier for __TRIAL_DAYS__ days. No credit card required. If you don\'t love it, your account quietly downgrades to Base at the end. No surprise charges, ever.',
   },
 ];
 
 const LandingPage = () => {
   const navigate = useNavigate();
+  const trialDays = useTrialDays();
   const [openFaq, setOpenFaq] = useState(-1);
   const [scrolled, setScrolled] = useState(false);
 
@@ -176,7 +178,7 @@ const LandingPage = () => {
               className="inline-flex items-center justify-center gap-2 px-7 py-4 text-base font-semibold rounded-xl btn-gold-cta"
               data-testid="landing-cta-hero"
             >
-              Start Your Free 30-Day Trial <ArrowRight className="w-4 h-4" />
+              Start Your Free {trialDays}-Day Trial <ArrowRight className="w-4 h-4" />
             </button>
             <a
               href="#features"
@@ -284,7 +286,7 @@ const LandingPage = () => {
               Plans that <span className="italic" style={{ color: 'var(--gold)' }}>scale with your family</span>.
             </h2>
             <p className="text-base max-w-xl mx-auto" style={{ color: 'var(--t4)' }}>
-              30-day free trial on every paid plan. No credit card up-front. Cancel anytime — your data is always yours.
+              {trialDays}-day free trial on every paid plan. No credit card up-front. Cancel anytime — your data is always yours.
             </p>
           </div>
 
@@ -351,7 +353,7 @@ const LandingPage = () => {
                 </button>
                 {openFaq === i && (
                   <div className="px-5 pb-5 text-sm leading-relaxed" style={{ color: 'var(--t4)' }}>
-                    {f.a}
+                    {f.a.replace('__TRIAL_DAYS__', trialDays)}
                   </div>
                 )}
               </div>
@@ -370,7 +372,7 @@ const LandingPage = () => {
             Relied on while you're <span className="italic" style={{ color: 'var(--gold)' }}>living</span>. Ready when you're gone.
           </h2>
           <p className="text-base sm:text-lg mb-9 max-w-xl mx-auto leading-relaxed" style={{ color: 'var(--t4)' }}>
-            30 days free. No credit card. Encrypt your first document in under 4 minutes.
+            {trialDays} days free. No credit card. Encrypt your first document in under 4 minutes.
           </p>
           <button
             onClick={() => handleCTA('final')}

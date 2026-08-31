@@ -19,6 +19,7 @@ import { Link } from 'react-router-dom';
 import { Check, Loader2, Crown, Star, Shield, Award, Heart, Sparkles, Sun, ChevronDown } from 'lucide-react';
 import { API_URL } from '../../config';
 import { recordFunnelEvent } from '../../utils/funnelTelemetry';
+import useTrialDays from '../../hooks/useTrialDays';
 
 const TIER_ICON = {
   premium: Crown,
@@ -68,6 +69,7 @@ const fmt = (n) => {
 };
 
 export default function LandingPricing() {
+  const trialDays = useTrialDays();
   const [plans, setPlans] = useState([]);
   const [eligibilityPlans, setEligibilityPlans] = useState([]);
   const [tierFeatures, setTierFeatures] = useState({});
@@ -226,7 +228,7 @@ export default function LandingPricing() {
           style={highlighted ? {} : { background: 'transparent', border: '1px solid var(--b)', color: 'var(--t2)', display: 'block' }}
           data-testid={`landing-tier-${p.id}-cta`}
         >
-          Start 30-day free trial
+          Start {trialDays}-day free trial
         </Link>
       </div>
     );

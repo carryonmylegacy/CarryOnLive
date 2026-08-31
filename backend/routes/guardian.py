@@ -16,6 +16,7 @@ from services.access_control import require_estate_actor
 from services.ai_burn_guard import require_ai_burn_budget
 from services.ai_safety import hardened_system_prompt
 from services.encryption import decrypt_aes256, decrypt_field, get_estate_salt
+from services.transcript_crypto import dec, enc, salt_for
 from services.readiness import calculate_estate_readiness
 from utils import get_current_user, log_activity, update_estate_readiness
 
@@ -822,6 +823,7 @@ Be specific. Name documents by their exact vault filename. Quote checklist items
         # Build conversation history from DB for multi-turn context
         # pre-push-invariants: allow-system-content-bypass — `system_message` is the safety-wrapped `ESTATE_GUARDIAN_SYSTEM_PROMPT` (line 551) after `.format(estate_context=...)`.
         history_messages = [{"role": "system", "content": system_message}]
+        transcript_salt = await salt_for(estate_id)
 
         # Cross-chat knowledge: include key points from recent sessions.
         # audit #1798 P1 — estate-scoped: only pull prior context from the SAME
@@ -846,6 +848,7 @@ Be specific. Name documents by their exact vault filename. Quote checklist items
                                 "$push": {
                                     "role": "$role",
                                     "content": "$content",
+                                    "enc_v": "$enc_v",
                                 }
                             },
                         }
@@ -859,7 +862,9 @@ Be specific. Name documents by their exact vault filename. Quote checklist items
                     # Take last 2 exchanges from each session (up to 4 messages)
                     msgs = sess["messages"][-4:]
                     summary = " | ".join(
-                        f"{'User' if m['role'] == 'user' else 'Guardian'}: {m['content'][:150]}" for m in msgs
+                        f"{'User' if m['role'] == 'user' else 'Guardian'}: "
+                        f"{(dec(m.get('content'), transcript_salt, m.get('enc_v')) or '')[:150]}"
+                        for m in msgs
                     )
                     cross_context_parts.append(summary)
                 cross_context = "\n---\n".join(cross_context_parts)
@@ -881,7 +886,9 @@ Be specific. Name documents by their exact vault filename. Quote checklist items
         )
 
         for msg in prev_messages:
-            history_messages.append({"role": msg["role"], "content": msg["content"]})
+            history_messages.append(
+                {"role": msg["role"], "content": dec(msg.get("content"), transcript_salt, msg.get("enc_v"))}
+            )
 
         # Add the current user message
         history_messages.append({"role": "user", "content": user_message_text})
@@ -1399,24 +1406,29 @@ Be specific. Name documents by their exact vault filename. Quote checklist items
             await update_estate_readiness(estate_id)
             action_result = {"action": "readiness_analyzed", "readiness": readiness}
 
-        # Store in history (estate-scoped — audit #1798 P1)
+        # Store in history (estate-scoped — audit #1798 P1; content encrypted at rest)
+        transcript_salt = await salt_for(estate_id)
+        user_stored, user_enc = enc(data.message, transcript_salt)
         await db.chat_history.insert_one(
             {
                 "session_id": session_id,
                 "user_id": current_user["id"],
                 "estate_id": estate_id,
                 "role": "user",
-                "content": data.message,
+                "content": user_stored,
+                "enc_v": user_enc,
                 "created_at": datetime.now(timezone.utc).isoformat(),
             }
         )
+        asst_stored, asst_enc = enc(response, transcript_salt)
         await db.chat_history.insert_one(
             {
                 "session_id": session_id,
                 "user_id": current_user["id"],
                 "estate_id": estate_id,
                 "role": "assistant",
-                "content": response,
+                "content": asst_stored,
+                "enc_v": asst_enc,
                 "action_result": action_result,
                 "created_at": datetime.now(timezone.utc).isoformat(),
             }

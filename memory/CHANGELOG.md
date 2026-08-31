@@ -10068,3 +10068,11 @@ Founder set RUN_E2E=false; next Save-to-GitHub push will deploy everything.
   turf) — user must check Vercel build log for "PRERENDER VERIFIED", then
   curl -s https://www.carryon.us/about | grep -c 'div id="root"></div>' → expect 0.
 note: ios/App/App/public/* are cap-sync artifacts — window-qualified globals patch (cordova.js, cordova_plugins.js, sw-push.js) must be re-applied if 'npx cap sync' regenerates them (oxlint no-undef)
+
+## Aug 31, 2026 — CI unblock + Section A (dynamic trial copy) + Section E read/write paths
+- FIXED CI blocker: guardian_chat_sessions.py missing `from services.transcript_crypto import dec, salt_for` (F821). ruff check + format clean; check.sh ALL CLEAR.
+- SECTION A COMPLETE: trial copy now dynamic via useTrialDays hook (reads GET /api/public/site-content trial_days). Wired: LandingPage.js (hero CTA, pricing blurb, final CTA, FAQ answer), LandingPricing.js (tier CTAs), GetStartedPage.js (step-4 copy + stat card), ResetTrialModal.js (button label; body was already dynamic). Verified by setting preview trial_policy=10 → all surfaces rendered "10-day"; reverted preview to 30 after. Prerendered /landing-consumer HTML stays stale until next Vercel build (known).
+- SECTION E READ/WRITE PATHS COMPLETE (D6): added dec to guardian_exports.py (export-conversation + export-plan-of-action PDFs) and full enc/dec to beneficiary_concierge.py (insert encrypts question/answer w/ enc_v; history + session titles decrypt; legacy plaintext passes through). E2E verified: encrypted row → /api/chat/history returns plaintext, no enc_v leak; PDF export renders decrypted text.
+- SECTION E MIGRATION SCRIPT written (NOT run in apply mode anywhere): backend/scripts/migrate_encrypt_transcripts.py — idempotent (enc_v marker; enc_v:0 for unscopable rows), dry-run default, --apply to write. Preview dry-run (read-only): chat_history 62 encryptable + 344 no-estate legacy rows; BEC 24 + 1 orphan. MUST deploy code before running on prod.
+- SECTION F one-liners delivered to founder (voice row cleanup, paired_price unset, ben_base mislock check) — all three validated on preview.
+- SECTION B2 export security design report delivered — awaiting founder approval before B1/B3. Sections C & D still blocked on Section B deploy.

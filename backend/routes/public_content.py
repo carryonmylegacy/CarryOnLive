@@ -11,6 +11,7 @@ hardcoded default video.
 from fastapi import APIRouter
 
 from config import db
+from routes.admin.trial_policy import get_trial_days
 
 router = APIRouter()
 
@@ -25,6 +26,7 @@ async def get_public_site_content():
         "footer_address_line1": settings.get("footer_address_line1", "1550 Wilson Boulevard 7th Floor"),
         "footer_address_line2": settings.get("footer_address_line2", "Arlington, VA 22209 U.S.A."),
         "footer_phone": settings.get("footer_phone", "(703) 889-0017"),
+        "trial_days": await get_trial_days(),
         # Public, non-sensitive feature flags (mirrors prior admin/platform behavior).
         "offline_mode": settings.get("offline_mode", "off"),
         "subscriptions_enabled": settings.get("subscriptions_enabled", True),

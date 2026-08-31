@@ -13,6 +13,7 @@ from pydantic import BaseModel as PydanticBaseModel
 
 from config import XAI_MODEL, db, logger, xai_client
 from services.audit import audit_log
+from services.transcript_crypto import dec, salt_for
 from utils import get_current_user
 
 router = APIRouter()
@@ -669,13 +670,20 @@ async def export_conversation_pdf(
     history = (
         await db.chat_history.find(
             {"session_id": session_id, "user_id": current_user["id"]},
-            {"_id": 0, "id": 1, "role": 1, "content": 1, "created_at": 1},
+            {"_id": 0, "id": 1, "role": 1, "content": 1, "created_at": 1, "estate_id": 1, "enc_v": 1},
         )
         .sort("created_at", 1)
         .to_list(200)
     )
     if not history:
         raise HTTPException(status_code=404, detail="No conversation found")
+    salts: dict = {}
+    for m in history:
+        if m.get("enc_v"):
+            eid = m.get("estate_id")
+            if eid not in salts:
+                salts[eid] = await salt_for(eid)
+            m["content"] = dec(m.get("content"), salts[eid], m.get("enc_v"))
 
     # Get estate context
     estates = await _get_user_estate(current_user, {"_id": 0, "id": 1, "name": 1})
@@ -830,13 +838,20 @@ async def export_plan_of_action_pdf(
     history = (
         await db.chat_history.find(
             {"session_id": session_id, "user_id": current_user["id"]},
-            {"_id": 0, "id": 1, "role": 1, "content": 1},
+            {"_id": 0, "id": 1, "role": 1, "content": 1, "estate_id": 1, "enc_v": 1},
         )
         .sort("created_at", 1)
         .to_list(200)
     )
     if not history:
         raise HTTPException(status_code=404, detail="No conversation found")
+    salts: dict = {}
+    for m in history:
+        if m.get("enc_v"):
+            eid = m.get("estate_id")
+            if eid not in salts:
+                salts[eid] = await salt_for(eid)
+            m["content"] = dec(m.get("content"), salts[eid], m.get("enc_v"))
 
     # Estate context
     estates = await _get_user_estate(current_user, {"_id": 0, "id": 1, "name": 1})

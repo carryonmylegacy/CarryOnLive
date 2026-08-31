@@ -5,6 +5,7 @@ import { ArrowLeft, ArrowRight, ChevronRight, Check, X, Users, Shield, FileText,
 import { initFirebase, trackEvent, trackPixel } from '../services/firebase';
 import { API_URL } from '../config';
 import apiClient from '../utils/apiClient';
+import useTrialDays, { trialDaysLabel } from '../hooks/useTrialDays';
 import confetti from 'canvas-confetti';
 
 const INTERESTS = [
@@ -89,6 +90,7 @@ const pillSelected = {
 export default function GetStartedPage() {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
+  const trialDays = useTrialDays();
   const [searchParams] = useSearchParams();
 
   const [step, setStep] = useState(1);
@@ -622,7 +624,7 @@ export default function GetStartedPage() {
                   </h1>
                   <p style={{ fontWeight: 600, fontSize: '0.9375rem', color: '#64748b', maxWidth: '28rem', margin: '0 auto' }}>
                     Join families across the country building lasting continuity with CarryOn.
-                    Start your free 30-day trial today.
+                    Start your free {trialDays}-day trial today.
                   </p>
                 </div>
 
@@ -630,7 +632,7 @@ export default function GetStartedPage() {
                 <div className="grid grid-cols-2 gap-3 mb-6">
                   {[
                     { value: 'AES-256', label: 'Encryption Standard' },
-                    { value: '30 days', label: 'Free Trial' },
+                    { value: trialDaysLabel(trialDays), label: 'Free Trial' },
                   ].map(stat => (
                     <div key={stat.label} style={{
                       background: 'rgba(255,255,255,0.7)', borderRadius: '1rem',
