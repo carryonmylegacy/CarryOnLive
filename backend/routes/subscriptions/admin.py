@@ -415,5 +415,3 @@ async def update_family_discount_settings(
         "message": "Family discount settings updated",
         **{k: v for k, v in update.items() if k != "updated_at"},
     }
-
-
