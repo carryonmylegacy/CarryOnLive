@@ -10129,3 +10129,6 @@ Founder-approved completion of the A–Q public-site backlog (A–M shipped in t
 - Standing rule added to AGENT_RULES.md: placeholders never go in rendered strings.
 - Discover More report: homepage hero "Discover More" (LoginPage desktop+mobile, HomePage) → in-page anchor `#about` (LandingContent section id="about", the reframe section); nav "About" → route `/about`. Same word, different targets — reported, not changed.
 - PROD VERIFICATION PENDING founder push (Save to GitHub → Vercel). After deploy: curl -s https://www.carryon.us/ and /about | grep -c "SOURCE NEEDED" → expect 0 (also busts stale prerendered HTML).
+
+## Jun 2026 — Hero scroll link renamed "Discover More" → "Explore CarryOn" (founder pick)
+All 3 instances (LoginPage desktop scroll-explore-desktop + mobile scroll-explore-mobile, HomePage scroll-explore-home). Target unchanged (#about in-page anchor); "About" now only ever refers to the /about page in visible copy. Verified: click scrolls, both pages show new label, build green.

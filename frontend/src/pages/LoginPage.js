@@ -1009,7 +1009,7 @@ const LoginPage = () => {
                 style={{ opacity: 0.85, transition: 'opacity 200ms cubic-bezier(0.4,0,0.2,1)' }}
                 onMouseEnter={e => e.currentTarget.style.opacity = '1'}
                 onMouseLeave={e => e.currentTarget.style.opacity = '0.85'}>
-                <span className="text-white/85 text-sm font-semibold tracking-[0.1em] uppercase" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.4)' }}>Discover More</span>
+                <span className="text-white/85 text-sm font-semibold tracking-[0.1em] uppercase" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.4)' }}>Explore CarryOn</span>
                 <ChevronDown className="w-5 h-5 text-[#d4af37]" strokeWidth={2.5} style={{ animation: 'fadeInUp 1.4s ease-in-out infinite alternate' }} />
               </a>
             </RevealSection>
@@ -1152,7 +1152,7 @@ const LoginPage = () => {
                     style={{ opacity: 0.85, transition: 'opacity 200ms cubic-bezier(0.4,0,0.2,1)' }}
                     onMouseEnter={e => e.currentTarget.style.opacity = '1'}
                     onMouseLeave={e => e.currentTarget.style.opacity = '0.85'}>
-                    <span className="text-white/85 text-sm font-semibold tracking-[0.1em] uppercase" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.4)' }}>Discover More</span>
+                    <span className="text-white/85 text-sm font-semibold tracking-[0.1em] uppercase" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.4)' }}>Explore CarryOn</span>
                     <ChevronDown className="w-5 h-5 text-[#d4af37]" strokeWidth={2.5} style={{ animation: 'fadeInUp 1.4s ease-in-out infinite alternate' }} />
                   </a>
                 </div>
