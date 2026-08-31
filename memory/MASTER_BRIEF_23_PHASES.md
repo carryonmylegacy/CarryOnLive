@@ -499,7 +499,20 @@ The four-pillar section presents roughly twelve named systems with acronyms — 
 - D6: EGA/BEC transcripts plaintext — remediation proposal delivered (report only). Constrains 1A: no unqualified "staff cannot read" claims.
 
 ## E. Pricing pre-Phase-16 items (reported)
-- Seniors $12.99 = Standard feature set (no Premium extras); price justification needed from founder.
-- paired_price NOT self-healed (admin-set or legacy); ben_price/features/quarterly/annual ARE force-synced from code+ben plans on every settings read (plans.py:490-536) — admin edits to those fields get silently overwritten.
-- beta_mode=True → everyone has access free (guards.py:65), checkout records preference w/o charging.
-- Hospice: benefactor $0 forever; ben_hospice $4.99 applies to beneficiaries only post-transition.
+- **PRODUCTION VALUES (Jun 2026, from live GET /api/subscriptions/plans — THE Phase 16 source):**
+  - Premium 24.99/22.49q/19.99a ben 6.99 paired 2.99 · Standard 19.99/17.99/15.99 ben 5.99 paired 3.99 · Base 9.99/8.99/7.99 ben 4.99 paired 4.99 · Military 8.99 ben 3.99 paired 1.99 · Veteran 8.99 ben 3.99 paired 1.99 · Seniors 12.99 ben 1.99 paired 3.99 · New Adult 3.99 ben 1.99 paired 1.99 · Hospice 0 ben 4.99 paired 4.99 · Enterprise 0
+  - beneficiary_plans (prod, 7 rows — NO ben_new_adult/ben_seniors): ben_premium 6.99, ben_standard 5.99, ben_base 4.99, ben_military 3.99, ben_veteran 3.99, ben_hospice 4.99, ben_enterprise 0
+  - **beta_mode: FALSE in production** (billing is LIVE). family_plan_enabled true; family discounts: benefactor 30%, beneficiary 50% (flat, not scaling).
+  - FC: active, 499/399/199/79/179/179/399 (matches code/preview).
+  - PREVIEW numbers (Phase 0 0D table) are WRONG for production — never use them for public copy.
+- Seniors concern REVERSED in prod: 12.99 < Standard 19.99 → Seniors IS a discount tier. E1 flag resolved.
+- paired_price NOT self-healed (admin-set); ben_price/features/quarterly/annual ARE force-synced from code+ben plans on every settings read (plans.py:490-536).
+- C3 REDRAFT NEEDED from prod values: family bundle claim is half-true (percentage-based yes 30/50; "more you save" scaling no). Proposed: "save 30% on your own subscription and 50% on every family member you add" — pending founder approval.
+
+## SESSION LOG — production re-verification (Jun 2026)
+- Footer (Section A): prod platform_settings held 1509 N Scott/889-0017; founder fixed via portal — line1 now canonical (missing comma), line2 missing " USA", **phone STILL (703) 889-0017 — founder must update to +1 (703) 884-1527**. Static prerendered HTML keeps old values until next Vercel rebuild.
+- Founder prod password ROTATED (test_credentials.md flagged). No admin API access.
+- Atlas query pack delivered to founder for: voiceprint counts, soft-deleted file_data residue, chat_history/BEC counts, trial policy, section_security voice residue. AWAITING RESULTS — Phase 4 purge plan blocked on these.
+- Master-key investigation DONE: master key = user support phrase (bcrypt hash), admin unlock removes app-level doc locks only, never decrypts/returns content; no admin endpoint returns file content. Rows 1&4 of 1A table cleared for approval.
+- /landing-consumer renders LIVE prod pricing via public plans APIs (LandingPricing.js) — already a de-facto public pricing surface; "30-day free trial" copy ×5 on it.
+- /speak-with-us embeds full LandingContent (import) — carries all homepage claims + footer.
