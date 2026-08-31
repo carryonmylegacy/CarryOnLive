@@ -173,7 +173,7 @@ const SealedAccountScreen = ({ transitionedAt, onBack }) => {
 
         {/* Footer */}
         <p className="text-center text-[11px] text-[#334155] mt-6">
-          CarryOn™ · AES-256-GCM Encrypted · Zero-Knowledge Architecture
+          CarryOn™ · AES-256-GCM Encrypted · Per-Estate Keys
         </p>
       </div>
     </div>

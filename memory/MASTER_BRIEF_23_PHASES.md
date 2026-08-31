@@ -469,7 +469,12 @@ The four-pillar section presents roughly twelve named systems with acronyms — 
 - [x] Phase 1D — "Bank-grade security · 256-bit SSL" → "AES-256 encryption · Per-estate keys · TLS 1.3" (LoginPage ×3, SignupPage, PartnerPortalPage)
 - [x] Phase 1E — SOC 2 bullet → "SOC 2 Type II audit in progress — …", linked to /security
 - [x] Phase 1F — security section now links to /security + /wind-down-promise
-- [ ] Phase 1A (STOP GATE) — findings + proposed copy DELIVERED, awaiting founder approval
+- [x] Phase 1A — APPROVED (rows 1 & 4 amended by founder) and APPLIED: all 16 rows + revised C3 + 2 additional zero-knowledge instances found during verification (AcceptInvitationPage.js:272,453 — grep truncation had hidden them). Build clean (main.3a7efde2.js). Sitewide grep: zero-knowledge/air-gapped/no-data-ever-leaves/never-accessed/Bank-grade = 0 hits in rendered copy (only the /security disclosure sentence "not a zero-knowledge system in the cryptographic sense", which is the approved amendment).
+- NOT YET DEPLOYED to production (ships with next founder push).
+- Footer phone in production API STILL (703) 889-0017 as of this session's check — founder believed it fixed; portal save may not have persisted. Line2 missing " USA". Address line1 fixed.
+- /landing-consumer: noindex/canonical decision SUSPENDED by founder (unique live-pricing content). Phase 16 design now open question (new /pricing vs upgrade).
+- E2 finding: SubscriptionPaywall is dismissible ONLY while trial active (SubscriptionPaywall.js:1046) — at trial expiry paywall is modal+non-dismissible → export unreachable through UI; "data remains accessible for export" not true in practice at expiry. Flagged.
+- GetStartedPage "130+ Families Protected" — uncited stat, added to Phase 15 list.
 - [ ] Phase 2, 3
 - [ ] Phase 4 (STOP GATE)
 - [ ] Phase 5–15

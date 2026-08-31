@@ -630,7 +630,7 @@ export default function GetStartedPage() {
                 <div className="grid grid-cols-3 gap-3 mb-6">
                   {[
                     { value: '130+', label: 'Families Protected' },
-                    { value: 'AES-256', label: 'Bank-Grade Encryption' },
+                    { value: 'AES-256', label: 'Encryption Standard' },
                     { value: '30 days', label: 'Free Trial' },
                   ].map(stat => (
                     <div key={stat.label} style={{

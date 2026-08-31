@@ -1069,7 +1069,7 @@ export default function SubscriptionPaywall({ onDismiss }) {
         {/* Apple-required subscription disclosure (Guideline 3.1.2) */}
         <div className="text-center mb-4 animate-fade-in max-w-md mx-auto">
           <p className="text-[var(--t5)] text-xs">
-            AES-256 Encrypted · Zero-Knowledge Architecture · All plans include full security
+            AES-256 Encrypted · Per-Estate Keys · All plans include full security
           </p>
           <p className="text-[var(--t5)] text-[11px] mt-2 leading-relaxed">
             Payment will be charged to your {useAppleIAP ? 'Apple ID' : 'payment method'} at confirmation of purchase.

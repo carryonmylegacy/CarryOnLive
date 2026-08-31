@@ -243,8 +243,8 @@ const AcceptInvitationPage = () => {
                 </Button>
 
                 <p className="text-[11px] text-center text-[#525c72] leading-relaxed">
-                  Your privacy is our priority. All data is AES-256 encrypted with zero-knowledge architecture. 
-                  We will never share your information. No one — not even us — can read your data.
+                  Your privacy is our priority. All data is AES-256 encrypted with keys unique to each estate. 
+                  We will never share your information.
                 </p>
               </div>
             </div>
@@ -269,7 +269,7 @@ const AcceptInvitationPage = () => {
                 the same standard used by banks and governments.
               </p>
               <div className="space-y-3">
-                {['End-to-end encryption', 'Zero-knowledge architecture', 'SOC 2 compliance framework', '2FA on every login'].map((t, i) => (
+                {['AES-256 encryption', 'Per-estate keys', 'SOC 2 Type II audit in progress', '2FA on every login'].map((t, i) => (
                   <div key={i} className="flex items-center gap-3">
                     <CheckCircle className="w-4 h-4 text-[#10b981]" />
                     <span className="text-sm text-[#94a3b8]">{t}</span>
@@ -450,7 +450,7 @@ const AcceptInvitationPage = () => {
 
                 <div className="flex items-center gap-2 justify-center mt-4">
                   <Shield className="w-3 h-3 text-[#10b981]" />
-                  <p className="text-[11px] text-[#525c72]">AES-256 encrypted | Zero-knowledge | 2FA Protected</p>
+                  <p className="text-[11px] text-[#525c72]">AES-256 encrypted | Per-estate keys | 2FA Protected</p>
                 </div>
               </div>
             </div>

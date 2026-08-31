@@ -10,7 +10,7 @@ import LandingPricing from '../components/landing/LandingPricing';
 
 const TRUST_BADGES = [
   { label: 'AES-256 Encrypted' },
-  { label: 'Zero-Knowledge' },
+  { label: 'Per-Estate Keys' },
   { label: '2FA Protected' },
   { label: 'SOC 2 In Progress' },
 ];
@@ -59,7 +59,7 @@ const FAQS = [
   },
   {
     q: 'Is my data really encrypted?',
-    a: 'Yes. AES-256-GCM at rest, TLS 1.3 in transit, zero-knowledge architecture for vault contents — meaning even our engineers cannot read your stored documents. Your master key never leaves your device unencrypted.',
+    a: 'Yes. AES-256-GCM at rest, TLS 1.3 in transit, and a separate encryption key for every estate. Documents you flag for AI analysis are decrypted server-side for that analysis only; unflagged documents are never sent to the AI — not even their names.',
   },
   {
     q: 'What\'s included in the free trial?',
@@ -297,12 +297,12 @@ const LandingPage = () => {
         <div className="max-w-4xl mx-auto text-center">
           <p className="text-sm uppercase tracking-[0.18em] mb-3" style={{ color: 'var(--gold)' }}>Built for what matters most</p>
           <h2 className="text-2xl sm:text-3xl font-semibold leading-tight mb-10 text-white" style={{ fontFamily: 'var(--serif)' }}>
-            Bank-grade encryption. <span className="italic" style={{ color: 'var(--gold)' }}>Family-grade care</span>.
+            AES-256 encryption. <span className="italic" style={{ color: 'var(--gold)' }}>Family-grade care</span>.
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 text-center">
             {[
               { icon: Lock, label: 'AES-256-GCM', sub: 'Encryption at rest' },
-              { icon: Shield, label: 'Zero-Knowledge', sub: 'We can\'t read your vault' },
+              { icon: Shield, label: 'Per-Estate Keys', sub: 'Every estate sealed separately' },
               { icon: KeyRound, label: '2FA + Master Key', sub: 'Layered access control' },
               { icon: Users, label: 'SOC 2 In Progress', sub: 'Compliance-first' },
             ].map((t) => {

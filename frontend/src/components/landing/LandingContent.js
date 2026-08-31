@@ -110,7 +110,7 @@ const PLATFORM_FEATURES = [
   { icon: UserCheck, title: 'Benefactor & Beneficiary System', desc: 'Enroll the people who matter most. Control what each person can see, access, and manage within your family\'s continuity plan.' },
   { icon: ArrowUpDown, title: 'Succession Hierarchy', desc: 'Ranked beneficiary succession with automatic promotion when a primary can no longer serve. Your chain of responsibility never breaks.' },
   { icon: Layers, title: 'Multi-Estate Support', desc: 'Manage multiple estates under one account — built for blended, extended, and modern families with complex structures.' },
-  { icon: Users, title: 'Family Plan Savings', desc: 'Bundle your household for percentage-based discounts on every tier. The more family members you prepare, the more you save.' },
+  { icon: Users, title: 'Family Plan Savings', desc: 'Save 30% on your own subscription and 50% for every family member you add.' },
   { icon: ShieldAlert, title: 'Emergency Access', desc: 'Verified protocol for beneficiaries to request vault access when a benefactor is incapacitated. Built for real emergencies.' },
   { icon: SlidersHorizontal, title: 'Granular Permissions', desc: 'Control exactly what each beneficiary can see across every function in every pillar &mdash; vault, messages, checklists, protocols, and more. Per-person access.' },
   { icon: Smartphone, title: 'Native Mobile App', desc: 'iOS and Android with biometric login, push notifications, and full platform access. Your family\'s continuity goes wherever you go.' },
@@ -128,8 +128,8 @@ const FIVE_STEPS = [
 
 /* ── data: security items ── */
 const SECURITY_ITEMS = [
-  { icon: LockIcon, text: 'AES-256 per-estate encryption \u2014 your family\'s data is never accessed by our team' },
-  { icon: Sparkles, text: 'Estate Guardian\u2122 AI operates entirely within your encrypted vault \u2014 no data ever leaves' },
+  { icon: LockIcon, text: 'AES-256 encryption with a separately derived key for every estate \u2014 no single stored key opens two families\' vaults' },
+  { icon: Sparkles, text: 'Estate Guardian\u2122 AI reads only the documents you individually flag for AI review \u2014 unflagged documents are never transmitted, not even their names' },
   { icon: Shield, text: 'Two-factor authentication on every login with device trust options for your family' },
   { icon: Users, text: 'Transition verification by a human team \u2014 not algorithms, not AI. Real people confirming real events.' },
   { icon: FileCheck, text: 'SOC 2 Type II audit in progress \u2014 full audit trail and GDPR data rights built in', link: '/security' },

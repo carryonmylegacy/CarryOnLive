@@ -367,7 +367,7 @@ const SettingsPage = () => {
         <div className="text-center pt-6 pb-4">
           <div className="flex items-center justify-center gap-2 text-[var(--t5)] text-sm mb-2">
             <Shield className="w-4 h-4" />
-            <span>AES-256 Encrypted · Zero-Knowledge · 2FA Protected</span>
+            <span>AES-256 Encrypted · Per-Estate Keys · 2FA Protected</span>
           </div>
           <p className="text-[var(--t5)] text-xs">
             CarryOn™ v1.0.0 · © 2024 CarryOn Inc.

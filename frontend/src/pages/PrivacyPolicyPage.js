@@ -72,7 +72,7 @@ const PrivacyPolicyPage = () => {
             <section>
               <h2 className="text-lg font-semibold text-[var(--t)] mb-3">5. Data Security</h2>
               <p>
-                We implement industry-standard security measures, including AES-256 encryption, zero-knowledge architecture, and two-factor authentication. Your sensitive documents are encrypted at rest and in transit. Voice biometric data is stored as mathematical representations (voiceprints) and cannot be reverse-engineered into audio.
+                We implement industry-standard security measures, including AES-256 encryption with per-estate keys and two-factor authentication. Your sensitive documents are encrypted at rest and in transit. Conversations with our AI features are retained as chat transcripts until you delete them and may quote documents you flag for AI analysis.
               </p>
             </section>
 

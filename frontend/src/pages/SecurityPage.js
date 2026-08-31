@@ -93,7 +93,7 @@ const SecurityPage = () => {
           <Bullet><strong>Per-estate encryption salt</strong> generated at estate creation. No two families share a key.</Bullet>
           <Bullet><strong>PBKDF2-HMAC-SHA256, 600,000 iterations</strong> for password-derived keys (NIST recommends ≥600k).</Bullet>
           <Bullet><strong>TLS 1.3</strong> with HSTS preload (max-age 1 year, includeSubDomains, preload).</Bullet>
-          <Bullet><strong>Zero-knowledge vault contents.</strong> Engineering staff cannot read your stored documents.</Bullet>
+          <Bullet><strong>Encrypted vault contents.</strong> Documents are stored AES-256-GCM encrypted with per-estate keys — there is no staff tool for browsing them. AI chat transcripts, which can quote documents you flagged for AI analysis, are currently stored unencrypted; database access is restricted and logged. We're saying so here because this page changes before practice does. Encryption keys are derived per estate from key material CarryOn operates, so this is not a zero-knowledge system in the cryptographic sense — we hold the ability to decrypt, and we constrain who can exercise it rather than claiming we cannot.</Bullet>
         </ul>
       </Section>
 

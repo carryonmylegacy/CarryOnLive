@@ -173,7 +173,7 @@ const AboutPage = () => {
                 },
                 {
                   title: 'Security Without Compromise.',
-                  desc: 'Zero-knowledge encryption. Air-gapped AI. No backdoors. No exceptions.',
+                  desc: 'Per-estate AES-256 encryption. AI analysis only on documents you explicitly flag for it — processed by xAI, whose published API policy excludes your content from model training. No backdoors. No exceptions.',
                 },
                 {
                   title: 'Accessible to Every Family.',
