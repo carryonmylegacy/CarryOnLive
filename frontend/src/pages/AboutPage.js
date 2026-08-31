@@ -98,7 +98,7 @@ const AboutPage = () => {
             </RevealSection>
             <RevealSection delay={0.15}>
               <p className="text-[#7b879e] text-base leading-relaxed mb-10">
-                76% of American families will face exactly this. {'<<< SOURCE NEEDED >>>'} Not because they didn&apos;t care &mdash; but because no one gave them a simple, secure, affordable way to get ready.
+                76% of American families will face exactly this.{/* SOURCE NEEDED: 76% of American families figure */} Not because they didn&apos;t care &mdash; but because no one gave them a simple, secure, affordable way to get ready.
               </p>
             </RevealSection>
 
@@ -260,7 +260,7 @@ const AboutPage = () => {
             </RevealSection>
             <RevealSection delay={0.1}>
               <p className="text-[#7b879e] text-base leading-relaxed mb-6">
-                CarryOn is led by a small, focused team that believes this work matters. Our leadership brings deep experience across operations, legal, finance, and technology &mdash; but what unites us isn&apos;t our r&eacute;sum&eacute;s. It&apos;s the shared conviction that 76% {'<<< SOURCE NEEDED >>>'} is an unacceptable number, and that every family &mdash; regardless of who they are, where they live, or what they look like &mdash; deserves to be ready.
+                CarryOn is led by a small, focused team that believes this work matters. Our leadership brings deep experience across operations, legal, finance, and technology &mdash; but what unites us isn&apos;t our r&eacute;sum&eacute;s. It&apos;s the shared conviction that 76%{/* SOURCE NEEDED: 76% figure */} is an unacceptable number, and that every family &mdash; regardless of who they are, where they live, or what they look like &mdash; deserves to be ready.
               </p>
             </RevealSection>
             <RevealSection delay={0.15}>

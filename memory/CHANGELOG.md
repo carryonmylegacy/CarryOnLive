@@ -10123,3 +10123,9 @@ Founder-approved completion of the A–Q public-site backlog (A–M shipped in t
 - Footer: "Last revised: June 2026 (three-state rewrite)". SEO description updated to three-state framing. Echo fixed: LandingPage.js FAQ answer (archived /landing-consumer) no longer promises the decryption utility.
 - SecurityPage transcript-plaintext disclosure LEFT AS-IS intentionally (still true on prod until founder runs the transcript migration).
 **Share-card check: BLOCKED ON DEPLOY** — prod still serves old og tags until founder pushes. After push: curl -s https://www.carryon.us/ | grep og-image (expect og-image.jpg ×2), then LinkedIn Post Inspector (linkedin.com/post-inspector) to bust LinkedIn's cache, and text the link in iMessage.
+
+## Jun 2026 — HOTFIX: <<< SOURCE NEEDED >>> markers were rendering on production
+- Section L (prior session) wrongly injected visible `{'<<< SOURCE NEEDED >>>'}` text instead of flagging locations. 3 rendered instances converted to non-rendering JSX comments (stats unchanged): AboutPage.js:101 + :263 (76% figure ×2), LandingContent.js:549 (300,000 hospice figure). Repo-wide unbounded grep: only other `<<<`/`>>>` is AboutPage.js:229 founder-headshot placeholder ALREADY inside a JSX comment (never rendered); backend + public/ clean. Built bundle greps 0 "SOURCE NEEDED". Preview verified: 0 occurrences on / and /about, figures intact.
+- Standing rule added to AGENT_RULES.md: placeholders never go in rendered strings.
+- Discover More report: homepage hero "Discover More" (LoginPage desktop+mobile, HomePage) → in-page anchor `#about` (LandingContent section id="about", the reframe section); nav "About" → route `/about`. Same word, different targets — reported, not changed.
+- PROD VERIFICATION PENDING founder push (Save to GitHub → Vercel). After deploy: curl -s https://www.carryon.us/ and /about | grep -c "SOURCE NEEDED" → expect 0 (also busts stale prerendered HTML).

@@ -630,3 +630,11 @@ ENFORCEMENT:
     after every push and fails if any duplicate style/className exists.
   • Run manually: `python3 /app/scripts/check_jsx_duplicate_attrs.py
     /app/frontend/src`
+
+## RULE — PLACEHOLDERS NEVER RENDER (founder standing rule, Jun 2026)
+Placeholders (`<<< SOURCE NEEDED >>>`, `<<< PLACEHOLDER >>>`, `<<< COUNSEL >>>`, etc.) must NEVER
+be put into rendered strings — no JSX text, no template literals, no API-returned copy, nothing a
+browser will print. Use JSX/code comments (`{/* SOURCE NEEDED: <figure> */}`), a tracking file in
+/app/memory, or the report to the founder. Violation shipped `<<< SOURCE NEEDED >>>` to production
+on the homepage hospice figure and /about 76% figures (fixed Jun 2026 — markers converted to JSX
+comments at AboutPage.js:101, AboutPage.js:263, LandingContent.js:549).

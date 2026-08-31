@@ -546,7 +546,7 @@ const LandingContent = ({ navigateWithFade, testIdSuffix = '', beforeAbout, skip
               Readiness shouldn&apos;t depend on your circumstances.
             </h2>
             <p className="text-[#7b879e] text-base leading-relaxed mb-6">
-              At any given time, over 300,000 Americans are in hospice {'<<< SOURCE NEEDED >>>'} &mdash; and the vast majority have no plan in place for their families. CarryOn&#8482; is offered at no cost to all U.S. citizens and resident aliens enrolled in certified hospice care. Full platform access. No exceptions.
+              At any given time, over 300,000 Americans are in hospice{/* SOURCE NEEDED: 300,000 Americans in hospice figure */} &mdash; and the vast majority have no plan in place for their families. CarryOn&#8482; is offered at no cost to all U.S. citizens and resident aliens enrolled in certified hospice care. Full platform access. No exceptions.
             </p>
             <p className="text-white text-base font-semibold italic leading-relaxed">
               No one should be denied the ability to prepare their family &mdash; simply because of their circumstances.
