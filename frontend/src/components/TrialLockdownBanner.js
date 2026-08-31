@@ -67,7 +67,7 @@ const TrialLockdownBanner = () => {
           style={{ background: 'transparent', color: '#d4af37', border: '1px solid rgba(212,175,55,0.5)' }}
           data-testid="lockdown-export-link"
         >
-          Export everything
+          Export your data
         </button>
       )}
     </div>
