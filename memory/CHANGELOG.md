@@ -10076,3 +10076,9 @@ note: ios/App/App/public/* are cap-sync artifacts — window-qualified globals p
 - SECTION E MIGRATION SCRIPT written (NOT run in apply mode anywhere): backend/scripts/migrate_encrypt_transcripts.py — idempotent (enc_v marker; enc_v:0 for unscopable rows), dry-run default, --apply to write. Preview dry-run (read-only): chat_history 62 encryptable + 344 no-estate legacy rows; BEC 24 + 1 orphan. MUST deploy code before running on prod.
 - SECTION F one-liners delivered to founder (voice row cleanup, paired_price unset, ben_base mislock check) — all three validated on preview.
 - SECTION B2 export security design report delivered — awaiting founder approval before B1/B3. Sections C & D still blocked on Section B deploy.
+
+## Aug 31, 2026 — Production verification (post-push, Section A live)
+- Prod API (carryon-api-kacr.onrender.com): trial_days=10, footer_phone=(703) 889-0017 — HTTP 200.
+- www.carryon.us/landing-consumer rendered: all 5 trial strings read 10 (hero CTA, pricing blurb, tier CTAs, final CTA, FAQ#5). Static prerendered HTML ALSO reads 10 → Vercel rebuild happened; crawler-staleness caveat resolved.
+- www.carryon.us/get-started: step 4 reads "free 10-day trial" + "10 days / Free Trial" stat; steps 1-3 contain no trial-length strings (by design).
+- Backend-code-liveness gate for migration: the dry run itself proves it (script ships in same commit as decrypt paths — if scripts/migrate_encrypt_transcripts.py exists on Render, the read paths are live).
