@@ -10169,3 +10169,6 @@ www.carryon.us confirmed live: 0 SOURCE NEEDED / <<< markers on / + /about + /wi
 - Preview XAI_API_KEY swapped to founder's new team 8cfd50b8-0d3c-4b30-8351-1d53b07562b0 (key name "CarryOn Production", wildcard ACLs, team_blocked=false). VERIFIED from preview: live call returns x-zero-data-retention: true; all 3 configured models respond via BEC diagnose; served==requested.
 - ZDR copy (founder approved option a): /security "Privacy & Data Protection" new bullet "AI processing — zero data retention" (xAI processes only to generate response, no storage after return, no training; transcripts stored by CarryOn not xAI); /privacy Data Security paragraph extended with ZDR sentence. NOTE: the remembered phrase "retained by xAI for a limited period" never existed in the codebase — this was NEW disclosure, not a swap. Both verified rendering on preview; build green.
 - Old team 605d0ed3 key no longer referenced anywhere in this environment.
+
+## Jun 2026 — CANONICAL FACTS correction (founder, binding)
+- Phone (703) 889-0017 IS canonical; (703) 884-1527 superseded (founder confirmed Aug 31). Address line2 canonical: "Arlington, VA 22209" — NO USA suffix. Production footer data is CORRECT. Removed from audit outstanding list; MASTER_BRIEF stale note marked SUPERSEDED.
