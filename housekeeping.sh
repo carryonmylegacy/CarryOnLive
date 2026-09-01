@@ -772,7 +772,7 @@ for f in /app/backend/routes/*.py /app/backend/server.py; do
     line_num=$(echo "$match" | cut -d: -f1)
     line_content=$(echo "$match" | cut -d: -f2-)
     # Check if it's an inclusion projection (has ": 1") and excludes _id
-    if echo "$line_content" | grep -q '"_id": 0' && echo "$line_content" | grep -qE '": 1' && ! echo "$line_content" | grep -qE '"id": 1'; then
+    if echo "$line_content" | grep -q '"_id": 0' && echo "$line_content" | grep -qE '": 1' && ! echo "$line_content" | grep -qE '"id": 1' && ! echo "$line_content" | grep -q 'allow-missing-id'; then
       PROJ_ISSUES=$((PROJ_ISSUES + 1))
       PROJ_DETAILS="${PROJ_DETAILS}  ${fname}:${line_num} — inclusion projection missing \"id\": 1\n"
     fi

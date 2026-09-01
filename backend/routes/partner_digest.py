@@ -40,8 +40,13 @@ async def gather_partner_week(partner: dict) -> dict:
     if estate_ids:
         bens = await db.beneficiaries.find(
             {"estate_id": {"$in": estate_ids}, "deleted_at": None},
-            # pre-push-invariants: allow-missing-id
-            {"_id": 0, "user_id": 1, "invitation_status": 1, "invitation_sent_at": 1, "invitation_accepted_at": 1},
+            {
+                "_id": 0,
+                "user_id": 1,
+                "invitation_status": 1,
+                "invitation_sent_at": 1,
+                "invitation_accepted_at": 1,
+            },  # pre-push-invariants: allow-missing-id
         ).to_list(8000)
         bens_total = len(bens)
         for b in bens:

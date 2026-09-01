@@ -27,7 +27,7 @@ export const YouTubeFacade = ({ videoId, title, testId }) => {
       aria-label={`Play video: ${title}`}
       data-testid={testId}
       className="group"
-      style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0, padding: 0, cursor: 'pointer', background: '#0b1221', display: 'block' }}
+      style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0, padding: 0, cursor: 'pointer', background: 'var(--bg2)', display: 'block' }}
     >
       <img
         src={thumb}

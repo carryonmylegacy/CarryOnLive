@@ -21,6 +21,10 @@ async def get_config(current_user: dict = Depends(require_admin)):
 @router.put("/admin/xai-alerting/config")
 async def update_config(data: dict, current_user: dict = Depends(require_admin)):
     update = {}
+    if "xai_alerting_enabled" in data:
+        if not isinstance(data["xai_alerting_enabled"], bool):
+            raise HTTPException(status_code=400, detail="Enabled flag must be true or false")
+        update["xai_alerting_enabled"] = data["xai_alerting_enabled"]
     if "xai_spend_alert_usd" in data:
         try:
             v = float(data["xai_spend_alert_usd"])

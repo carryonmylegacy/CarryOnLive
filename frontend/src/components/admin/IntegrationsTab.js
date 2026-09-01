@@ -118,7 +118,7 @@ const IntegrationCard = ({ integration, revealed, onToggle, onEdit }) => {
   const rank = integration.limiting_rank;
   const rankStyle = RANK_STYLES[rank];
   const isLimiting = rank > 0;
-  const statusColors = { active: '#22C55E', blocked: '#F59E0B', 'free/self-hosted': '#3B82F6' };
+  const statusColors = { active: '#22C55E', blocked: '#F59E0B', 'free/self-hosted': '#3B82F6', missing_config: '#EF4444' };
   const statusColor = statusColors[integration.status] || '#6B7280';
   const Icon = iconMap[integration.id] || Puzzle;
 
@@ -146,6 +146,34 @@ const IntegrationCard = ({ integration, revealed, onToggle, onEdit }) => {
               </div>
               <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                 <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: `${statusColor}15`, color: statusColor }}>{integration.status}</span>
+                {integration.live_status === true && (
+                  <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(34,197,94,0.12)', color: '#22C55E' }}
+                    title={`${integration.live_detail || 'Live check passed'}${integration.last_verified_at ? ` — checked ${new Date(integration.last_verified_at).toLocaleString()}` : ''}`}
+                    data-testid={`live-ok-${integration.id}`}>
+                    LIVE ✓
+                  </span>
+                )}
+                {integration.live_status === false && (
+                  <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(239,68,68,0.12)', color: '#EF4444' }}
+                    title={integration.live_detail || 'Live check failed'}
+                    data-testid={`live-fail-${integration.id}`}>
+                    CHECK FAILED
+                  </span>
+                )}
+                {integration.env_missing?.length > 0 && (
+                  <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(239,68,68,0.12)', color: '#EF4444' }}
+                    title={`Missing backend env key(s): ${integration.env_missing.join(', ')}`}
+                    data-testid={`env-missing-${integration.id}`}>
+                    key missing
+                  </span>
+                )}
+                {integration.cost_stale && (
+                  <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(245,158,11,0.12)', color: '#F59E0B' }}
+                    title="Cost not reviewed in 90+ days — open Edit and Save to stamp a review"
+                    data-testid={`cost-stale-${integration.id}`}>
+                    cost review due
+                  </span>
+                )}
                 {integration.cost_monthly > 0 && (
                   <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(var(--gold-rgb), 0.1)', color: 'var(--gold)' }}>
                     ${integration.cost_monthly.toFixed(2)}/mo
@@ -290,11 +318,11 @@ const COGSSummary = ({ cogs, integrations }) => {
 const SuggestionsPanel = ({ capacity }) => {
   if (!capacity) return null;
   const suggestions = [
-    { icon: TrendingUp, text: 'Set up usage alerts in Resend, MongoDB Atlas, and Railway dashboards to get email notifications before hitting plan limits.' },
+    { icon: TrendingUp, text: 'Set up usage alerts in Resend, MongoDB Atlas, and Render dashboards to get email notifications before hitting plan limits.' },
     { icon: Activity, text: 'Monitor the System Health tab for xAI credit burn rate — set a calendar reminder to check monthly spend vs. remaining balance.' },
     { icon: HardDrive, text: 'MongoDB M30 has 40GB storage. Your current usage is small, but media-heavy estates will grow fast. Watch the database storage metric above.' },
     { icon: ArrowUpCircle, text: 'Pre-negotiate your upgrade path: Resend Scale ($90/mo) at 8K users, Capgo Team ($83/mo) at 10K MAU, MongoDB M40 ($759/mo) at 15K users.' },
-    { icon: Shield, text: 'Railway and Vercel have no status page alerts configured. Add https://status.railway.com and https://vercel-status.com to your monitoring to catch outages.' },
+    { icon: Shield, text: 'Render and Vercel have no status page alerts configured. Add https://status.render.com and https://vercel-status.com to your monitoring to catch outages.' },
     { icon: Gauge, text: 'Consider adding a daily automated email to yourself with key metrics: total users, new signups, emails sent, Guardian AI sessions, and error count.' },
   ];
 
@@ -339,6 +367,30 @@ export const IntegrationsTab = ({ getAuthHeaders }) => {
   const [newPinDigits, setNewPinDigits] = useState(['', '', '', '']);
   const [changePinStep, setChangePinStep] = useState('current'); // 'current' | 'new'
   const [currentPinForChange, setCurrentPinForChange] = useState('');
+  const [verifying, setVerifying] = useState(false);
+
+  const reload = async () => {
+    try {
+      const res = await apiClient.get(`${API_URL}/admin/integrations`, getAuthHeaders());
+      setData(res.data);
+    } catch { /* keep current data */ }
+  };
+
+  const handleVerifyAll = async () => {
+    setVerifying(true);
+    try {
+      const res = await apiClient.post(`${API_URL}/admin/integrations/verify-all`, {}, getAuthHeaders());
+      const ok = res.data.results.filter(r => r.ok).length;
+      const fail = res.data.results.length - ok;
+      if (fail > 0) toast.error(`${ok} live, ${fail} failed — see red chips for details`);
+      else toast.success(`All ${ok} live checks passed`);
+      await reload();
+    } catch (e) {
+      toast.error(e?.response?.data?.detail || 'Verify run failed');
+    } finally {
+      setVerifying(false);
+    }
+  };
 
   // Auto-load integrations on mount (no password needed)
   React.useEffect(() => {
@@ -734,6 +786,16 @@ export const IntegrationsTab = ({ getAuthHeaders }) => {
           <Shield className="w-5 h-5 text-[var(--gold)]" />
           <h2 className="text-base font-bold text-[var(--t)]">Platform Integrations</h2>
           <span className="text-[11px] text-[var(--t5)]">({integrations.length})</span>
+          {data.verify_summary?.ok > 0 && (
+            <span className="flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-green-500/10 text-green-400" data-testid="verify-summary-ok">
+              <CheckCircle2 className="w-3 h-3" /> {data.verify_summary.ok} live
+            </span>
+          )}
+          {data.verify_summary?.fail > 0 && (
+            <span className="flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-red-500/10 text-red-400" data-testid="verify-summary-fail">
+              <AlertTriangle className="w-3 h-3" /> {data.verify_summary.fail} failing
+            </span>
+          )}
           {unverifiedFieldCount > 0 && (
             <span className="flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400">
               <AlertTriangle className="w-3 h-3" /> {unverifiedFieldCount} unverified
@@ -741,6 +803,12 @@ export const IntegrationsTab = ({ getAuthHeaders }) => {
           )}
         </div>
         <div className="flex items-center gap-2">
+          <button onClick={handleVerifyAll} disabled={verifying}
+            className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
+            style={{ background: 'rgba(34,197,94,0.1)', color: '#22C55E', border: '1px solid rgba(34,197,94,0.25)' }}
+            data-testid="verify-all-btn">
+            <Activity className="w-3 h-3" /> {verifying ? 'Verifying…' : 'Verify all'}
+          </button>
           <button onClick={openChangePin}
             className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-lg transition-colors"
             style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--t4)', border: '1px solid var(--b)' }}

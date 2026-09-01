@@ -31,6 +31,7 @@ from config import XAI_API_KEY, db, logger
 ALERT_RECIPIENT = "founder@carryon.us"
 
 CONFIG_DEFAULTS = {
+    "xai_alerting_enabled": True,
     "xai_spend_alert_usd": 5.0,
     "xai_substitution_alert_pct": 10,
     "ai_fallback_alert_count": 3,
@@ -175,8 +176,22 @@ async def run_xai_health_checks(force: bool = False) -> dict:
     per-day dedup so alerting can be verified end-to-end from production.
     """
     cfg = await get_alert_config()
+    enabled = bool(cfg.get("xai_alerting_enabled", True))
     day_start, now = _utc_day()
     date_str = day_start.strftime("%Y-%m-%d")
+
+    if not enabled and not force:
+        # Founder toggled alerting OFF — the daily job does nothing.
+        return {
+            "date": date_str,
+            "ran_at": now.isoformat(),
+            "overall": "disabled",
+            "checks": [],
+            "alerts_sent": 0,
+            "enabled": False,
+            "recipient": ALERT_RECIPIENT,
+            "config": {k: cfg[k] for k in CONFIG_DEFAULTS},
+        }
 
     checks = [
         await _check_key_health(),
@@ -192,7 +207,8 @@ async def run_xai_health_checks(force: bool = False) -> dict:
             to_send.append(c)
 
     alerts_sent = 0
-    if to_send:
+    # Toggle OFF + Run-now: run the checks and show results, send nothing.
+    if to_send and enabled:
         items = "".join(
             f"<li style='margin-bottom:8px'><strong>{c['label']}:</strong> {c['summary']}</li>" for c in to_send
         )
@@ -221,6 +237,7 @@ async def run_xai_health_checks(force: bool = False) -> dict:
         "overall": "alert" if tripped else "ok",
         "checks": checks,
         "alerts_sent": alerts_sent,
+        "enabled": enabled,
         "recipient": ALERT_RECIPIENT,
         "config": {k: cfg[k] for k in CONFIG_DEFAULTS},
     }

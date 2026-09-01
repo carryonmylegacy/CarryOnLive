@@ -167,7 +167,7 @@ if not VAPID_PRIVATE_KEY_INLINE and not VAPID_PRIVATE_KEY_PATH:
 # ── Sentry (error monitoring) ──
 # Activates only if SENTRY_DSN is set; otherwise no-op.
 SENTRY_DSN = os.environ.get("SENTRY_DSN")
-SENTRY_ENVIRONMENT = os.environ.get("SENTRY_ENVIRONMENT", os.environ.get("RAILWAY_ENVIRONMENT", "production"))
+SENTRY_ENVIRONMENT = os.environ.get("SENTRY_ENVIRONMENT", "production")
 if SENTRY_DSN:
     try:
         import sentry_sdk

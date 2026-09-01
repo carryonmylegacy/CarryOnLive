@@ -242,7 +242,7 @@ const AboutPage = () => {
                   />
                 ) : (
                   <div
-                    className="w-28 h-28 rounded-full flex-shrink-0 flex items-center justify-center text-center text-[10px] leading-tight px-2"
+                    className="w-28 h-28 rounded-full flex-shrink-0 flex items-center justify-center text-center text-[11px] leading-tight px-2"
                     style={{ background: 'rgba(212,175,55,0.06)', border: '1px dashed rgba(212,175,55,0.35)', color: '#7b879e' }}
                     data-testid="founder-headshot-placeholder"
                   >

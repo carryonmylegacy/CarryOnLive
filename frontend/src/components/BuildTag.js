@@ -16,7 +16,7 @@ export const BUILD_VERSION = 'V2026.05.27.AUTHSRC';
 // from REACT_APP_BACKEND_URL (inlined at build time by CRA).
 const IS_PRODUCTION_SITE =
   process.env.NODE_ENV === 'production' &&
-  !(process.env.REACT_APP_BACKEND_URL || '').includes('preview.emergentagent.com');
+  !String(process.env.REACT_APP_BACKEND_URL).includes('preview.emergentagent.com');
 
 const BuildTag = () => {
   if (IS_PRODUCTION_SITE) return null;

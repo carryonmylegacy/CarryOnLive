@@ -421,7 +421,6 @@ _TRACKED_SECRETS = [
     ("ENCRYPTION_KEY", "critical", "KDF master key — DO NOT rotate without re-encryption migration"),
     ("JWT_SECRET", "critical", "Session signing secret (rotation invalidates all sessions)"),
     # --- high: 3rd-party service credentials ---
-    ("EMERGENT_LLM_KEY", "high", "Universal LLM key (rotate via Emergent profile)"),
     ("XAI_API_KEY", "high", "xAI/Grok direct API key"),
     ("RESEND_API_KEY", "high", "Resend transactional email"),
     ("STRIPE_API_KEY", "high", "Stripe live secret key (sk_live_...)"),

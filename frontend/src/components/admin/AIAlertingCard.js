@@ -11,6 +11,7 @@
 import React, { useEffect, useState } from 'react';
 import apiClient from '../../utils/apiClient';
 import { BellRing, Loader2, PlayCircle, CheckCircle2, AlertTriangle, Save } from 'lucide-react';
+import { Switch } from '../ui/switch';
 import { API_URL } from '../../config';
 import { toast } from '../../utils/toast';
 
@@ -30,6 +31,7 @@ export const AIAlertingCard = () => {
   const [saving, setSaving] = useState(false);
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState(null);
+  const [toggling, setToggling] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -59,6 +61,20 @@ export const AIAlertingCard = () => {
     }
   };
 
+  const toggleEnabled = async (checked) => {
+    setToggling(true);
+    try {
+      const r = await apiClient.put(`${API_URL}/admin/xai-alerting/config`, { xai_alerting_enabled: checked }, authHeaders());
+      setConfig(r.data);
+      setDraft((d) => ({ ...d, xai_alerting_enabled: r.data.xai_alerting_enabled }));
+      toast.success(checked ? 'AI alerting ON — daily checks will email you' : 'AI alerting OFF — no alert emails will be sent');
+    } catch (e) {
+      toast.error(e?.response?.data?.detail || 'Failed to update alerting');
+    } finally {
+      setToggling(false);
+    }
+  };
+
   const runNow = async () => {
     setRunning(true);
     setResult(null);
@@ -66,7 +82,8 @@ export const AIAlertingCard = () => {
       const r = await apiClient.post(`${API_URL}/admin/xai-alerting/run-now`, {}, authHeaders());
       setResult(r.data);
       const tripped = r.data.checks.filter((c) => c.status === 'alert').length;
-      if (tripped > 0) toast.success(`${tripped} check(s) tripped — alert emailed to ${r.data.recipient}`);
+      if (tripped > 0 && r.data.enabled === false) toast.success(`${tripped} check(s) tripped — no email sent (alerting is OFF)`);
+      else if (tripped > 0) toast.success(`${tripped} check(s) tripped — alert emailed to ${r.data.recipient}`);
       else toast.success('All four checks passed — no alert needed');
     } catch (e) {
       toast.error(e?.response?.data?.detail || 'Check run failed');
@@ -91,8 +108,19 @@ export const AIAlertingCard = () => {
     <div className="rounded-xl p-5" style={{ background: 'var(--card)', border: '1px solid var(--b)' }} data-testid="ai-alerting-card">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-1">
         <div className="flex items-center gap-2">
-          <BellRing className="w-4 h-4" style={{ color: 'var(--gold)' }} />
+          <BellRing className="w-4 h-4" style={{ color: config.xai_alerting_enabled ? 'var(--gold)' : 'var(--t5)' }} />
           <h3 className="text-sm font-bold" style={{ color: 'var(--t)' }}>AI Alerting</h3>
+          <div className="flex items-center gap-1.5 ml-1">
+            <Switch
+              checked={!!config.xai_alerting_enabled}
+              onCheckedChange={toggleEnabled}
+              disabled={toggling}
+              data-testid="ai-alerting-toggle"
+            />
+            <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: config.xai_alerting_enabled ? '#6EE7B7' : 'var(--t5)' }}>
+              {config.xai_alerting_enabled ? 'On' : 'Off'}
+            </span>
+          </div>
         </div>
         <button
           onClick={runNow}
@@ -106,9 +134,15 @@ export const AIAlertingCard = () => {
         </button>
       </div>
       <p className="text-xs mb-4" style={{ color: 'var(--t5)' }}>
-        Daily checks: key health, spend, silent model substitution, and AI fallback rate. Tripped
-        checks email <strong style={{ color: 'var(--t3)' }}>{config.recipient}</strong> — model
-        names, counts, and dollar figures only, never user content.
+        {config.xai_alerting_enabled ? (
+          <>
+            Daily checks: key health, spend, silent model substitution, and AI fallback rate. Tripped
+            checks email <strong style={{ color: 'var(--t3)' }}>{config.recipient}</strong> — model
+            names, counts, and dollar figures only, never user content.
+          </>
+        ) : (
+          <>Alerting is paused — the daily job is skipped and no alert emails are sent. "Run checks now" still works and shows results without emailing.</>
+        )}
       </p>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">

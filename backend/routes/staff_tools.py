@@ -75,6 +75,8 @@ async def _merge_overrides(integrations: list):
             integ["cost_note"] = ovr["cost_note"]
         if ovr.get("cost_verified") is not None:
             integ["cost_verified"] = ovr["cost_verified"]
+        if ovr.get("cost_reviewed_at"):
+            integ["cost_reviewed_at"] = ovr["cost_reviewed_at"]
         saved_details = ovr.get("details", {})
         for detail in integ["details"]:
             if detail["label"] in saved_details:
@@ -95,6 +97,17 @@ async def get_integrations(current_user: dict = Depends(get_current_user)):
     return data
 
 
+@router.post("/admin/integrations/verify-all")
+async def verify_all_integrations(current_user: dict = Depends(get_current_user)):
+    """Live-verify every integration with a cheap authenticated check (founder only).
+    Also runs nightly via integration_verify_scheduler."""
+    require_founder(current_user)
+    from services.integration_health import verify_all
+
+    results = await verify_all()
+    return {"results": results, "ran_at": datetime.now(timezone.utc).isoformat()}
+
+
 @router.post("/admin/integrations/unlock")
 async def unlock_integrations(data: IntegrationsPinRequest, current_user: dict = Depends(get_current_user)):
     """Unlock integrations vault with PIN — returns full sensitive values."""
@@ -112,6 +125,8 @@ async def update_integration(
     await _verify_integrations_pin(data.pin)
 
     update = {"integration_id": integration_id, "updated_at": datetime.now(timezone.utc).isoformat()}
+    # Any founder save counts as a cost/details review — clears the >90d stale flag.
+    update["cost_reviewed_at"] = update["updated_at"]
     if data.details:
         update["details"] = data.details
     if data.cost_monthly is not None:
@@ -280,6 +295,49 @@ async def _build_integrations_data():
             ],
         },
         {
+            "id": "sentry",
+            "name": "Sentry",
+            "status": "active",
+            "category": "infrastructure",
+            "dashboard_url": "https://sentry.io",
+            "cost_monthly": 0.00,
+            "cost_note": "$0/mo (Developer free tier — activates when SENTRY_DSN is set)",
+            "cost_verified": False,
+            "details": [
+                {"label": "Purpose", "value": "Error monitoring (frontend + backend, env-gated)", "verified": True},
+                {"label": "Plan", "value": "", "verified": False},
+                {
+                    "label": "Backend DSN",
+                    "value": m(os.environ.get("SENTRY_DSN", "")),
+                    "sensitive": True,
+                    "verified": bool(os.environ.get("SENTRY_DSN")),
+                },
+                {"label": "Frontend DSN", "value": "Set in Vercel env (REACT_APP_SENTRY_DSN)", "verified": False},
+                {"label": "Login Email", "value": "", "verified": False, "sensitive": True},
+            ],
+        },
+        {
+            "id": "github",
+            "name": "GitHub",
+            "status": "active",
+            "category": "infrastructure",
+            "dashboard_url": "https://github.com",
+            "cost_monthly": 0.00,
+            "cost_note": "$0/mo (Free plan — private repo + Actions minutes within free tier)",
+            "cost_verified": False,
+            "details": [
+                {
+                    "label": "Purpose",
+                    "value": "Source of truth + Actions CI + deploy trigger (Render & Vercel)",
+                    "verified": True,
+                },
+                {"label": "Repository", "value": "", "verified": False},
+                {"label": "CI", "value": "GitHub Actions (ci.yml on push to main)", "verified": True},
+                {"label": "Deploy Hooks", "value": "Render auto-deploy + Vercel auto-deploy on main", "verified": True},
+                {"label": "Login Email", "value": "", "verified": False, "sensitive": True},
+            ],
+        },
+        {
             "id": "stripe",
             "name": "Stripe",
             "status": "active",
@@ -339,9 +397,17 @@ async def _build_integrations_data():
             "cost_verified": True,
             "details": [
                 {"label": "Purpose", "value": "Estate Guardian AI Chat", "verified": True},
-                {"label": "Models", "value": "Grok-4 (main) + Grok-3-mini (light)", "verified": True},
-                {"label": "Credits Purchased", "value": "$500 (March 2026)", "verified": True},
-                {"label": "Pricing (Grok-4)", "value": "$3/1M input, $15/1M output tokens", "verified": True},
+                {
+                    "label": "Models",
+                    "value": "grok-4.3 (EGA/BEC) + grok-4.20-0309-non-reasoning (light)",
+                    "verified": True,
+                },
+                {
+                    "label": "Data Retention",
+                    "value": "Zero data retention (ZDR) — verified via x-zero-data-retention header",
+                    "verified": True,
+                },
+                {"label": "Pricing (grok-4.3)", "value": "$1.25/1M input, $2.50/1M output tokens", "verified": True},
                 {"label": "Team ID", "value": os.environ.get("XAI_TEAM_ID", ""), "verified": True},
                 {
                     "label": "API Key",
@@ -707,6 +773,8 @@ async def _build_integrations_data():
         "capacitor",
         "firebase",
         "meta_pixel",
+        "sentry",
+        "github",
         "social_instagram",
         "social_facebook",
         "social_linkedin",
@@ -803,8 +871,50 @@ async def _build_integrations_data():
     # Merge user overrides from MongoDB
     await _merge_overrides(integrations)
 
+    # ── Automation layer (Jun 2026): env-aware status, live checks, drift ──
+    from services.integration_health import ENV_BINDINGS, detect_drift, get_health_map
+
+    health = await get_health_map()
+    now_dt = datetime.now(timezone.utc)
+    for integ in integrations:
+        keys = ENV_BINDINGS.get(integ["id"], [])
+        missing = [k for k in keys if not os.environ.get(k)]
+        integ["env_keys"] = keys
+        integ["env_missing"] = missing
+        if missing and integ["status"] == "active":
+            integ["status"] = "missing_config"
+        h = health.get(integ["id"], {})
+        integ["live_status"] = h.get("ok")
+        integ["live_detail"] = h.get("detail")
+        integ["last_verified_at"] = h.get("checked_at")
+        # Paid tiles: flag when cost hasn't been reviewed (Edit → Save) in 90+ days.
+        stale = False
+        if integ.get("cost_monthly", 0) > 0:
+            reviewed = integ.get("cost_reviewed_at")
+            if not reviewed:
+                stale = True
+            else:
+                try:
+                    stale = (now_dt - datetime.fromisoformat(reviewed)).days > 90
+                except ValueError:
+                    stale = True
+        integ["cost_stale"] = stale
+
+    for item in detect_drift():
+        warnings.append({"level": "warning", "message": item})
+
+    ok_n = sum(1 for i in integrations if i.get("live_status") is True)
+    fail_n = sum(1 for i in integrations if i.get("live_status") is False)
+    verify_summary = {
+        "ok": ok_n,
+        "fail": fail_n,
+        "manual": len(integrations) - ok_n - fail_n,
+        "last_run": max((i.get("last_verified_at") or "" for i in integrations), default="") or None,
+    }
+
     return {
         "integrations": integrations,
+        "verify_summary": verify_summary,
         "capacity": {
             "total_users": total_users,
             "role_breakdown": role_counts,

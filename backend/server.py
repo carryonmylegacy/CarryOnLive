@@ -105,6 +105,7 @@ from schedulers import (
     grace_period_scheduler,
     bill_reminder_scheduler,
     xai_health_scheduler,
+    integration_verify_scheduler,
 )
 from services.scheduler_lock import with_scheduler_lock
 
@@ -269,6 +270,7 @@ async def lifespan(app):
             asyncio.create_task(_supervise("onboarding_drip", onboarding_drip_scheduler, ttl=600)),
             asyncio.create_task(_supervise("email_health", email_health_scheduler, ttl=600)),
             asyncio.create_task(_supervise("xai_health", xai_health_scheduler)),
+            asyncio.create_task(_supervise("integration_verify", integration_verify_scheduler)),
         ]
 
     # Warm up xAI connection + start periodic keepalive (local per-pod, no lock needed)

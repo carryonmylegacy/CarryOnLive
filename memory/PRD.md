@@ -538,7 +538,9 @@ bug — fix it in the preview DB immediately (snippet in
 - Hardcoded `rgba(212,175,55,…)` → `var(--gold-rgb)` sweep.
 
 ### Last verified end-to-end working item
-**/partner SEO + BEC fallback disclosure + xAI alerting + transcript backfill + ZDR copy split (Sep 1 2026, check.sh ALL CLEAR, fast suite 81/81, alerting E2E verified with real email to founder):**
+**Integrations automation layer + AI Alerting toggle (Sep 1 2026, check.sh ALL CLEAR, iteration_188: backend 100%, frontend 100%):**
+Env-aware tiles (ENV_BINDINGS), 'Verify all' 9 live checks + nightly integration_verify_scheduler, drift detection into warnings bar, cost_stale >90d flags, Sentry+GitHub tiles, EMERGENT_LLM_KEY removed from env+scan, AI Alerting on/off toggle. Also fixed latent /api/api double-prefix 404s (EmailHealthCard "Not Found" toast, AdminReferralsTab, ReferralCard). NOT YET PUSHED — ships with next founder push.
+- **Prior:** /partner SEO + BEC fallback disclosure + xAI alerting + transcript backfill + ZDR copy split (pushed Sep 1):
 /partner noindex metadata (gated portal, not in sitemap); BEC amber fallback notice (founder wording, only on is_fallback) + ai_fallback_events logging (BEC+EGA); daily xai_health_scheduler (key health / spend / substitution / fallback-rate) with founder-portal thresholds + Run-now in Admin → Platform → Integrations; migrate_encrypt_transcripts.py --backfill mode; /security + /privacy ZDR copy separates our ZDR config from xAI's training-exclusion policy. PUSHED by founder end-of-session; full testing-agent regression deferred. Known finding: EGA requests for grok-4.20-0309-reasoning served by -non-reasoning (silent substitution, same price) — founder to decide on ladder change.
 - **Prior:** B1/B3 export field-inclusion + Wind-Down three-state rewrite (Jun 2026 fork, iteration_185: backend 17/17, frontend 16/16, check.sh ALL CLEAR):
 GDPR export now includes decrypted MM bodies + DAV secret values + financial picture + entities + CCP + FFN +

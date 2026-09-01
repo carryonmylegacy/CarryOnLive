@@ -108,7 +108,13 @@ async def export_step_up(data: StepUpRequest, request: Request, current_user: di
 
     user = await db.users.find_one(
         {"id": current_user["id"]},
-        {"_id": 0, "password": 1, "email": 1, "sms_otp_enabled": 1, "sms_phone_number": 1},
+        {
+            "_id": 0,
+            "password": 1,
+            "email": 1,
+            "sms_otp_enabled": 1,
+            "sms_phone_number": 1,
+        },  # pre-push-invariants: allow-missing-id
     )
     if not user or not verify_password(data.password, user.get("password", "")):
         await _audit(current_user, request, "export_step_up_denied", {"result": "wrong_password"}, "warning")

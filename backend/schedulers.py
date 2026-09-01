@@ -83,6 +83,21 @@ async def xai_health_scheduler():
         await asyncio.sleep(86400)
 
 
+async def integration_verify_scheduler():
+    """Nightly live-verify of every integration (Admin → Platform → Integrations)."""
+    await asyncio.sleep(1200)  # settle after startup
+    while True:
+        try:
+            from services.integration_health import verify_all
+
+            results = await verify_all()
+            ok_n = sum(1 for r in results if r["ok"])
+            logger.info(f"Integration verify scheduler: {ok_n}/{len(results)} ok")
+        except Exception as e:
+            logger.error(f"Integration verify scheduler failed: {e}")
+        await asyncio.sleep(86400)
+
+
 async def daily_dob_check_scheduler():
     """Run DOB-based subscription event checks once daily."""
     await asyncio.sleep(300)  # Wait 5 min after startup
