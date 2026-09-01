@@ -74,7 +74,7 @@ const PrivacyPolicyPage = () => {
             <section>
               <h2 className="text-lg font-semibold text-[var(--t)] mb-3">5. Data Security</h2>
               <p>
-                We implement industry-standard security measures, including AES-256 encryption with per-estate keys and two-factor authentication. Your sensitive documents are encrypted at rest and in transit. Conversations with our AI features are retained as chat transcripts until you delete them and may quote documents you flag for AI analysis.
+                We implement industry-standard security measures, including AES-256 encryption with per-estate keys and two-factor authentication. Your sensitive documents are encrypted at rest and in transit. Conversations with our AI features are retained as chat transcripts until you delete them and may quote documents you flag for AI analysis. AI requests are processed by xAI under a zero-data-retention configuration &mdash; xAI does not store your content after the response is returned and does not use it to train its models.
               </p>
             </section>
 
