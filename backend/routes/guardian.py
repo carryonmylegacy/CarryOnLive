@@ -1080,6 +1080,22 @@ Be specific. Name documents by their exact vault filename. Quote checklist items
             if _sem_acquired:
                 _HEAVY_AI_SEMAPHORE.release()
                 _sem_acquired = False
+            # Measurable degraded-AI rate — one event per ladder exhaustion,
+            # no user content (model names + error class only).
+            try:
+                await db.ai_fallback_events.insert_one(
+                    {
+                        "surface": "ega",
+                        "endpoint": f"guardian.chat[{data.action or 'message'}]",
+                        "estate_id": estate_id,
+                        "user_id": current_user.get("id"),
+                        "models_tried": list(_MODEL_ORDER),
+                        "last_error_class": type(last_error).__name__ if last_error else None,
+                        "created_at": datetime.now(timezone.utc).isoformat(),
+                    }
+                )
+            except Exception:
+                pass
             raise last_error
 
         # Cost ledger — fire-and-forget after the successful xAI completion.

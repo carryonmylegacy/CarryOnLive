@@ -538,7 +538,9 @@ bug — fix it in the preview DB immediately (snippet in
 - Hardcoded `rgba(212,175,55,…)` → `var(--gold-rgb)` sweep.
 
 ### Last verified end-to-end working item
-**B1/B3 export field-inclusion + Wind-Down three-state rewrite (Jun 2026 fork, iteration_185: backend 17/17, frontend 16/16, check.sh ALL CLEAR):**
+**/partner SEO + BEC fallback disclosure + xAI alerting + transcript backfill + ZDR copy split (Sep 1 2026, check.sh ALL CLEAR, fast suite 81/81, alerting E2E verified with real email to founder):**
+/partner noindex metadata (gated portal, not in sitemap); BEC amber fallback notice (founder wording, only on is_fallback) + ai_fallback_events logging (BEC+EGA); daily xai_health_scheduler (key health / spend / substitution / fallback-rate) with founder-portal thresholds + Run-now in Admin → Platform → Integrations; migrate_encrypt_transcripts.py --backfill mode; /security + /privacy ZDR copy separates our ZDR config from xAI's training-exclusion policy. PUSHED by founder end-of-session; full testing-agent regression deferred. Known finding: EGA requests for grok-4.20-0309-reasoning served by -non-reasoning (silent substitution, same price) — founder to decide on ladder change.
+- **Prior:** B1/B3 export field-inclusion + Wind-Down three-state rewrite (Jun 2026 fork, iteration_185: backend 17/17, frontend 16/16, check.sh ALL CLEAR):
 GDPR export now includes decrypted MM bodies + DAV secret values + financial picture + entities + CCP + FFN +
 plan timeline (behind deployed B2 step-up). /wind-down-promise rewritten to founder-approved three-state copy;
 false ZIP/CSV/decryption-CLI claims removed. NOT PUSHED — awaiting founder deploy; share-card check blocked on deploy.

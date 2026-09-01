@@ -152,7 +152,7 @@ const SecurityPage = () => {
           <Bullet>Beneficiaries see <em>nothing</em> until you choose. Pre-transition, the only surface they have is their own profile.</Bullet>
           <Bullet>"Public Device Mode" wipes the local cache (IndexedDB + JWT) on tab close or inactivity for shared devices (libraries, FEMA shelters).</Bullet>
           <Bullet>We never sell, trade, or market your family data to third parties. Ever.</Bullet>
-          <Bullet><strong>AI processing — zero data retention.</strong> Estate Guardian, the Beneficiary Concierge, and our other AI features are powered by xAI (Grok). Our xAI account is configured for zero data retention: the content of each request is processed only to generate the response and is not stored by xAI after the response is returned, nor used to train their models. The conversation transcripts you see in the app are stored by CarryOn under the controls described above &mdash; not by xAI.</Bullet>
+          <Bullet><strong>AI processing — zero data retention.</strong> Estate Guardian, the Beneficiary Concierge, and our other AI features are powered by xAI (Grok). Our xAI account is configured for zero data retention: the content of each request is processed only to generate the response and is not stored by xAI afterward. Separately, xAI's published API policy excludes API content from model training. The conversation transcripts you see in the app are stored by CarryOn under the controls described above &mdash; not by xAI.</Bullet>
         </ul>
       </Section>
 

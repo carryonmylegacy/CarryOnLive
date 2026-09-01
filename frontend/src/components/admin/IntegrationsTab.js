@@ -11,6 +11,7 @@ import { toast } from '../../utils/toast';
 import { openPdfPreview } from '../../utils/openPdfPreview';
 import { API_URL } from '../../config';
 import { EmailHealthCard } from './EmailHealthCard';
+import { AIAlertingCard } from './AIAlertingCard';
 
 const iconMap = {
   railway: Server, vercel: Globe, mongodb: Database, s3: Cloud,
@@ -782,8 +783,9 @@ export const IntegrationsTab = ({ getAuthHeaders }) => {
 
       {/* Email deliverability (SPF / DKIM / DMARC) — shown on All + AI/Comms */}
       {(activeFilter === 'all' || activeFilter === 'ai_communication') && (
-        <div className="my-3">
+        <div className="my-3 space-y-3">
           <EmailHealthCard />
+          <AIAlertingCard />
         </div>
       )}
 

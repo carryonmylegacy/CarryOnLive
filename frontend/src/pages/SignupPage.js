@@ -1199,7 +1199,7 @@ const SignupPage = () => {
               <Input type="text" inputMode="numeric" maxLength={6} value={otp}
                 onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
                 placeholder="000000"
-                className="h-14 text-center text-2xl tracking-[0.4em] font-mono bg-[#0b1322] border-[#1a2a42] text-white focus:border-[#d4af37] rounded-xl w-full"
+                className="ios-fs-exempt h-14 text-center text-2xl tracking-[0.4em] font-mono bg-[#0b1322] border-[#1a2a42] text-white focus:border-[#d4af37] rounded-xl w-full"
                 data-testid="signup-otp-input" autoFocus />
               <p className="text-[#3a4a63] text-sm mt-2">{otp.length}/6 digits entered</p>
               <Button onClick={handleVerifyOtp} disabled={loading || otp.length !== 6}

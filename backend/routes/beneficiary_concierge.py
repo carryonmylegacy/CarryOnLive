@@ -513,19 +513,34 @@ async def concierge_ask(
 
     if completion is None:
         # ── GRACEFUL FALLBACK ──
-        # Three retries across grok-3-mini, grok-3, grok-4 all failed.
-        # Either the API key is invalid on this deploy, the egress is
-        # blocked, or x.ai is down across all models. Synthesize a
-        # document-aware answer so the user is never stuck on a red
-        # error bubble. The message intentionally does NOT mention
-        # AI/network issues — it just speaks to what's known about
-        # the documents and points to the executor, so a pitch
-        # audience can't tell anything went wrong.
+        # Every model in the ladder failed. Either the API key is invalid
+        # on this deploy, the egress is blocked, or x.ai is down across
+        # all models. Synthesize a document-aware answer so the user is
+        # never stuck on a red error bubble. Founder directive (Jun 2026):
+        # the degradation is DISCLOSED — the frontend renders a visually
+        # distinct notice above this answer (driven by is_fallback) so a
+        # grieving beneficiary knows the AI was unavailable and the answer
+        # came straight from their designated documents.
         logger.error(
             f"BEC ask: all models {_MODEL_ORDER} failed; serving template fallback. "
             f"last_error={type(last_error).__name__ if last_error else 'None'}: "
             f"{str(last_error)[:300] if last_error else ''}"
         )
+        # Measurable fallback rate — one event per occurrence, no user content.
+        try:
+            await db.ai_fallback_events.insert_one(
+                {
+                    "surface": "bec",
+                    "endpoint": "beneficiary_concierge.ask",
+                    "estate_id": payload.estate_id,
+                    "user_id": current_user.get("id"),
+                    "models_tried": list(_MODEL_ORDER),
+                    "last_error_class": type(last_error).__name__ if last_error else None,
+                    "created_at": datetime.now(timezone.utc).isoformat(),
+                }
+            )
+        except Exception:
+            pass
         if docs:
             doc_lines = []
             for idx, doc in enumerate(docs, start=1):

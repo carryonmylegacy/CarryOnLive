@@ -2012,3 +2012,18 @@ body.ect-chat-active .dashboard-content-area {
 @media (prefers-reduced-motion: reduce) {
   .vault-hot-button { animation: none; }
 }
+
+/* ─── iOS focus-zoom guard (PWA "auto zoom in" bug, Jun 2026) ─────────────
+   iOS Safari auto-zooms the viewport when a focused input/textarea/select
+   has font-size < 16px — and the zoom PERSISTS across navigation, which
+   users experience as "the app zoomed in by itself". Pinch-zoom stays
+   enabled for WCAG 1.4.4; instead we clamp native form controls to ≥16px
+   on touch devices so the focus-zoom never fires. Intentionally large
+   inputs (OTP fields, already ≥16px) opt out via .ios-fs-exempt. */
+@media (hover: none) and (pointer: coarse) {
+  input:not(.ios-fs-exempt),
+  select:not(.ios-fs-exempt),
+  textarea:not(.ios-fs-exempt) {
+    font-size: 16px !important;
+  }
+}

@@ -10,6 +10,7 @@
  */
 
 import { FlagBackdrop } from '../components/FlagBackdrop';
+import SEO from '../components/SEO';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../utils/apiClient';
@@ -84,6 +85,8 @@ export default function ManagerLoginPage() {
 
   return (
     <div className="min-h-screen relative overflow-hidden flex items-center justify-center py-10" style={{ background: 'var(--bg)' }} data-testid="manager-login-page">
+      {/* Gated portal entry (manager sign-in) — noindex, deliberately NOT in sitemap.xml */}
+      <SEO title="Partner With CarryOn" description="Bring family continuity to the people you serve. How advisors, planners, and organizations partner with CarryOn." path="/partner" noindex />
       <div className="absolute inset-0 z-0">
         <FlagBackdrop style={{ filter: 'brightness(0.55) contrast(1.05)' }} />
       </div>

@@ -26,6 +26,7 @@ from .grace_periods import router as grace_periods_router
 from .ip_whitelist import router as ip_whitelist_router
 from .launch_war_room import router as launch_war_room_router
 from .llm_cost import router as llm_cost_router
+from .xai_alerting import router as xai_alerting_router
 from .db_status import router as db_status_router
 from .maintenance import router as maintenance_router
 from .maintenance import public_router as maintenance_public_router
@@ -71,6 +72,7 @@ router.include_router(funnel_analytics_router, dependencies=[Depends(require_sco
 router.include_router(email_health_router, dependencies=[Depends(require_scope("platform_health"))])
 router.include_router(trial_policy_router, dependencies=[Depends(require_scope("finance"))])
 router.include_router(llm_cost_router, dependencies=[Depends(require_scope("platform_health"))])
+router.include_router(xai_alerting_router, dependencies=[Depends(require_scope("platform_health"))])
 router.include_router(db_status_router, dependencies=[Depends(require_scope("platform_health"))])
 router.include_router(audit_chain_status_router, dependencies=[Depends(require_scope("compliance"))])
 router.include_router(soc2_readiness_router, dependencies=[Depends(require_scope("compliance"))])

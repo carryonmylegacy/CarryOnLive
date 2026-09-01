@@ -69,6 +69,20 @@ async def weekly_digest_scheduler():
             logger.error(f"Partner weekly digest failed: {e}")
 
 
+async def xai_health_scheduler():
+    """Daily xAI key-health / spend / substitution / fallback alerting (Jun 2026)."""
+    await asyncio.sleep(900)  # settle after startup
+    while True:
+        try:
+            from services.xai_alerting import run_xai_health_checks
+
+            result = await run_xai_health_checks()
+            logger.info(f"xAI health scheduler: overall={result['overall']} alerts_sent={result['alerts_sent']}")
+        except Exception as e:
+            logger.error(f"xAI health scheduler failed: {e}")
+        await asyncio.sleep(86400)
+
+
 async def daily_dob_check_scheduler():
     """Run DOB-based subscription event checks once daily."""
     await asyncio.sleep(300)  # Wait 5 min after startup

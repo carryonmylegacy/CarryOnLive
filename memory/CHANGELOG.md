@@ -10172,3 +10172,16 @@ www.carryon.us confirmed live: 0 SOURCE NEEDED / <<< markers on / + /about + /wi
 
 ## Jun 2026 — CANONICAL FACTS correction (founder, binding)
 - Phone (703) 889-0017 IS canonical; (703) 884-1527 superseded (founder confirmed Aug 31). Address line2 canonical: "Arlington, VA 22209" — NO USA suffix. Production footer data is CORRECT. Removed from audit outstanding list; MASTER_BRIEF stale note marked SUPERSEDED.
+
+## Jun 2026 — PWA "auto zoom in" on home fixed (iOS focus-zoom)
+- ROOT CAUSE: Section D (WCAG) re-enabled viewport zoom; iOS auto-zooms when a focused input/textarea/select is <16px computed AND the zoom persists across navigation → "going home auto-zooms". shadcn base was already 16px mobile, but stragglers existed.
+- FIX: index.css "iOS focus-zoom guard" — @media (hover:none) and (pointer:coarse): input/select/textarea:not(.ios-fs-exempt) { font-size:16px !important }. 4 large OTP inputs exempted via .ios-fs-exempt (LoginPage ×2, SignupPage, settings/PrivacyCard). @supports webkit gate deliberately dropped (Chromium-testable + Android best practice). Pinch-zoom stays (WCAG 1.4.4).
+- VERIFIED: testing agent iteration_187 100% — touch emulation: all native controls ≥16px on / and /signup; desktop keeps 14px text-sm (clamp inactive); viewport meta still zoom-permissive; rule live in stylesheet with :not(.ios-fs-exempt); no console errors. Build green. Ships with next push.
+
+## Sep 1, 2026 — /partner SEO, BEC fallback disclosure, xAI alerting, transcript backfill, ZDR copy
+- `/partner` (ManagerLoginPage): added SEO tags (founder-supplied title/desc/canonical) + noindex — gated portal entry, deliberately NOT in sitemap.xml. All 19 public routes re-verified against production (unique title/desc/self-canonical); /partner was the only gap, fixed this push.
+- BEC fallback: founder-approved amber notice callout (`bec-fallback-notice`) prepends the answer ONLY when is_fallback; old red badge removed; live turns keep green EGA badge. New `ai_fallback_events` collection logs every BEC template fallback + EGA ladder exhaustion (no user content). Backend comment updated: degradation is now disclosed by design.
+- xAI alerting (founder-approved): `services/xai_alerting.py` + `xai_health_scheduler` (daily, distributed lock, registered in server.py). 4 checks: key health (GET /v1/api-key flags), daily spend ≥ threshold, model substitution share, fallback rate. Emails founder@carryon.us via Resend — model names/counts/dollars only. Config in platform_settings, editable via Admin → Platform → Integrations → AI Alerting card (`AIAlertingCard.js`) with Run-checks-now (bypasses per-day dedup). E2E verified: real email delivered; caught real substitution grok-4.20-0309-reasoning → non-reasoning on EGA chat.
+- Transcript migration: `--backfill` mode resolves missing estate_id via sole-estate owner lookup, re-scans enc_v:0 rows, _id-cursor pagination (no infinite loop). Preview dry-run: 32/344 chat_history rows resolvable. Founder runs on Render.
+- ZDR copy: /security + /privacy rewritten per founder — ZDR (our config) vs training exclusion (xAI published API policy) now separately attributed.
+- check.sh: ALL CLEAR (ruff, ESLint, fast suite 81/81). Full testing-agent regression NOT yet run (founder pushed at end of session).

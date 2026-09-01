@@ -2,17 +2,24 @@
 
 Encrypts `chat_history.content` (EGA) and `beneficiary_concierge_messages
 .question/.answer` (BEC) with each estate's AES-256 key, marking migrated
-rows with `enc_v: 1`. Idempotent: rows that already carry `enc_v` are never
+rows with `enc_v: 1`. Idempotent: rows already carrying `enc_v: 1` are never
 touched, so the script can be re-run safely at any time.
 
-Rows WITHOUT an `estate_id` cannot be estate-scoped and are left as
-plaintext (the read path passes them through unchanged) — they are counted
-and reported so the founder can decide whether to delete them.
+Rows WITHOUT an `estate_id` cannot be estate-scoped. By default they are
+left as plaintext and counted. With `--backfill`, the script resolves the
+missing `estate_id` from the row's `user_id` when that user owns EXACTLY
+ONE estate (deterministic — EGA is benefactor-side and legacy rows predate
+estate stamping), writes it onto the row, and encrypts it like any other.
+Rows whose user owns zero or multiple estates stay plaintext and are
+reported. `--backfill` also re-scans rows an earlier run marked `enc_v: 0`
+("skipped"), so nothing is ever permanently skipped.
 
 USAGE (Render shell, from the backend directory):
 
-    python scripts/migrate_encrypt_transcripts.py            # DRY RUN (default)
-    python scripts/migrate_encrypt_transcripts.py --apply    # actually encrypt
+    python scripts/migrate_encrypt_transcripts.py                     # DRY RUN
+    python scripts/migrate_encrypt_transcripts.py --backfill          # DRY RUN incl. estate_id resolution
+    python scripts/migrate_encrypt_transcripts.py --backfill --apply  # backfill estate_id + encrypt
+    python scripts/migrate_encrypt_transcripts.py --apply             # encrypt only (skips estate-less rows)
 
 Requires MONGO_URL / DB_NAME / ENCRYPTION_KEY in the environment (already
 set on the Render service). Exits 0 on success, 1 on any failure.
@@ -38,35 +45,61 @@ async def _salt(db, cache: dict, estate_id: str):
     return cache[estate_id]
 
 
-async def migrate_collection(db, apply: bool, name: str, fields: tuple) -> dict:
+async def _resolve_estate(db, cache: dict, user_id: str):
+    """estate_id when `user_id` owns exactly one estate, else None."""
+    if user_id not in cache:
+        estates = await db.estates.find({"owner_id": user_id}, {"_id": 0, "id": 1}).to_list(3)
+        cache[user_id] = estates[0]["id"] if len(estates) == 1 else None
+    return cache[user_id]
+
+
+async def migrate_collection(db, apply: bool, backfill: bool, name: str, fields: tuple) -> dict:
     from services.transcript_crypto import ENC_VERSION, enc
 
     coll = db[name]
-    stats = {"scanned": 0, "encrypted": 0, "no_estate": 0, "no_salt": 0, "empty": 0}
+    stats = {
+        "scanned": 0,
+        "encrypted": 0,
+        "backfilled_estate_id": 0,
+        "no_estate_unresolvable": 0,
+        "no_salt": 0,
+        "empty": 0,
+    }
     salts: dict = {}
-    query = {"enc_v": {"$exists": False}}
-    projection = {"_id": 1, "estate_id": 1, **{f: 1 for f in fields}}
+    owners: dict = {}
+    # --backfill re-scans rows an earlier --apply marked enc_v: 0 (skipped).
+    base_query = {"enc_v": {"$in": [None, 0]}} if backfill else {"enc_v": {"$exists": False}}
+    projection = {"_id": 1, "estate_id": 1, "user_id": 1, **{f: 1 for f in fields}}
 
+    # `_id`-cursor pagination: each batch advances past the last seen row
+    # regardless of what was written, so unresolvable rows can never make
+    # the loop spin in place.
+    last_id = None
     while True:
-        rows = await coll.find(query, projection).limit(BATCH).to_list(BATCH)
+        query = dict(base_query)
+        if last_id is not None:
+            query["_id"] = {"$gt": last_id}
+        rows = await coll.find(query, projection).sort("_id", 1).limit(BATCH).to_list(BATCH)
         if not rows:
             break
-        made_progress = False
+        last_id = rows[-1]["_id"]
         for row in rows:
             stats["scanned"] += 1
             estate_id = row.get("estate_id")
+            backfilled = False
+            if not estate_id and backfill and row.get("user_id"):
+                estate_id = await _resolve_estate(db, owners, row["user_id"])
+                backfilled = estate_id is not None
             if not estate_id:
-                stats["no_estate"] += 1
-                if apply:  # mark so the query loop terminates; 0 = "not encrypted"
+                stats["no_estate_unresolvable"] += 1
+                if apply:
                     await coll.update_one({"_id": row["_id"]}, {"$set": {"enc_v": 0}})
-                    made_progress = True
                 continue
             salt = await _salt(db, salts, estate_id)
             if salt is None:
                 stats["no_salt"] += 1
                 if apply:
                     await coll.update_one({"_id": row["_id"]}, {"$set": {"enc_v": 0}})
-                    made_progress = True
                 continue
             update = {}
             for f in fields:
@@ -78,22 +111,24 @@ async def migrate_collection(db, apply: bool, name: str, fields: tuple) -> dict:
                 stats["empty"] += 1
                 if apply:
                     await coll.update_one({"_id": row["_id"]}, {"$set": {"enc_v": 0}})
-                    made_progress = True
                 continue
+            if backfilled:
+                update["estate_id"] = estate_id
+                stats["backfilled_estate_id"] += 1
             stats["encrypted"] += 1
             if apply:
                 await coll.update_one({"_id": row["_id"]}, {"$set": {**update, "enc_v": ENC_VERSION}})
-                made_progress = True
-        if not apply or not made_progress:
-            break  # dry run: one pass over the first batches is enough to report
     return stats
 
 
 async def main() -> int:
     apply = "--apply" in sys.argv
+    backfill = "--backfill" in sys.argv
     from config import db
 
     mode = "APPLY" if apply else "DRY RUN (pass --apply to write)"
+    if backfill:
+        mode += " + BACKFILL (resolve missing estate_id via sole-estate owner)"
     print(f"== Transcript encryption migration — {mode} ==")
     ok = True
     for name, fields in (
@@ -101,13 +136,13 @@ async def main() -> int:
         ("beneficiary_concierge_messages", ("question", "answer")),
     ):
         try:
-            stats = await migrate_collection(db, apply, name, fields)
+            stats = await migrate_collection(db, apply, backfill, name, fields)
             print(f"{name}: {stats}")
         except Exception as e:
             ok = False
             print(f"{name}: FAILED — {e}")
     if not apply:
-        print("NOTE: dry run scans only the first unmigrated batches; counts are a lower bound.")
+        print("NOTE: dry run scans everything but writes nothing; 'encrypted' = rows that WOULD be encrypted.")
     return 0 if ok else 1
 
 

@@ -695,6 +695,24 @@ function Bubble({ role, content, citations, error, modelUsed, isFallback, onCita
             : { background: error ? 'rgba(239,68,68,0.10)' : 'var(--s)', color: error ? '#FCA5A5' : 'var(--t2)', border: `1px solid ${error ? 'rgba(239,68,68,0.30)' : 'var(--b)'}` }
         }
       >
+        {/* Degraded-path notice — founder directive Jun 2026: when the AI
+            ladder fails and the templated fallback serves, the beneficiary
+            is told plainly. Visually distinct callout, never inline prose.
+            Renders ONLY when is_fallback is true; never on a live AI turn. */}
+        {!isUser && !error && isFallback && (
+          <div
+            className="mb-3 px-3 py-2.5 rounded-lg flex items-start gap-2"
+            style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.45)' }}
+            role="status"
+            data-testid="bec-fallback-notice"
+          >
+            <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" style={{ color: '#FCD34D' }} aria-hidden="true" />
+            <p className="text-[13px] leading-snug" style={{ color: '#FDE68A' }}>
+              <strong>Our AI assistant is temporarily unavailable.</strong>{' '}
+              The answer below comes directly from the documents your benefactor shared with you, without AI interpretation. It may be less complete than usual. Please try again shortly for a fuller response.
+            </p>
+          </div>
+        )}
         <div>{renderContent()}</div>
         {!isUser && !error && citedMarkers.length > 0 && (
           <div className="mt-3 pt-2 border-t border-[var(--b)] flex flex-wrap items-center gap-1.5" data-testid="concierge-sources">
@@ -735,25 +753,17 @@ function Bubble({ role, content, citations, error, modelUsed, isFallback, onCita
             so the firewall narrative — "your documents never leave
             your encrypted vault" — is never undercut. Hidden on user
             bubbles and on error bubbles. */}
-        {!isUser && !error && modelUsed && (
+        {/* Live-engine badge. On fallback turns the prominent notice above
+            the answer carries the message — no second badge needed. */}
+        {!isUser && !error && modelUsed && !isFallback && (
           <div className="mt-2 flex items-center gap-1.5" data-testid="concierge-model-badge">
-            {isFallback ? (
-              <span
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider"
-                style={{ background: 'rgba(239,68,68,0.10)', border: '1px solid rgba(239,68,68,0.30)', color: '#FCA5A5' }}
-                title="The live AI engine was briefly unreachable — a templated response was served instead. Try again in a moment for a live AI answer."
-              >
-                Fallback response (retry in a moment)
-              </span>
-            ) : (
-              <span
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider"
-                style={{ background: 'rgba(34,201,147,0.10)', border: '1px solid rgba(34,201,147,0.30)', color: '#6EE7B7' }}
-                title="Answered live by the EGA AI engine inside your AES-256 encrypted vault."
-              >
-                via EGA AI engine
-              </span>
-            )}
+            <span
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider"
+              style={{ background: 'rgba(34,201,147,0.10)', border: '1px solid rgba(34,201,147,0.30)', color: '#6EE7B7' }}
+              title="Answered live by the EGA AI engine inside your AES-256 encrypted vault."
+            >
+              via EGA AI engine
+            </span>
           </div>
         )}
       </div>

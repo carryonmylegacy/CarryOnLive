@@ -318,7 +318,7 @@ const PrivacyCard = () => {
                   onChange={e => setExportOtp(e.target.value.replace(/\D/g, ''))}
                   onKeyDown={e => { if (e.key === 'Enter' && exportOtp.length === 6 && !exportLoading) downloadExport({ otp: exportOtp }); }}
                   autoFocus
-                  className="w-full px-3 py-2 mb-1 bg-[var(--s)] border border-[var(--b)] rounded-lg text-[var(--t)] text-lg tracking-[0.4em] text-center outline-none focus:border-[#d4af37]/50"
+                  className="w-full px-3 py-2 mb-1 bg-[var(--s)] border border-[var(--b)] rounded-lg text-[var(--t)] ios-fs-exempt text-lg tracking-[0.4em] text-center outline-none focus:border-[#d4af37]/50"
                   data-testid="export-otp-input"
                 />
                 <p className="text-[var(--t5)] text-[11px] mb-4">The code expires in 10 minutes and works once.</p>
