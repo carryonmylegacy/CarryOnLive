@@ -1,6 +1,20 @@
 # CarryOn — Changelog
 
 
+## Sep 1, 2026 — Items 4 / 6 / 7 verified as a unit + FULL regression (iteration_189) — VERIFIED, ready to push
+
+Founder answered the three open approvals (xAI alerting = build, transcript `--backfill` = build, ZDR copy = edit) and asked for the full testing-agent regression, not the fast suite.
+
+- **Item 4 — xAI alerting** (`services/xai_alerting.py`, `routes/admin/xai_alerting.py`, `schedulers.py::xai_health_scheduler`, `components/admin/AIAlertingCard.js`): four checks (key health / daily spend / model substitution / fallback rate), founder-portal thresholds with server-side validation, "Run checks now", daily scheduler supervised in `server.py`. Already in code from the prior session — re-verified against the founder's spec, no changes needed.
+- **Item 7 — `scripts/migrate_encrypt_transcripts.py --backfill`**: sole-estate owner resolution → stamp `estate_id` → encrypt; multi-estate / orphaned rows reported (`no_estate_unresolvable`) and never encrypted; `enc_v: 0` rows re-scanned. **Dry-run is the default; `--apply` is required to write** — confirmed by two consecutive dry-runs scanning identical counts (406 chat_history / 25 BEC) and Mongo `enc_v` counts unchanged before/after (testing agent). Preview dry-run: 94 would encrypt (32 via backfill), 312 unresolvable. **Founder runs on Render**; never `--apply` on preview.
+- **Item 6 — ZDR copy**: `/security` bullet and `/privacy` sentence match the founder's text verbatim (ZDR = our configuration; training exclusion = xAI's published policy, attributed separately).
+- **Regression**: `check.sh` ALL CLEAR (fast suite 81/81). Testing agent iteration_189: backend 24/24 new (`tests/test_iter189_regression.py`) + 23/23 existing (BEC fallback, iter188 integrations, IDOR guards) + fast suite 81/81 = **0 failures**; frontend: exact ZDR text on both pages, `/partner` noindex + description + canonical, AI Alerting card (toggle OFF → run-now 4 checks → toggle ON, threshold save/restore, Verify all), 9 public routes + 12 benefactor routes incl. `/beneficiary` Hub critical pathway — **0 failures**. Toggle left ON, thresholds restored.
+- **Preview-only artifact (NOT a bug)**: `<title>` renders empty on preview for every route because the dev-server visual-edits babel plugin instruments the hoisted `<title>`; production serves `<title>Partner With CarryOn</title>` / `<title>Security &amp; Trust — CarryOn</title>` correctly (curl-verified). Do not "fix".
+- **Legacy `pytest tests/` folder is NOT a regression suite**: full run = 1103 pass / 589 fail / 512 error / 487 skip, every failure traced to harness staleness (single-session `active_session_exists` without `force_login`, removed `/auth/dev-login`, `routes/auth.py` → package, 11→15 tier features, 7→9 onboarding steps, OTP off on preview, Chromium absent). Three suspects (owner-gate 403s, admin-authz 200s, `drill_reminder_scheduler` wiring) individually re-verified as stale tests, not defects. Canonical gates remain `check.sh` fast suite + testing-agent iterations. Bringing the legacy folder current is a separate, founder-authorised task.
+- **Founder-decision flag (not changed)**: `/security` "Encrypted vault contents" bullet still says AI chat transcripts are "currently stored unencrypted". New transcripts ARE encrypted at write (`transcript_crypto`); legacy rows become encrypted once the founder runs the migration on Render. Copy should be revisited after that run.
+- Working-tree extras riding along with the push: `frontend/public/sw-push.js` SHELL_VERSION auto-bump (build stamp) and a regenerated `frontend/yarn.lock` (preview `yarn install` syncing deps already in package.json; CI tolerates via `--frozen-lockfile || yarn install`).
+
+
 ## Jun 12, 2026 — Offline beneficiary Hub "0 estates" — root-caused & fixed — VERIFIED
 
 User hit "connected to 0 benefactor estates" on the beneficiary Hub (`/beneficiary`) in airplane mode after logging in online then immediately going offline.
