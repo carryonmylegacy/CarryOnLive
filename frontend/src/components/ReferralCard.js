@@ -21,7 +21,7 @@ const ReferralCard = () => {
     const token = localStorage.getItem('carryon_token');
     if (!token) { setLoading(false); return; }
     axios
-      .get(`${API_URL}/api/referrals/me`, { headers: { Authorization: `Bearer ${token}` } })
+      .get(`${API_URL}/referrals/me`, { headers: { Authorization: `Bearer ${token}` } })
       .then((r) => setData(r.data))
       .catch(() => {})
       .finally(() => setLoading(false));

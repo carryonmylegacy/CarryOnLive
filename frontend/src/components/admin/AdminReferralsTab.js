@@ -41,7 +41,7 @@ export const AdminReferralsTab = () => {
     if (!token) return;
     setLoading(true);
     axios
-      .get(`${API_URL}/api/admin/referrals?days=${days}`, {
+      .get(`${API_URL}/admin/referrals?days=${days}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((r) => setData(r.data))

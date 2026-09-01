@@ -60,7 +60,7 @@ export const EmailHealthCard = () => {
     if (force) setRecheck(true);
     else setLoading(true);
     try {
-      const r = await apiClient.get(`${API_URL}/api/admin/email-health${force ? '?force=true' : ''}`, {
+      const r = await apiClient.get(`${API_URL}/admin/email-health${force ? '?force=true' : ''}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setData(r.data);

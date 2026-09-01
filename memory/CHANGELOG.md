@@ -10185,3 +10185,8 @@ www.carryon.us confirmed live: 0 SOURCE NEEDED / <<< markers on / + /about + /wi
 - Transcript migration: `--backfill` mode resolves missing estate_id via sole-estate owner lookup, re-scans enc_v:0 rows, _id-cursor pagination (no infinite loop). Preview dry-run: 32/344 chat_history rows resolvable. Founder runs on Render.
 - ZDR copy: /security + /privacy rewritten per founder — ZDR (our config) vs training exclusion (xAI published API policy) now separately attributed.
 - check.sh: ALL CLEAR (ruff, ESLint, fast suite 81/81). Full testing-agent regression NOT yet run (founder pushed at end of session).
+
+## Sep 1, 2026 (hotfix) — "Not Found" toast on Admin → Platform → Integrations
+- Root cause: 3 components double-prefixed the API path (`${API_URL}/api/...` where config.js API_URL already ends in `/api`) → silent 404s since they shipped. EmailHealthCard's catch toasted the FastAPI 404 detail "Not Found" on every tab mount.
+- Fixed: EmailHealthCard.js, AdminReferralsTab.js, ReferralCard.js → single `/api`. All three endpoints verified 200 with founder token; Integrations tab renders both EmailHealthCard (live SPF/DKIM/DMARC data — FIRST time this card ever displayed data) and AIAlertingCard with no error toast. check.sh ALL CLEAR.
+- Note: other `${API_URL}/api/` matches (ForceUpdateGate, DockCustomizer, MenuOrderCustomizer, useTrialDays, errorReporter) are NOT bugs — they alias BASE_URL or raw env without /api.
