@@ -125,6 +125,12 @@ async def ensure_indexes(db, logger):
         await db.users.create_index("email")
         await db.users.create_index("id", unique=True)
         # Username is the unique login identifier
+        # Jun 2026 repair: provisioned pending-claim clients used to be written
+        # with username_lower="" — the unique+sparse index treats "" as a real
+        # value, so the SECOND provisioned client platform-wide hit E11000 and
+        # client creation 500'd (prod partner-portal bug). Unset empty-string
+        # username fields so the sparse index skips them; idempotent.
+        await db.users.update_many({"username_lower": ""}, {"$unset": {"username_lower": "", "username": ""}})
         await db.users.create_index("username_lower", unique=True, sparse=True)
         await db.estates.create_index("owner_id")
         await db.documents.create_index("estate_id")

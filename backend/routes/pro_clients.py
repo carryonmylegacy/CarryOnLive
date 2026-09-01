@@ -155,8 +155,10 @@ async def provision_client_portal(
         "email": email.strip(),
         "email_lower": email_lower,
         "email_verified": False,
-        "username": "",
-        "username_lower": "",
+        # NOTE: username/username_lower are intentionally OMITTED (not "").
+        # db.users has a unique+sparse index on username_lower; sparse only
+        # skips MISSING fields, so a second provisioned client with "" would
+        # E11000 (prod bug, Jun 2026). The client picks a username at claim.
         # Unusable placeholder — login is additionally blocked while
         # account_status == pending_claim (see routes/auth/login.py).
         "password": hash_password(secrets.token_urlsafe(32)),
