@@ -30,18 +30,32 @@ from datetime import datetime, timezone
 
 from config import db, db_read, logger
 
-# Per-1M-token pricing in USD. Update when pricing changes.
+# Per-1M-token pricing in USD, authoritative source: GET https://api.x.ai/v1/language-models
+# (verified Jun 2026; API returns units of $0.0001 per 1M tokens).
+# ⚠️ xAI SILENTLY REDIRECTS retired model names: requests for grok-4, grok-3,
+# and grok-3-mini are all SERVED BY grok-4.3 (confirmed via response.model,
+# Jun 2026). Always price by the RESPONSE model, never the requested name.
+# Reasoning tokens are billed at the output rate but are NOT included in
+# usage.completion_tokens — they arrive in completion_tokens_details.
 PRICING = {
-    "grok-4": {"input": 3.00, "output": 15.00},
-    "grok-3": {"input": 1.50, "output": 7.50},
-    "grok-3-mini": {"input": 0.50, "output": 2.00},
-    "grok-2-vision-1212": {"input": 2.00, "output": 10.00},
+    "grok-4.3": {"input": 1.25, "output": 2.50},
+    "grok-4.20-0309-reasoning": {"input": 1.25, "output": 2.50},
+    "grok-4.20-0309-non-reasoning": {"input": 1.25, "output": 2.50},
+    "grok-4.20-multi-agent-0309": {"input": 1.25, "output": 2.50},
+    "grok-4.5": {"input": 2.00, "output": 6.00},
+    "grok-4.6": {"input": 2.00, "output": 6.00},
+    "grok-build-0.1": {"input": 1.00, "output": 2.00},
+    # Retired names — kept ONLY so stray legacy references price at what
+    # actually serves them (the grok-4.3 redirect):
+    "grok-4": {"input": 1.25, "output": 2.50},
+    "grok-3": {"input": 1.25, "output": 2.50},
+    "grok-3-mini": {"input": 1.25, "output": 2.50},
 }
 
 
 def estimate_cost(model: str, prompt_tokens: int, completion_tokens: int) -> float:
     """Returns estimated USD cost (rounded to 6 decimals)."""
-    p = PRICING.get(model, PRICING["grok-3"])  # default to grok-3 pricing for unknown
+    p = PRICING.get(model, PRICING["grok-4.3"])  # unknown → flagship pricing
     cost = (prompt_tokens / 1_000_000) * p["input"] + (completion_tokens / 1_000_000) * p["output"]
     return round(cost, 6)
 
@@ -64,18 +78,27 @@ async def record_llm_call(
     duration_ms: int,
     success: bool,
     error_class: str | None = None,
+    served_model: str | None = None,
+    reasoning_tokens: int = 0,
 ) -> float:
-    """Insert a single LLM call record. Returns estimated cost USD."""
-    cost = estimate_cost(model, prompt_tokens, completion_tokens)
+    """Insert a single LLM call record. Returns estimated cost USD.
+
+    `served_model` is the model xAI ACTUALLY used (response.model) — it can
+    differ from `model` because xAI silently redirects retired names. Cost is
+    priced on the served model, and reasoning tokens bill at the output rate.
+    """
+    cost = estimate_cost(served_model or model, prompt_tokens, completion_tokens + reasoning_tokens)
     now = datetime.now(timezone.utc)
     doc = {
         "user_id": user_id,
         "estate_id": estate_id,
         "endpoint": endpoint,
         "model": model,
+        "served_model": served_model,
         "prompt_tokens": prompt_tokens,
         "completion_tokens": completion_tokens,
-        "total_tokens": prompt_tokens + completion_tokens,
+        "reasoning_tokens": reasoning_tokens,
+        "total_tokens": prompt_tokens + completion_tokens + reasoning_tokens,
         "estimated_cost_usd": cost,
         "duration_ms": duration_ms,
         "success": success,
@@ -92,22 +115,35 @@ async def record_llm_call(
     return cost
 
 
-def _extract_usage(response) -> tuple[int, int]:
-    """Pull prompt/completion tokens from an xAI response object.
+def _extract_usage(response) -> tuple[int, int, int]:
+    """Pull (prompt, completion, reasoning) tokens from an xAI response.
 
-    The xAI SDK mirrors OpenAI's `response.usage` shape. We defensively
-    handle both attribute and dict access — never raise; ledger
-    accuracy is non-essential to the user-facing response.
+    The xAI SDK mirrors OpenAI's `response.usage` shape. Reasoning tokens
+    live in usage.completion_tokens_details.reasoning_tokens and are NOT
+    included in completion_tokens, but ARE billed at the output rate.
+    Defensive both-access handling — never raise; ledger accuracy is
+    non-essential to the user-facing response.
     """
     try:
         usage = getattr(response, "usage", None) or {}
         if hasattr(usage, "prompt_tokens"):
-            return int(getattr(usage, "prompt_tokens", 0) or 0), int(getattr(usage, "completion_tokens", 0) or 0)
+            details = getattr(usage, "completion_tokens_details", None)
+            reasoning = int(getattr(details, "reasoning_tokens", 0) or 0) if details else 0
+            return (
+                int(getattr(usage, "prompt_tokens", 0) or 0),
+                int(getattr(usage, "completion_tokens", 0) or 0),
+                reasoning,
+            )
         if isinstance(usage, dict):
-            return int(usage.get("prompt_tokens", 0) or 0), int(usage.get("completion_tokens", 0) or 0)
+            reasoning = int((usage.get("completion_tokens_details") or {}).get("reasoning_tokens", 0) or 0)
+            return (
+                int(usage.get("prompt_tokens", 0) or 0),
+                int(usage.get("completion_tokens", 0) or 0),
+                reasoning,
+            )
     except Exception:
         pass
-    return 0, 0
+    return 0, 0, 0
 
 
 async def record_xai_response(
@@ -130,7 +166,10 @@ async def record_xai_response(
     is observational, never critical-path.
     """
     try:
-        prompt_tokens, completion_tokens = _extract_usage(response) if response is not None else (0, 0)
+        prompt_tokens, completion_tokens, reasoning_tokens = (
+            _extract_usage(response) if response is not None else (0, 0, 0)
+        )
+        served_model = getattr(response, "model", None) if response is not None else None
         if duration_ms is None:
             duration_ms = int((time.time() - started_at) * 1000) if started_at else 0
         await record_llm_call(
@@ -138,8 +177,10 @@ async def record_xai_response(
             estate_id=estate_id,
             endpoint=endpoint,
             model=model,
+            served_model=served_model,
             prompt_tokens=prompt_tokens,
             completion_tokens=completion_tokens,
+            reasoning_tokens=reasoning_tokens,
             duration_ms=duration_ms,
             success=success,
             error_class=error_class,
@@ -168,6 +209,8 @@ async def track_llm_call(
     class _Ctx:
         prompt_tokens = 0
         completion_tokens = 0
+        reasoning_tokens = 0
+        served_model: str | None = None
         success = True
         error_class: str | None = None
 
@@ -186,8 +229,10 @@ async def track_llm_call(
             estate_id=estate_id,
             endpoint=endpoint,
             model=model,
+            served_model=ctx.served_model,
             prompt_tokens=ctx.prompt_tokens,
             completion_tokens=ctx.completion_tokens,
+            reasoning_tokens=ctx.reasoning_tokens,
             duration_ms=duration_ms,
             success=ctx.success,
             error_class=ctx.error_class,

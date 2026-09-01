@@ -997,9 +997,9 @@ Be specific. Name documents by their exact vault filename. Quote checklist items
             # fallback for the rare case grok-3 itself errors. This
             # turns the previously-common 180s-then-fail pattern into
             # a sub-5s success in the typical case.
-            _ladder = ["grok-3", selected_model, XAI_MODEL_LIGHT]
+            _ladder = ["grok-4.20-0309-reasoning", selected_model, XAI_MODEL_LIGHT]
         else:
-            _ladder = [XAI_MODEL_LIGHT, "grok-3", XAI_MODEL]
+            _ladder = [XAI_MODEL_LIGHT, "grok-4.20-0309-reasoning", XAI_MODEL]
         _seen: set = set()
         _MODEL_ORDER = [m for m in _ladder if m and not (m in _seen or _seen.add(m))]
         # For heavy IAC analysis the failover overhead matters more
@@ -1144,21 +1144,27 @@ Be specific. Name documents by their exact vault filename. Quote checklist items
         try:
             usage = completion.usage
             if usage:
+                from services.llm_cost_ledger import estimate_cost as _est
+
                 now_ts = datetime.now(timezone.utc)
                 input_t = getattr(usage, "prompt_tokens", 0) or 0
                 output_t = getattr(usage, "completion_tokens", 0) or 0
-                # Grok-4: $3/1M input, $15/1M output; Grok-3-mini: ~$0.20/$0.50
-                if selected_model == XAI_MODEL:
-                    cost = (input_t * 3.0 / 1_000_000) + (output_t * 15.0 / 1_000_000)
-                else:
-                    cost = (input_t * 0.20 / 1_000_000) + (output_t * 0.50 / 1_000_000)
+                _details = getattr(usage, "completion_tokens_details", None)
+                reasoning_t = int(getattr(_details, "reasoning_tokens", 0) or 0) if _details else 0
+                # Price by the model xAI ACTUALLY served (it silently
+                # redirects retired names); reasoning tokens bill at the
+                # output rate but are excluded from completion_tokens.
+                served = getattr(completion, "model", None) or selected_model
+                cost = _est(served, input_t, output_t + reasoning_t)
                 await db.xai_usage.insert_one(
                     {
                         "date": now_ts.strftime("%Y-%m-%d"),
                         "timestamp": now_ts.isoformat(),
                         "model": selected_model,
+                        "served_model": served,
                         "input_tokens": input_t,
                         "output_tokens": output_t,
+                        "reasoning_tokens": reasoning_t,
                         "cost_usd": round(cost, 6),
                         "user_id": current_user["id"],
                         "session_id": data.session_id,

@@ -560,7 +560,7 @@ Generate a complete, actionable emergency plan for this specific disaster. Retur
     # Mirrors the EGA pattern in guardian.py so a flaky grok-4 doesn't
     # hang the CCP wizard for 60+ seconds.
     _LADDER: list[str] = []
-    for m in ("grok-3", XAI_MODEL, XAI_MODEL_LIGHT):
+    for m in ("grok-4.20-0309-reasoning", XAI_MODEL, XAI_MODEL_LIGHT):
         if m and m not in _LADDER:
             _LADDER.append(m)
     _PER_CALL_TIMEOUT_S = 45.0  # hard per-attempt ceiling

@@ -33,7 +33,7 @@ from uuid import uuid4
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, EmailStr
 
-from config import db, xai_client, logger
+from config import db, xai_client, logger, XAI_MODEL_LIGHT
 from services.ai_burn_guard import require_ai_burn_budget
 from services.estate_auth import is_estate_member, is_estate_owner
 from utils import RESEND_API_KEY, SENDER_EMAIL, get_current_user
@@ -957,8 +957,8 @@ async def risk_profile(req: RiskProfileRequest, current_user: dict = Depends(get
         _t0 = _time.time()
         resp = await _asyncio.to_thread(
             xai_client.chat.completions.create,
-            model="grok-3-mini",  # Risk-ranking is a simple classification
-            messages=[{"role": "user", "content": prompt}],  # task; mini returns in 3-5s vs grok-4-latest's 80s+.
+            model=XAI_MODEL_LIGHT,  # Risk-ranking is a simple classification
+            messages=[{"role": "user", "content": prompt}],  # task; the light model returns fastest.
             temperature=0.2,
             max_tokens=1800,
         )
@@ -968,7 +968,7 @@ async def risk_profile(req: RiskProfileRequest, current_user: dict = Depends(get
             await _rec(
                 resp,
                 endpoint="ccp.risk_profile",
-                model="grok-3-mini",
+                model=XAI_MODEL_LIGHT,
                 user_id=current_user.get("id"),
                 estate_id=req.estate_id,
                 started_at=_t0,

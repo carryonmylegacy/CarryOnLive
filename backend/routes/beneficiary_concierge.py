@@ -71,7 +71,7 @@ async def concierge_diagnose(current_user: dict = Depends(get_current_user)) -> 
         result["error"] = "xai_client is None — XAI_API_KEY missing from this pod's env"
         return result
 
-    for model_name in ["grok-3-mini", "grok-3", "grok-4"]:
+    for model_name in [XAI_MODEL_LIGHT, "grok-4.20-0309-reasoning", XAI_MODEL]:
         t0 = asyncio.get_event_loop().time()
         try:
             r = await asyncio.to_thread(
@@ -439,7 +439,7 @@ async def concierge_ask(
 
     # Models, in priority order. The first to return wins. Pulled from
     # config so /admin can override without a deploy.
-    _MODEL_ORDER = [m for m in (XAI_MODEL_LIGHT, "grok-3", XAI_MODEL) if m]
+    _MODEL_ORDER = [m for m in (XAI_MODEL_LIGHT, "grok-4.20-0309-reasoning", XAI_MODEL) if m]
     # De-dupe while preserving order (in case env sets LIGHT==HEAVY)
     seen: set[str] = set()
     _MODEL_ORDER = [m for m in _MODEL_ORDER if not (m in seen or seen.add(m))]

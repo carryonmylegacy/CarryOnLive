@@ -116,8 +116,12 @@ if RESEND_API_KEY:
 # xAI Grok (Estate Guardian AI)
 XAI_API_KEY = os.environ.get("XAI_API_KEY")
 XAI_BASE_URL = "https://api.x.ai/v1"
-XAI_MODEL = os.environ.get("XAI_MODEL", "grok-4")
-XAI_MODEL_LIGHT = os.environ.get("XAI_MODEL_LIGHT", "grok-3-mini")
+# Jun 2026: grok-4/grok-3/grok-3-mini are RETIRED — xAI silently redirects
+# them all to grok-4.3 (verified via response.model). Name real models
+# explicitly. Light path uses the non-reasoning variant: same per-token price
+# as grok-4.3 but no reasoning-token burn on simple calls.
+XAI_MODEL = os.environ.get("XAI_MODEL", "grok-4.3")
+XAI_MODEL_LIGHT = os.environ.get("XAI_MODEL_LIGHT", "grok-4.20-0309-non-reasoning")
 xai_client = None
 if XAI_API_KEY:
     xai_client = XAIClient(
