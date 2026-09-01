@@ -8,6 +8,7 @@ from pydantic import BaseModel
 
 from config import db
 from guards import require_admin, require_staff
+from services.transcript_purge import purge_estate_transcripts, purge_user_transcripts
 
 router = APIRouter()
 
@@ -36,7 +37,7 @@ async def delete_estate_only(
     await db.messages.delete_many({"estate_id": estate_id})
     await db.checklists.delete_many({"estate_id": estate_id})
     await db.death_certificates.delete_many({"estate_id": estate_id})
-    await db.chat_history.delete_many({"estate_id": estate_id})
+    await purge_estate_transcripts(estate_id)
     await db.milestone_reports.delete_many({"estate_id": estate_id})
     await db.digital_credentials.delete_many({"estate_id": estate_id})
     await db.section_permissions.delete_many({"estate_id": estate_id})
@@ -98,7 +99,7 @@ async def cleanup_ghost_estates(
         await db.messages.delete_many({"estate_id": estate_id})
         await db.checklists.delete_many({"estate_id": estate_id})
         await db.death_certificates.delete_many({"estate_id": estate_id})
-        await db.chat_history.delete_many({"estate_id": estate_id})
+        await purge_estate_transcripts(estate_id)
         await db.milestone_reports.delete_many({"estate_id": estate_id})
         await db.digital_credentials.delete_many({"estate_id": estate_id})
         await db.section_permissions.delete_many({"estate_id": estate_id})
@@ -159,8 +160,13 @@ async def cleanup_orphans(current_user: dict = Depends(require_admin)):
         deleted["checklists"] = r.deleted_count
         r = await db.estates.delete_many({"id": {"$in": orphan_estate_ids}})
         deleted["estates"] = r.deleted_count
+        t = await purge_estate_transcripts(orphan_estate_ids)
+        deleted["transcripts"] = sum(t.values())
 
     if orphan_owner_ids:
+        for oid in orphan_owner_ids:
+            t = await purge_user_transcripts(oid, orphan_estate_ids)
+            deleted["transcripts"] = deleted.get("transcripts", 0) + sum(t.values())
         r = await db.user_subscriptions.delete_many({"user_id": {"$in": orphan_owner_ids}})
         deleted["subscriptions"] = r.deleted_count
 

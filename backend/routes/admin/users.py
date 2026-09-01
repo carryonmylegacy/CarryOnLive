@@ -160,7 +160,6 @@ async def delete_user(
         await db.messages.delete_many({"estate_id": {"$in": estate_ids}})
         await db.checklists.delete_many({"estate_id": {"$in": estate_ids}})
         await db.death_certificates.delete_many({"estate_id": {"$in": estate_ids}})
-        await db.chat_history.delete_many({"estate_id": {"$in": estate_ids}})
         await db.milestone_reports.delete_many({"estate_id": {"$in": estate_ids}})
         await db.digital_credentials.delete_many({"estate_id": {"$in": estate_ids}})
         await db.section_permissions.delete_many({"estate_id": {"$in": estate_ids}})
@@ -171,6 +170,10 @@ async def delete_user(
 
     # Delete user's subscription, sessions, and other user-keyed data
     await db.user_subscriptions.delete_many({"user_id": user_id})
+    # AI transcripts (EGA + BEC) by user_id AND estate_id — legacy rows lack estate_id.
+    from services.transcript_purge import purge_user_transcripts
+
+    await purge_user_transcripts(user_id, estate_ids)
     await db.ai_feedback.delete_many({"user_id": user_id})
     await db.dts_tasks.delete_many({"user_id": user_id})
     await db.support_chats.delete_many({"user_id": user_id})

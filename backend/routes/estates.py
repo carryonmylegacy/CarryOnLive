@@ -11,6 +11,7 @@ from models import Estate, EstateCreate, EstateUpdate
 from services.access_control import require_estate_actor
 from services.encryption import generate_estate_salt
 from services.readiness import calculate_estate_readiness, ensure_default_checklist
+from services.transcript_purge import purge_estate_transcripts
 from utils import get_current_user, log_activity
 from services.photo_urls import resolve_photo_url
 
@@ -533,6 +534,7 @@ async def create_estate_for_existing_user(data: CreateEstateRequest, current_use
             await db.vault_items.delete_many({"estate_id": existing["id"]})
             await db.checklist_items.delete_many({"estate_id": existing["id"]})
             await db.activity_logs.delete_many({"estate_id": existing["id"]})
+            await purge_estate_transcripts(existing["id"])
 
     user = await db.users.find_one({"id": current_user["id"]}, {"_id": 0})
     if not user:
@@ -955,6 +957,7 @@ async def delete_estate(estate_id: str, current_user: dict = Depends(get_current
     await db.beneficiaries.delete_many({"estate_id": estate_id})
     await db.checklists.delete_many({"estate_id": estate_id})
     await db.activity_logs.delete_many({"estate_id": estate_id})
+    await purge_estate_transcripts(estate_id)
     await db.estates.delete_one({"id": estate_id})
 
     return {"message": "Estate deleted"}
