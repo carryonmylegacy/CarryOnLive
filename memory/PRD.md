@@ -538,6 +538,7 @@ bug — fix it in the preview DB immediately (snippet in
 - Hardcoded `rgba(212,175,55,…)` → `var(--gold-rgb)` sweep.
 
 ### Last verified end-to-end working item
+**⛔ HOLD (Sep 2 2026): founder away 3 days — DO NOT PUSH, NO FURTHER WORK until the founder returns and reviews. HEAD is 3 commits ahead of production (347e4ea1 · 79a97f89 · f8628c87 = /security sentence, design doc, Tier-1 bump, erasure Phase 1 core, trial-reminder fix, drift guard). Production = 388d37aa + Render migration (0 plaintext transcripts).**
 **Tier-1 dependency bump + Erasure Phase 1 core (Sep 2 2026, iteration_191: backend 100%, frontend 100%, check.sh ALL CLEAR, pip-audit 82→36). NOT PUSHED — founder approval pending (report delivered).** Next in founder's order: Step 3 hygiene (OTP hashing + BSON-Date TTLs + TTL-less collections + idempotency index), then Erasure Phase 2 (self-service 14-day flow, scheduler, login gate, emails, remove accepted-beneficiary blocker, wire deletion_requests), Phase 3 (admin page, erase-by-email, copy, generated retention policy). Standing rules: only authenticate as `petemitchell` on production; ask before any other account; never use family-member accounts. Production check 5 (new EGA conversation) still pending founder's trial reset on petemitchell.
 - **Prior:** Erasure service — inventory + design delivered (Sep 1 2026; `/app/memory/ERASURE_DESIGN.md`); decisions D1–D8 received Sep 2.
 - **Prior:** Transcript deletion finality (Sep 1 2026, iteration_190: backend 100%, frontend 100%, check.sh ALL CLEAR):
