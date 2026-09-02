@@ -26,6 +26,15 @@ CHECK_INTERVAL_HOURS = 6  # how often to scan for reminders
 _ALL_REMINDER_DAYS = sorted({d for days in ALLOWED_TRIAL_DAYS for d in REMINDER_CADENCE[days]}, reverse=True)
 
 
+_RESERVED_DOMAINS = ("example.com", "example.net", "example.org", ".test", ".invalid", ".localhost")
+
+
+def _undeliverable(email):
+    """RFC 2606 reserved domains (QA fixtures) can never receive mail — mark sent, skip Resend."""
+    domain = (email or "").rsplit("@", 1)[-1].lower()
+    return any(domain == d or domain.endswith(d) for d in _RESERVED_DOMAINS)
+
+
 def build_trial_reminder_email(user_name, days_remaining, app_url, trial_days):
     """Build HTML email for trial reminder."""
     urgency = "urgent" if days_remaining <= 3 else "standard"
@@ -192,6 +201,9 @@ async def send_trial_reminders():
         ).to_list(500)
 
         for user in users:
+            if _undeliverable(user.get("email")):
+                await db.users.update_one({"id": user["id"]}, {"$set": {f"trial_reminder_{days}d_sent": True}})
+                continue
             try:
                 subject, html = build_trial_reminder_email(
                     user.get("name", user.get("first_name", "")),
@@ -245,6 +257,9 @@ async def send_trial_reminders():
         )
         if sub:
             continue  # Has active subscription, skip
+        if _undeliverable(user.get("email")):
+            await db.users.update_one({"id": user["id"]}, {"$set": {"trial_expired_email_sent": True}})
+            continue
 
         try:
             subject, html = build_trial_expired_email(

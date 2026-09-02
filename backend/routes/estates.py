@@ -10,8 +10,8 @@ from guards import require_benefactor_role
 from models import Estate, EstateCreate, EstateUpdate
 from services.access_control import require_estate_actor
 from services.encryption import generate_estate_salt
+from services.erasure import erase_estate
 from services.readiness import calculate_estate_readiness, ensure_default_checklist
-from services.transcript_purge import purge_estate_transcripts
 from utils import get_current_user, log_activity
 from services.photo_urls import resolve_photo_url
 
@@ -530,11 +530,7 @@ async def create_estate_for_existing_user(data: CreateEstateRequest, current_use
         is_ghost = is_empty and existing.get("status") == "pre-transition"
 
         if is_ghost:
-            await db.estates.delete_one({"id": existing["id"]})
-            await db.vault_items.delete_many({"estate_id": existing["id"]})
-            await db.checklist_items.delete_many({"estate_id": existing["id"]})
-            await db.activity_logs.delete_many({"estate_id": existing["id"]})
-            await purge_estate_transcripts(existing["id"])
+            await erase_estate(existing["id"], actor=current_user, reason="ghost_replace")
 
     user = await db.users.find_one({"id": current_user["id"]}, {"_id": 0})
     if not user:
@@ -951,14 +947,8 @@ async def delete_estate(estate_id: str, current_user: dict = Depends(get_current
 
     await purge_estate_storage(estate_id)
 
-    # Delete all related data
-    await db.documents.delete_many({"estate_id": estate_id})
-    await db.messages.delete_many({"estate_id": estate_id})
-    await db.beneficiaries.delete_many({"estate_id": estate_id})
-    await db.checklists.delete_many({"estate_id": estate_id})
-    await db.activity_logs.delete_many({"estate_id": estate_id})
-    await purge_estate_transcripts(estate_id)
-    await db.estates.delete_one({"id": estate_id})
+    # Single erasure executor — every estate-scoped collection in the manifest + blobs.
+    await erase_estate(estate_id, actor=current_user, reason="owner_delete")
 
     return {"message": "Estate deleted"}
 

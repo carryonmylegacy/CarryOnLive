@@ -1,6 +1,6 @@
 # CarryOn — Erasure Service: Collection Inventory + Design (Sep 1, 2026)
 
-Status: DESIGN FOR FOUNDER APPROVAL — no code written. Source of truth for the erasure build.
+Status: APPROVED Sep 2 2026 (D1–D8 decided: 14-day window · D2 option A · delete sender-side · read-only at T0 · delete support · 3 y user-level logs / 7 y audit_trail · notify partner (minimum detail) · proceed with Apple IAP). Phase 1 core built (services/erasure_manifest.py, services/erasure.py, drift guard). Source of truth for the erasure build.
 Inventory taken from the live preview schema (175 collections) cross-checked against every
 `db.<coll>.insert/update` in `routes/`, `services/`, `server.py`, `schedulers.py`.
 

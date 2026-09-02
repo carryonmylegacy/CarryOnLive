@@ -8,7 +8,8 @@ from pydantic import BaseModel
 
 from config import db
 from guards import require_admin, require_staff
-from services.transcript_purge import purge_estate_transcripts, purge_user_transcripts
+from services.erasure import erase_estate
+from services.transcript_purge import purge_user_transcripts
 
 router = APIRouter()
 
@@ -31,19 +32,8 @@ async def delete_estate_only(
 
     owner_id = estate["owner_id"]
 
-    # Delete all estate-linked data
-    await db.beneficiaries.delete_many({"estate_id": estate_id})
-    await db.documents.delete_many({"estate_id": estate_id})
-    await db.messages.delete_many({"estate_id": estate_id})
-    await db.checklists.delete_many({"estate_id": estate_id})
-    await db.death_certificates.delete_many({"estate_id": estate_id})
-    await purge_estate_transcripts(estate_id)
-    await db.milestone_reports.delete_many({"estate_id": estate_id})
-    await db.digital_credentials.delete_many({"estate_id": estate_id})
-    await db.section_permissions.delete_many({"estate_id": estate_id})
-    await db.beneficiary_display_overrides.delete_many({"estate_id": estate_id})
-    await db.beneficiary_grace_periods.delete_many({"estate_id": estate_id})
-    await db.estates.delete_one({"id": estate_id})
+    # Single erasure executor — every estate-scoped collection in the manifest + blobs.
+    await erase_estate(estate_id, actor=current_user, reason="admin_estate_delete")
 
     # Check if owner has any other estates
     other_estates = await db.estates.count_documents({"owner_id": owner_id})
@@ -93,19 +83,7 @@ async def cleanup_ghost_estates(
 
         owner_id = estate["owner_id"]
 
-        # Delete all estate-linked data
-        await db.beneficiaries.delete_many({"estate_id": estate_id})
-        await db.documents.delete_many({"estate_id": estate_id})
-        await db.messages.delete_many({"estate_id": estate_id})
-        await db.checklists.delete_many({"estate_id": estate_id})
-        await db.death_certificates.delete_many({"estate_id": estate_id})
-        await purge_estate_transcripts(estate_id)
-        await db.milestone_reports.delete_many({"estate_id": estate_id})
-        await db.digital_credentials.delete_many({"estate_id": estate_id})
-        await db.section_permissions.delete_many({"estate_id": estate_id})
-        await db.beneficiary_display_overrides.delete_many({"estate_id": estate_id})
-        await db.beneficiary_grace_periods.delete_many({"estate_id": estate_id})
-        await db.estates.delete_one({"id": estate_id})
+        await erase_estate(estate_id, actor=current_user, reason="admin_bulk_estate_delete")
         deleted_count += 1
 
         # Reset benefactor flags if no other estates remain
@@ -150,18 +128,9 @@ async def cleanup_orphans(current_user: dict = Depends(require_admin)):
     }
 
     if orphan_estate_ids:
-        r = await db.beneficiaries.delete_many({"estate_id": {"$in": orphan_estate_ids}})
-        deleted["beneficiaries"] = r.deleted_count
-        r = await db.documents.delete_many({"estate_id": {"$in": orphan_estate_ids}})
-        deleted["documents"] = r.deleted_count
-        r = await db.messages.delete_many({"estate_id": {"$in": orphan_estate_ids}})
-        deleted["messages"] = r.deleted_count
-        r = await db.checklists.delete_many({"estate_id": {"$in": orphan_estate_ids}})
-        deleted["checklists"] = r.deleted_count
-        r = await db.estates.delete_many({"id": {"$in": orphan_estate_ids}})
-        deleted["estates"] = r.deleted_count
-        t = await purge_estate_transcripts(orphan_estate_ids)
-        deleted["transcripts"] = sum(t.values())
+        for eid in orphan_estate_ids:
+            for k, v in (await erase_estate(eid, actor=current_user, reason="orphan_cleanup")).items():
+                deleted[k] = deleted.get(k, 0) + v
 
     if orphan_owner_ids:
         for oid in orphan_owner_ids:

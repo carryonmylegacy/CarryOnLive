@@ -61,6 +61,13 @@ FAST_SUITE = [
     # that drops the legal-disclaimer banner from page 1, gets caught
     # here in <0.3s.
     "tests/test_quickstart_legal_filter.py",
+    # Erasure manifest drift guard (Sep 1 2026) — every collection carrying a
+    # user/estate/email key, in the live DB or in any db.<coll>.insert/update
+    # under routes/ + services/, must have an entry in services/erasure_manifest.py.
+    # This is the mechanism that stops orphaned personal data from recurring:
+    # a new collection cannot ship until someone has decided what erasure does
+    # to it. ~1s, read-only.
+    "tests/regression/test_erasure_manifest_drift.py",
 ]
 
 

@@ -141,63 +141,12 @@ async def delete_user(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    # Cascade delete all associated data
-    # Find estates owned by this user
-    estates = await db.estates.find({"owner_id": user_id}, {"_id": 0, "id": 1}).to_list(1000)
-    estate_ids = [e["id"] for e in estates]
+    # Single erasure executor (services/erasure.py) — driven by the erasure manifest so
+    # admin deletes are exactly as complete as self-service erasure.
+    from services.erasure import erase_user
 
-    if estate_ids:
-        # SOC2 deletion finality (audit 5391e8b #6): purge ALL object-storage
-        # blobs for each estate BEFORE removing the DB rows that point to them.
-        from services.estate_purge import purge_estate_storage
-
-        for _eid in estate_ids:
-            await purge_estate_storage(_eid)
-
-        # Delete ALL data tied to these estates
-        await db.beneficiaries.delete_many({"estate_id": {"$in": estate_ids}})
-        await db.documents.delete_many({"estate_id": {"$in": estate_ids}})
-        await db.messages.delete_many({"estate_id": {"$in": estate_ids}})
-        await db.checklists.delete_many({"estate_id": {"$in": estate_ids}})
-        await db.death_certificates.delete_many({"estate_id": {"$in": estate_ids}})
-        await db.milestone_reports.delete_many({"estate_id": {"$in": estate_ids}})
-        await db.digital_credentials.delete_many({"estate_id": {"$in": estate_ids}})
-        await db.section_permissions.delete_many({"estate_id": {"$in": estate_ids}})
-        await db.beneficiary_display_overrides.delete_many({"estate_id": {"$in": estate_ids}})
-        await db.beneficiary_grace_periods.delete_many({"estate_id": {"$in": estate_ids}})
-        await db.apple_transactions.delete_many({"user_id": user_id})
-        await db.estates.delete_many({"id": {"$in": estate_ids}})
-
-    # Delete user's subscription, sessions, and other user-keyed data
-    await db.user_subscriptions.delete_many({"user_id": user_id})
-    # AI transcripts (EGA + BEC) by user_id AND estate_id — legacy rows lack estate_id.
-    from services.transcript_purge import purge_user_transcripts
-
-    await purge_user_transcripts(user_id, estate_ids)
-    await db.ai_feedback.delete_many({"user_id": user_id})
-    await db.dts_tasks.delete_many({"user_id": user_id})
-    await db.support_chats.delete_many({"user_id": user_id})
-    await db.onboarding_progress.delete_many({"user_id": user_id})
-    await db.client_errors.delete_many({"user_id": user_id})
-    await db.webauthn_credentials.delete_many({"user_id": user_id})
-
-    # Remove this user from all estates' beneficiaries arrays (they may be a beneficiary of other estates)
-    await db.estates.update_many(
-        {"beneficiaries": user_id},
-        {"$pull": {"beneficiaries": user_id}},
-    )
-    # Delete beneficiary records that link this user to other estates
-    await db.beneficiaries.delete_many({"user_id": user_id})
-
-    # SOC2 deletion finality (#6): purge the user's personal media (profile
-    # photos) from object storage before the user row is removed.
-    from services.estate_purge import purge_user_storage
-
-    await purge_user_storage(user_id)
-
-    # Finally delete the user
-    await db.users.delete_one({"id": user_id})
-    return {"message": "User and all associated data deleted"}
+    receipt = await erase_user(user_id, actor=current_user, reason="admin_delete")
+    return {"message": "User and all associated data deleted", "receipt_id": receipt["id"], "counts": receipt["counts"]}
 
 
 @router.put("/admin/users/{user_id}/role")
