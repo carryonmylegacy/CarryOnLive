@@ -68,6 +68,7 @@ FAST_SUITE = [
     # a new collection cannot ship until someone has decided what erasure does
     # to it. ~1s, read-only.
     "tests/regression/test_erasure_manifest_drift.py",
+    "tests/regression/test_dav_admin_plaintext_hotfix.py",
 ]
 
 

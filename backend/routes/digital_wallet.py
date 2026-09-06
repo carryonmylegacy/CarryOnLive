@@ -18,6 +18,10 @@ router = APIRouter()
 
 # ===================== DIGITAL WALLET VAULT =====================
 
+# Fields an admin/founder who does not own the estate must never receive
+# (plaintext, legacy plaintext rows, and ciphertext alike). Hotfix Sep 2026.
+_SECRET_FIELDS = ("password", "additional_access", "encrypted_password", "encrypted_additional")
+
 
 def _entry_assigned_to_actor(entry: dict, actor: dict) -> bool:
     assigned = entry.get("assigned_beneficiary_id")
@@ -149,9 +153,16 @@ async def get_digital_wallet(estate_id: str, request: Request = None, current_us
     estate_salt = await get_estate_salt(estate_id)
 
     if is_owner or is_admin:
-        # Owner sees all entries with decrypted passwords
+        strip_secrets = is_admin and not is_owner
+        # Owner sees all entries with decrypted passwords; an admin who does not
+        # own the estate gets the entries with every secret field removed.
         for entry in entries:
-            _decrypt_wallet_entry(entry, estate_salt)
+            if strip_secrets:
+                for key in _SECRET_FIELDS:
+                    entry.pop(key, None)
+            else:
+                _decrypt_wallet_entry(entry, estate_salt)
+        admin_details = {"access_type": "admin", "secrets_stripped": True} if strip_secrets else {}
         # SOC 2 CC6.1: Audit sensitive data access
         await log_audit_event(
             actor_id=current_user["id"],
@@ -163,7 +174,7 @@ async def get_digital_wallet(estate_id: str, request: Request = None, current_us
             resource_id=estate_id,
             ip_address=get_client_ip(request) if request else "",
             severity="info",
-            details={"entry_count": len(entries)},
+            details={"entry_count": len(entries), **admin_details},
         )
         return entries
 

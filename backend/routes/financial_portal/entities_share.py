@@ -38,7 +38,9 @@ from fastapi import Depends
 from pydantic import BaseModel, Field
 
 from config import db
+from routes.digital_wallet import _SECRET_FIELDS
 from services.access_control import can_access_document
+from services.audit import audit_log
 from services.encryption import decrypt_field, get_estate_salt
 from services.photo_urls import resolve_photo_url
 from utils import get_current_user
@@ -267,7 +269,25 @@ async def get_entities_beneficiary_view(estate_id: str, current_user: dict = Dep
                 c, is_transitioned=is_transitioned, beneficiary_can_see_now=beneficiary_can_see_now
             )
         if allowed:
-            visible_creds.append(_credential_view(c, estate_salt))
+            if is_admin and not is_owner:
+                # Admin who does not own the estate: never decrypt, never return a secret field.
+                c = {k: v for k, v in c.items() if k not in _SECRET_FIELDS}
+                view = {k: v for k, v in _credential_view(c, estate_salt).items() if k not in _SECRET_FIELDS}
+            else:
+                view = _credential_view(c, estate_salt)
+            visible_creds.append(view)
+    if is_admin and not is_owner and visible_creds:
+        await audit_log(
+            action="digital_wallet.admin_secrets_stripped",
+            user_id=current_user["id"],
+            resource_type="digital_wallet",
+            resource_id=estate_id,
+            estate_id=estate_id,
+            details={"route": "entities_beneficiary_view", "entry_count": len(visible_creds)},
+            actor_email=current_user.get("email", ""),
+            actor_role=current_user.get("role", ""),
+            category="data_access",
+        )
 
     return {
         "visible": True,

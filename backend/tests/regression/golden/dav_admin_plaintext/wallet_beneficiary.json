@@ -1,0 +1,39 @@
+[
+ {
+  "account_name": "Bank",
+  "additional_access": "PT<CT-bank-2fa>",
+  "assigned_beneficiary_id": "benrec-0000-0000-0000-000000000004",
+  "assigned_beneficiary_name": "Ben Fixture",
+  "beneficiary_visibility": "posthumous_only",
+  "category": "banking",
+  "created_at": "2026-01-01T00:00:00+00:00",
+  "deleted_at": null,
+  "encrypted_additional": "CT-bank-2fa",
+  "encrypted_password": "CT-bank-pass",
+  "estate_id": "estate-0000-0000-0000-00000000000a",
+  "id": "dav-1",
+  "linked_entity_id": "entity-0000-0000-0000-00000000000b",
+  "linked_entity_name": "Fixture LLC",
+  "login_username": "owner-login",
+  "notes": "main account",
+  "password": "PT<CT-bank-pass>"
+ },
+ {
+  "account_name": "Legacy plaintext row",
+  "additional_access": "LEGACY-PIN",
+  "assigned_beneficiary_id": "benrec-0000-0000-0000-000000000004",
+  "assigned_beneficiary_name": "Ben Fixture",
+  "beneficiary_visibility": "show_now",
+  "category": "other",
+  "created_at": "2026-01-03T00:00:00+00:00",
+  "deleted_at": null,
+  "encrypted_password": null,
+  "estate_id": "estate-0000-0000-0000-00000000000a",
+  "id": "dav-3",
+  "linked_entity_id": "entity-0000-0000-0000-00000000000b",
+  "linked_entity_name": "Fixture LLC",
+  "login_username": "legacy",
+  "notes": "pre-encryption row",
+  "password": "PLAINTEXT-LEGACY"
+ }
+]
