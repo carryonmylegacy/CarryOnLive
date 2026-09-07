@@ -24,7 +24,7 @@ const PrivacyPolicyPage = () => {
               Privacy Policy
             </h1>
           </div>
-          <p className="text-[#7B879E] text-sm mb-8">Last updated: February 2026</p>
+          <p className="text-[#7B879E] text-sm mb-8">Last updated: September 7, 2026</p>
 
           <div className="space-y-8 text-[#C0C8D8] text-sm leading-relaxed">
             <section>
@@ -39,6 +39,8 @@ const PrivacyPolicyPage = () => {
               <p className="mb-3">We collect information you provide directly to us, including:</p>
               <ul className="list-disc list-inside space-y-1 ml-2">
                 <li>Personal identification information (name, email address, phone number)</li>
+                <li>Date of birth &mdash; used to confirm you are 18 or older and to determine eligibility for age-based plans (New Adult 18&ndash;25, Seniors 65+)</li>
+                <li>Gender (optional) &mdash; used only to word family relationships correctly in your family tree (for example &quot;mother&quot; or &quot;father&quot;); it is never used for marketing or profiling</li>
                 <li>Account credentials (encrypted passwords)</li>
                 <li>Estate planning data (beneficiary information, documents, checklists)</li>
                 <li>Payment information (processed securely through Stripe)</li>
