@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import apiClient from '../utils/apiClient';
+import { copyrightLine } from '../config/company';
 import { toast } from '../utils/toast';
 import { useAuth } from '../contexts/AuthContext';
 import { useLocalStorageBoolean } from '../hooks/useLocalStorageBoolean';
@@ -370,7 +371,7 @@ const SettingsPage = () => {
             <span>AES-256 Encrypted · Per-Estate Keys · 2FA Protected</span>
           </div>
           <p className="text-[var(--t5)] text-xs">
-            CarryOn™ v1.0.0 · © 2024 CarryOn Inc.
+            CarryOn™ v1.0.0 · {copyrightLine()}
           </p>
         </div>
       </div>

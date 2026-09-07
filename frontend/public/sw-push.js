@@ -41,6 +41,7 @@ function userImageCacheName() {
 const PRECACHE_URLS = [
   '/',
   '/index.html',
+  '/shell.html',                // Pristine SPA shell (Vercel build) — preferred offline fallback, carries no page meta
   '/manifest.json',
   '/splash.jpg',
   '/carryon-icon.jpg',
@@ -402,11 +403,15 @@ async function cacheFirst(request, cacheName, ignoreSearch = false) {
 // Network-first with cache fallback. For navigations.
 async function networkFirstNavigation(event) {
   const cache = await caches.open(SHELL_CACHE);
+  // Prefer this route's own cached HTML, then the pristine shell. `/index.html`
+  // and `/` hold whatever page was navigated last — its baked-in <title>,
+  // canonical and og: tags would otherwise be served for every other route.
   const cachedShell = async () =>
-    (await cache.match('/index.html')) ||
-    (await cache.match('/')) ||
     (await cache.match(event.request)) ||
-    (await cache.match(new URL(event.request.url).pathname));
+    (await cache.match(new URL(event.request.url).pathname)) ||
+    (await cache.match('/shell.html')) ||
+    (await cache.match('/index.html')) ||
+    (await cache.match('/'));
 
   // Fast-path: if the browser already knows we're offline, don't waste
   // a minute waiting for a fetch that will never resolve. Serve the

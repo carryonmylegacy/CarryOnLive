@@ -269,7 +269,7 @@ const AcceptInvitationPage = () => {
                 the same standard used by banks and governments.
               </p>
               <div className="space-y-3">
-                {['AES-256 encryption', 'Per-estate keys', 'SOC 2 Type II audit in progress', '2FA on every login'].map((t, i) => (
+                {['AES-256 encryption', 'Per-estate keys', 'Preparing for SOC 2 Type II', '2FA on every login'].map((t, i) => (
                   <div key={i} className="flex items-center gap-3">
                     <CheckCircle className="w-4 h-4 text-[#10b981]" />
                     <span className="text-sm text-[#94a3b8]">{t}</span>

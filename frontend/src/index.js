@@ -550,6 +550,10 @@ try {
   import('./offline/outbox').then((m) => m.migrateOutboxEncryption()).catch(() => {});
 } catch { /* SSR / module load */ }
 
+// Prerendered public pages ship their <SEO> head tags baked into the static
+// HTML; React re-hoists them on mount, so drop the baked copies first.
+document.querySelectorAll('head [data-seo]').forEach((el) => el.remove());
+
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
   <React.StrictMode>

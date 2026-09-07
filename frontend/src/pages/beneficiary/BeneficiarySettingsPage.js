@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../../utils/apiClient';
+import { copyrightLine } from '../../config/company';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { User, Lock, LogOut, Shield, Moon, Sun, Crown, WifiOff } from 'lucide-react';
@@ -212,7 +213,7 @@ const BeneficiarySettingsPage = () => {
           <Shield className="w-3 h-3" />
           <span>AES-256 Encrypted · Per-Estate Keys · 2FA Protected</span>
         </div>
-        <p className="text-[var(--t5)] text-[11px]">CarryOn™ v1.0.0 · © 2024 CarryOn Inc.</p>
+        <p className="text-[var(--t5)] text-[11px]">CarryOn™ v1.0.0 · {copyrightLine()}</p>
       </div>
     </div>
   );

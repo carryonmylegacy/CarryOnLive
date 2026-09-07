@@ -96,7 +96,7 @@ const SecurityPage = () => {
           <Bullet><strong>Per-estate encryption salt</strong> generated at estate creation. No two families share a key.</Bullet>
           <Bullet><strong>PBKDF2-HMAC-SHA256, 600,000 iterations</strong> for password-derived keys (NIST recommends ≥600k).</Bullet>
           <Bullet><strong>TLS 1.3</strong> with HSTS preload (max-age 1 year, includeSubDomains, preload).</Bullet>
-          <Bullet><strong>Encrypted vault contents.</strong> Documents are stored AES-256-GCM encrypted with per-estate keys — there is no staff tool for browsing them. AI chat transcripts, which can quote documents you flagged for AI analysis, are encrypted at rest with the same per-estate keys and are deleted with the estate or account they belong to. Encryption keys are derived per estate from key material CarryOn operates, so this is not a zero-knowledge system in the cryptographic sense — we hold the ability to decrypt, and we constrain who can exercise it rather than claiming we cannot.</Bullet>
+          <Bullet><strong>Encrypted with per-estate keys; access controlled and audited.</strong> Documents are stored AES-256-GCM encrypted with keys derived per estate from key material CarryOn operates. Because we hold that key material, this is not a zero-knowledge system: CarryOn staff access to stored content is restricted to administrator roles, limited to defined support and verification tasks, and every document download and vault view is written to an append-only audit trail &mdash; access is controlled and audited, not impossible. AI chat transcripts, which can quote documents you flagged for AI analysis, are encrypted at rest with the same per-estate keys and are deleted with the estate or account they belong to.</Bullet>
         </ul>
       </Section>
 
@@ -124,7 +124,7 @@ const SecurityPage = () => {
       {/* Infra */}
       <Section icon={Server} title="Infrastructure" testid="security-infra">
         <ul className="space-y-2">
-          <Bullet>Hosted on Railway (US East) and Vercel (global edge). MongoDB Atlas (encrypted-at-rest, automatic backups, point-in-time recovery).</Bullet>
+          <Bullet>Backend hosted on Render (Virginia, US East); web app served by Vercel (global edge). MongoDB Atlas (encrypted-at-rest, automatic backups, point-in-time recovery).</Bullet>
           <Bullet>Distributed scheduler locks (MongoDB-backed) prevent duplicate background jobs in multi-pod deployments.</Bullet>
           <Bullet>MongoDB-backed sliding-window rate limiter on every authentication and high-value endpoint.</Bullet>
           <Bullet>Sentry error monitoring on both backend (FastAPI + Starlette) and frontend, gated behind env-based DSN so dev environments never report.</Bullet>
@@ -159,7 +159,7 @@ const SecurityPage = () => {
       {/* Compliance */}
       <Section icon={Shield} title="Compliance & Audits" testid="security-compliance">
         <ul className="space-y-2">
-          <Bullet><strong>SOC 2 Type II — In Progress.</strong> We are mid-audit. We will publish the report and audit firm name on this page when complete. We do not claim SOC 2 attestation today.</Bullet>
+          <Bullet><strong>Preparing for SOC 2 Type II.</strong> We are preparing for a SOC 2 Type II audit. We do not claim SOC 2 attestation today. When the audit is complete, the report and the audit firm's name will be published on this page.</Bullet>
           <Bullet>GDPR & CCPA data-subject rights (access, deletion, portability) supported via in-app export and a written request to <a href="mailto:privacy@carryon.us" className="underline" style={{ color: 'var(--gold)' }}>privacy@carryon.us</a>.</Bullet>
           <Bullet>HIPAA-style controls applied to medical directives stored in the Secure Document Vault, though we are not a covered entity.</Bullet>
         </ul>
@@ -203,7 +203,7 @@ const SecurityPage = () => {
       </div>
 
       <p className="text-xs mt-10 text-center" style={{ color: 'var(--t5)' }}>
-        Last updated: April 29, 2026. This page is the source of truth for
+        Last updated: September 7, 2026. This page is the source of truth for
         CarryOn's security posture. We change it before we change practice.
       </p>
     </div>

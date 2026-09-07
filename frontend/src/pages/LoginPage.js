@@ -887,7 +887,6 @@ const LoginPage = () => {
             ].map(item => (
               <a key={item.label} href={item.href} className="text-[#6b7a90] text-sm font-medium hover:text-[#d4af37] transition-colors duration-300">{item.label}</a>
             ))}
-            <button onClick={() => navigateWithFade('/founder-about')} className="text-[#6b7a90] text-sm font-medium hover:text-[#d4af37] transition-colors duration-300" data-testid="nav-founder-btn">Founder</button>
           </div>
           <div className="flex items-center gap-3 sm:gap-4">
             {/* Mobile hamburger — opens dropdown with all nav items
@@ -939,13 +938,6 @@ const LoginPage = () => {
                 data-testid="nav-mobile-about"
               >
                 About
-              </button>
-              <button
-                onClick={() => { setMobileNavOpen(false); navigateWithFade('/founder-about'); }}
-                className="text-left py-3 text-[#cbd5e1] text-base font-medium hover:text-[#d4af37] transition-colors"
-                data-testid="nav-mobile-founder"
-              >
-                Founder
               </button>
             </div>
           </div>

@@ -37,17 +37,6 @@ const WAIVED_RULES = [
   // axe rules fire inside the player (aria-prohibited-attr, button-name,
   // color-contrast). Rationale: third-party widget, not our markup.
   // ↳ Waiver only at the iframe-scope level, not page-wide.
-
-  // 'meta-viewport': iOS PWA standalone mode requires
-  // `maximum-scale=1, user-scalable=no` to prevent the iOS double-tap-zoom
-  // gesture from breaking our custom touch handlers. Without this the
-  // tile-grid and the org-chart canvas mis-fire on every interaction.
-  // The trade-off is that pinch-zoom is disabled on the marketing site
-  // too; we accept this because: (a) iOS users can still use system-level
-  // accessibility zoom (Settings > Accessibility > Zoom), (b) the
-  // typography is already sized 16px+ throughout, and (c) the alternative
-  // breaks the production PWA. Documented in A11Y_WAIVERS.md.
-  'meta-viewport',
 ];
 
 async function scan(page, name) {

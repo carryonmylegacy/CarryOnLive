@@ -2,7 +2,7 @@
 // The admin Site Content tab can override address/phone at runtime via
 // GET /api/public/site-content; these are the canonical defaults.
 export const COMPANY = {
-  entity: 'CarryOn Technologies LLC',
+  entity: 'CarryOn Enterprises Inc.',
   addressLine1: '1550 Wilson Boulevard 7th Floor',
   addressLine2: 'Arlington, VA 22209',
   phone: '(703) 889-0017',
@@ -12,4 +12,4 @@ export const COMPANY = {
   emailSupport: 'support@carryon.us',
 };
 
-export const copyrightLine = () => `© ${new Date().getFullYear()} ${COMPANY.entity}. All rights reserved.`;
+export const copyrightLine = () => `© ${new Date().getFullYear()} ${COMPANY.entity.replace(/\.$/, '')}. All rights reserved.`;

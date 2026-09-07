@@ -134,7 +134,7 @@ const SECURITY_ITEMS = [
   { icon: Sparkles, text: 'Estate Guardian\u2122 AI reads only the documents you individually flag for AI review \u2014 unflagged documents are never transmitted, not even their names' },
   { icon: Shield, text: 'Two-factor authentication on every login with device trust options for your family' },
   { icon: Users, text: 'Transition verification by a human team \u2014 not algorithms, not AI. Real people confirming real events.' },
-  { icon: FileCheck, text: 'SOC 2 Type II audit in progress \u2014 full audit trail and GDPR data rights built in', link: '/security' },
+  { icon: FileCheck, text: 'Preparing for SOC 2 Type II \u2014 full audit trail and GDPR data rights built in', link: '/security' },
 ];
 
 /**

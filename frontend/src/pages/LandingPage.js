@@ -15,7 +15,7 @@ const TRUST_BADGES = [
   { label: 'AES-256 Encrypted' },
   { label: 'Per-Estate Keys' },
   { label: '2FA Protected' },
-  { label: 'SOC 2 In Progress' },
+  { label: 'Preparing for SOC 2' },
 ];
 
 // Source-of-truth feature catalog. These are the canonical "Four Pillars
@@ -309,7 +309,7 @@ const LandingPage = () => {
               { icon: Lock, label: 'AES-256-GCM', sub: 'Encryption at rest' },
               { icon: Shield, label: 'Per-Estate Keys', sub: 'Every estate sealed separately' },
               { icon: KeyRound, label: '2FA + Master Key', sub: 'Layered access control' },
-              { icon: Users, label: 'SOC 2 In Progress', sub: 'Compliance-first' },
+              { icon: Users, label: 'Preparing for SOC 2', sub: 'Compliance-first' },
             ].map((t) => {
               const Icon = t.icon;
               return (

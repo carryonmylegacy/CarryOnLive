@@ -21,7 +21,6 @@ import PendingUploadsIndicator from './components/PendingUploadsIndicator';
 import PendingSyncChip from './components/PendingSyncChip';
 import ScrollRestorationProvider from './components/ScrollRestorationProvider';
 import PartnerHeadBranding from './components/PartnerHeadBranding';
-import BuildTag from './components/BuildTag';
 import { NoIndex } from './components/SEO';
 import UpdatePrompt from './components/UpdatePrompt';
 import { AmberAlertProvider } from './components/AmberAlert';
@@ -960,7 +959,6 @@ function App() {
           <PendingUploadsIndicator />
           <AmberAlertProvider />
           <UsernameReviewModal />
-          <BuildTag />
           <UpdatePrompt />
           <AppRoutes />
           <ShareHandler />

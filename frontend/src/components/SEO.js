@@ -15,18 +15,21 @@ const ORIGIN = 'https://www.carryon.us';
  */
 export const SEO = ({ title, description, path = '/', noindex = false }) => {
   const url = `${ORIGIN}${path}`;
+  // data-seo marks these tags so index.js can drop the copies baked into the
+  // prerendered static HTML before React mounts (otherwise every public page
+  // carries two <title>/<canonical>/og: sets after hydration).
   return (
     <>
-      <title>{title}</title>
-      <meta name="description" content={description} />
-      <link rel="canonical" href={url} />
-      {noindex && <meta name="robots" content="noindex" />}
-      <meta property="og:type" content="website" />
-      <meta property="og:title" content={title} />
-      <meta property="og:description" content={description} />
-      <meta property="og:url" content={url} />
-      <meta name="twitter:title" content={title} />
-      <meta name="twitter:description" content={description} />
+      <title data-seo="">{title}</title>
+      <meta name="description" content={description} data-seo="" />
+      <link rel="canonical" href={url} data-seo="" />
+      {noindex && <meta name="robots" content="noindex" data-seo="" />}
+      <meta property="og:type" content="website" data-seo="" />
+      <meta property="og:title" content={title} data-seo="" />
+      <meta property="og:description" content={description} data-seo="" />
+      <meta property="og:url" content={url} data-seo="" />
+      <meta name="twitter:title" content={title} data-seo="" />
+      <meta name="twitter:description" content={description} data-seo="" />
     </>
   );
 };

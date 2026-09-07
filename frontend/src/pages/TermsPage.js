@@ -24,13 +24,13 @@ const TermsPage = () => {
               Terms of Service
             </h1>
           </div>
-          <p className="text-[#7B879E] text-sm mb-8">Last updated: February 2026</p>
+          <p className="text-[#7B879E] text-sm mb-8">Last updated: September 7, 2026</p>
 
           <div className="space-y-8 text-[#C0C8D8] text-sm leading-relaxed">
             <section>
               <h2 className="text-lg font-semibold text-[var(--t)] mb-3">1. Acceptance of Terms</h2>
               <p>
-                By accessing or using CarryOn&trade; (the &quot;Service&quot;), you agree to be bound by these Terms of Service (&quot;Terms&quot;). If you do not agree to these Terms, do not use the Service. We reserve the right to modify these Terms at any time, and your continued use of the Service constitutes acceptance of any changes.
+                These Terms of Service (&quot;Terms&quot;) are an agreement between you and CarryOn Enterprises Inc. (&quot;CarryOn,&quot; &quot;we,&quot; or &quot;us&quot;), the company that operates the CarryOn&trade; platform (the &quot;Service&quot;). By accessing or using the Service, you agree to be bound by these Terms. If you do not agree to these Terms, do not use the Service. We reserve the right to modify these Terms at any time, and your continued use of the Service constitutes acceptance of any changes.
               </p>
             </section>
 
@@ -81,7 +81,7 @@ const TermsPage = () => {
             <section>
               <h2 className="text-lg font-semibold text-[var(--t)] mb-3">6. Intellectual Property</h2>
               <p>
-                The Service, including its design, features, content, and underlying technology, is owned by CarryOn&trade; and protected by intellectual property laws. You retain ownership of the content you upload. By using the Service, you grant us a limited license to store, process, and display your content solely for the purpose of providing the Service.
+                The Service, including its design, features, content, and underlying technology, is owned by CarryOn Enterprises Inc. and protected by intellectual property laws. You retain ownership of the content you upload. By using the Service, you grant us a limited license to store, process, and display your content solely for the purpose of providing the Service.
               </p>
             </section>
 
@@ -123,7 +123,7 @@ const TermsPage = () => {
             <section>
               <h2 className="text-lg font-semibold text-[var(--t)] mb-3">12. Contact Us</h2>
               <p>
-                If you have questions about these Terms, please contact us at: <a href="mailto:info@carryon.us" className="text-[#7AABFD] hover:text-[#A5C6FE] transition-colors" data-testid="terms-contact-email">info@carryon.us</a>
+                If you have questions about these Terms, please contact CarryOn Enterprises Inc. at: <a href="mailto:support@carryon.us" className="text-[#7AABFD] hover:text-[#A5C6FE] transition-colors" data-testid="terms-contact-email">support@carryon.us</a>
               </p>
             </section>
           </div>
