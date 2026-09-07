@@ -1138,7 +1138,7 @@ async def generate_soc2_report(data: IntegrationsPinRequest, current_user: dict 
     controls = [
         "Encryption at Rest: AES-256-GCM (application layer) + SSE-S3 (storage layer)",
         "Encryption in Transit: TLS 1.3 enforced on all endpoints",
-        "Authentication: JWT tokens (HS256) + WebAuthn/FIDO2 passkey-based + Voice biometrics",
+        "Authentication: JWT tokens (HS256) + WebAuthn/FIDO2 passkey-based",
         "Authorization: Role-based access control (RBAC) with Founder/Admin/Operator/Benefactor/Beneficiary roles",
         "API Security: Rate limiting, CORS restrictions, input validation, SQL injection prevention (MongoDB parameterized queries)",
         "Credential Management: All credentials stored in environment variables, never in code. Masked in UI with secondary PIN gate.",

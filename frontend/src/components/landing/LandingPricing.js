@@ -228,7 +228,7 @@ export default function LandingPricing() {
           style={highlighted ? {} : { background: 'transparent', border: '1px solid var(--b)', color: 'var(--t2)', display: 'block' }}
           data-testid={`landing-tier-${p.id}-cta`}
         >
-          Start {trialDays}-day free trial
+          {trialDays ? `Start ${trialDays}-day free trial` : 'Start free trial'}
         </Link>
       </div>
     );

@@ -106,7 +106,7 @@ const SecurityPage = () => {
           <Bullet>HMAC-SHA256 signed JWTs with token blacklist + auto-expiring TTL index in MongoDB.</Bullet>
           <Bullet>Single-session enforcement for non-admin accounts — old sessions are invalidated when you log in elsewhere.</Bullet>
           <Bullet>Account lockout after 5 failed attempts within 15 minutes.</Bullet>
-          <Bullet>Email-based 2FA (OTP) available for all accounts. SMS 2FA gated on Twilio A2P 10DLC approval.</Bullet>
+          <Bullet>A one-time email code at sign-in, on by default for every account (SMS where enabled), with an option to skip it for the rest of the day on a trusted connection; passkeys supported.</Bullet>
           <Bullet>WebAuthn / Passkey support for benefactor and beneficiary accounts.</Bullet>
         </ul>
       </Section>

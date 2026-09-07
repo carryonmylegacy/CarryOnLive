@@ -265,11 +265,11 @@ const AcceptInvitationPage = () => {
               </h2>
               <p className="text-[#94a3b8] leading-relaxed mb-8">
                 Your password is hashed with bcrypt and never stored in plain text. 
-                Two-factor authentication protects every login. Your documents are encrypted with AES-256 — 
+                A one-time email code at sign-in, on by default for every account (SMS where enabled), with an option to skip it for the rest of the day on a trusted connection; passkeys supported. Your documents are encrypted with AES-256 — 
                 the same standard used by banks and governments.
               </p>
               <div className="space-y-3">
-                {['AES-256 encryption', 'Per-estate keys', 'Preparing for SOC 2 Type II', '2FA on every login'].map((t, i) => (
+                {['AES-256 encryption', 'Per-estate keys', 'Preparing for SOC 2 Type II', 'One-time email code at sign-in, on by default'].map((t, i) => (
                   <div key={i} className="flex items-center gap-3">
                     <CheckCircle className="w-4 h-4 text-[#10b981]" />
                     <span className="text-sm text-[#94a3b8]">{t}</span>

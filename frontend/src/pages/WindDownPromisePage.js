@@ -98,14 +98,15 @@ const WindDownPromisePage = () => {
             Access Vault entries including their secret values, your full financial
             picture (bills, debts, accounts, property), entities &amp; structures,
             Friends &amp; Family contacts, contingency protocols, Immediate Action
-            Checklist, and your estate plan timeline &mdash; one readable JSON file.
+            Checklist, and your plan&apos;s change history &mdash; one readable JSON file.
           </Bullet>
           <Bullet>Every uploaded document, downloadable individually in its original file format (PDF, JPG, MP4, WAV&hellip;).</Bullet>
           <Bullet>Milestone message audio and video in original format.</Bullet>
           <Bullet>
             Formatted PDFs from your Estate Binder &mdash; Immediate Action Checklist,
             Contingency Protocols, Financial Picture hand-off package, Estate Guardian
-            plan and transcript, Emergency Card, Family Readiness Report.
+            plan and transcript, Emergency Card, Family Readiness Report &mdash; for the
+            sections you have generated in the Estate Binder.
           </Bullet>
           <Bullet>Or write to <a href="mailto:privacy@carryon.us" className="underline" style={{ color: 'var(--gold)' }}>privacy@carryon.us</a> and we assemble it with you.</Bullet>
         </ul>
@@ -116,7 +117,15 @@ const WindDownPromisePage = () => {
         <ul className="space-y-2">
           <Bullet>Every active account receives at least <strong>90 calendar days of advance written notice</strong> (email + in-app banner) before any service degradation.</Bullet>
           <Bullet>Every feature stays fully functional for the whole window. Nothing removed early "to save costs."</Bullet>
-          <Bullet>Every export path in State 1 stays open all 90 days, and we actively remind you to use them.</Bullet>
+          <Bullet>Every export path in State 1 stays open all 90 days, and we will remind you to use them by email.</Bullet>
+          <Bullet>There is no automated wind-down mode in the software today; these are commitments we carry out.</Bullet>
+          <Bullet>
+            <strong>What happens at day 90:</strong> the software deletes the <strong>file content</strong> of
+            your uploaded documents (the stored PDFs, images, audio and video). Document metadata
+            (names, categories, dates) and everything in the JSON export &mdash; including Digital
+            Access Vault entries and milestone message text &mdash; survive. Download your files
+            before day 90; after it they cannot be recovered.
+          </Bullet>
           <Bullet>Founders Circle Lifetime members get <strong>concierge migration support</strong> &mdash; a real person walks you through your export and confirms you have everything.</Bullet>
           <Bullet>If we are acquired, the acquirer must honor this entire promise as a condition of the deal. If the founder is ever unable to operate the company, his own estate plan includes hand-off instructions to a successor with these same commitments.</Bullet>
         </ul>
@@ -151,8 +160,8 @@ const WindDownPromisePage = () => {
       </div>
 
       <p className="text-xs mt-10 text-center" style={{ color: 'var(--t5)' }}>
-        First published: April 29, 2026. Last revised: June 2026 (three-state
-        rewrite). Any change to this page must be accompanied by an updated
+        First published: April 29, 2026. Last revised: September 7, 2026 (export scope,
+        day-90 file deletion, no automated wind-down mode). Any change to this page must be accompanied by an updated
         changelog entry and 30 days' notice to active members.
       </p>
     </div>

@@ -132,7 +132,7 @@ const FIVE_STEPS = [
 const SECURITY_ITEMS = [
   { icon: LockIcon, text: 'AES-256 encryption with a separately derived key for every estate \u2014 no single stored key opens two families\' vaults' },
   { icon: Sparkles, text: 'Estate Guardian\u2122 AI reads only the documents you individually flag for AI review \u2014 unflagged documents are never transmitted, not even their names' },
-  { icon: Shield, text: 'Two-factor authentication on every login with device trust options for your family' },
+  { icon: Shield, text: 'A one-time email code at sign-in, on by default for every account (SMS where enabled), with an option to skip it for the rest of the day on a trusted connection; passkeys supported' },
   { icon: Users, text: 'Transition verification by a human team \u2014 not algorithms, not AI. Real people confirming real events.' },
   { icon: FileCheck, text: 'Preparing for SOC 2 Type II \u2014 full audit trail and GDPR data rights built in', link: '/security' },
 ];

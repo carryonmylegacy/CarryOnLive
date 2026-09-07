@@ -6,7 +6,7 @@ export const COMPANY = {
   addressLine1: '1550 Wilson Boulevard 7th Floor',
   addressLine2: 'Arlington, VA 22209',
   phone: '(703) 889-0017',
-  emailGeneral: 'info@carryon.us',
+  emailGeneral: 'support@carryon.us',
   emailPrivacy: 'privacy@carryon.us',
   emailSecurity: 'security@carryon.us',
   emailSupport: 'support@carryon.us',

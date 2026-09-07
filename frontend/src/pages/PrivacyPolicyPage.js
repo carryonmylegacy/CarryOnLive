@@ -120,7 +120,7 @@ const PrivacyPolicyPage = () => {
                 For data access, correction, deletion, or portability requests, contact: <a href="mailto:privacy@carryon.us" className="text-[#7AABFD] hover:text-[#A5C6FE] transition-colors" data-testid="privacy-dsr-email">privacy@carryon.us</a>
               </p>
               <p className="mt-2">
-                For general questions about this Privacy Policy or our data practices, contact: <a href="mailto:info@carryon.us" className="text-[#7AABFD] hover:text-[#A5C6FE] transition-colors" data-testid="privacy-general-email">info@carryon.us</a>
+                For general questions about this Privacy Policy or our data practices, contact: <a href="mailto:support@carryon.us" className="text-[#7AABFD] hover:text-[#A5C6FE] transition-colors" data-testid="privacy-general-email">support@carryon.us</a>
               </p>
             </section>
           </div>

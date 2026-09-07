@@ -66,7 +66,7 @@ const FAQS = [
   },
   {
     q: 'What\'s included in the free trial?',
-    a: 'Full Premium tier for __TRIAL_DAYS__ days. No credit card required. If you don\'t love it, your account quietly downgrades to Base at the end. No surprise charges, ever.',
+    a: 'Full Premium tier for __TRIAL__. No credit card required. If you don\'t love it, your account quietly downgrades to Base at the end. No surprise charges, ever.',
   },
 ];
 
@@ -308,7 +308,7 @@ const LandingPage = () => {
             {[
               { icon: Lock, label: 'AES-256-GCM', sub: 'Encryption at rest' },
               { icon: Shield, label: 'Per-Estate Keys', sub: 'Every estate sealed separately' },
-              { icon: KeyRound, label: '2FA + Master Key', sub: 'Layered access control' },
+              { icon: KeyRound, label: 'Sign-in code', sub: 'One-time email code, on by default; passkeys supported' },
               { icon: Users, label: 'Preparing for SOC 2', sub: 'Compliance-first' },
             ].map((t) => {
               const Icon = t.icon;
@@ -356,7 +356,7 @@ const LandingPage = () => {
                 </button>
                 {openFaq === i && (
                   <div className="px-5 pb-5 text-sm leading-relaxed" style={{ color: 'var(--t4)' }}>
-                    {f.a.replace('__TRIAL_DAYS__', trialDays)}
+                    {f.a.replace('__TRIAL__', trialDays ? `${trialDays} days` : 'the length of the current free trial')}
                   </div>
                 )}
               </div>

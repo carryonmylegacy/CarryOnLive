@@ -43,7 +43,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
   // The CURRENT global trial duration. Read once on mount and used
   // for any copy that references "the trial period" (Reset Trial
   // tooltip, modal body, beta-mode toggle toast).
-  const [trialDays, setTrialDays] = useState(30);
+  const [trialDays, setTrialDays] = useState(null);
 
   useEffect(() => {
     apiClient.get(`${API_URL}/admin/trial-policy`, getAuthHeaders())
@@ -56,7 +56,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
     try {
       await apiClient.put(`${API_URL}/admin/user/${userId}/beta`, { is_beta: !currentBeta }, getAuthHeaders());
       setUsers(prev => prev.map(u => u.id === userId ? { ...u, is_beta_tester: !currentBeta } : u));
-      toast.success(!currentBeta ? 'Beta mode activated' : `Beta mode deactivated — ${trialDays}-day grace period started`);
+      toast.success(!currentBeta ? 'Beta mode activated' : `Beta mode deactivated — ${trialDays ?? '…'}-day grace period started`);
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Failed to toggle beta');
     }
@@ -405,7 +405,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
                 <Button variant="ghost" size="sm" className="text-[var(--t5)] h-8 w-8 p-0 hover:bg-[var(--s)] hover:text-current"
                   onClick={() => setResetTrialTarget({ id: u.id, name: u.name, role: u.role, trial_ends_at: u.trial_ends_at })}
                   disabled={resettingTrial === u.id}
-                  title={`Reset ${trialDays}-day free trial`} data-testid={`admin-reset-trial-${u.id}`}>
+                  title={`Reset ${trialDays ?? '…'}-day free trial`} data-testid={`admin-reset-trial-${u.id}`}>
                   {resettingTrial === u.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Clock className="w-4 h-4" />}
                 </Button>
               )}

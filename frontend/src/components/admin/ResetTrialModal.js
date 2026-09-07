@@ -7,7 +7,7 @@ export const ResetTrialModal = ({
   handleResetTrial,
   resetting,
   onCancel,
-  trialDays = 30,
+  trialDays,
 }) => {
   if (!resetTarget) return null;
 
@@ -44,7 +44,7 @@ export const ResetTrialModal = ({
 
         <div className="p-3 rounded-xl" style={{ background: 'rgba(var(--gold-rgb), 0.06)', border: '1px solid rgba(var(--gold-rgb), 0.12)' }}>
           <p className="text-sm text-[var(--t3)]">
-            Restart the {trialDays}-day free trial for <strong className="text-white">{resetTarget.name}</strong> ({resetTarget.role})?
+            Restart the {trialDays ?? '…'}-day free trial for <strong className="text-white">{resetTarget.name}</strong> ({resetTarget.role})?
           </p>
           <div className="mt-2 space-y-1 text-[11px] text-[var(--t5)]">
             {prevTrialLabel && (
@@ -57,6 +57,7 @@ export const ResetTrialModal = ({
               <span>New trial ends</span>
               <span className="text-[var(--gold)] font-medium">
                 {(() => {
+                  if (trialDays == null) return '…';
                   const d = new Date();
                   d.setDate(d.getDate() + trialDays);
                   return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
@@ -87,7 +88,7 @@ export const ResetTrialModal = ({
             data-testid="reset-trial-confirm-btn"
           >
             {resetting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <RotateCcw className="w-4 h-4 mr-2" />}
-            Reset {trialDays}-Day Trial
+            Reset {trialDays ?? '…'}-Day Trial
           </Button>
         </div>
       </div>

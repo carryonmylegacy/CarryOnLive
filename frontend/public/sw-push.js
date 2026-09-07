@@ -260,11 +260,10 @@ self.addEventListener('install', (event) => {
         }
       })
       // NOTE: we intentionally do NOT call self.skipWaiting() here.
-      // The new worker stays in the "waiting" state so the app can show
-      // a "New version available — tap to refresh" prompt and only
-      // activate (via the SKIP_WAITING message) when the user taps.
-      // This stops the open page from silently running stale code until
-      // a full app close/reopen (the recurring PWA-cache complaint).
+      // The new worker stays in the "waiting" state. The app activates it
+      // (SKIP_WAITING message) automatically on the next cold launch, and
+      // shows a "New version available — tap to refresh" prompt when the
+      // update lands mid-session, so a task in flight is never interrupted.
   );
 });
 

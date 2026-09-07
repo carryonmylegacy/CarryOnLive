@@ -432,9 +432,15 @@ if ('serviceWorker' in navigator && window.location.protocol !== 'file:' && !IS_
         };
 
         // A new worker may already be waiting at page load (installed
-        // on a previous visit but never activated).
+        // on a previous visit but never activated). This is a COLD
+        // LAUNCH: nothing is in progress yet, so activate it right away
+        // (SKIP_WAITING → one reload on controllerchange) instead of
+        // leaving the stale bundle in place until someone taps the
+        // prompt. Updates discovered later in the session (below) keep
+        // the tap-to-refresh prompt so a task in flight isn't interrupted.
         if (reg.waiting && navigator.serviceWorker.controller) {
           promptUpdate(reg.waiting);
+          window.__carryonApplyUpdate();
         }
         reg.addEventListener('updatefound', () => {
           const installing = reg.installing;
