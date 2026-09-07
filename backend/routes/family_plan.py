@@ -400,11 +400,11 @@ async def add_family_member(plan_id: str, data: FamilyPlanInvite, current_user: 
         }
     else:
         # Beneficiary — apply % discount on their tier price
-        # Determine beneficiary price from their tier
-        ben_plan_map = {"premium": "ben_premium", "standard": "ben_standard", "base": "ben_base"}
+        # Determine beneficiary price from their tier (every benefactor tier has a
+        # ben_<tier> counterpart; only fall back to ben_base when none exists)
         fpo_plan_id = fp.get("fpo_plan_id", "base")
-        ben_plan_id = ben_plan_map.get(fpo_plan_id, "ben_base")
         ben_plans = {p["id"]: p for p in settings.get("beneficiary_plans", [])}
+        ben_plan_id = f"ben_{fpo_plan_id}" if f"ben_{fpo_plan_id}" in ben_plans else "ben_base"
         ben_plan_info = ben_plans.get(ben_plan_id)
         ben_original_price = float(ben_plan_info["price"]) if ben_plan_info else 4.99
         ben_discount = round(ben_original_price * beneficiary_disc_pct / 100, 2)
