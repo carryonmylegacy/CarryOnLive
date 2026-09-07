@@ -69,6 +69,7 @@ FAST_SUITE = [
     # to it. ~1s, read-only.
     "tests/regression/test_erasure_manifest_drift.py",
     "tests/regression/test_dav_admin_plaintext_hotfix.py",
+    "tests/regression/test_tier_price_parity.py",
 ]
 
 
