@@ -2,10 +2,13 @@
 and what they were actually charged.
 
 Run in a Render shell (production) or locally (preview):
-    cd /app/backend && python scripts/readonly_ben_tier_billing_audit.py
+    python scripts/readonly_ben_tier_billing_audit.py --quick   # 2 count_documents calls, nothing else
+    python scripts/readonly_ben_tier_billing_audit.py           # full audit
 
-Reads: users, estates, beneficiaries, user_subscriptions, payment_transactions.
-Writes nothing. Prints counts plus one line per affected account (id, email masked).
+Reads only: users, estates, beneficiaries, user_subscriptions, payment_transactions
+(find / count_documents). Writes nothing. stdout carries counts, plan ids, amounts,
+timestamps, the first 8 chars of internal user ids and masked emails — no names, no
+full emails, no phone numbers.
 """
 
 import asyncio
@@ -21,11 +24,27 @@ TIERS = ("seniors", "new_adult")
 EXPECTED_BEN_PLAN = {"seniors": "ben_seniors", "new_adult": "ben_new_adult"}
 
 
+def _short(uid: str) -> str:
+    return (uid or "?")[:8]
+
+
 def _mask(email: str) -> str:
     if not email or "@" not in email:
         return "?"
     local, dom = email.split("@", 1)
     return f"{local[:2]}***@{dom}"
+
+
+async def quick():
+    """Fastest possible answer to: are there ANY paid beneficiary subscriptions at all?"""
+    from config import db
+
+    paid_subs = await db.user_subscriptions.count_documents({"plan_id": {"$regex": "^ben_"}, "amount": {"$gt": 0}})
+    paid_txns = await db.payment_transactions.count_documents({"plan_id": {"$regex": "^ben_"}, "status": "paid"})
+    print(f"user_subscriptions with plan_id ben_* and amount > 0: {paid_subs}")
+    print(f"payment_transactions with plan_id ben_* and status paid: {paid_txns}")
+    if paid_subs == 0 and paid_txns == 0:
+        print("=> no beneficiary has ever paid through the web checkout; the exposure question is closed")
 
 
 async def main():
@@ -91,7 +110,7 @@ async def main():
             flag += "  <-- amount above $1.99/mo catalog price"
             overcharged.append(s["user_id"])
         print(
-            f"  sub user={s['user_id']} {_mask(ben_users.get(s['user_id'], {}).get('email'))} "
+            f"  sub user={_short(s['user_id'])} {_mask(ben_users.get(s['user_id'], {}).get('email'))} "
             f"plan={s.get('plan_id')} status={s.get('status')} cycle={s.get('billing_cycle')} amount={amt}{flag}"
         )
     print(f"beneficiary subscriptions on those estates: {len(ben_subs)}; above catalog price: {len(overcharged)}")
@@ -99,11 +118,11 @@ async def main():
     paid_over = [t for t in txns if float(t.get("amount") or 0) > 1.99 and str(t.get("plan_id", "")).startswith("ben_")]
     for t in paid_over:
         print(
-            f"  PAID txn user={t['user_id']} {_mask(ben_users.get(t['user_id'], {}).get('email'))} "
+            f"  PAID txn user={_short(t['user_id'])} {_mask(ben_users.get(t['user_id'], {}).get('email'))} "
             f"plan={t.get('plan_id')} amount={t.get('amount')} at={t.get('updated_at') or t.get('created_at')}"
         )
     print(f"paid Stripe transactions above $1.99 for these beneficiaries: {len(paid_over)}")
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    asyncio.run(quick() if "--quick" in sys.argv else main())
