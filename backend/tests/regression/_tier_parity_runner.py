@@ -44,13 +44,33 @@ def seed(db, plans, ben_plans, tiers):
         )
         db.user_subscriptions.insert_many(
             [
-                {"user_id": f"bf-{t}", "plan_id": t, "status": "active", "billing_cycle": "monthly", "amount": price[t]},
-                {"user_id": f"fm-{t}", "plan_id": t, "status": "active", "billing_cycle": "monthly", "amount": price[t]},
+                {
+                    "user_id": f"bf-{t}",
+                    "plan_id": t,
+                    "status": "active",
+                    "billing_cycle": "monthly",
+                    "amount": price[t],
+                },
+                {
+                    "user_id": f"fm-{t}",
+                    "plan_id": t,
+                    "status": "active",
+                    "billing_cycle": "monthly",
+                    "amount": price[t],
+                },
             ]
         )
-        db.estates.insert_one({"id": f"es-{t}", "owner_id": f"bf-{t}", "status": "pre-transition", "beneficiaries": [f"bn-{t}"]})
+        db.estates.insert_one(
+            {"id": f"es-{t}", "owner_id": f"bf-{t}", "status": "pre-transition", "beneficiaries": [f"bn-{t}"]}
+        )
         db.beneficiaries.insert_one(
-            {"id": f"br-{t}", "estate_id": f"es-{t}", "user_id": f"bn-{t}", "email": f"bn-{t}@carryontest.io", "deleted_at": None}
+            {
+                "id": f"br-{t}",
+                "estate_id": f"es-{t}",
+                "user_id": f"bn-{t}",
+                "email": f"bn-{t}@carryontest.io",
+                "deleted_at": None,
+            }
         )
         db.family_plans.insert_one(
             {"id": f"fp-{t}", "fpo_user_id": f"bf-{t}", "fpo_plan_id": t, "status": "active", "members": []}
@@ -107,8 +127,12 @@ async def run(tiers):
         bf_status = await st.get_subscription_status(current_user=bf)
         row["benefactor_plan_id"] = (bf_status.get("subscription") or {}).get("plan_id")
 
-        await fam.add_family_member(f"fp-{t}", fam.FamilyPlanInvite(email=f"fm-{t}@carryontest.io", role="benefactor"), current_user=bf)
-        await fam.add_family_member(f"fp-{t}", fam.FamilyPlanInvite(email=f"bn-{t}@carryontest.io", role="beneficiary"), current_user=bf)
+        await fam.add_family_member(
+            f"fp-{t}", fam.FamilyPlanInvite(email=f"fm-{t}@carryontest.io", role="benefactor"), current_user=bf
+        )
+        await fam.add_family_member(
+            f"fp-{t}", fam.FamilyPlanInvite(email=f"bn-{t}@carryontest.io", role="beneficiary"), current_user=bf
+        )
         from config import db
 
         fp = await db.family_plans.find_one({"id": f"fp-{t}"}, {"_id": 0})
