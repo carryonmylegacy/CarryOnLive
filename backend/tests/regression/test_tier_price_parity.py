@@ -504,6 +504,35 @@ def test_stored_beneficiary_cycle_prices_self_heal_on_load(world, tier):
         assert _close(got[k], cat[k]), f"{tier}: stored {k}={got[k]} not healed to catalog {cat[k]} — {got}"
 
 
+HEAL_MAY_TOUCH = {"quarterly_price", "annual_price", "allows_billing_toggle"}
+
+
+def test_settings_heal_touches_only_beneficiary_cycle_prices(world):
+    """The C8b heal writes beneficiary quarterly_price/annual_price (+ a missing allows_billing_toggle) and
+    nothing else: family discount percentages, per-member family prices, per-user custom_discount and every
+    subscription amount are byte-identical before and after."""
+    hi = world["heal_integrity"]
+    for key in (
+        "family_benefactor_discount_percent",
+        "family_beneficiary_discount_percent",
+        "family_plan_enabled",
+        "plans",
+    ):
+        assert key in hi["settings_other_keys"], f"snapshot did not cover subscription_settings.{key}"
+    assert hi["settings_other_identical"], "heal changed a subscription_settings field other than beneficiary_plans"
+    assert hi["family_plans_count"] == len(TIERS) and hi["family_plans_identical"], "heal changed family_plans"
+    for f in ("original_price", "family_price", "discount"):
+        assert f in hi["family_member_fields"], f"snapshot did not cover family_plans.members[].{f}"
+    assert hi["subscription_overrides_count"] == len(TIERS) and hi["subscription_overrides_identical"], (
+        "heal changed subscription_overrides.custom_discount"
+    )
+    assert hi["user_subscriptions_identical"], "heal changed user_subscriptions"
+    changed = {pid: keys for pid, keys in hi["beneficiary_plan_changed_keys"].items() if keys}
+    assert set(changed) == {"ben_military", "ben_premium"}, f"heal touched undrifted plans: {changed}"
+    for pid, keys in changed.items():
+        assert set(keys) <= HEAL_MAY_TOUCH, f"{pid}: heal changed {keys} (allowed: {sorted(HEAL_MAY_TOUCH)})"
+
+
 # ------------------------------------------------ stage 8: benefactor charges are frozen ----
 def _benefactor_snapshot(world):
     snap = {}

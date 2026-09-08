@@ -269,6 +269,57 @@ async def run(tiers, paid, paid_ben):
         _, err = await call(iap.validate_apple_receipt(_Req(body), current_user=_user(uid, role)))
         out["apple"][t] = err or await sub_row(uid)
 
+    # C8b — stored beneficiary_plans drift (preview 2026-09-08: flat-rate rows saved 1.99/1.79/1.59 by the
+    # pre-fix admin edit). get_subscription_settings() must heal ONLY quarterly_price / annual_price (and
+    # merge a missing allows_billing_toggle) and leave every family-plan and discount field byte-identical.
+    async def snapshot():
+        doc = await db.subscription_settings.find_one({"_id": "global"}, {"_id": 0})
+        return {
+            "settings_other": {k: v for k, v in doc.items() if k != "beneficiary_plans"},
+            "beneficiary_plans": {p["id"]: p for p in doc["beneficiary_plans"]},
+            "family_plans": await db.family_plans.find({}, {"_id": 0}).sort("id", 1).to_list(1000),
+            "subscription_overrides": await db.subscription_overrides.find({}, {"_id": 0})
+            .sort("user_id", 1)
+            .to_list(1000),
+            "user_subscriptions": await db.user_subscriptions.find({}, {"_id": 0}).sort("user_id", 1).to_list(1000),
+        }
+
+    def same(a, b):
+        return json.dumps(a, sort_keys=True, default=str) == json.dumps(b, sort_keys=True, default=str)
+
+    doc = await db.subscription_settings.find_one({"_id": "global"}, {"_id": 0, "beneficiary_plans": 1})
+    drift = {"ben_military": (1.79, 1.59), "ben_premium": (9.99, 9.99)}
+    for p in doc["beneficiary_plans"]:
+        if p["id"] in drift:
+            p["quarterly_price"], p["annual_price"] = drift[p["id"]]
+    next(p for p in doc["beneficiary_plans"] if p["id"] == "ben_military").pop("allows_billing_toggle", None)
+    await db.subscription_settings.update_one(
+        {"_id": "global"}, {"$set": {"beneficiary_plans": doc["beneficiary_plans"]}}
+    )
+    before = await snapshot()
+    await get_subscription_settings()
+    after = await snapshot()
+    keys = ("price", "quarterly_price", "annual_price", "allows_billing_toggle")
+    out["settings_ben_cycle_heal"] = {pid: {k: after["beneficiary_plans"][pid].get(k) for k in keys} for pid in drift}
+    out["heal_integrity"] = {
+        "settings_other_identical": same(before["settings_other"], after["settings_other"]),
+        "settings_other_keys": sorted(before["settings_other"]),
+        "family_plans_identical": same(before["family_plans"], after["family_plans"]),
+        "family_plans_count": len(before["family_plans"]),
+        "family_member_fields": sorted({k for fp in before["family_plans"] for m in fp.get("members", []) for k in m}),
+        "subscription_overrides_identical": same(before["subscription_overrides"], after["subscription_overrides"]),
+        "subscription_overrides_count": len(before["subscription_overrides"]),
+        "user_subscriptions_identical": same(before["user_subscriptions"], after["user_subscriptions"]),
+        "beneficiary_plan_changed_keys": {
+            pid: sorted(
+                k
+                for k in set(b) | set(after["beneficiary_plans"][pid])
+                if b.get(k) != after["beneficiary_plans"][pid].get(k)
+            )
+            for pid, b in before["beneficiary_plans"].items()
+        },
+    }
+
     # Admin beneficiary price edit — LAST, it mutates catalog prices in the scratch DB.
     admin = {"id": "adm-1", "email": "adm-1@carryontest.io", "role": "admin"}
     out["admin_ben_price_edit"] = {}
@@ -276,28 +327,7 @@ async def run(tiers, paid, paid_ben):
         await adm.update_beneficiary_plan_price(pid, price=2.49, current_user=admin)
         settings = await get_subscription_settings()
         bp = next(p for p in settings["beneficiary_plans"] if p["id"] == pid)
-        out["admin_ben_price_edit"][pid] = {
-            k: bp.get(k) for k in ("price", "quarterly_price", "annual_price", "allows_billing_toggle")
-        }
-
-    # Stored beneficiary_plans drift (observed on preview 2026-09-08: flat-rate tiers stored 1.99/1.79/1.59).
-    # get_subscription_settings() must heal the stored copy on load and persist it.
-    doc = await db.subscription_settings.find_one({"_id": "global"}, {"_id": 0, "beneficiary_plans": 1})
-    drift = {"ben_military": (1.99, 1.79, 1.59), "ben_premium": (2.99, 9.99, 9.99)}
-    for p in doc["beneficiary_plans"]:
-        if p["id"] in drift:
-            p["price"], p["quarterly_price"], p["annual_price"] = drift[p["id"]]
-            p.pop("allows_billing_toggle", None)  # older stored rows predate this key
-    await db.subscription_settings.update_one(
-        {"_id": "global"}, {"$set": {"beneficiary_plans": doc["beneficiary_plans"]}}
-    )
-    await get_subscription_settings()
-    healed = await db.subscription_settings.find_one({"_id": "global"}, {"_id": 0, "beneficiary_plans": 1})
-    out["settings_ben_cycle_heal"] = {
-        p["id"]: {k: p.get(k) for k in ("price", "quarterly_price", "annual_price", "allows_billing_toggle")}
-        for p in healed["beneficiary_plans"]
-        if p["id"] in drift
-    }
+        out["admin_ben_price_edit"][pid] = {k: bp.get(k) for k in keys}
     return out
 
 
