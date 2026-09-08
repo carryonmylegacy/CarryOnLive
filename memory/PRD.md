@@ -538,40 +538,7 @@ bug — fix it in the preview DB immediately (snippet in
 - Hardcoded `rgba(212,175,55,…)` → `var(--gold-rgb)` sweep.
 
 ### Last verified end-to-end working item
-**Sep 8 2026 — `fix/tier-maps` ready for Push #2 (2 commits, NOT PUSHED):** B1–B11 + C1–C10 tier-parity defects closed; `test_tier_price_parity.py` 328 passed / 0 xfail; benefactor charges byte-identical to the frozen pre-fix baseline (only approved exception C4: per-user discount now applies on quarterly/annual change-plan); check.sh ALL CLEAR. After the founder pushes: run `python scripts/readonly_ben_tier_billing_audit.py --quick` on Render, then DAV Legacy Programs Phase 0 (docs only, zero code) on `feat/dav-legacy-programs`. App Store Connect products `us.carryon.app.v2.ben_new_adult_{monthly,quarterly,annual}` to be created by founder when IAP goes live. See CHANGELOG Sep 8.
-**⛔ HOLD (Sep 2 2026): founder away 3 days — DO NOT PUSH, NO FURTHER WORK until the founder returns and reviews. HEAD is 3 commits ahead of production (347e4ea1 · 79a97f89 · f8628c87 = /security sentence, design doc, Tier-1 bump, erasure Phase 1 core, trial-reminder fix, drift guard). Production = 388d37aa + Render migration (0 plaintext transcripts).**
-**Tier-1 dependency bump + Erasure Phase 1 core (Sep 2 2026, iteration_191: backend 100%, frontend 100%, check.sh ALL CLEAR, pip-audit 82→36). NOT PUSHED — founder approval pending (report delivered).** Next in founder's order: Step 3 hygiene (OTP hashing + BSON-Date TTLs + TTL-less collections + idempotency index), then Erasure Phase 2 (self-service 14-day flow, scheduler, login gate, emails, remove accepted-beneficiary blocker, wire deletion_requests), Phase 3 (admin page, erase-by-email, copy, generated retention policy). Standing rules: only authenticate as `petemitchell` on production; ask before any other account; never use family-member accounts. Production check 5 (new EGA conversation) still pending founder's trial reset on petemitchell.
-- **Prior:** Erasure service — inventory + design delivered (Sep 1 2026; `/app/memory/ERASURE_DESIGN.md`); decisions D1–D8 received Sep 2.
-- **Prior:** Transcript deletion finality (Sep 1 2026, iteration_190: backend 100%, frontend 100%, check.sh ALL CLEAR):
-`migrate_encrypt_transcripts.py` gained cost-ledger backfill + separate `--delete-orphans` flag (dry-run default, lists rows before deleting); new `services/transcript_purge.py` wired into every user/estate deletion path (user_id AND estate_id); IDOR fast-suite fixture cleans up its account. Founder to run on Render (dry → apply) → 0 plaintext transcripts → then retire the /security "currently stored unencrypted" sentence (founder approval pending). NOT PUSHED yet.
-**Backlog surfaced (founder decision pending — do NOT build unprompted):** estate-delete and admin user-delete cascades miss 30+/60 content collections (DAV `digital_wallet`, CFP, CES, CCP, FFN, ECT, `binder_shares`, PDFs, notifications…); a single erasure service is the right fix. DS pip-audit drift 79→82 (pypdf/pillow/litellm) needs a separate dependency-bump task.
-- **Prior:** Items 4/6/7 verified as a unit + FULL regression (Sep 1 2026, check.sh ALL CLEAR, iteration_189: backend 24/24 new + 23/23 existing + fast 81/81, frontend 0 failures):
-xAI alerting (4 checks, thresholds, Run-now, daily scheduler), transcript migration `--backfill` (DRY-RUN DEFAULT, `--apply` to write — founder runs on Render), ZDR copy verbatim on /security + /privacy. Push list handed to founder. NOTE: preview `<title>` is empty on every route due to the dev-only visual-edits babel plugin — production titles are correct (curl-verified); not a bug. NOTE: legacy `pytest tests/` folder (216 files) is NOT green and is NOT the regression gate — failures are harness staleness (see CHANGELOG Sep 1); canonical gates = `check.sh` fast suite + testing-agent iterations. Open founder decision: `/security` "transcripts currently stored unencrypted" bullet should be revisited after the Render migration run.
-- **Prior:** Integrations automation layer + AI Alerting toggle (Sep 1 2026, check.sh ALL CLEAR, iteration_188: backend 100%, frontend 100%):
-Env-aware tiles (ENV_BINDINGS), 'Verify all' 9 live checks + nightly integration_verify_scheduler, drift detection into warnings bar, cost_stale >90d flags, Sentry+GitHub tiles, EMERGENT_LLM_KEY removed from env+scan, AI Alerting on/off toggle. Also fixed latent /api/api double-prefix 404s (EmailHealthCard "Not Found" toast, AdminReferralsTab, ReferralCard). NOT YET PUSHED — ships with next founder push.
-- **Prior:** /partner SEO + BEC fallback disclosure + xAI alerting + transcript backfill + ZDR copy split (pushed Sep 1):
-/partner noindex metadata (gated portal, not in sitemap); BEC amber fallback notice (founder wording, only on is_fallback) + ai_fallback_events logging (BEC+EGA); daily xai_health_scheduler (key health / spend / substitution / fallback-rate) with founder-portal thresholds + Run-now in Admin → Platform → Integrations; migrate_encrypt_transcripts.py --backfill mode; /security + /privacy ZDR copy separates our ZDR config from xAI's training-exclusion policy. PUSHED by founder end-of-session; full testing-agent regression deferred. Known finding: EGA requests for grok-4.20-0309-reasoning served by -non-reasoning (silent substitution, same price) — founder to decide on ladder change.
-- **Prior:** B1/B3 export field-inclusion + Wind-Down three-state rewrite (Jun 2026 fork, iteration_185: backend 17/17, frontend 16/16, check.sh ALL CLEAR):
-GDPR export now includes decrypted MM bodies + DAV secret values + financial picture + entities + CCP + FFN +
-plan timeline (behind deployed B2 step-up). /wind-down-promise rewritten to founder-approved three-state copy;
-false ZIP/CSV/decryption-CLI claims removed. NOT PUSHED — awaiting founder deploy; share-card check blocked on deploy.
-- **Prior:** Public-site backlog Sections N–Q (iteration_184: frontend 12/12 PASS).
-CTA standardized to "Start your family's plan" sitewide; YouTube click-to-load facades (`YouTubeFacade.js`);
-flag-bg optimized (1.16 MB → 63 KB jpg + webp `<picture>` via `FlagBackdrop.js`); branded 1200×630 og-image.jpg;
-security.txt dead references fixed (contact security@carryon.us); homepage IA reordered (Five Steps above Four
-Pillars) with per-pillar collapsed accordions. See CHANGELOG Jun 2026 entry.
-- **Prior:** Partner Manager Portal (Jun 2026 fork part 2, iter173: backend 14/14 + 9/9 regression, frontend pass after z-index fix):
-founder-issued manager credentials per partner (Partners tab key icon — create/regenerate/deactivate,
-password shown once, copyable portal URL), dedicated manager portal at /manager →
-/manager/portal (roster at a glance, create client portals, Enter Portal in trustee mode with
-"Return to manager portal", send invites, password reset via email code or one-time temp password
-with session revocation). Strict scope isolation (manager ↔ user tokens mutually rejected,
-partner-scoped data only). Housekeeping 0 WARN / 0 FAIL. See CHANGELOG for the founder runbook.
-- Admin Portal six-section restructure (Operations / Finance /
-  Marketing / Compliance / Platform / Admin) with gradient headers and
-  opaque high-contrast pill navigation. PWA Trustee Mode banner
-  spacing tuned to iOS safe-area. Build deploys clean; housekeeping 0
-  WARN / 0 FAIL.
+**Sep 8 2026 — Push #2 (`fix/tier-maps`) LIVE on production and verified. `feat/founder-pricing-rules` (`d07c5c7a`) ready as Push #3 candidate, NOT PUSHED:** per-tier quarterly/annual discount percents editable in Admin → Finance → Subs (0/0 = flat), `PUT /admin/plans/{id}/pricing`, hardcoded ×0.9/×0.8 removed; parity suite 350/0 xfail; check.sh ALL CLEAR. Open: Scope #3 part (b) — founder control of age windows, verification docs, grace period, plan names/order — awaiting founder decision. After Push #3: read-only `readonly_ben_tier_billing_audit.py --quick` on Render, then DAV Legacy Programs Phase 0 (docs only). App Store Connect products `us.carryon.app.v2.ben_new_adult_{monthly,quarterly,annual}` still to be created by founder.
 
 ---
 
