@@ -538,7 +538,7 @@ bug — fix it in the preview DB immediately (snippet in
 - Hardcoded `rgba(212,175,55,…)` → `var(--gold-rgb)` sweep.
 
 ### Last verified end-to-end working item
-**Sep 8 2026 — Push #2 (`fix/tier-maps`) LIVE on production and verified. `feat/founder-pricing-rules` (`d07c5c7a`) ready as Push #3 candidate, NOT PUSHED:** per-tier quarterly/annual discount percents editable in Admin → Finance → Subs (0/0 = flat), `PUT /admin/plans/{id}/pricing`, hardcoded ×0.9/×0.8 removed; parity suite 350/0 xfail; check.sh ALL CLEAR. Open: Scope #3 part (b) — founder control of age windows, verification docs, grace period, plan names/order — awaiting founder decision. After Push #3: read-only `readonly_ben_tier_billing_audit.py --quick` on Render, then DAV Legacy Programs Phase 0 (docs only). App Store Connect products `us.carryon.app.v2.ben_new_adult_{monthly,quarterly,annual}` still to be created by founder.
+**Sep 8 2026 — `feat/founder-pricing-rules` (`d07c5c7a` + `a7d3f194`) ready for Push #3, NOT PUSHED:** founder controls every pricing rule in Admin → Finance → Subs — per-tier price + quarterly/annual %, name/note/features, verification + docs, age windows + age-out target, display order, grace period, proration. Parity suite 357/0 xfail, check.sh ALL CLEAR, testing-agent frontend sweep 10/11 (miss = pre-existing `/` routing). After push: verify prod, run read-only `readonly_ben_tier_billing_audit.py --quick` on Render, then DAV Legacy Programs Phase 0 (docs only). App Store Connect `ben_new_adult_*` products still to be created by founder.
 
 ---
 
