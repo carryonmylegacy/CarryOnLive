@@ -1,9 +1,9 @@
 """CarryOn™ — Billing Lifecycle Manager
 
 Handles:
-- Detecting expired subscriptions → grace period (past_due, 30 days)
+- Detecting expired subscriptions → grace period (past_due, founder-set grace_period_days)
 - Daily email reminders during grace period
-- Transition to dormant after 30-day grace
+- Transition to dormant when the grace period ends
 - Reactivation on successful payment
 - Admin notifications for payment issues
 """
@@ -12,8 +12,6 @@ import asyncio
 from datetime import datetime, timedelta, timezone
 
 from config import db, logger
-
-GRACE_PERIOD_DAYS = 30
 
 
 def _grace_email_html(name: str, days_remaining: int, settings_url: str) -> str:
@@ -91,7 +89,7 @@ Hi {name},
 </p>
 
 <p style="color:#94a3b8;font-size:16px;line-height:1.6;margin:0 0 16px 0;">
-Your 30-day grace period has expired. Your CarryOn account is now in a dormant state. Here's what this means:
+Your grace period has expired. Your CarryOn account is now in a dormant state. Here's what this means:
 </p>
 
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:16px 0;">
@@ -191,8 +189,11 @@ Thank you for continuing to protect what matters most.
 
 async def handle_payment_failed(user_id: str):
     """Called when Stripe reports a payment failure. Starts grace period."""
+    from routes.subscriptions.plans import get_subscription_settings
+
+    grace_days = (await get_subscription_settings())["grace_period_days"]
     now = datetime.now(timezone.utc)
-    grace_end = now + timedelta(days=GRACE_PERIOD_DAYS)
+    grace_end = now + timedelta(days=grace_days)
 
     sub = await db.user_subscriptions.find_one({"user_id": user_id}, {"_id": 0})
     if not sub:
@@ -222,7 +223,7 @@ async def handle_payment_failed(user_id: str):
     asyncio.create_task(
         notify.founder(
             "Payment Failed — Grace Period Started",
-            f"{user_name}'s payment failed. 30-day grace period started.",
+            f"{user_name}'s payment failed. {grace_days}-day grace period started.",
             url="/admin",
         )
     )
@@ -236,7 +237,7 @@ async def handle_payment_failed(user_id: str):
         await send_email(
             to=user["email"],
             subject="Action Required: Update Your CarryOn Payment Method",
-            html=_grace_email_html(name, GRACE_PERIOD_DAYS, settings_url),
+            html=_grace_email_html(name, grace_days, settings_url),
         )
 
     logger.info(f"Grace period started for user {user_id}, ends {grace_end.isoformat()}")
@@ -390,7 +391,7 @@ async def _run_billing_lifecycle_check():
                 asyncio.create_task(
                     notify.founder(
                         "Account Went Dormant",
-                        f"{user_name}'s account is now dormant after 30-day grace period.",
+                        f"{user_name}'s account is now dormant — grace period ended.",
                         url="/admin",
                     )
                 )

@@ -14,6 +14,7 @@
  * over with the same data + Stripe / Apple-IAP rails.
  */
 import React, { useState, useEffect, useRef } from 'react';
+import { isDiscountTier, hasAgeWindow, ageLabel, discountTiersBlurb } from '../../utils/planRules';
 import apiClient from '../../utils/apiClient';
 import { Link } from 'react-router-dom';
 import { Check, Loader2, Crown, Star, Shield, Award, Heart, Sparkles, Sun, ChevronDown } from 'lucide-react';
@@ -43,20 +44,11 @@ const TIER_ACCENT = {
   hospice: '#ec4899',
 };
 
-// Tiers we show on the public landing page. Eligibility-gated tiers
-// (new_adult age-verified, military, hospice, veteran) live behind their
-// own qualification flow inside the paywall, so we keep the public
-// landing focused on the three any-visitor tiers + Founders Circle.
-const PUBLIC_TIERS = ['premium', 'standard', 'base'];
-
-// Eligibility-gated discount tiers, revealed when the visitor opens the
-// "Eligible for a discount?" button. Pricing and features come from the
-// same /api/subscriptions/plans response the in-app paywall uses.
-const ELIGIBILITY_TIERS = ['military', 'veteran', 'hospice', 'seniors', 'new_adult'];
+// Main vs eligibility-gated tiers come from the founder-defined catalog (plan.requires_verification,
+// plan_order). Enterprise is sold B2B and never rendered on the public landing page.
+const HIDDEN_ON_LANDING = ['enterprise'];
 
 const ELIGIBILITY_BLURB = {
-  new_adult: 'Ages 18–25 — government ID verified at signup.',
-  seniors: 'Ages 65+ — government ID verified at signup.',
   military: 'Active military / first responders — verified at signup.',
   veteran: 'Veterans — verified at signup.',
   hospice: 'Hospice patients & immediate family — verified at signup.',
@@ -88,14 +80,9 @@ export default function LandingPricing() {
       .then(([plansRes, fcRes]) => {
         if (cancelled) return;
         const all = plansRes.data.plans || [];
-        const visible = all.filter((p) => PUBLIC_TIERS.includes(p.id));
-        // Canonical order: premium → standard → base (high-to-low) so
-        // the user's eye lands on the most-recommended tier first.
-        visible.sort((a, b) => PUBLIC_TIERS.indexOf(a.id) - PUBLIC_TIERS.indexOf(b.id));
-        setPlans(visible);
-        const eligible = all.filter((p) => ELIGIBILITY_TIERS.includes(p.id));
-        eligible.sort((a, b) => ELIGIBILITY_TIERS.indexOf(a.id) - ELIGIBILITY_TIERS.indexOf(b.id));
-        setEligibilityPlans(eligible);
+        const shown = all.filter((p) => !HIDDEN_ON_LANDING.includes(p.id));
+        setPlans(shown.filter((p) => !isDiscountTier(p)));
+        setEligibilityPlans(shown.filter(isDiscountTier));
         setTierFeatures(plansRes.data.tier_features || {});
         setFc(fcRes.data?.active ? fcRes.data : null);
       })
@@ -172,7 +159,7 @@ export default function LandingPricing() {
     const price = p[billingPriceField] ?? p.price;
     const features = (tierFeatures[p.id] || []).filter((f) => f.enabled).slice(0, 7);
     const fallbackFeatures = p.features || [];
-    const blurb = ELIGIBILITY_BLURB[p.id];
+    const blurb = hasAgeWindow(p) ? `Ages ${ageLabel(p)} — government ID verified at signup.` : ELIGIBILITY_BLURB[p.id];
 
     return (
       <div
@@ -297,7 +284,7 @@ export default function LandingPricing() {
               fontFamily: 'var(--serif)',
             }}
           >
-            Eligible for a discount? Military / First Responders, Veterans, Hospice patients, Seniors (65+), and New adults (18–25) have dedicated tiers — {discountOpen ? 'hide' : 'see'} pricing.
+            {discountTiersBlurb(eligibilityPlans).replace(/\.$/, '')} — {discountOpen ? 'hide' : 'see'} pricing.
             <ChevronDown
               className="w-4 h-4 flex-shrink-0 transition-transform"
               style={{ transform: discountOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}

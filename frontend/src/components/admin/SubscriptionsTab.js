@@ -10,6 +10,7 @@ import { toast } from '../../utils/toast';
 import { API_URL } from '../../config';
 import { FeatureGatesCard } from './FeatureGatesCard';
 import { PlanPricingRow } from './PlanPricingRow';
+import { BillingRulesCard } from './BillingRulesCard';
 
 export const SubscriptionsTab = ({ getAuthHeaders, users: _users, operatorMode = false }) => {
   const [settings, setSettings] = useState(null);
@@ -54,12 +55,29 @@ export const SubscriptionsTab = ({ getAuthHeaders, users: _users, operatorMode =
     } catch (_err) { toast.error('Failed to update'); }
   };
 
-  const updatePlanPricing = async (planId, payload) => {
+  const updatePlan = async (planId, payload) => {
     try {
-      await apiClient.put(`${API_URL}/admin/plans/${planId}/pricing`, payload, { headers: { ...headers, 'Content-Type': 'application/json' } });
+      await apiClient.put(`${API_URL}/admin/plans/${planId}`, payload, { headers: { ...headers, 'Content-Type': 'application/json' } });
       fetchData();
       return true;
-    } catch (err) { toast.error(err.response?.data?.detail || 'Failed to update pricing'); return false; }
+    } catch (err) { toast.error(err.response?.data?.detail || 'Failed to update plan'); return false; }
+  };
+
+  const updateBillingRules = async (payload) => {
+    try {
+      await apiClient.put(`${API_URL}/admin/billing-rules`, payload, { headers: { ...headers, 'Content-Type': 'application/json' } });
+      fetchData();
+      return true;
+    } catch (err) { toast.error(err.response?.data?.detail || 'Failed to update billing rules'); return false; }
+  };
+
+  const movePlan = (planId, delta) => {
+    const order = (settings?.plans || []).map(p => p.id);
+    const i = order.indexOf(planId);
+    const j = i + delta;
+    if (i < 0 || j < 0 || j >= order.length) return;
+    [order[i], order[j]] = [order[j], order[i]];
+    updateBillingRules({ plan_order: order });
   };
 
   const updateUserOverride = async (userId, data) => {
@@ -279,15 +297,17 @@ export const SubscriptionsTab = ({ getAuthHeaders, users: _users, operatorMode =
             <DollarSign className="w-5 h-5 text-[var(--gold)]" />
             Benefactor Plan Pricing
           </h3>
-          <p className="text-xs text-[var(--t5)] mb-3">Set the monthly price and the quarterly / annual discount for each tier. Cycle prices follow automatically; 0% / 0% makes a tier flat-rate.</p>
+          <p className="text-xs text-[var(--t5)] mb-3">Set the monthly price and the quarterly / annual discount for each tier — 0% / 0% makes a tier flat-rate. "Details" edits the name, note, feature bullets, verification requirement and documents, and the age window. Arrows set the display order everywhere.</p>
           <div className="space-y-2">
             {(settings?.plans || []).map(plan => (
-              <PlanPricingRow key={plan.id} plan={plan} accent="var(--gold)" testIdPrefix="plan" onSave={updatePlanPricing} />
+              <PlanPricingRow key={plan.id} plan={plan} accent="var(--gold)" testIdPrefix="plan" onSave={updatePlan} benefactorPlans={settings?.plans || []} onMove={movePlan} />
             ))}
           </div>
         </CardContent>
       </Card>
       )}
+
+      {!operatorMode && <BillingRulesCard key={`${settings?.grace_period_days}-${settings?.proration_enabled}`} settings={settings} onSave={updateBillingRules} />}
 
       {/* Beneficiary Pricing — Founder only */}
       {!operatorMode && (
@@ -299,7 +319,7 @@ export const SubscriptionsTab = ({ getAuthHeaders, users: _users, operatorMode =
           </h3>
           <div className="space-y-2">
             {(settings?.beneficiary_plans || []).map(plan => (
-              <PlanPricingRow key={plan.id} plan={plan} accent="#60A5FA" testIdPrefix="ben-plan" onSave={updatePlanPricing} />
+              <PlanPricingRow key={plan.id} plan={plan} accent="#60A5FA" testIdPrefix="ben-plan" onSave={updatePlan} />
             ))}
           </div>
         </CardContent>

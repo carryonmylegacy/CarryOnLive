@@ -102,8 +102,20 @@ def seed(db, plans, ben_plans, tiers):
         _user("dob-new_adult", "benefactor", _years_ago(20, 10)),
         _user("dob-seniors", "benefactor", _years_ago(70, 10)),
         _user("ao-1", "beneficiary", _years_ago(26, 2)),  # turned 26 two days ago
+        _user("dob-62", "benefactor", _years_ago(62, 10)),
+        _user("dob-26", "benefactor", _years_ago(26, 10)),
+        _user("gp-1", "benefactor"),
+        _user("pp-1", "benefactor"),
+        _user("pp-2", "benefactor"),
     ]
     subs.append(_sub("ao-1", "new_adult", price["new_adult"]))
+    subs.append(_sub("gp-1", "premium", price["premium"]))
+    half = {
+        "current_period_start": (NOW - timedelta(days=15)).isoformat(),
+        "current_period_end": (NOW + timedelta(days=15)).isoformat(),
+    }
+    subs.append({**_sub("pp-1", "base", price["base"]), **half})
+    subs.append({**_sub("pp-2", "base", price["base"]), **half})
     db.users.insert_many(users)
     db.user_subscriptions.insert_many(subs)
 
@@ -332,7 +344,7 @@ async def run(tiers, paid, paid_ben):
         out["admin_ben_price_edit"][pid] = {k: bp.get(k) for k in keys}
 
     # Founder pricing rules — per-plan quarterly/annual discount percents drive cycle prices and charges.
-    from routes.subscriptions.plans import PlanPricingUpdate, plan_lookup
+    from routes.subscriptions.plans import PlanUpdate as PlanPricingUpdate, plan_lookup
 
     def frozen(plan):
         return json.loads(json.dumps(plan, sort_keys=True, default=str))
@@ -345,7 +357,7 @@ async def run(tiers, paid, paid_ben):
         ("ben_premium", PlanPricingUpdate(price=6.99)),
     )
     for pid, data in edits:
-        await adm.update_plan_pricing(pid, data, current_user=admin)
+        await adm.update_plan(pid, data, current_user=admin)
     by_id = plan_lookup(await get_subscription_settings())
     fields = (
         "price",
@@ -366,6 +378,120 @@ async def run(tiers, paid, paid_ben):
             pid: {c: await checkout_amount(_user(f"pr-{pid}", role), pid, c) for c in CYCLES}
             for pid, role in (("premium", "benefactor"), ("standard", "benefactor"), ("ben_military", "beneficiary"))
         },
+    }
+    out["founder_rules"] = await founder_rules_stage(
+        db, adm, st, vl, co, checkout_amount, change_plan_amount, call, admin
+    )
+    return out
+
+
+async def founder_rules_stage(db, adm, st, vl, co, checkout_amount, change_plan_amount, call, admin):
+    """Scope #3 part (b): age windows, verification, copy, order, grace period, proration — all via the portal."""
+    import services.billing_lifecycle as bl
+    import services.notifications as notif
+    from fastapi import HTTPException
+
+    from routes.subscriptions.plans import BillingRulesUpdate, PlanUpdate, get_subscription_settings
+
+    async def _noop(*a, **k):
+        return None
+
+    notif.notify.founder = _noop
+    out = {}
+
+    async def attempt(coro):
+        try:
+            await coro
+            return None
+        except HTTPException as e:
+            return f"HTTP {e.status_code}: {e.detail}"
+
+    # Age windows: widen seniors to 60+, new_adult to 27, and re-target new_adult age-out to base
+    eligible_before = {
+        "dob-62": (await st.get_subscription_status(current_user=_user("dob-62", "benefactor"))).get("eligible_tiers"),
+        "dob-26": (await st.get_subscription_status(current_user=_user("dob-26", "benefactor"))).get("eligible_tiers"),
+    }
+    await adm.update_plan("seniors", PlanUpdate(age_min=60), current_user=admin)
+    await adm.update_plan("new_adult", PlanUpdate(age_max=27, age_out_plan_id="base"), current_user=admin)
+    out["age"] = {
+        "before": eligible_before,
+        "after": {
+            "dob-62": (await st.get_subscription_status(current_user=_user("dob-62", "benefactor"))).get(
+                "eligible_tiers"
+            ),
+            "dob-26": (await st.get_subscription_status(current_user=_user("dob-26", "benefactor"))).get(
+                "eligible_tiers"
+            ),
+        },
+    }
+    # a 30-year-old still on new_adult (seeded now so the earlier lifecycle stage did not move them)
+    await db.users.insert_one(_user("ao-2", "benefactor", _years_ago(30, 10)))
+    await db.user_subscriptions.insert_one(_sub("ao-2", "new_adult", 3.99))
+    await vl._age_out_subscribers(NOW)
+    out["age"]["ao-2"] = await db.user_subscriptions.find_one(
+        {"user_id": "ao-2"}, {"_id": 0, "plan_id": 1, "plan_name": 1}
+    )
+
+    # Verification + copy: military no longer verified; veteran docs edited; base renamed with new bullets
+    await adm.update_plan("military", PlanUpdate(requires_verification=False), current_user=admin)
+    await adm.update_plan("veteran", PlanUpdate(verification_docs=["DD214", "VA card"]), current_user=admin)
+    await adm.update_plan(
+        "base", PlanUpdate(name="Essentials", note="Our starter plan", features=["Alpha", "Beta"]), current_user=admin
+    )
+    await adm.update_plan("ben_base", PlanUpdate(name="Essentials Beneficiary"), current_user=admin)
+    await get_subscription_settings()  # a second load must not revert founder-owned copy
+    payload = await st.get_subscription_plans()
+    by_id = {p["id"]: p for p in payload["plans"]}
+    ben_by_id = {p["id"]: p for p in payload["beneficiary_plans"]}
+    out["copy"] = {
+        "military_requires_verification": by_id["military"]["requires_verification"],
+        "veteran_docs": by_id["veteran"]["verification_docs"],
+        "base": {k: by_id["base"].get(k) for k in ("name", "note", "features")},
+        "ben_base_name": ben_by_id["ben_base"]["name"],
+    }
+
+    # Display order: reverse it
+    order = [p["id"] for p in payload["plans"]]
+    reversed_order = list(reversed(order))
+    await adm.update_billing_rules(BillingRulesUpdate(plan_order=reversed_order), current_user=admin)
+    payload = await st.get_subscription_plans()
+    out["order"] = {
+        "requested": reversed_order,
+        "plans": [p["id"] for p in payload["plans"]],
+        "beneficiary_plans": [p["id"] for p in payload["beneficiary_plans"]],
+    }
+
+    # Grace period: 45 days
+    await adm.update_billing_rules(BillingRulesUpdate(grace_period_days=45), current_user=admin)
+    await bl.handle_payment_failed("gp-1")
+    gp = await db.user_subscriptions.find_one({"user_id": "gp-1"}, {"_id": 0, "status": 1, "grace_period_end": 1})
+    out["grace"] = {"settings": (await get_subscription_settings())["grace_period_days"], "sub": gp}
+
+    # Proration: on (default) credits unused time; off charges the new plan in full
+    on_amount = await change_plan_amount(_user("pp-1", "benefactor"), "premium", "monthly")
+    await adm.update_billing_rules(BillingRulesUpdate(proration_enabled=False), current_user=admin)
+    off_amount = await change_plan_amount(_user("pp-2", "benefactor"), "premium", "monthly")
+    out["proration"] = {"on": on_amount, "off": off_amount, "premium_price": by_id["premium"]["price"]}
+
+    # Validation
+    out["validation"] = {
+        "age_min_gt_max": await attempt(
+            adm.update_plan("seniors", PlanUpdate(age_min=80, age_max=70), current_user=admin)
+        ),
+        "age_on_ben_plan": await attempt(adm.update_plan("ben_base", PlanUpdate(age_min=18), current_user=admin)),
+        "age_out_self": await attempt(
+            adm.update_plan("new_adult", PlanUpdate(age_out_plan_id="new_adult"), current_user=admin)
+        ),
+        "order_incomplete": await attempt(
+            adm.update_billing_rules(BillingRulesUpdate(plan_order=["premium"]), current_user=admin)
+        ),
+        "grace_400": await attempt(
+            adm.update_billing_rules(BillingRulesUpdate(grace_period_days=400), current_user=admin)
+        ),
+        "pct_101": await attempt(adm.update_plan("base", PlanUpdate(annual_discount_percent=101), current_user=admin)),
+        "non_admin": await attempt(
+            adm.update_plan("base", PlanUpdate(price=1), current_user=_user("pp-1", "benefactor"))
+        ),
     }
     return out
 

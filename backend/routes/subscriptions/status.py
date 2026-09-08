@@ -20,6 +20,7 @@ from routes.subscriptions.plans import (
     router,
     DEFAULT_PLANS,
     BENEFICIARY_PLANS,
+    age_eligible_plan_ids,
     get_subscription_settings,
     calculate_trial_status,
 )
@@ -151,16 +152,13 @@ async def get_subscription_status(current_user: dict = Depends(get_current_user)
         is_grace = False
         is_dormant = False
 
-    # Determine eligible special tiers based on DOB
+    # Determine eligible special tiers from the plans' founder-set age windows
     eligible_tiers = []
     if user_doc and user_doc.get("date_of_birth"):
         try:
             dob = datetime.fromisoformat(user_doc["date_of_birth"])
             age = (datetime.now(timezone.utc) - dob.replace(tzinfo=timezone.utc)).days // 365
-            if 18 <= age <= 25:
-                eligible_tiers.append("new_adult")
-            elif age >= 65:
-                eligible_tiers.append("seniors")
+            eligible_tiers = age_eligible_plan_ids(settings.get("plans", []), age)
         except (ValueError, TypeError):
             pass
 

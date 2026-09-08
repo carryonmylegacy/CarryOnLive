@@ -6,6 +6,7 @@ import {
   CreditCard, Loader2, Clock, ChevronRight, ChevronDown, Zap, Shield, X, Check,
   Crown, Star, Heart, Award, ArrowRight, Users, Mail, Sparkles, Sun
 } from 'lucide-react';
+import { isDiscountTier, verifiesBeforeCheckout, verificationDocs, tierDisplayName, ageLabel, hasAgeWindow, verificationBadge, discountTiersBlurb, maxCycleSaving } from '../../utils/planRules';
 import { isNative } from '../../services/native';
 import { restoreIAPPurchases } from '../../services/iap';
 import { useIAPPurchase } from '../../hooks/useIAPPurchase';
@@ -30,11 +31,11 @@ const TIER_STYLES = {
   premium: { accent: '#d4af37', icon: Crown, label: 'Most Popular' },
   standard: { accent: '#60A5FA', icon: Star, label: null },
   base: { accent: '#22C993', icon: Shield, label: null },
-  new_adult: { accent: '#B794F6', icon: Award, label: 'Verified · 18–25' },
-  military: { accent: '#F59E0B', icon: Shield, label: 'Verified' },
+  new_adult: { accent: '#B794F6', icon: Award, label: null },
+  military: { accent: '#F59E0B', icon: Shield, label: null },
   hospice: { accent: '#ec4899', icon: Heart, label: 'Free' },
-  veteran: { accent: '#059669', icon: Award, label: 'Verified' },
-  seniors: { accent: '#FBBF24', icon: Sun, label: 'Verified · 65+' },
+  veteran: { accent: '#059669', icon: Award, label: null },
+  seniors: { accent: '#FBBF24', icon: Sun, label: null },
   enterprise: { accent: '#8B5CF6', icon: Zap, label: 'B2B Partner' },
 };
 
@@ -48,10 +49,11 @@ export const beneficiaryMonthlyPrice = (plan, beneficiaryPlans, billing) => {
   return bp.price;
 };
 
-const BeneficiaryBillingToggle = ({ billing, onChange }) => {
+const BeneficiaryBillingToggle = ({ billing, onChange, plans }) => {
+  const pct = (cycle) => { const v = maxCycleSaving(plans, cycle); return v > 0 ? `${v}%` : null; };
   const cycles = [
-    { id: 'annual', label: 'Annual', save: '20%' },
-    { id: 'quarterly', label: 'Quarterly', save: '10%' },
+    { id: 'annual', label: 'Annual', save: pct('annual') },
+    { id: 'quarterly', label: 'Quarterly', save: pct('quarterly') },
     { id: 'monthly', label: 'Monthly', save: null },
   ];
 
@@ -231,19 +233,10 @@ export const SubscriptionManagement = ({
   // Enterprise) are tucked behind a gold pill so the page feels
   // focused on the 95% case. Beneficiaries always see only their
   // locked tier — no pill needed.
-  const MAIN_TIER_IDS = ['premium', 'standard', 'base', 'ben_premium', 'ben_standard', 'ben_base'];
-  // Canonical discount-tier display order (platform-wide).
-  const DISCOUNT_TIER_ORDER = ['military', 'veteran', 'hospice', 'seniors', 'new_adult', 'enterprise'];
-  const sortByDiscountOrder = (a, b) => {
-    const ai = DISCOUNT_TIER_ORDER.indexOf(a.id);
-    const bi = DISCOUNT_TIER_ORDER.indexOf(b.id);
-    return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
-  };
-  const isMainTier = (id) => MAIN_TIER_IDS.includes(id);
-  const mainPlans = isBeneficiary ? displayPlans : displayPlans.filter(p => isMainTier(p.id));
-  const discountPlans = isBeneficiary
-    ? []
-    : displayPlans.filter(p => !isMainTier(p.id)).sort(sortByDiscountOrder);
+  // Discount tiers = plans that require eligibility (founder-defined); order follows the founder's plan_order.
+  const isMainTier = (id) => !isDiscountTier(displayPlans.find(p => p.id === id));
+  const mainPlans = isBeneficiary ? displayPlans : displayPlans.filter(p => !isDiscountTier(p));
+  const discountPlans = isBeneficiary ? [] : displayPlans.filter(isDiscountTier);
   const [discountOpen, setDiscountOpen] = useState(false);
   const discountSectionRef = useRef(null);
 
@@ -251,10 +244,11 @@ export const SubscriptionManagement = ({
   const eligibleTiers = subscriptionStatus?.eligible_tiers || [];
   const specialStatus = subscriptionStatus?.special_status || [];
   const hasSpecialStatus = specialStatus.length > 0;
-  const isNewAdult = eligibleTiers.includes('new_adult') && !hasSpecialStatus;
+  const ageTier = eligibleTiers.find(t => displayPlans.some(p => p.id === t)) || null;
   const autoTier = hasSpecialStatus
     ? (specialStatus.includes('hospice') ? 'hospice' : specialStatus.includes('veteran') ? 'veteran' : specialStatus.includes('seniors') ? 'seniors' : specialStatus.includes('enterprise') ? 'enterprise' : 'military')
-    : (isNewAdult ? 'new_adult' : (eligibleTiers.includes('seniors') ? 'seniors' : null));
+    : ageTier;
+  const autoPlan = displayPlans.find(p => p.id === autoTier);
 
   // Auto-open the discount section when the user has a verified
   // discount tier (military / veteran / hospice / enterprise / new
@@ -298,21 +292,13 @@ export const SubscriptionManagement = ({
   const showBillingToggle = !isBeneficiary || (lockedPlan && lockedPlan.allows_billing_toggle !== false);
   const beneficiaryNoTierYet = isBeneficiary && !lockedTier;
 
-  const requiresVerification = (planId) => ['military', 'hospice', 'veteran', 'seniors', 'new_adult', 'enterprise'].includes(planId);
+  const planById = (planId) => displayPlans.find(p => p.id === planId);
+  const requiresVerification = (planId) => verifiesBeforeCheckout(planById(planId));
 
   // Check if user is already verified for a tier
   const isVerifiedFor = (planId) => {
     return subscriptionStatus?.verification?.status === 'approved' &&
       subscriptionStatus?.verification?.tier_requested === planId;
-  };
-
-  const VERIFICATION_DOCS = {
-    military: ['Military ID', 'Active Duty Orders', 'First Responder Badge'],
-    hospice: ['Hospice Enrollment Documentation'],
-    veteran: ['DD214', 'Veterans Administration Benefits Letter'],
-    seniors: ["Driver's License", 'Passport', 'State ID'],
-    new_adult: ["Driver's License", 'Passport', 'State ID'],
-    enterprise: ['Partner access code'],
   };
 
   // B2B code verification state
@@ -626,7 +612,7 @@ export const SubscriptionManagement = ({
             Greyed + disabled under Free Mode (no plan to bill). */}
         {showBillingToggle && (
           <div className={platformFreeMode ? 'opacity-40 grayscale pointer-events-none select-none' : ''} aria-hidden={platformFreeMode ? 'true' : undefined}>
-            <BeneficiaryBillingToggle billing={billing} onChange={setBilling} />
+            <BeneficiaryBillingToggle billing={billing} onChange={setBilling} plans={displayPlans} />
           </div>
         )}
 
@@ -684,13 +670,11 @@ export const SubscriptionManagement = ({
             aria-hidden={platformFreeMode ? 'true' : undefined}
           >
             <p className="text-xs text-[var(--yw)] leading-relaxed">
-              {isNewAdult
-                ? 'Based on your age (18–25), you qualify for the New Adult tier. A government-issued ID is required after subscribing.'
-                : autoTier === 'seniors'
-                ? 'Based on your age (65+), you qualify for the Seniors tier. A government-issued ID is required after subscribing.'
-                : autoTier === 'enterprise'
-                ? 'You selected Enterprise / B2B Partner. Enter your partner code below to activate your access.'
-                : `Based on your special eligibility, you qualify for the ${autoTier === 'military' ? 'Military / First Responder' : autoTier === 'veteran' ? 'Veteran' : 'Hospice'} tier. Verification is required after subscribing.`}
+              {autoTier === 'enterprise'
+                ? `You selected ${autoPlan?.name || 'Enterprise / B2B Partner'}. Enter your partner code below to activate your access.`
+                : hasAgeWindow(autoPlan)
+                ? `Based on your age (${ageLabel(autoPlan)}), you qualify for the ${autoPlan.name} tier. A government-issued ID is required after subscribing.`
+                : `Based on your special eligibility, you qualify for the ${autoPlan?.name || autoTier} tier. Verification is required after subscribing.`}
             </p>
           </div>
         )}
@@ -784,7 +768,7 @@ export const SubscriptionManagement = ({
                 )}
 
                 {/* Label badges */}
-                {(style.label || isCurrent || isAutoSelected || isPendingThisPlan || showRecommendedPulse) && (
+                {(style.label || verificationBadge(plan) || isCurrent || isAutoSelected || isPendingThisPlan || showRecommendedPulse) && (
                   <div className="absolute top-0 left-1/2 -translate-x-1/2 text-[11px] font-bold px-3 py-0.5 rounded-b-lg z-10 flex items-center gap-1"
                     style={{
                       background: isPendingThisPlan
@@ -799,7 +783,7 @@ export const SubscriptionManagement = ({
                         <Loader2 className="w-3 h-3 animate-spin" />
                         Processing Payment…
                       </>
-                    ) : isCurrent ? 'Current Plan' : isAutoSelected ? 'Your Tier' : showRecommendedPulse ? 'Recommended — Best Value' : style.label}
+                    ) : isCurrent ? 'Current Plan' : isAutoSelected ? 'Your Tier' : showRecommendedPulse ? 'Recommended — Best Value' : (style.label || verificationBadge(plan))}
                   </div>
                 )}
                 {/* Founder-granted attribution — only on the active
@@ -1040,7 +1024,7 @@ export const SubscriptionManagement = ({
                         className="font-semibold leading-snug inline-flex items-center justify-center gap-2"
                         style={{ color: '#0b1120', fontSize: 'clamp(13px, 1.2vw, 15px)' }}
                       >
-                        Eligible for a discount? Military / First Responders, Veterans, Hospice patients, Seniors (65+), New adults (18–25), and B2B partners have dedicated tiers — {discountOpen ? 'hide' : 'see'} pricing.
+                        {discountTiersBlurb(discountPlans).replace(/\.$/, '')} — {discountOpen ? 'hide' : 'see'} pricing.
                         <ChevronDown
                           className="w-4 h-4 flex-shrink-0 transition-transform"
                           style={{ transform: discountOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
@@ -1147,7 +1131,7 @@ export const SubscriptionManagement = ({
           }}>
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>
-                {verificationTier === 'military' ? 'Military / First Responder' : verificationTier === 'veteran' ? 'Veteran' : verificationTier === 'seniors' ? 'Seniors (65+)' : verificationTier === 'new_adult' ? 'New Adult (18–25)' : 'Hospice'} Verification
+                {tierDisplayName(planById(verificationTier)) || verificationTier} Verification
               </h2>
               <button onClick={() => { setShowVerification(false); setVerificationFile(null); setVerificationDocType(''); }}
                 className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-[var(--t4)] active:scale-90 transition-transform">
@@ -1162,7 +1146,7 @@ export const SubscriptionManagement = ({
             <div className="space-y-2">
               <label className="text-xs text-[var(--t5)] font-medium">Document Type</label>
               <div className="flex flex-col gap-2">
-                {(VERIFICATION_DOCS[verificationTier] || []).map(doc => (
+                {verificationDocs(planById(verificationTier)).map(doc => (
                   <button
                     key={doc}
                     onClick={() => setVerificationDocType(doc)}

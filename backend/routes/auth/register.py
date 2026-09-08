@@ -9,6 +9,7 @@ from fastapi import HTTPException
 from config import db, logger
 from models import UserCreate
 from routes.admin.trial_policy import get_trial_days
+from routes.subscriptions.plans import age_eligible_plan_ids, get_subscription_settings
 from services.encryption import generate_estate_salt
 from utils import generate_otp, hash_password, send_otp_email
 
@@ -67,8 +68,8 @@ async def register(data: UserCreate):
         try:
             dob = datetime.fromisoformat(data.date_of_birth)
             age = (now - dob.replace(tzinfo=timezone.utc)).days // 365
-            if 18 <= age <= 25:
-                eligible_tier = "new_adult"
+            eligible = age_eligible_plan_ids((await get_subscription_settings()).get("plans", []), age)
+            eligible_tier = eligible[0] if eligible else None
         except (ValueError, TypeError):
             pass
     if any(s in special_statuses for s in ["military", "first_responder", "federal_agent"]):

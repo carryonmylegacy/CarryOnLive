@@ -5,6 +5,7 @@ import { Crown, Shield, Check, Star, ChevronRight, ChevronDown, Loader2,
   Upload, Clock, Users, X, Heart, Award, RotateCcw, Zap, Sun, Sparkles
 } from 'lucide-react';
 import { beneficiaryMonthlyPrice } from './settings/SubscriptionManagement';
+import { isDiscountTier, isAgeEligible, verifiesBeforeCheckout, verificationDocs, tierDisplayName, ageLabel, discountTiersBlurb, savingsLabel } from '../utils/planRules';
 import { Button } from './ui/button';
 import { toast } from '../utils/toast';
 import { isNative } from '../services/native';
@@ -41,17 +42,7 @@ const TIER_COLORS = {
 // Tier groups for the lazy-collapse layout (mirrors landing page +
 // SubscriptionManagement). Eligibility/discount tiers tuck behind a
 // gold pill; main tiers are always front-and-center.
-const MAIN_TIER_IDS_PAYWALL = ['premium', 'standard', 'base'];
-
-// Canonical discount-tier display order (platform-wide).
-// Matches the discount blurb copy: Military / First Responders → Veterans →
-// Hospice → Seniors → New Adults → B2B (enterprise).
-const DISCOUNT_TIER_ORDER = ['military', 'veteran', 'hospice', 'seniors', 'new_adult', 'enterprise'];
-const sortByDiscountOrder = (a, b) => {
-  const ai = DISCOUNT_TIER_ORDER.indexOf(a.id);
-  const bi = DISCOUNT_TIER_ORDER.indexOf(b.id);
-  return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
-};
+// Main vs discount tiers and their order are founder-defined (plan.requires_verification + plan_order).
 
 export default function SubscriptionPaywall({ onDismiss }) {
   const { token, refreshSubscription, partnerBranding } = useAuth();
@@ -182,14 +173,10 @@ export default function SubscriptionPaywall({ onDismiss }) {
     return '/month';
   };
 
-  const getSavingsLabel = () => {
-    if (billing === 'quarterly') return 'Save 10%';
-    if (billing === 'annual') return 'Save 20%';
-    return null;
-  };
+  const getSavingsLabel = () => (billing === 'monthly' ? null : savingsLabel(plans, billing));
 
   const handleCheckout = async (plan) => {
-    if (plan.requires_verification && plan.id !== 'new_adult') {
+    if (verifiesBeforeCheckout(plan)) {
       setVerificationTier(plan.id);
       setShowVerification(true);
       return;
@@ -347,13 +334,8 @@ export default function SubscriptionPaywall({ onDismiss }) {
     }
   };
 
-  // Filter plans based on eligibility
-  const visiblePlans = plans.filter(p => {
-    if (p.id === 'new_adult') {
-      return subStatus?.eligible_tiers?.includes('new_adult');
-    }
-    return true;
-  });
+  // Every tier is visible; age-window tiers render locked ("Ages X only") when the user's DOB doesn't qualify.
+  const visiblePlans = plans;
 
   const trial = subStatus?.trial || {};
   // Founder-wide Free Mode — gold banner replaces the plan picker and
@@ -371,22 +353,9 @@ export default function SubscriptionPaywall({ onDismiss }) {
 
   // Verification Upload Modal
   if (showVerification) {
-    const docOptions = verificationTier === 'military'
-      ? ['Military ID', 'First Responder Badge']
-      : verificationTier === 'veteran'
-        ? ['DD214', 'Veterans Administration Benefits Letter']
-        : verificationTier === 'seniors' || verificationTier === 'new_adult'
-          ? ["Driver's License", 'Passport', 'State ID']
-          : ['Hospice enrollment documentation'];
-    const verificationTitle = verificationTier === 'military'
-      ? 'Military / First Responder'
-      : verificationTier === 'veteran'
-        ? 'Veteran'
-        : verificationTier === 'seniors'
-          ? 'Seniors (65+)'
-          : verificationTier === 'new_adult'
-            ? 'New Adult (18–25)'
-            : 'Hospice';
+    const verifyingPlan = plans.find(p => p.id === verificationTier) || {};
+    const docOptions = verificationDocs(verifyingPlan);
+    const verificationTitle = tierDisplayName(verifyingPlan) || verificationTier;
 
     return (
       <div className="fixed inset-0 z-[9999] bg-[#0a0e1a]/95 flex items-center justify-center p-4" data-testid="verification-modal">
@@ -579,10 +548,8 @@ export default function SubscriptionPaywall({ onDismiss }) {
         <div className={`max-w-5xl w-full mb-8 animate-fade-in ${platformFreeMode ? 'opacity-40 grayscale pointer-events-none select-none' : ''}`} aria-hidden={platformFreeMode ? 'true' : undefined}>
         {(() => {
           const filteredPlans = visiblePlans.filter(p => !['hospice'].includes(p.id) || p.price === 0);
-          const mainPlans = filteredPlans.filter(p => MAIN_TIER_IDS_PAYWALL.includes(p.id));
-          const discountPlans = filteredPlans
-            .filter(p => !MAIN_TIER_IDS_PAYWALL.includes(p.id))
-            .sort(sortByDiscountOrder);
+          const mainPlans = filteredPlans.filter(p => !isDiscountTier(p));
+          const discountPlans = filteredPlans.filter(isDiscountTier);
 
           const renderPaywallCard = (plan, useFlexWidth) => {
             const Icon = TIER_ICONS[plan.id] || Shield;
@@ -590,7 +557,7 @@ export default function SubscriptionPaywall({ onDismiss }) {
             const isSelected = selectedPlan === plan.id;
             const isPremium = plan.id === 'premium';
             const eligibleTiers = subStatus?.eligible_tiers || [];
-            const eligible = plan.id !== 'new_adult' || eligibleTiers.includes('new_adult');
+            const eligible = isAgeEligible(plan, eligibleTiers);
 
             // Subscription state — the `/subscriptions/status` payload
             // nests the real subscription document under `.subscription`,
@@ -845,7 +812,7 @@ export default function SubscriptionPaywall({ onDismiss }) {
                   {/* CTA Button */}
                   {!eligible ? (
                     <div className="w-full text-center text-xs font-medium py-3 rounded-xl text-[var(--t5)]" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
-                      Ages 18-25 only
+                      Ages {ageLabel(plan)} only
                     </div>
                   ) : isActivePlan ? (
                     <div className="w-full text-center text-xs font-bold py-3 rounded-xl text-[#22C993]"
@@ -922,7 +889,7 @@ export default function SubscriptionPaywall({ onDismiss }) {
                         className="font-semibold leading-snug inline-flex items-center justify-center gap-2"
                         style={{ color: '#0b1120', fontSize: 'clamp(13px, 1.2vw, 15px)' }}
                       >
-                        Eligible for a discount? Military / First Responders, Veterans, Hospice patients, Seniors (65+), New adults (18–25), and B2B partners have dedicated tiers — {discountOpen ? 'hide' : 'see'} pricing.
+                        {discountTiersBlurb(discountPlans).replace(/\.$/, '')} — {discountOpen ? 'hide' : 'see'} pricing.
                         <ChevronDown
                           className="w-4 h-4 flex-shrink-0 transition-transform"
                           style={{ transform: discountOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}

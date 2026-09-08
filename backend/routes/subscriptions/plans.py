@@ -211,6 +211,9 @@ DEFAULT_PLANS = [
         "ben_price": 1.99,
         "adjustable": False,
         "note": "Ages 18–25 · Requires verification",
+        "age_min": 18,
+        "age_max": 25,
+        "age_out_plan_id": "standard",
         "requires_verification": True,
         "verification_docs": [
             "Driver's License",
@@ -266,6 +269,9 @@ DEFAULT_PLANS = [
         "ben_price": 1.99,
         "adjustable": False,
         "note": "Ages 65+ · Requires verification",
+        "age_min": 65,
+        "age_max": None,
+        "age_out_plan_id": None,
         "requires_verification": True,
         "verification_docs": [
             "Driver's License",
@@ -428,7 +434,29 @@ BENEFICIARY_PLANS = [
 for _plan in (*DEFAULT_PLANS, *BENEFICIARY_PLANS):
     _plan.update(cycle_fields(_plan))
 
-GRACE_PERIOD_DAYS = 30
+DEFAULT_GRACE_PERIOD_DAYS = 30
+
+
+def billing_rule_defaults():
+    """Founder-editable platform rules (Admin → Finance → Subs → Billing Rules)."""
+    return {
+        "grace_period_days": DEFAULT_GRACE_PERIOD_DAYS,
+        "proration_enabled": True,
+        "plan_order": list(PLAN_ORDER),
+    }
+
+
+def age_eligible_plan_ids(plans, age):
+    """Plans whose founder-set age window (age_min / age_max, either open) contains this age."""
+    out = []
+    for plan in plans:
+        lo, hi = plan.get("age_min"), plan.get("age_max")
+        if lo is None and hi is None:
+            continue
+        if (lo is None or age >= lo) and (hi is None or age <= hi):
+            out.append(plan["id"])
+    return out
+
 
 TRIAL_DURATION_DAYS = 30
 
@@ -470,10 +498,27 @@ class AdminSubscriptionSettings(BaseModel):
     plans: Optional[List[Dict[str, Any]]] = None
 
 
-class PlanPricingUpdate(BaseModel):
+class PlanUpdate(BaseModel):
+    """Every founder-editable plan field. Cycle prices are derived, never set directly."""
+
     price: Optional[float] = None
     quarterly_discount_percent: Optional[float] = None  # 0-100; 0/0 = flat rate
     annual_discount_percent: Optional[float] = None
+    name: Optional[str] = None
+    note: Optional[str] = None
+    features: Optional[List[str]] = None
+    requires_verification: Optional[bool] = None
+    verification_docs: Optional[List[str]] = None
+    age_min: Optional[int] = None
+    age_max: Optional[int] = None
+    age_out_plan_id: Optional[str] = None
+    clear_age_window: Optional[bool] = None  # drop age_min / age_max / age_out_plan_id
+
+
+class BillingRulesUpdate(BaseModel):
+    grace_period_days: Optional[int] = None
+    proration_enabled: Optional[bool] = None
+    plan_order: Optional[List[str]] = None
 
 
 class AdminUserSubscriptionOverride(BaseModel):
@@ -493,15 +538,19 @@ async def get_subscription_settings():
         settings = {
             "beta_mode": True,
             "plans": DEFAULT_PLANS,
+            "beneficiary_plans": BENEFICIARY_PLANS,
             "family_plan_enabled": True,
+            **billing_rule_defaults(),
         }
         await db.subscription_settings.update_one({"_id": "global"}, {"$set": settings}, upsert=True)
     else:
-        # Ensure any new plans from code are added to stored settings
-        # and merge new fields from DEFAULT_PLANS into existing stored plans
-        # Also sync 'features' field to ensure code-defined features take precedence
+        # Ensure any new plans from code are added to stored settings and merge new fields
+        # from DEFAULT_PLANS into existing stored plans. Names, notes, features, verification
+        # and age windows are founder-owned once stored — code only fills in missing keys.
         stored_ids = {p["id"] for p in settings.get("plans", [])}
         needs_update = False
+        new_rules = {k: v for k, v in billing_rule_defaults().items() if k not in settings}
+        settings.update(new_rules)
         for plan in DEFAULT_PLANS:
             if plan["id"] not in stored_ids:
                 settings.setdefault("plans", []).append(plan)
@@ -514,10 +563,6 @@ async def get_subscription_settings():
                             if key not in stored_plan:
                                 stored_plan[key] = plan[key]
                                 needs_update = True
-                        # Always sync features from code to ensure they're up-to-date
-                        if stored_plan.get("features") != plan.get("features"):
-                            stored_plan["features"] = plan["features"]
-                            needs_update = True
                         # Cycle prices always derive from the founder-set monthly price + discount percents
                         for key, value in cycle_fields(stored_plan).items():
                             if stored_plan.get(key) != value:
@@ -552,10 +597,16 @@ async def get_subscription_settings():
             if expected_ben is not None and stored_plan.get("ben_price") != expected_ben:
                 stored_plan["ben_price"] = expected_ben
                 needs_update = True
-        if needs_update:
+        if needs_update or new_rules:
             await db.subscription_settings.update_one(
                 {"_id": "global"},
-                {"$set": {"plans": settings["plans"], "beneficiary_plans": settings.get("beneficiary_plans", [])}},
+                {
+                    "$set": {
+                        "plans": settings["plans"],
+                        "beneficiary_plans": settings.get("beneficiary_plans", []),
+                        **new_rules,
+                    }
+                },
             )
     # Always re-sort the returned plan lists into the canonical paywall
     # order. The user wants symmetry across every paywall (landing, main
@@ -565,10 +616,13 @@ async def get_subscription_settings():
     # stored copies so it never reaches API consumers again.
     for pl in settings.get("plans", []):
         pl.pop("paired_price", None)
+    order = settings.get("plan_order") or PLAN_ORDER
     if settings.get("plans"):
-        settings["plans"] = _sort_by_canonical_order(settings["plans"], PLAN_ORDER)
+        settings["plans"] = _sort_by_canonical_order(settings["plans"], order)
     if settings.get("beneficiary_plans"):
-        settings["beneficiary_plans"] = _sort_by_canonical_order(settings["beneficiary_plans"], BEN_PLAN_ORDER)
+        settings["beneficiary_plans"] = _sort_by_canonical_order(
+            settings["beneficiary_plans"], [f"ben_{t}" for t in order]
+        )
     return settings
 
 

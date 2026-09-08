@@ -19,7 +19,8 @@ from routes.subscriptions.plans import (
     get_subscription_settings,
     AdminSubscriptionSettings,
     AdminUserSubscriptionOverride,
-    PlanPricingUpdate,
+    PlanUpdate,
+    BillingRulesUpdate,
     cycle_fields,
 )
 
@@ -278,14 +279,18 @@ async def admin_reset_subscription(
     }
 
 
-@router.put("/admin/plans/{plan_id}/pricing")
-async def update_plan_pricing(
+AGE_FIELDS = ("age_min", "age_max", "age_out_plan_id")
+
+
+@router.put("/admin/plans/{plan_id}")
+async def update_plan(
     plan_id: str,
-    data: PlanPricingUpdate,
+    data: PlanUpdate,
     current_user: dict = Depends(get_current_user),
 ):
-    """Founder pricing control for any plan (benefactor or ben_*): monthly price and the
-    quarterly / annual discount percents. Cycle prices are derived; 0 / 0 = flat rate."""
+    """Founder control of any plan (benefactor or ben_*): price, quarterly / annual discount
+    percents (0 / 0 = flat rate), name, note, feature bullets, verification requirement and
+    accepted documents, and the age window (age_min / age_max / age_out_plan_id)."""
     if current_user.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
     if data.price is not None and data.price < 0:
@@ -294,6 +299,12 @@ async def update_plan_pricing(
         value = getattr(data, field)
         if value is not None and not 0 <= value <= 100:
             raise HTTPException(status_code=400, detail=f"{field} must be between 0 and 100")
+    if data.name is not None and not data.name.strip():
+        raise HTTPException(status_code=400, detail="Name cannot be empty")
+    for field in ("age_min", "age_max"):
+        value = getattr(data, field)
+        if value is not None and not 0 <= value <= 130:
+            raise HTTPException(status_code=400, detail=f"{field} must be between 0 and 130")
 
     settings = await get_subscription_settings()
     plans = settings.get("plans", DEFAULT_PLANS)
@@ -302,8 +313,27 @@ async def update_plan_pricing(
     if not plan:
         raise HTTPException(status_code=404, detail=f"Plan not found: {plan_id}")
 
-    for field, value in data.model_dump(exclude_none=True).items():
-        plan[field] = value
+    updates = data.model_dump(exclude_none=True)
+    clear_age = updates.pop("clear_age_window", False)
+    if any(k in updates for k in AGE_FIELDS) or clear_age:
+        if plan_id.startswith("ben_"):
+            raise HTTPException(status_code=400, detail="Age windows apply to benefactor plans only")
+        if clear_age:
+            for k in AGE_FIELDS:
+                plan.pop(k, None)
+                updates.pop(k, None)
+        lo = updates.get("age_min", plan.get("age_min"))
+        hi = updates.get("age_max", plan.get("age_max"))
+        if lo is not None and hi is not None and lo > hi:
+            raise HTTPException(status_code=400, detail="age_min cannot exceed age_max")
+        target = updates.get("age_out_plan_id", plan.get("age_out_plan_id"))
+        if target is not None and (target == plan_id or target not in {p["id"] for p in plans}):
+            raise HTTPException(status_code=400, detail=f"age_out_plan_id must be another benefactor plan: {target}")
+    for field in ("features", "verification_docs"):
+        if field in updates:
+            updates[field] = [str(x).strip() for x in updates[field] if str(x).strip()]
+    for field, value in updates.items():
+        plan[field] = value.strip() if isinstance(value, str) else value
     plan.update(cycle_fields(plan))
 
     # A beneficiary plan's monthly price is mirrored as ben_price on its benefactor plan
@@ -323,7 +353,27 @@ async def update_plan_pricing(
             }
         },
     )
-    return {"success": True, "message": f"{plan['name']} pricing updated", "plan": plan}
+    return {"success": True, "message": f"{plan['name']} updated", "plan": plan}
+
+
+@router.put("/admin/billing-rules")
+async def update_billing_rules(data: BillingRulesUpdate, current_user: dict = Depends(get_current_user)):
+    """Platform billing rules: grace period length, proration on plan change, plan display order."""
+    if current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    update = data.model_dump(exclude_none=True)
+    if not update:
+        raise HTTPException(status_code=400, detail="Nothing to update")
+    if "grace_period_days" in update and not 0 <= update["grace_period_days"] <= 365:
+        raise HTTPException(status_code=400, detail="grace_period_days must be between 0 and 365")
+    if "plan_order" in update:
+        settings = await get_subscription_settings()
+        ids = {p["id"] for p in settings.get("plans", [])}
+        if set(update["plan_order"]) != ids or len(update["plan_order"]) != len(ids):
+            raise HTTPException(status_code=400, detail="plan_order must list every benefactor plan id exactly once")
+    update["updated_at"] = datetime.now(timezone.utc).isoformat()
+    await db.subscription_settings.update_one({"_id": "global"}, {"$set": update})
+    return {"success": True, **{k: v for k, v in update.items() if k != "updated_at"}}
 
 
 @router.put("/admin/plans/{plan_id}/price")
@@ -333,7 +383,7 @@ async def update_plan_price(
     current_user: dict = Depends(get_current_user),
 ):
     """Legacy form endpoint — monthly price only."""
-    return await update_plan_pricing(plan_id, PlanPricingUpdate(price=price), current_user)
+    return await update_plan(plan_id, PlanUpdate(price=price), current_user)
 
 
 @router.put("/admin/beneficiary-plans/{plan_id}/price")
@@ -343,7 +393,7 @@ async def update_beneficiary_plan_price(
     current_user: dict = Depends(get_current_user),
 ):
     """Legacy form endpoint — beneficiary monthly price only."""
-    return await update_plan_pricing(plan_id, PlanPricingUpdate(price=price), current_user)
+    return await update_plan(plan_id, PlanUpdate(price=price), current_user)
 
 
 @router.get("/admin/family-discount-settings")

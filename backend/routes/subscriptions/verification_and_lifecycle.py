@@ -15,7 +15,6 @@ from routes.subscriptions.plans import (
     get_price_for_cycle,
     plan_lookup as catalog_lookup,
     VerificationReviewRequest,
-    GRACE_PERIOD_DAYS,
 )
 
 
@@ -31,7 +30,8 @@ async def upload_verification_document(
     current_user: dict = Depends(get_current_user),
 ):
     """Upload a verification document for a special tier (Military/Hospice/Veteran)"""
-    valid_tiers = ["military", "hospice", "veteran", "seniors", "new_adult", "enterprise"]
+    settings = await get_subscription_settings()
+    valid_tiers = [p["id"] for p in settings.get("plans", []) if p.get("requires_verification")]
     if tier_requested not in valid_tiers:
         raise HTTPException(status_code=400, detail=f"Invalid tier. Must be one of: {valid_tiers}")
 
@@ -616,23 +616,33 @@ async def get_beneficiary_lifecycle(current_user: dict = Depends(get_current_use
                     }
                 )
 
-            # Check if aging out of New Adult tier at 26
-            twentysixth = dob.replace(year=dob.year + 26)
-            if twentysixth.tzinfo is None:
-                twentysixth = twentysixth.replace(tzinfo=timezone.utc)
-            days_to_26 = (twentysixth - now).days
-            if -30 <= days_to_26 <= 90:
-                age_events.append(
-                    {
-                        "event": "turning_26",
-                        "age": 26,
-                        "date": twentysixth.isoformat(),
-                        "days_away": days_to_26,
-                        "message": "You are aging out of the New Adult tier — your plan will transition to standard pricing."
-                        if days_to_26 > 0
-                        else "You have turned 26 — your plan has transitioned to standard pricing.",
-                    }
-                )
+            # Aging out of the current plan's founder-set age window
+            sub = await db.user_subscriptions.find_one({"user_id": current_user["id"]}, {"_id": 0, "plan_id": 1})
+            settings = await get_subscription_settings()
+            plans_by_id = catalog_lookup(settings)
+            plan = plans_by_id.get((sub or {}).get("plan_id") or "")
+            target = plans_by_id.get((plan or {}).get("age_out_plan_id") or "")
+            if plan and plan.get("age_max") is not None and target:
+                boundary_age = plan["age_max"] + 1
+                boundary = dob.replace(year=dob.year + boundary_age)
+                if boundary.tzinfo is None:
+                    boundary = boundary.replace(tzinfo=timezone.utc)
+                days_to_boundary = (boundary - now).days
+                if -30 <= days_to_boundary <= 90:
+                    age_events.append(
+                        {
+                            "event": f"aging_out_{plan['id']}",
+                            "age": boundary_age,
+                            "date": boundary.isoformat(),
+                            "days_away": days_to_boundary,
+                            "message": (
+                                f"You are aging out of the {plan['name']} tier — your plan will transition to "
+                                f"{target['name']} pricing."
+                                if days_to_boundary > 0
+                                else f"You have turned {boundary_age} — your plan has transitioned to {target['name']} pricing."
+                            ),
+                        }
+                    )
         except (ValueError, TypeError):
             pass
 
@@ -700,7 +710,7 @@ async def trigger_benefactor_transition(
             beneficiary_ids.add(ben_id)
 
     now = datetime.now(timezone.utc)
-    grace_end = now + timedelta(days=GRACE_PERIOD_DAYS)
+    grace_end = now + timedelta(days=(await get_subscription_settings())["grace_period_days"])
     created = 0
 
     for ben_id in beneficiary_ids:
@@ -809,64 +819,72 @@ async def check_dob_subscription_events():
                         except Exception:
                             pass
 
-            # Turning 26 — ages out of New Adult tier
-            if age == 26:
-                twentysixth = dob.replace(year=dob.year + 26)
-                if twentysixth.tzinfo is None:
-                    twentysixth = twentysixth.replace(tzinfo=timezone.utc)
-                days_since = (now - twentysixth).days
-                if 0 <= days_since <= 7:
-                    already = await db.lifecycle_events.find_one({"user_id": user_doc["id"], "event": "turned_26"})
-                    if not already:
-                        # Auto-migrate from new_adult to standard pricing
-                        sub = await db.user_subscriptions.find_one(
-                            {
-                                "user_id": user_doc["id"],
-                                "plan_id": "new_adult",
-                                "status": "active",
-                            }
-                        )
-                        if sub:
-                            standard = catalog_lookup(await get_subscription_settings())["standard"]
-                            await db.user_subscriptions.update_one(
-                                {"user_id": user_doc["id"]},
-                                {
-                                    "$set": {
-                                        "plan_id": "standard",
-                                        "plan_name": standard["name"],
-                                        "updated_at": now.isoformat(),
-                                        "migration_reason": "aged_out_new_adult",
-                                    }
-                                },
-                            )
-
-                        await db.lifecycle_events.insert_one(
-                            {
-                                "user_id": user_doc["id"],
-                                "event": "turned_26",
-                                "triggered_at": now.isoformat(),
-                            }
-                        )
-                        events_triggered += 1
-                        try:
-                            from services.email import send_email
-
-                            await send_email(
-                                to=user_doc["email"],
-                                subject="Your CarryOn plan has been updated",
-                                html=f"""
-                                <p>Hi {user_doc.get("name", "").split()[0] if user_doc.get("name") else "there"},</p>
-                                <p>As you've turned 26, your New Adult tier has transitioned to Standard pricing. No action needed — your access continues uninterrupted.</p>
-                                <p>— The CarryOn Team</p>
-                                """,
-                            )
-                        except Exception:
-                            pass
-
         except (ValueError, TypeError, KeyError):
             continue
 
+    events_triggered += await _age_out_subscribers(now)
     return events_triggered
+
+
+async def _age_out_subscribers(now):
+    """Move subscribers past a plan's founder-set age_max onto that plan's age_out_plan_id."""
+    settings = await get_subscription_settings()
+    plans_by_id = catalog_lookup(settings)
+    moved = 0
+    for plan in settings.get("plans", []):
+        target = plans_by_id.get(plan.get("age_out_plan_id") or "")
+        if plan.get("age_max") is None or not target:
+            continue
+        subs = await db.user_subscriptions.find(
+            {"plan_id": plan["id"], "status": "active"},
+            {"_id": 0, "user_id": 1},  # pre-push-invariants: allow-missing-id
+        ).to_list(5000)
+        for sub in subs:
+            user_doc = await db.users.find_one(
+                {"id": sub["user_id"]}, {"_id": 0, "id": 1, "email": 1, "name": 1, "date_of_birth": 1}
+            )
+            if not user_doc or not user_doc.get("date_of_birth"):
+                continue
+            try:
+                dob = datetime.fromisoformat(user_doc["date_of_birth"].replace("Z", "+00:00"))
+            except (ValueError, TypeError):
+                continue
+            if dob.tzinfo is None:
+                dob = dob.replace(tzinfo=timezone.utc)
+            if (now - dob).days // 365 <= plan["age_max"]:
+                continue
+            await db.user_subscriptions.update_one(
+                {"user_id": user_doc["id"]},
+                {
+                    "$set": {
+                        "plan_id": target["id"],
+                        "plan_name": target["name"],
+                        "updated_at": now.isoformat(),
+                        "migration_reason": f"aged_out_{plan['id']}",
+                    }
+                },
+            )
+            await db.lifecycle_events.insert_one(
+                {"user_id": user_doc["id"], "event": f"aged_out_{plan['id']}", "triggered_at": now.isoformat()}
+            )
+            moved += 1
+            try:
+                from services.email import send_email
+
+                first = user_doc.get("name", "").split()[0] if user_doc.get("name") else "there"
+                await send_email(
+                    to=user_doc["email"],
+                    subject="Your CarryOn plan has been updated",
+                    html=f"""
+                    <p>Hi {first},</p>
+                    <p>As you've turned {plan["age_max"] + 1}, your {plan["name"]} tier has transitioned to
+                    {target["name"]} pricing. No action needed — your access continues uninterrupted.</p>
+                    <p>— The CarryOn Team</p>
+                    """,
+                )
+            except Exception:
+                pass
+    return moved
 
 
 # ═══════════════════════════════════════════════════

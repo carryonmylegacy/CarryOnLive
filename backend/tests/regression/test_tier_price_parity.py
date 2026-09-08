@@ -628,3 +628,102 @@ def test_benefactor_amounts_identical_to_frozen_baseline(world, tier):
     assert _benefactor_snapshot(world)[tier] == baseline[tier], (
         f"{tier}: benefactor billing differs from the frozen pre-fix baseline {BASELINE.name}"
     )
+
+
+# ------------------------------------------ stage 10: founder plan rules (Scope #3 part b) ----
+def test_founder_rules_age_window_drives_eligibility_and_age_out(world):
+    fr = world["founder_rules"]["age"]
+    assert "seniors" not in (fr["before"]["dob-62"] or []) and "seniors" in fr["after"]["dob-62"], (
+        f"seniors age_min 65→60 must qualify a 62-year-old: {fr}"
+    )
+    assert "new_adult" not in (fr["before"]["dob-26"] or []) and "new_adult" in fr["after"]["dob-26"], (
+        f"new_adult age_max 25→27 must qualify a 26-year-old: {fr}"
+    )
+    assert fr["ao-2"]["plan_id"] == "base" and fr["ao-2"]["plan_name"] == PLAN["base"]["name"], (
+        f"a 30-year-old on new_adult must land on the founder-set age_out_plan_id (base): {fr['ao-2']}"
+    )
+
+
+def test_founder_rules_verification_and_copy_are_editable_and_persist(world):
+    c = world["founder_rules"]["copy"]
+    assert c["military_requires_verification"] is False
+    assert c["veteran_docs"] == ["DD214", "VA card"]
+    assert c["base"] == {"name": "Essentials", "note": "Our starter plan", "features": ["Alpha", "Beta"]}, (
+        f"founder-edited name/note/features must survive a settings reload (no code force-sync): {c['base']}"
+    )
+    assert c["ben_base_name"] == "Essentials Beneficiary"
+
+
+def test_founder_rules_plan_order_drives_payload_order(world):
+    o = world["founder_rules"]["order"]
+    assert o["plans"] == o["requested"], (
+        f"GET /subscriptions/plans order {o['plans']} != founder order {o['requested']}"
+    )
+    assert o["beneficiary_plans"] == [f"ben_{t}" for t in o["requested"]], (
+        "beneficiary plans must mirror the founder order"
+    )
+
+
+def test_founder_rules_grace_period_and_proration(world):
+    g = world["founder_rules"]["grace"]
+    assert g["settings"] == 45 and g["sub"]["status"] == "past_due"
+    from datetime import datetime, timedelta, timezone
+
+    end = datetime.fromisoformat(g["sub"]["grace_period_end"])
+    assert abs((end - datetime.now(timezone.utc)) - timedelta(days=45)) < timedelta(minutes=10), g
+    p = world["founder_rules"]["proration"]
+    assert "error" not in p["on"] and "error" not in p["off"], p
+    assert p["on"]["amount"] < p["premium_price"], f"proration ON must credit unused time: {p}"
+    assert _close(p["off"]["amount"], p["premium_price"]), f"proration OFF must charge the new plan in full: {p}"
+
+
+def test_founder_rules_validation(world):
+    v = world["founder_rules"]["validation"]
+    for key, code in (
+        ("age_min_gt_max", "400"),
+        ("age_on_ben_plan", "400"),
+        ("age_out_self", "400"),
+        ("order_incomplete", "400"),
+        ("grace_400", "400"),
+        ("pct_101", "400"),
+        ("non_admin", "403"),
+    ):
+        assert v[key] and v[key].startswith(f"HTTP {code}"), f"{key}: expected HTTP {code}, got {v[key]!r}"
+
+
+def test_no_hardcoded_tier_rules_in_backend():
+    checks = {
+        "routes/subscriptions/verification_and_lifecycle.py": [
+            r"valid_tiers\s*=\s*\[\s*\"",
+            r"age == 26",
+            r"year \+ 26",
+        ],
+        "routes/subscriptions/status.py": [r"<= 25", r">= 65"],
+        "routes/auth/register.py": [r"<= 25"],
+        "services/billing_lifecycle.py": [r"GRACE_PERIOD_DAYS\s*=\s*\d+", r"30-day"],
+    }
+    for rel, patterns in checks.items():
+        src = Path(BACKEND, rel).read_text()
+        for pat in patterns:
+            assert not re.search(pat, src), f"{rel}: hardcoded tier rule {pat!r} — must come from the founder catalog"
+
+
+def test_no_hardcoded_tier_rules_in_frontend():
+    patterns = [
+        r"18–25",
+        r"18-25",
+        r"65\+",
+        r"DISCOUNT_TIER_ORDER",
+        r"MAIN_TIER_IDS",
+        r"VERIFICATION_DOCS",
+        r"Save 10%",
+        r"Save 20%",
+    ]
+    for rel in (
+        "components/SubscriptionPaywall.js",
+        "components/settings/SubscriptionManagement.js",
+        "components/landing/LandingPricing.js",
+    ):
+        src = Path(FRONTEND, rel).read_text()
+        for pat in patterns:
+            assert not re.search(pat, src), f"{rel}: hardcoded tier rule {pat!r} — render it from the plan fields"

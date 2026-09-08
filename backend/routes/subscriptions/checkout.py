@@ -694,6 +694,8 @@ async def change_subscription_plan(
         unused_fraction = 0.0
 
     remaining_credit = round(old_total_paid * unused_fraction, 2)
+    if not settings.get("proration_enabled", True):
+        remaining_credit = 0.0  # founder rule: no credit for unused time on plan change
 
     # --- Calculate new plan cost: the plan's own cycle prices, then the per-user discount ---
     override = await db.subscription_overrides.find_one({"user_id": current_user["id"]}, {"_id": 0})
