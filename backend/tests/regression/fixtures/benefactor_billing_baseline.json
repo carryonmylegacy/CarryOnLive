@@ -1,0 +1,326 @@
+{
+  "base": {
+    "beta_checkout": {
+      "plan_id": "base",
+      "plan_name": "Base"
+    },
+    "change_billing": {
+      "annual": {
+        "amount": 76.68
+      },
+      "quarterly": {
+        "amount": 21.57
+      }
+    },
+    "change_plan": {
+      "annual": {
+        "amount": 76.68
+      },
+      "monthly": {
+        "amount": 7.99
+      },
+      "quarterly": {
+        "amount": 21.57
+      }
+    },
+    "checkout": {
+      "annual": {
+        "amount": 76.68
+      },
+      "monthly": {
+        "amount": 7.99
+      },
+      "quarterly": {
+        "amount": 21.57
+      }
+    }
+  },
+  "enterprise": {
+    "beta_checkout": {
+      "plan_id": "enterprise",
+      "plan_name": "Enterprise / B2B Partner"
+    },
+    "change_billing": {
+      "annual": {
+        "amount": 0.0
+      },
+      "quarterly": {
+        "amount": 0.0
+      }
+    },
+    "change_plan": {
+      "annual": {
+        "amount": 0.0
+      },
+      "monthly": {
+        "amount": 0.0
+      },
+      "quarterly": {
+        "amount": 0.0
+      }
+    },
+    "checkout": {
+      "annual": {
+        "amount": null
+      },
+      "monthly": {
+        "amount": null
+      },
+      "quarterly": {
+        "amount": null
+      }
+    }
+  },
+  "hospice": {
+    "beta_checkout": {
+      "plan_id": "hospice",
+      "plan_name": "Hospice"
+    },
+    "change_billing": {
+      "annual": {
+        "amount": 0.0
+      },
+      "quarterly": {
+        "amount": 0.0
+      }
+    },
+    "change_plan": {
+      "annual": {
+        "amount": 0.0
+      },
+      "monthly": {
+        "amount": 0.0
+      },
+      "quarterly": {
+        "amount": 0.0
+      }
+    },
+    "checkout": {
+      "annual": {
+        "amount": null
+      },
+      "monthly": {
+        "amount": null
+      },
+      "quarterly": {
+        "amount": null
+      }
+    }
+  },
+  "military": {
+    "beta_checkout": {
+      "plan_id": "military",
+      "plan_name": "Military / First Responder"
+    },
+    "change_billing": {
+      "annual": {
+        "amount": 57.48
+      },
+      "quarterly": {
+        "amount": 16.17
+      }
+    },
+    "change_plan": {
+      "annual": {
+        "amount": 57.48
+      },
+      "monthly": {
+        "amount": 5.99
+      },
+      "quarterly": {
+        "amount": 16.17
+      }
+    },
+    "checkout": {
+      "annual": {
+        "amount": 57.48
+      },
+      "monthly": {
+        "amount": 5.99
+      },
+      "quarterly": {
+        "amount": 16.17
+      }
+    }
+  },
+  "new_adult": {
+    "beta_checkout": {
+      "plan_id": "new_adult",
+      "plan_name": "New Adult"
+    },
+    "change_billing": {
+      "annual": {
+        "amount": 38.28
+      },
+      "quarterly": {
+        "amount": 10.77
+      }
+    },
+    "change_plan": {
+      "annual": {
+        "amount": 38.28
+      },
+      "monthly": {
+        "amount": 3.99
+      },
+      "quarterly": {
+        "amount": 10.77
+      }
+    },
+    "checkout": {
+      "annual": {
+        "amount": 38.28
+      },
+      "monthly": {
+        "amount": 3.99
+      },
+      "quarterly": {
+        "amount": 10.77
+      }
+    }
+  },
+  "premium": {
+    "beta_checkout": {
+      "plan_id": "premium",
+      "plan_name": "Premium"
+    },
+    "change_billing": {
+      "annual": {
+        "amount": 95.88
+      },
+      "quarterly": {
+        "amount": 26.97
+      }
+    },
+    "change_plan": {
+      "annual": {
+        "amount": 95.88
+      },
+      "monthly": {
+        "amount": 9.99
+      },
+      "quarterly": {
+        "amount": 26.97
+      }
+    },
+    "checkout": {
+      "annual": {
+        "amount": 95.88
+      },
+      "monthly": {
+        "amount": 9.99
+      },
+      "quarterly": {
+        "amount": 26.97
+      }
+    }
+  },
+  "seniors": {
+    "beta_checkout": {
+      "plan_id": "seniors",
+      "plan_name": "Seniors"
+    },
+    "change_billing": {
+      "annual": {
+        "amount": 124.68
+      },
+      "quarterly": {
+        "amount": 35.07
+      }
+    },
+    "change_plan": {
+      "annual": {
+        "amount": 124.68
+      },
+      "monthly": {
+        "amount": 12.99
+      },
+      "quarterly": {
+        "amount": 35.07
+      }
+    },
+    "checkout": {
+      "annual": {
+        "amount": 124.68
+      },
+      "monthly": {
+        "amount": 12.99
+      },
+      "quarterly": {
+        "amount": 35.07
+      }
+    }
+  },
+  "standard": {
+    "beta_checkout": {
+      "plan_id": "standard",
+      "plan_name": "Standard"
+    },
+    "change_billing": {
+      "annual": {
+        "amount": 86.28
+      },
+      "quarterly": {
+        "amount": 24.27
+      }
+    },
+    "change_plan": {
+      "annual": {
+        "amount": 86.28
+      },
+      "monthly": {
+        "amount": 8.99
+      },
+      "quarterly": {
+        "amount": 24.27
+      }
+    },
+    "checkout": {
+      "annual": {
+        "amount": 86.28
+      },
+      "monthly": {
+        "amount": 8.99
+      },
+      "quarterly": {
+        "amount": 24.27
+      }
+    }
+  },
+  "veteran": {
+    "beta_checkout": {
+      "plan_id": "veteran",
+      "plan_name": "Veteran"
+    },
+    "change_billing": {
+      "annual": {
+        "amount": 57.48
+      },
+      "quarterly": {
+        "amount": 16.17
+      }
+    },
+    "change_plan": {
+      "annual": {
+        "amount": 57.48
+      },
+      "monthly": {
+        "amount": 5.99
+      },
+      "quarterly": {
+        "amount": 16.17
+      }
+    },
+    "checkout": {
+      "annual": {
+        "amount": 57.48
+      },
+      "monthly": {
+        "amount": 5.99
+      },
+      "quarterly": {
+        "amount": 16.17
+      }
+    }
+  }
+}

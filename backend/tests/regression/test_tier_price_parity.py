@@ -7,15 +7,17 @@ fails here BY NAME.
 
 Stages (per tier, benefactor + beneficiary equivalent):
   1. catalog        DEFAULT_PLANS / BENEFICIARY_PLANS / PLAN_ORDER agree with each other
-  2. status.py      plan_map (AST) + live beneficiary_locked_tier resolution
+  2. status.py      plan_map (AST) + live beneficiary_locked_tier + DOB eligibility
   3. plans payload  GET /subscriptions/plans — the exact object the paywall card renders
-  4. family plan    add-member quote (original_price, family_price) + FPO preview, 30 % / 50 %
-  5. checkout       plan_id -> Stripe amount for monthly / quarterly / annual (Stripe stubbed)
+  4. family plan    add-member quote (original_price, family_price) + FPO/beneficiary preview
+  5. checkout       plan_id -> Stripe amount for monthly / quarterly / annual (Stripe stubbed),
+                    live + beta, change-plan (incl. per-user discount), change-billing
   6. static maps    feature_gates.TIER_IDS, apple_webhook, admin valid_tiers, frontend
-                    tier maps (FeatureGatesCard, UsersTab, SubscriptionManagement,
-                    SubscriptionPaywall, LandingPricing, iap.js)
+                    tier maps, paywall copy, trial emails
+  7. lifecycle      new_adult age-out, Apple IAP activation, admin beneficiary price edit
+  8. baseline       every BENEFACTOR amount equals the frozen pre-fix fixture (byte-identical)
 
-Known defects are marked xfail(strict=True) with a B-number and file:line; fixing one makes
+Known defects are marked xfail(strict=True) with a B/C-number and file:line; fixing one makes
 its xfail XPASS-strict → remove the entry from KNOWN. Nothing else is tolerated.
 DB stages run in a subprocess bound to a throwaway scratch database (DB_NAME override).
 """
@@ -36,6 +38,7 @@ from pymongo import MongoClient
 
 BACKEND = "/app/backend"
 FRONTEND = "/app/frontend/src"
+BASELINE = Path(BACKEND, "tests/regression/fixtures/benefactor_billing_baseline.json")
 sys.path.insert(0, BACKEND)
 load_dotenv(os.path.join(BACKEND, ".env"))
 
@@ -48,9 +51,11 @@ TIERS = list(PLAN_ORDER)
 BEN_TIERS = [f"ben_{t}" for t in TIERS]
 PLAN = {p["id"]: p for p in DEFAULT_PLANS}
 BEN_PLAN = {p["id"]: p for p in BENEFICIARY_PLANS}
-BENEFACTOR_DISC, BENEFICIARY_DISC = 30, 50
+ANY_PLAN = {**PLAN, **BEN_PLAN}
+BENEFACTOR_DISC, BENEFICIARY_DISC, CUSTOM_DISCOUNT = 30, 50, 25
 PAID_TIERS = [t for t in TIERS if float(PLAN[t]["price"]) > 0]
 PAID_BEN_TIERS = [b for b in BEN_TIERS if float(BEN_PLAN.get(b, {}).get("price", 0)) > 0]
+CYCLES = ("monthly", "quarterly", "annual")
 
 # ---- known defects (stage, tier) -> reason. Remove an entry once the code is fixed. ----
 KNOWN = {
@@ -64,6 +69,7 @@ KNOWN = {
         "ben_new_adult",
     ): "B2 routes/subscriptions/apple_webhook.py:25-72 lacks ben_new_adult",
     ("iap.js", "ben_new_adult"): "B2 frontend/src/services/iap.js lacks ben_new_adult products",
+    ("apple_iap.activation", "ben_new_adult"): "B2 no product maps to ben_new_adult → 400 Unknown product",
     ("admin.users.valid_tiers", "seniors"): "B3 routes/admin/users.py:362 valid_tiers lacks seniors",
     ("admin.bulk_ops.valid_tiers", "seniors"): "B3 routes/admin/bulk_ops.py:37 valid_tiers lacks seniors",
     ("FeatureGatesCard.TIER_LABELS", "seniors"): "B4 components/admin/FeatureGatesCard.js TIER_LABELS lacks seniors",
@@ -85,10 +91,63 @@ KNOWN = {
         "SubscriptionManagement.TIER_STYLES",
         "ben_enterprise",
     ): "B4 components/settings/SubscriptionManagement.js:20-36 lacks ben_enterprise",
+    (
+        "status.dob_eligibility",
+        "seniors",
+    ): "B6 status.py:154-163 DOB eligibility covers new_adult (18–25) only, not seniors (65+)",
+    (
+        "lifecycle.age_out",
+        "new_adult",
+    ): "B7 verification_and_lifecycle.py:824-833 age-out writes plan_id 'ben_standard' on a benefactor subscription",
+    (
+        "SubscriptionPaywall.family_copy",
+        "family",
+    ): "B10 SubscriptionPaywall.js:978,983,1031,1035 legacy 'flat $3.49/mo' / '$1/mo' copy",
+    ("trial_email.source", "trial_reminders.py"): "B11 routes/trial_reminders.py:83,147 hardcoded '$7.99/mo'",
+    ("trial_email.starting_price", "reminder"): "B11 routes/trial_reminders.py:83 hardcoded '$7.99/mo'",
+    ("trial_email.starting_price", "expired"): "B11 routes/trial_reminders.py:147 hardcoded '$7.99/mo'",
+    (
+        "ben_price_display",
+        "SubscriptionPaywall",
+    ): "C7 SubscriptionPaywall.js:799-804 ben_price × 0.8/0.9 — flat-rate ben tiers shown discounted",
+    (
+        "ben_price_display",
+        "SubscriptionManagement",
+    ): "C7 SubscriptionManagement.js:845-850 ben_price × 0.8/0.9 — flat-rate ben tiers shown discounted",
+    (
+        "admin.ben_price_edit",
+        "ben_military",
+    ): "C8 subscriptions/admin.py:337-338 flat-rate ben plan recomputed ×0.9/×0.8",
+    (
+        "feature_gates.unknown_tier",
+        "unknown",
+    ): "C9 feature_gates.py:177 unknown tier → every feature visible (:485 denies)",
 }
 for _b in BEN_TIERS:
     KNOWN[("checkout.beneficiary", _b)] = (
         "B5 routes/subscriptions/checkout.py:76-79 resolves settings['plans'] only → 400 Invalid plan for every ben_*"
+    )
+    KNOWN[("checkout.beta.beneficiary", _b)] = (
+        "B5/C1 checkout.py:51 beta branch resolves settings['plans'] only → ben_* preference never recorded"
+    )
+    KNOWN[("change_plan.beneficiary", _b)] = (
+        "B5/C2+C3 checkout.py:675 ben_* → 404 Plan not found; :709-721 ben_price mixed with benefactor cycle prices"
+    )
+    KNOWN[("change_billing.beneficiary", _b)] = (
+        "B5/C5 checkout.py:896-899 resolves settings['plans'] only → 400 Current plan not found for ben_*"
+    )
+for _t in PAID_TIERS:
+    KNOWN[("change_plan.discounted_benefactor", _t)] = (
+        "C4 checkout.py:712-721 custom_discount applied to base_price only → dropped on quarterly/annual"
+    )
+for _t in PAID_TIERS + PAID_BEN_TIERS:
+    if _t != "ben_new_adult" and _t.replace("_", " ").title() != ANY_PLAN[_t]["name"]:
+        KNOWN[("apple_iap.activation", _t)] = (
+            "C10 apple_iap.py:136 plan_name = plan_id.title() instead of the catalog name"
+        )
+for _t in TIERS:
+    KNOWN[("family.preview_beneficiary", _t)] = (
+        "B9 family_plan.py:180 estates queried by user_id (schema key is owner_id) → preview tree lists the FPO only"
     )
 
 
@@ -99,6 +158,34 @@ def tier_params(stage, tiers):
         marks = [pytest.mark.xfail(strict=True, reason=reason)] if reason else []
         out.append(pytest.param(t, id=t, marks=marks))
     return out
+
+
+def _close(a, b):
+    return a is not None and b is not None and abs(float(a) - float(b)) <= 0.011
+
+
+def _cycle_total(plan, cycle, discount=0):
+    """Full-period charge for a plan/cycle — same rule as /subscriptions/checkout."""
+    if float(plan["price"]) <= 0:
+        return None  # free tier: activates without Stripe
+    if cycle == "annual":
+        amount = round(float(plan["annual_price"]) * 12, 2)
+    elif cycle == "quarterly":
+        amount = round(float(plan["quarterly_price"]) * 3, 2)
+    else:
+        amount = float(plan["price"])
+    return round(amount * (1 - discount / 100), 2) if discount else amount
+
+
+def _assert_amounts(got_by_cycle, plan, label, discount=0, cycles=CYCLES):
+    for cycle in cycles:
+        exp = _cycle_total(plan, cycle, discount)
+        got = got_by_cycle[cycle]
+        assert "error" not in got, f"{label}/{cycle}: rejected own catalog plan: {got['error']}"
+        if exp is None:
+            assert not got["amount"], f"{label}/{cycle}: free tier charged {got['amount']}"
+        else:
+            assert _close(got["amount"], exp), f"{label}/{cycle}: amount {got['amount']} != {exp}"
 
 
 # ---------------------------------------------------------------- stage 1: catalog ----
@@ -143,6 +230,19 @@ def test_feature_gates_tier_ids_cover_tier(tier):
     )
 
 
+@pytest.mark.parametrize("tier", tier_params("feature_gates.unknown_tier", ["unknown"]))
+def test_feature_gates_unknown_tier_is_denied_everywhere(tier):
+    from routes.feature_gates import _build_default_gates, get_enabled_features_for_tier
+
+    gates = _build_default_gates()
+    assert get_enabled_features_for_tier(gates, "no_such_tier") == [], (
+        "get_enabled_features_for_tier shows every feature for an unknown tier while is_feature_enabled_for_user denies it"
+    )
+    assert get_enabled_features_for_tier(gates, "ben_premium") == get_enabled_features_for_tier(gates, "premium"), (
+        "ben_<tier> must inherit <tier>'s gates (a beneficiary on their own ben_* sub must not lose navigation)"
+    )
+
+
 def _apple_plan_ids():
     from routes.subscriptions.apple_webhook import APPLE_TO_PLAN
 
@@ -174,6 +274,19 @@ def test_admin_users_valid_tiers_cover_tier(tier):
 def test_admin_bulk_ops_valid_tiers_cover_tier(tier):
     assert tier in _literal_list_after("routes/admin/bulk_ops.py", "valid_tiers = ["), (
         f"{tier}: bulk tier assignment rejects it"
+    )
+
+
+def _starting_monthly_price():
+    """Lowest paid, no-verification benefactor price — what 'Plans start at' must quote."""
+    return min(float(p["price"]) for p in DEFAULT_PLANS if float(p["price"]) > 0 and not p.get("requires_verification"))
+
+
+@pytest.mark.parametrize("tier", tier_params("trial_email.source", ["trial_reminders.py"]))
+def test_trial_reminder_source_has_no_hardcoded_price(tier):
+    src = Path(BACKEND, f"routes/{tier}").read_text()
+    assert not re.search(r"\$\d+\.\d{2}", src), (
+        "trial_reminders.py hardcodes a dollar price — must come from the catalog"
     )
 
 
@@ -237,7 +350,32 @@ def test_iap_products_cover_paid_tier(tier):
     )
 
 
-# --------------------------------------------------------- DB-backed stages 2b/3/4/5 ----
+@pytest.mark.parametrize("tier", tier_params("SubscriptionPaywall.family_copy", ["family"]))
+def test_paywall_family_tile_copy_is_catalog_driven(tier):
+    src = Path(FRONTEND, "components/SubscriptionPaywall.js").read_text()
+    for legacy in ("$3.49", "$1/mo", "Floor tiers exempt", "Owner pays standard tier rate"):
+        assert legacy not in src, f"SubscriptionPaywall.js still carries legacy family-plan copy {legacy!r}"
+    for key in ("family_benefactor_discount_percent", "family_beneficiary_discount_percent"):
+        assert key in src, f"SubscriptionPaywall.js family tile must render {key} from /subscriptions/plans"
+
+
+_BEN_PRICE_DISPLAY = {
+    "SubscriptionPaywall": "components/SubscriptionPaywall.js",
+    "SubscriptionManagement": "components/settings/SubscriptionManagement.js",
+}
+
+
+@pytest.mark.parametrize("comp", tier_params("ben_price_display", list(_BEN_PRICE_DISPLAY)))
+def test_beneficiary_price_display_uses_catalog_cycle_prices(comp):
+    src = Path(FRONTEND, _BEN_PRICE_DISPLAY[comp]).read_text()
+    assert not re.search(r"ben_price\s*\*\s*0\.[89]", src), (
+        f"{comp}: derives beneficiary quarterly/annual price as ben_price × 0.9/0.8 — flat-rate ben tiers "
+        "(military/veteran/seniors/new_adult) are 1.99 on every cycle; read beneficiary_plans[ben_<tier>] instead"
+    )
+    assert "beneficiary_plans" in src, f"{comp}: must read beneficiary_plans from /subscriptions/plans"
+
+
+# --------------------------------------------------------- DB-backed stages 2b/3/4/5/7 ----
 @pytest.fixture(scope="module")
 def world():
     url = os.environ.get("MONGO_URL")
@@ -264,10 +402,6 @@ def world():
     return json.loads(line[len("RESULT ") :])
 
 
-def _close(a, b):
-    return a is not None and b is not None and abs(float(a) - float(b)) <= 0.011
-
-
 @pytest.mark.parametrize("tier", tier_params("status.locked_tier", TIERS))
 def test_status_resolves_beneficiary_to_own_tier(world, tier):
     row = world["tiers"][tier]
@@ -278,6 +412,12 @@ def test_status_resolves_beneficiary_to_own_tier(world, tier):
         f"{tier}: synthesized subscription.plan_id={row['beneficiary_synth_plan_id']!r}"
     )
     assert row["benefactor_plan_id"] == tier
+
+
+@pytest.mark.parametrize("tier", tier_params("status.dob_eligibility", ["new_adult", "seniors"]))
+def test_status_dob_eligibility_unlocks_age_tier(world, tier):
+    got = world["dob_eligibility"][tier]
+    assert tier in (got or []), f"{tier}: eligible_tiers={got!r} for a user whose DOB qualifies → card locked by age"
 
 
 @pytest.mark.parametrize("tier", tier_params("plans_payload.prices", TIERS))
@@ -327,35 +467,138 @@ def test_family_plan_beneficiary_quote(world, tier):
     )
 
 
-def _expected_amount(plan, cycle):
-    if float(plan["price"]) <= 0:
-        return None  # free tier: checkout activates without Stripe
-    if cycle == "annual":
-        return round(float(plan["annual_price"]) * 12, 2)
-    if cycle == "quarterly":
-        return round(float(plan["quarterly_price"]) * 3, 2)
-    return float(plan["price"])
+@pytest.mark.parametrize("tier", tier_params("family.preview_beneficiary", TIERS))
+def test_family_preview_lists_beneficiary_at_own_tier_price(world, tier):
+    tree = world["tiers"][tier]["preview_tree"]
+    rows = [r for r in tree if r.get("role") == "beneficiary" and r.get("email") == f"bn-{tier}@carryontest.io"]
+    assert rows, (
+        f"{tier}: preview_family_savings tree has no beneficiary row (estates queried by the wrong key?): {tree}"
+    )
+    ben_price = float(BEN_PLAN[f"ben_{tier}"]["price"])
+    assert _close(rows[0]["current_price"], ben_price), (
+        f"{tier}: preview current_price {rows[0]['current_price']} != {ben_price}"
+    )
+    assert _close(rows[0]["family_price"], round(ben_price * (1 - BENEFICIARY_DISC / 100), 2)), (
+        f"{tier}: preview family_price {rows[0]['family_price']} != {ben_price} less {BENEFICIARY_DISC}%"
+    )
 
 
 @pytest.mark.parametrize("tier", tier_params("checkout.benefactor", TIERS))
 def test_checkout_amount_matches_catalog_for_benefactor(world, tier):
-    co = world["tiers"][tier]["checkout"]["benefactor"]
-    for cycle in ("monthly", "quarterly", "annual"):
-        exp = _expected_amount(PLAN[tier], cycle)
-        got = co[cycle]
-        assert "error" not in got, f"{tier}/{cycle}: checkout rejected own catalog plan: {got['error']}"
-        assert (got["amount"] is None and exp is None) or _close(got["amount"], exp), (
-            f"{tier}/{cycle}: Stripe amount {got['amount']} != {exp}"
-        )
+    _assert_amounts(world["tiers"][tier]["checkout"]["benefactor"], PLAN[tier], f"{tier} checkout")
 
 
 @pytest.mark.parametrize("tier", tier_params("checkout.beneficiary", BEN_TIERS))
 def test_checkout_amount_matches_catalog_for_beneficiary(world, tier):
     co = world["tiers"][tier[len("ben_") :]]["checkout"]["beneficiary"]
-    for cycle in ("monthly", "quarterly", "annual"):
-        exp = _expected_amount(BEN_PLAN[tier], cycle)
-        got = co[cycle]
-        assert "error" not in got, f"{tier}/{cycle}: checkout rejected own catalog plan: {got['error']}"
-        assert (got["amount"] is None and exp is None) or _close(got["amount"], exp), (
-            f"{tier}/{cycle}: Stripe amount {got['amount']} != {exp}"
+    _assert_amounts(co, BEN_PLAN[tier], f"{tier} checkout")
+
+
+@pytest.mark.parametrize("tier", tier_params("checkout.beta.benefactor", TIERS))
+def test_beta_checkout_records_benefactor_plan(world, tier):
+    got = world["tiers"][tier]["beta_checkout"]["benefactor"]
+    assert got.get("plan_id") == tier and got.get("plan_name") == PLAN[tier]["name"], (
+        f"{tier}: beta checkout recorded {got}"
+    )
+
+
+@pytest.mark.parametrize("tier", tier_params("checkout.beta.beneficiary", BEN_TIERS))
+def test_beta_checkout_records_beneficiary_plan(world, tier):
+    got = world["tiers"][tier[len("ben_") :]]["beta_checkout"]["beneficiary"]
+    assert got.get("plan_id") == tier and got.get("plan_name") == BEN_PLAN[tier]["name"], (
+        f"{tier}: beta checkout recorded {got} (ben_* preference not saved)"
+    )
+
+
+@pytest.mark.parametrize("tier", tier_params("change_plan.benefactor", TIERS))
+def test_change_plan_amount_matches_catalog_for_benefactor(world, tier):
+    _assert_amounts(world["tiers"][tier]["change_plan"]["benefactor"], PLAN[tier], f"{tier} change-plan")
+
+
+@pytest.mark.parametrize("tier", tier_params("change_plan.beneficiary", BEN_TIERS))
+def test_change_plan_amount_matches_catalog_for_beneficiary(world, tier):
+    cp = world["tiers"][tier[len("ben_") :]]["change_plan"]["beneficiary"]
+    _assert_amounts(cp, BEN_PLAN[tier], f"{tier} change-plan")
+
+
+@pytest.mark.parametrize("tier", tier_params("change_plan.discounted_benefactor", TIERS))
+def test_change_plan_applies_custom_discount_on_every_cycle(world, tier):
+    """Rule: discount applies to the full-period amount (monthly, quarterly×3, annual×12) — same as checkout."""
+    cp = world["tiers"][tier]["change_plan"]["discounted_benefactor"]
+    _assert_amounts(cp, PLAN[tier], f"{tier} change-plan @{CUSTOM_DISCOUNT}%", discount=CUSTOM_DISCOUNT)
+
+
+@pytest.mark.parametrize("tier", tier_params("change_billing.benefactor", TIERS))
+def test_change_billing_amount_matches_catalog_for_benefactor(world, tier):
+    cb = world["tiers"][tier]["change_billing"]["benefactor"]
+    _assert_amounts(cb, PLAN[tier], f"{tier} change-billing", cycles=("quarterly", "annual"))
+
+
+@pytest.mark.parametrize("tier", tier_params("change_billing.beneficiary", BEN_TIERS))
+def test_change_billing_amount_matches_catalog_for_beneficiary(world, tier):
+    cb = world["tiers"][tier[len("ben_") :]]["change_billing"]["beneficiary"]
+    _assert_amounts(cb, BEN_PLAN[tier], f"{tier} change-billing", cycles=("quarterly", "annual"))
+
+
+@pytest.mark.parametrize("tier", tier_params("lifecycle.age_out", ["new_adult"]))
+def test_new_adult_age_out_lands_on_benefactor_standard(world, tier):
+    got = world["age_out"]
+    assert got.get("plan_id") == "standard", (
+        f"aged-out new_adult subscription now on {got!r} (must be benefactor 'standard')"
+    )
+    assert got.get("plan_name") == PLAN["standard"]["name"], f"aged-out plan_name {got.get('plan_name')!r}"
+
+
+@pytest.mark.parametrize("tier", tier_params("trial_email.starting_price", ["reminder", "expired"]))
+def test_trial_emails_quote_catalog_starting_price(world, tier):
+    emails = world["trial_emails"]
+    assert emails, "trial_reminders.starting_monthly_price() missing — emails cannot quote the catalog"
+    exp = _starting_monthly_price()
+    assert _close(emails["starting_price"], exp), f"starting price {emails['starting_price']} != catalog {exp}"
+    quoted = re.findall(r"\$(\d+\.\d{2})/mo", emails[tier])
+    assert quoted and all(_close(q, exp) for q in quoted), f"{tier} email quotes {quoted}, catalog says {exp:.2f}"
+
+
+@pytest.mark.parametrize("tier", tier_params("apple_iap.activation", PAID_TIERS + PAID_BEN_TIERS))
+def test_apple_iap_activates_own_plan_with_catalog_name(world, tier):
+    got = world["apple"][tier]
+    assert "error" not in got, f"{tier}: Apple product us.carryon.app.v2.{tier}_monthly rejected: {got['error']}"
+    assert got.get("plan_id") == tier, f"{tier}: activated {got.get('plan_id')!r}"
+    assert got.get("plan_name") == ANY_PLAN[tier]["name"], f"{tier}: plan_name {got.get('plan_name')!r} != catalog"
+
+
+@pytest.mark.parametrize("tier", tier_params("admin.ben_price_edit", ["ben_military", "ben_premium"]))
+def test_admin_beneficiary_price_edit_respects_billing_toggle(world, tier):
+    got = world["admin_ben_price_edit"][tier]
+    assert _close(got["price"], 2.49)
+    if BEN_PLAN[tier].get("allows_billing_toggle"):
+        assert _close(got["quarterly_price"], round(2.49 * 0.9, 2)) and _close(
+            got["annual_price"], round(2.49 * 0.8, 2)
+        ), got
+    else:
+        assert _close(got["quarterly_price"], 2.49) and _close(got["annual_price"], 2.49), (
+            f"{tier}: flat-rate plan must keep one price on every cycle, got {got}"
         )
+
+
+# ------------------------------------------------ stage 8: benefactor charges are frozen ----
+def _benefactor_snapshot(world):
+    snap = {}
+    for t in TIERS:
+        row = world["tiers"][t]
+        snap[t] = {
+            "checkout": row["checkout"]["benefactor"],
+            "change_plan": row["change_plan"]["benefactor"],
+            "change_billing": row["change_billing"]["benefactor"],
+            "beta_checkout": row["beta_checkout"]["benefactor"],
+        }
+    return snap
+
+
+@pytest.mark.parametrize("tier", tier_params("baseline.benefactor", TIERS))
+def test_benefactor_amounts_identical_to_frozen_baseline(world, tier):
+    """No change on this branch may alter what a benefactor (without custom_discount) is charged."""
+    baseline = json.loads(BASELINE.read_text())
+    assert _benefactor_snapshot(world)[tier] == baseline[tier], (
+        f"{tier}: benefactor billing differs from the frozen pre-fix baseline {BASELINE.name}"
+    )

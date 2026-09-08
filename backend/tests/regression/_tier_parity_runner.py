@@ -1,16 +1,18 @@
 """Subprocess runner for test_tier_price_parity.py — DB-backed stages.
 
 Bound to a throwaway scratch database via DB_NAME (set by the test). Seeds one benefactor
-+ one beneficiary + one estate + one family plan per catalog tier, then drives the real
-route handlers (status, plans payload, family-plan quote, checkout) and prints one JSON
-document with everything the test asserts on. Stripe is replaced with a capture stub —
-no network call is ever made.
++ one beneficiary + one estate + one family plan per catalog tier (plus dedicated users
+for change-plan / change-billing / beta / Apple / lifecycle stages), then drives the real
+route handlers and prints one JSON document with everything the test asserts on.
+Stripe is replaced with a capture stub and outbound email is stubbed — no network call
+is ever made.
 """
 
 import asyncio
 import json
 import os
 import sys
+from datetime import datetime, timedelta, timezone
 
 sys.path.insert(0, "/app/backend")
 from dotenv import load_dotenv  # noqa: E402
@@ -19,6 +21,25 @@ load_dotenv("/app/backend/.env")
 
 BENEFACTOR_DISC = 30
 BENEFICIARY_DISC = 50
+CUSTOM_DISCOUNT = 25
+ORIGIN = "https://www.carryon.us"
+CYCLES = ("monthly", "quarterly", "annual")
+NOW = datetime.now(timezone.utc)
+
+
+def _user(uid, role, dob=None):
+    doc = {"id": uid, "email": f"{uid}@carryontest.io", "role": role, "name": uid.upper()}
+    if dob is not None:
+        doc["date_of_birth"] = dob.isoformat()
+    return doc
+
+
+def _sub(uid, plan_id, amount, cycle="monthly"):
+    return {"user_id": uid, "plan_id": plan_id, "status": "active", "billing_cycle": cycle, "amount": amount}
+
+
+def _years_ago(years, extra_days=0):
+    return NOW.replace(year=NOW.year - years) - timedelta(days=extra_days)
 
 
 def seed(db, plans, ben_plans, tiers):
@@ -34,32 +55,32 @@ def seed(db, plans, ben_plans, tiers):
         }
     )
     price = {p["id"]: p["price"] for p in plans}
+    ben_price = {p["id"]: p["price"] for p in ben_plans}
+    users, subs = [], []
     for t in tiers:
-        db.users.insert_many(
-            [
-                {"id": f"bf-{t}", "email": f"bf-{t}@carryontest.io", "role": "benefactor", "name": f"BF {t}"},
-                {"id": f"bn-{t}", "email": f"bn-{t}@carryontest.io", "role": "beneficiary", "name": f"BN {t}"},
-                {"id": f"fm-{t}", "email": f"fm-{t}@carryontest.io", "role": "benefactor", "name": f"FM {t}"},
-            ]
-        )
-        db.user_subscriptions.insert_many(
-            [
-                {
-                    "user_id": f"bf-{t}",
-                    "plan_id": t,
-                    "status": "active",
-                    "billing_cycle": "monthly",
-                    "amount": price[t],
-                },
-                {
-                    "user_id": f"fm-{t}",
-                    "plan_id": t,
-                    "status": "active",
-                    "billing_cycle": "monthly",
-                    "amount": price[t],
-                },
-            ]
-        )
+        b = f"ben_{t}"
+        users += [
+            _user(f"bf-{t}", "benefactor"),
+            _user(f"bn-{t}", "beneficiary"),
+            _user(f"fm-{t}", "benefactor"),
+            _user(f"cp-{t}", "benefactor"),  # change-plan target t
+            _user(f"cb-{t}", "beneficiary"),  # change-plan target ben_t
+            _user(f"cd-{t}", "benefactor"),  # change-plan with custom_discount
+            _user(f"cbl-{t}", "benefactor"),  # change-billing on t
+            _user(f"cbb-{t}", "beneficiary"),  # change-billing on ben_t
+            _user(f"bb-{t}", "benefactor"),  # beta checkout t
+            _user(f"bbn-{t}", "beneficiary"),  # beta checkout ben_t
+        ]
+        subs += [
+            _sub(f"bf-{t}", t, price[t]),
+            _sub(f"fm-{t}", t, price[t]),
+            _sub(f"cp-{t}", "base", price["base"]),
+            _sub(f"cb-{t}", "ben_base", ben_price["ben_base"]),
+            _sub(f"cd-{t}", "base", price["base"]),
+            _sub(f"cbl-{t}", t, price[t]),
+            _sub(f"cbb-{t}", b, ben_price[b]),
+        ]
+        db.subscription_overrides.insert_one({"user_id": f"cd-{t}", "custom_discount": CUSTOM_DISCOUNT})
         db.estates.insert_one(
             {"id": f"es-{t}", "owner_id": f"bf-{t}", "status": "pre-transition", "beneficiaries": [f"bn-{t}"]}
         )
@@ -69,12 +90,22 @@ def seed(db, plans, ben_plans, tiers):
                 "estate_id": f"es-{t}",
                 "user_id": f"bn-{t}",
                 "email": f"bn-{t}@carryontest.io",
+                "name": f"BN {t}",
+                "relation": "Child",
                 "deleted_at": None,
             }
         )
         db.family_plans.insert_one(
             {"id": f"fp-{t}", "fpo_user_id": f"bf-{t}", "fpo_plan_id": t, "status": "active", "members": []}
         )
+    users += [
+        _user("dob-new_adult", "benefactor", _years_ago(20, 10)),
+        _user("dob-seniors", "benefactor", _years_ago(70, 10)),
+        _user("ao-1", "beneficiary", _years_ago(26, 2)),  # turned 26 two days ago
+    ]
+    subs.append(_sub("ao-1", "new_adult", price["new_adult"]))
+    db.users.insert_many(users)
+    db.user_subscriptions.insert_many(subs)
 
 
 class _FakeSession:
@@ -93,33 +124,77 @@ class _FakeStripeCheckout:
         return _FakeSession()
 
 
-async def run(tiers):
+class _Req:
+    def __init__(self, body):
+        self._body = body
+
+    async def json(self):
+        return self._body
+
+
+async def run(tiers, paid, paid_ben):
     from fastapi import HTTPException
 
     import routes.family_plan as fam
+    import routes.subscriptions.admin as adm
+    import routes.subscriptions.apple_iap as iap
     import routes.subscriptions.checkout as co
     import routes.subscriptions.status as st
-    from routes.subscriptions.plans import SubscriptionCheckoutRequest
+    import routes.subscriptions.verification_and_lifecycle as vl
+    import routes.trial_reminders as tr
+    import services.email as email_svc
+    from config import db
+    from routes.subscriptions.plans import SubscriptionCheckoutRequest, get_subscription_settings
 
     co.StripeCheckout = _FakeStripeCheckout  # never touch Stripe
 
-    async def checkout_amount(user, plan_id, cycle):
-        _FakeStripeCheckout.captured.clear()
-        try:
-            await co.create_subscription_checkout(
-                SubscriptionCheckoutRequest(plan_id=plan_id, billing_cycle=cycle, origin_url="https://www.carryon.us"),
-                request=None,
-                current_user=user,
-            )
-        except HTTPException as e:
-            return {"error": f"HTTP {e.status_code}: {e.detail}"}
-        return {"amount": _FakeStripeCheckout.captured[0] if _FakeStripeCheckout.captured else None}
+    async def _no_mail(*a, **k):
+        return True
 
-    plans_payload = await st.get_subscription_plans()
-    out = {"plans_payload": plans_payload, "tiers": {}}
+    email_svc.send_email = _no_mail  # lifecycle emails resolve this attribute at call time
+
+    captured = _FakeStripeCheckout.captured
+
+    async def call(coro):
+        captured.clear()
+        try:
+            return await coro, None
+        except HTTPException as e:
+            return None, {"error": f"HTTP {e.status_code}: {e.detail}"}
+
+    async def sub_row(uid):
+        return await db.user_subscriptions.find_one({"user_id": uid}, {"_id": 0, "plan_id": 1, "plan_name": 1}) or {}
+
+    async def checkout_amount(user, plan_id, cycle):
+        req = SubscriptionCheckoutRequest(plan_id=plan_id, billing_cycle=cycle, origin_url=ORIGIN)
+        _, err = await call(co.create_subscription_checkout(req, request=None, current_user=user))
+        return err or {"amount": captured[0] if captured else None}
+
+    async def change_plan_amount(user, plan_id, cycle):
+        req = co.ChangeSubscriptionRequest(plan_id=plan_id, billing_cycle=cycle, origin_url=ORIGIN)
+        _, err = await call(co.change_subscription_plan(req, current_user=user))
+        if err:
+            return err
+        if captured:
+            return {"amount": captured[0]}
+        sub = await db.user_subscriptions.find_one({"user_id": user["id"]}, {"_id": 0, "amount": 1})
+        return {"amount": (sub or {}).get("amount")}
+
+    async def change_billing_amount(user, cycle):
+        req = co.ChangeBillingRequest(billing_cycle=cycle, origin_url=ORIGIN)
+        _, err = await call(co.change_billing_cycle(req, current_user=user))
+        return err or {"amount": captured[0] if captured else 0.0}
+
+    out = {"plans_payload": await st.get_subscription_plans(), "tiers": {}}
+
+    out["dob_eligibility"] = {}
+    for key in ("new_adult", "seniors"):
+        status = await st.get_subscription_status(current_user=_user(f"dob-{key}", "benefactor"))
+        out["dob_eligibility"][key] = status.get("eligible_tiers")
+
     for t in tiers:
-        bf = {"id": f"bf-{t}", "email": f"bf-{t}@carryontest.io", "role": "benefactor", "name": f"BF {t}"}
-        bn = {"id": f"bn-{t}", "email": f"bn-{t}@carryontest.io", "role": "beneficiary", "name": f"BN {t}"}
+        b = f"ben_{t}"
+        bf, bn = _user(f"bf-{t}", "benefactor"), _user(f"bn-{t}", "beneficiary")
         row = {}
         ben_status = await st.get_subscription_status(current_user=bn)
         row["beneficiary_locked_tier"] = ben_status.get("beneficiary_locked_tier")
@@ -133,18 +208,77 @@ async def run(tiers):
         await fam.add_family_member(
             f"fp-{t}", fam.FamilyPlanInvite(email=f"bn-{t}@carryontest.io", role="beneficiary"), current_user=bf
         )
-        from config import db
-
         fp = await db.family_plans.find_one({"id": f"fp-{t}"}, {"_id": 0})
         row["family_members"] = {m["member_type"]: m for m in fp["members"]}
         preview = await fam.preview_family_savings(current_user=bf)
         row["preview_fpo"] = preview["family_tree"][0]
+        row["preview_tree"] = preview["family_tree"]
 
         row["checkout"] = {
-            "benefactor": {c: await checkout_amount(bf, t, c) for c in ("monthly", "quarterly", "annual")},
-            "beneficiary": {c: await checkout_amount(bn, f"ben_{t}", c) for c in ("monthly", "quarterly", "annual")},
+            "benefactor": {c: await checkout_amount(bf, t, c) for c in CYCLES},
+            "beneficiary": {c: await checkout_amount(bn, b, c) for c in CYCLES},
+        }
+        cp, cb, cd = _user(f"cp-{t}", "benefactor"), _user(f"cb-{t}", "beneficiary"), _user(f"cd-{t}", "benefactor")
+        row["change_plan"] = {
+            "benefactor": {c: await change_plan_amount(cp, t, c) for c in CYCLES},
+            "beneficiary": {c: await change_plan_amount(cb, b, c) for c in CYCLES},
+            "discounted_benefactor": {c: await change_plan_amount(cd, t, c) for c in CYCLES},
+        }
+        cbl, cbb = _user(f"cbl-{t}", "benefactor"), _user(f"cbb-{t}", "beneficiary")
+        row["change_billing"] = {
+            "benefactor": {c: await change_billing_amount(cbl, c) for c in ("quarterly", "annual")},
+            "beneficiary": {c: await change_billing_amount(cbb, c) for c in ("quarterly", "annual")},
         }
         out["tiers"][t] = row
+
+    # Beta-mode checkout records the chosen plan without charging.
+    await db.subscription_settings.update_one({"_id": "global"}, {"$set": {"beta_mode": True}})
+    for t in tiers:
+        for uid, pid in ((f"bb-{t}", t), (f"bbn-{t}", f"ben_{t}")):
+            role = "beneficiary" if pid.startswith("ben_") else "benefactor"
+            req = SubscriptionCheckoutRequest(plan_id=pid, billing_cycle="monthly", origin_url=ORIGIN)
+            await call(co.create_subscription_checkout(req, request=None, current_user=_user(uid, role)))
+        out["tiers"][t]["beta_checkout"] = {
+            "benefactor": await sub_row(f"bb-{t}"),
+            "beneficiary": await sub_row(f"bbn-{t}"),
+        }
+    await db.subscription_settings.update_one({"_id": "global"}, {"$set": {"beta_mode": False}})
+
+    # Lifecycle: new_adult ages out at 26.
+    await vl.check_dob_subscription_events()
+    out["age_out"] = await sub_row("ao-1")
+
+    # Trial emails quote the catalog's starting price (helper exists only once B11 is fixed).
+    starting = getattr(tr, "starting_monthly_price", None)
+    if starting:
+        price = await starting()
+        out["trial_emails"] = {
+            "starting_price": price,
+            "reminder": tr.build_trial_reminder_email("Pat", 3, ORIGIN, 10, price)[1],
+            "expired": tr.build_trial_expired_email("Pat", ORIGIN, 10, price)[1],
+        }
+    else:
+        out["trial_emails"] = None
+
+    # Apple IAP activation for every paid product (monthly).
+    out["apple"] = {}
+    for t in list(paid) + list(paid_ben):
+        uid = f"ap-{t}"
+        role = "beneficiary" if t.startswith("ben_") else "benefactor"
+        body = {"transaction_id": f"txn-{t}", "product_id": f"us.carryon.app.v2.{t}_monthly"}
+        _, err = await call(iap.validate_apple_receipt(_Req(body), current_user=_user(uid, role)))
+        out["apple"][t] = err or await sub_row(uid)
+
+    # Admin beneficiary price edit — LAST, it mutates catalog prices in the scratch DB.
+    admin = {"id": "adm-1", "email": "adm-1@carryontest.io", "role": "admin"}
+    out["admin_ben_price_edit"] = {}
+    for pid in ("ben_military", "ben_premium"):
+        await adm.update_beneficiary_plan_price(pid, price=2.49, current_user=admin)
+        settings = await get_subscription_settings()
+        bp = next(p for p in settings["beneficiary_plans"] if p["id"] == pid)
+        out["admin_ben_price_edit"][pid] = {
+            k: bp.get(k) for k in ("price", "quarterly_price", "annual_price", "allows_billing_toggle")
+        }
     return out
 
 
@@ -153,11 +287,13 @@ def main():
 
     from routes.subscriptions.plans import BENEFICIARY_PLANS, DEFAULT_PLANS, PLAN_ORDER
 
+    paid = [p["id"] for p in DEFAULT_PLANS if float(p["price"]) > 0]
+    paid_ben = [p["id"] for p in BENEFICIARY_PLANS if float(p["price"]) > 0]
     client = MongoClient(os.environ["MONGO_URL"])
     db = client[os.environ["DB_NAME"]]
     try:
         seed(db, [dict(p) for p in DEFAULT_PLANS], [dict(p) for p in BENEFICIARY_PLANS], PLAN_ORDER)
-        out = asyncio.run(run(PLAN_ORDER))
+        out = asyncio.run(run(PLAN_ORDER, paid, paid_ben))
         print("RESULT " + json.dumps(out, default=str, sort_keys=True))
     finally:
         client.drop_database(os.environ["DB_NAME"])
