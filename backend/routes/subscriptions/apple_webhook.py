@@ -15,7 +15,7 @@ from cryptography import x509
 from fastapi import HTTPException, Request
 
 from config import db, logger
-from routes.subscriptions.plans import router, APPLE_BUNDLE_ID
+from routes.subscriptions.plans import router, APPLE_BUNDLE_ID, get_subscription_settings, plan_lookup
 
 # Apple's root CA G3 certificate SHA-256 fingerprint (hex).
 # Used to anchor the certificate-chain verification so we only trust Apple-signed JWS.
@@ -55,6 +55,9 @@ APPLE_TO_PLAN = {
     "us.carryon.app.v2.ben_base_monthly": "ben_base",
     "us.carryon.app.v2.ben_base_quarterly": "ben_base",
     "us.carryon.app.v2.ben_base_annual": "ben_base",
+    "us.carryon.app.v2.ben_new_adult_monthly": "ben_new_adult",
+    "us.carryon.app.v2.ben_new_adult_quarterly": "ben_new_adult",
+    "us.carryon.app.v2.ben_new_adult_annual": "ben_new_adult",
     "us.carryon.app.v2.ben_military_monthly": "ben_military",
     "us.carryon.app.v2.ben_military_quarterly": "ben_military",
     "us.carryon.app.v2.ben_military_annual": "ben_military",
@@ -183,6 +186,7 @@ async def _handle_subscribed(txn: dict, renewal: dict | None):
     cycle = _billing_cycle_from_product(product_id)
     now = datetime.now(timezone.utc)
     expires = _ms_to_dt(txn.get("expiresDate")) or _period_end_from_cycle(now, cycle)
+    plan_name = plan_lookup(await get_subscription_settings()).get(plan_id, {}).get("name", plan_id)
 
     await db.user_subscriptions.update_one(
         {"user_id": app_account_token},
@@ -190,7 +194,7 @@ async def _handle_subscribed(txn: dict, renewal: dict | None):
             "$set": {
                 "user_id": app_account_token,
                 "plan_id": plan_id,
-                "plan_name": plan_id.replace("_", " ").title(),
+                "plan_name": plan_name,
                 "status": "active",
                 "billing_cycle": cycle,
                 "payment_provider": "apple_iap",

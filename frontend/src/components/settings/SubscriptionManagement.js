@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import apiClient from '../../utils/apiClient';
 import {
   CreditCard, Loader2, Clock, ChevronRight, ChevronDown, Zap, Shield, X, Check,
-  Crown, Star, Heart, Award, ArrowRight, Users, Mail, Sparkles
+  Crown, Star, Heart, Award, ArrowRight, Users, Mail, Sparkles, Sun
 } from 'lucide-react';
 import { isNative } from '../../services/native';
 import { restoreIAPPurchases } from '../../services/iap';
@@ -21,9 +21,12 @@ const TIER_STYLES = {
   ben_premium: { accent: '#d4af37', icon: Crown, label: 'Best Value' },
   ben_standard: { accent: '#60A5FA', icon: Star, label: null },
   ben_base: { accent: '#22C993', icon: Shield, label: null },
+  ben_new_adult: { accent: '#B794F6', icon: Award, label: 'Flat Rate' },
   ben_military: { accent: '#F59E0B', icon: Shield, label: 'Flat Rate' },
   ben_hospice: { accent: '#ec4899', icon: Heart, label: 'Post-Transition' },
   ben_veteran: { accent: '#059669', icon: Award, label: 'Flat Rate' },
+  ben_seniors: { accent: '#FBBF24', icon: Sun, label: 'Flat Rate' },
+  ben_enterprise: { accent: '#8B5CF6', icon: Zap, label: 'B2B Partner' },
   premium: { accent: '#d4af37', icon: Crown, label: 'Most Popular' },
   standard: { accent: '#60A5FA', icon: Star, label: null },
   base: { accent: '#22C993', icon: Shield, label: null },
@@ -31,7 +34,18 @@ const TIER_STYLES = {
   military: { accent: '#F59E0B', icon: Shield, label: 'Verified' },
   hospice: { accent: '#ec4899', icon: Heart, label: 'Free' },
   veteran: { accent: '#059669', icon: Award, label: 'Verified' },
+  seniors: { accent: '#FBBF24', icon: Sun, label: 'Verified · 65+' },
   enterprise: { accent: '#8B5CF6', icon: Zap, label: 'B2B Partner' },
+};
+
+// Beneficiary monthly price for a benefactor plan on the selected cycle — read from the
+// ben_<tier> catalog entry so flat-rate beneficiary tiers show the same price on every cycle.
+export const beneficiaryMonthlyPrice = (plan, beneficiaryPlans, billing) => {
+  const bp = (beneficiaryPlans || []).find((p) => p.id === `ben_${plan.id}`);
+  if (!bp) return plan.ben_price;
+  if (billing === 'annual') return bp.annual_price ?? bp.price;
+  if (billing === 'quarterly') return bp.quarterly_price ?? bp.price;
+  return bp.price;
 };
 
 const BeneficiaryBillingToggle = ({ billing, onChange }) => {
@@ -844,11 +858,7 @@ export const SubscriptionManagement = ({
                   {/* Beneficiary price — only on benefactor side */}
                   {!isBeneficiary && plan.ben_price !== undefined && (
                     <div className="mb-4 -mt-2 text-[var(--t4)] text-sm">
-                      Beneficiary: <span className="font-bold text-[var(--t3)]">${(
-                        billing === 'annual' ? plan.ben_price * 0.8
-                        : billing === 'quarterly' ? plan.ben_price * 0.9
-                        : plan.ben_price
-                      ).toFixed(2)}/mo</span>
+                      Beneficiary: <span className="font-bold text-[var(--t3)]">${Number(beneficiaryMonthlyPrice(plan, beneficiaryPlans, billing)).toFixed(2)}/mo</span>
                     </div>
                   )}
 

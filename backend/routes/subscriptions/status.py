@@ -159,6 +159,8 @@ async def get_subscription_status(current_user: dict = Depends(get_current_user)
             age = (datetime.now(timezone.utc) - dob.replace(tzinfo=timezone.utc)).days // 365
             if 18 <= age <= 25:
                 eligible_tiers.append("new_adult")
+            elif age >= 65:
+                eligible_tiers.append("seniors")
         except (ValueError, TypeError):
             pass
 

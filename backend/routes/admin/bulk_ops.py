@@ -34,7 +34,18 @@ async def bulk_assign_tier(
     current_user: dict = Depends(require_admin),
 ):
     """Bulk assign tier to multiple estates."""
-    valid_tiers = ["premium", "standard", "base", "new_adult", "military", "hospice", "veteran", "enterprise", ""]
+    valid_tiers = [
+        "premium",
+        "standard",
+        "base",
+        "new_adult",
+        "military",
+        "hospice",
+        "veteran",
+        "seniors",
+        "enterprise",
+        "",
+    ]
 
     if data.tier not in valid_tiers:
         raise HTTPException(status_code=400, detail=f"Invalid tier: {data.tier}")

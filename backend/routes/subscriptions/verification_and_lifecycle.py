@@ -13,6 +13,7 @@ from routes.subscriptions.plans import (
     DEFAULT_PLANS,
     get_subscription_settings,
     get_price_for_cycle,
+    plan_lookup as catalog_lookup,
     VerificationReviewRequest,
     GRACE_PERIOD_DAYS,
 )
@@ -826,12 +827,13 @@ async def check_dob_subscription_events():
                             }
                         )
                         if sub:
+                            standard = catalog_lookup(await get_subscription_settings())["standard"]
                             await db.user_subscriptions.update_one(
                                 {"user_id": user_doc["id"]},
                                 {
                                     "$set": {
-                                        "plan_id": "ben_standard",
-                                        "plan_name": "Standard",
+                                        "plan_id": "standard",
+                                        "plan_name": standard["name"],
                                         "updated_at": now.isoformat(),
                                         "migration_reason": "aged_out_new_adult",
                                     }

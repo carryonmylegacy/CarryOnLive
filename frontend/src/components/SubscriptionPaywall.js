@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { Crown, Shield, Check, Star, ChevronRight, ChevronDown, Loader2,
   Upload, Clock, Users, X, Heart, Award, RotateCcw, Zap, Sun, Sparkles
 } from 'lucide-react';
+import { beneficiaryMonthlyPrice } from './settings/SubscriptionManagement';
 import { Button } from './ui/button';
 import { toast } from '../utils/toast';
 import { isNative } from '../services/native';
@@ -55,6 +56,9 @@ const sortByDiscountOrder = (a, b) => {
 export default function SubscriptionPaywall({ onDismiss }) {
   const { token, refreshSubscription, partnerBranding } = useAuth();
   const [plans, setPlans] = useState([]);
+  const [beneficiaryPlans, setBeneficiaryPlans] = useState([]);
+  // Family-plan discount percentages come from the catalog (Admin → Finance → Subs), never hardcoded.
+  const [familyDiscounts, setFamilyDiscounts] = useState({ benefactor: 0, beneficiary: 0 });
   const [billing, setBilling] = useState('annual');
   const [selectedPlan, setSelectedPlan] = useState('premium');
   const [loading, setLoading] = useState(true);
@@ -124,6 +128,11 @@ export default function SubscriptionPaywall({ onDismiss }) {
         apiClient.get(`${API_URL}/subscriptions/status`, { headers }),
       ]);
       setPlans(plansRes.data.plans || []);
+      setBeneficiaryPlans(plansRes.data.beneficiary_plans || []);
+      setFamilyDiscounts({
+        benefactor: plansRes.data.family_benefactor_discount_percent || 0,
+        beneficiary: plansRes.data.family_beneficiary_discount_percent || 0,
+      });
       setSubStatus(statusRes.data);
       if (plansRes.data.tier_features) {
         setTierFeatures(plansRes.data.tier_features);
@@ -798,11 +807,7 @@ export default function SubscriptionPaywall({ onDismiss }) {
 
                   {plan.ben_price !== undefined && (
                     <p className="text-sm font-bold text-[var(--t4)] mb-4">
-                      Beneficiary: <span className="text-[var(--t3)]">${(
-                        billing === 'annual' ? plan.ben_price * 0.8
-                        : billing === 'quarterly' ? plan.ben_price * 0.9
-                        : plan.ben_price
-                      ).toFixed(2)}/mo</span>
+                      Beneficiary: <span className="text-[var(--t3)]">${Number(beneficiaryMonthlyPrice(plan, beneficiaryPlans, billing)).toFixed(2)}/mo</span>
                     </p>
                   )}
 
@@ -975,12 +980,12 @@ export default function SubscriptionPaywall({ onDismiss }) {
                   Bundle & Save
                 </span>
               </div>
-              <p className="text-xs text-[var(--t5)] mb-4">All beneficiaries: <span className="text-[var(--t5)]">flat $3.49/mo</span></p>
+              <p className="text-xs text-[var(--t5)] mb-4" data-testid="family-tile-beneficiary-discount">All beneficiaries: <span className="text-[var(--t5)]">{familyDiscounts.beneficiary}% off their tier rate</span></p>
 
               <div className="h-px mb-4" style={{ background: 'linear-gradient(90deg, transparent, rgba(var(--gold-rgb), 0.2), transparent)' }} />
 
               <div className="space-y-2.5 mb-5 flex-1">
-                {['Owner pays standard tier rate', 'Added benefactors save $1/mo', 'Successor inherits ownership', 'Floor tiers exempt from discount'].map((f, i) => (
+                {['Owner pays their regular tier rate', `Added benefactors save ${familyDiscounts.benefactor}%`, `Beneficiaries save ${familyDiscounts.beneficiary}%`, 'Successor inherits ownership'].map((f, i) => (
                   <div key={i} className="flex items-start gap-2.5 text-sm">
                     <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: 'rgba(var(--gold-rgb), 0.12)' }}>
                       <Check className="w-3 h-3 text-[#d4af37]" />
@@ -1024,15 +1029,15 @@ export default function SubscriptionPaywall({ onDismiss }) {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
                 <div className="p-3 rounded-xl bg-[var(--s)]">
                   <p className="text-[#d4af37] font-bold">Plan Owner</p>
-                  <p className="text-[var(--t4)]">Pays standard tier rate. Sets the plan anchor.</p>
+                  <p className="text-[var(--t4)]">Pays their regular tier rate. Sets the plan anchor.</p>
                 </div>
                 <div className="p-3 rounded-xl bg-[var(--s)]">
                   <p className="text-[#60A5FA] font-bold">Added Benefactors</p>
-                  <p className="text-[var(--t4)]">$1/mo discount off their individual tier rate</p>
+                  <p className="text-[var(--t4)]" data-testid="family-info-benefactor-discount">{familyDiscounts.benefactor}% off their individual tier rate</p>
                 </div>
                 <div className="p-3 rounded-xl bg-[var(--s)]">
                   <p className="text-[#22C993] font-bold">All Beneficiaries</p>
-                  <p className="text-[var(--t4)]">Flat $3.49/mo regardless of tier</p>
+                  <p className="text-[var(--t4)]" data-testid="family-info-beneficiary-discount">{familyDiscounts.beneficiary}% off their tier's beneficiary rate</p>
                 </div>
               </div>
               <p className="text-xs text-[var(--t5)] mt-3">

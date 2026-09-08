@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from config import db
-from routes.subscriptions import DEFAULT_PLANS, get_subscription_settings
+from routes.subscriptions import BENEFICIARY_PLANS, DEFAULT_PLANS, get_subscription_settings
 from utils import get_current_user
 
 router = APIRouter()
@@ -170,14 +170,17 @@ async def preview_family_savings(current_user: dict = Depends(get_current_user))
     """Preview family tree and potential savings if user activates family plan"""
     settings = await get_subscription_settings()
     plans = {p["id"]: p for p in settings.get("plans", DEFAULT_PLANS)}
+    ben_plans = {p["id"]: p for p in settings.get("beneficiary_plans", BENEFICIARY_PLANS)}
 
-    # Get user's current subscription
+    # Get user's current subscription (no subscription yet → preview at Standard)
     user_sub = await db.user_subscriptions.find_one({"user_id": current_user["id"], "status": "active"}, {"_id": 0})
     current_plan_id = user_sub.get("plan_id", "standard") if user_sub else "standard"
-    current_plan = plans.get(current_plan_id, plans.get("standard"))
+    current_plan = plans.get(current_plan_id)
+    if not current_plan:
+        raise HTTPException(status_code=400, detail=f"Unknown plan: {current_plan_id}")
 
     # Get all estates owned by this user
-    estates = await db.estates.find({"user_id": current_user["id"]}, {"_id": 0}).to_list(50)
+    estates = await db.estates.find({"owner_id": current_user["id"]}, {"_id": 0}).to_list(50)
     estate_ids = [e["id"] for e in estates]
 
     # Get all beneficiaries across all estates
@@ -226,10 +229,9 @@ async def preview_family_savings(current_user: dict = Depends(get_current_user))
                 {"user_id": ben_user.get("id"), "status": "active"}, {"_id": 0}
             )
 
-        if ben_sub:
-            ben_current_price = float(ben_sub.get("amount", current_plan.get("ben_price", 4.49)))
-        else:
-            ben_current_price = float(current_plan.get("ben_price", 4.49))
+        # Beneficiary price is inherited from the FPO's tier: ben_<tier> from the catalog
+        ben_plan = ben_plans.get(f"ben_{current_plan_id}")
+        ben_current_price = float(ben_plan["price"]) if ben_plan else float(current_plan["ben_price"])
 
         if is_also_benefactor:
             # Benefactors in family plan get % discount

@@ -509,11 +509,25 @@ async def get_subscription_settings():
                             stored_plan["annual_price"] = expected_a
                             needs_update = True
                         break
-        # Ensure any new beneficiary plans from code are added to stored settings
-        stored_ben_ids = {p["id"] for p in settings.get("beneficiary_plans", [])}
+        # Ensure any new beneficiary plans from code are added to stored settings, merge
+        # missing keys, and keep cycle prices consistent: flat-rate plans (no billing
+        # toggle) carry one price on every cycle; toggle plans follow the ×0.9 / ×0.8 rule.
+        stored_ben = {p["id"]: p for p in settings.get("beneficiary_plans", [])}
         for bplan in BENEFICIARY_PLANS:
-            if bplan["id"] not in stored_ben_ids:
+            sp = stored_ben.get(bplan["id"])
+            if sp is None:
                 settings.setdefault("beneficiary_plans", []).append(bplan)
+                needs_update = True
+                continue
+            for key in bplan:
+                if key not in sp:
+                    sp[key] = bplan[key]
+                    needs_update = True
+            flat = not sp.get("allows_billing_toggle", True)
+            expected_q = sp["price"] if flat else round(sp["price"] * 0.9, 2)
+            expected_a = sp["price"] if flat else round(sp["price"] * 0.8, 2)
+            if sp.get("quarterly_price") != expected_q or sp.get("annual_price") != expected_a:
+                sp["quarterly_price"], sp["annual_price"] = expected_q, expected_a
                 needs_update = True
         # Self-heal ben_price on benefactor plans from beneficiary plan prices
         ben_plans = settings.get("beneficiary_plans", [])
@@ -577,3 +591,34 @@ def get_price_for_cycle(plan, billing_cycle):
     elif billing_cycle == "annual":
         return plan.get("annual_price", round(plan["price"] * 0.8, 2))
     return plan["price"]
+
+
+def plan_lookup(settings):
+    """Every purchasable plan — benefactor and beneficiary — keyed by id."""
+    return {
+        p["id"]: p
+        for p in [*settings.get("plans", DEFAULT_PLANS), *settings.get("beneficiary_plans", BENEFICIARY_PLANS)]
+    }
+
+
+def cycle_total(plan, billing_cycle, discount_percent=0):
+    """Full-period charge for a plan on a cycle (its own cycle prices), then the per-user discount."""
+    monthly_price = float(plan["price"])
+    if billing_cycle == "annual":
+        amount = round(float(plan.get("annual_price", monthly_price * 0.8)) * 12, 2)
+    elif billing_cycle == "quarterly":
+        amount = round(float(plan.get("quarterly_price", monthly_price * 0.9)) * 3, 2)
+    else:
+        amount = monthly_price
+    if discount_percent > 0:
+        amount = round(amount * (1 - discount_percent / 100), 2)
+    return amount
+
+
+def starting_monthly_price(settings):
+    """Lowest paid benefactor price that needs no eligibility verification — the 'Plans start at' figure."""
+    return min(
+        float(p["price"])
+        for p in settings.get("plans", DEFAULT_PLANS)
+        if float(p["price"]) > 0 and not p.get("requires_verification")
+    )

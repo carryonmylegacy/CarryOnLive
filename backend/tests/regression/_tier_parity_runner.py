@@ -279,6 +279,25 @@ async def run(tiers, paid, paid_ben):
         out["admin_ben_price_edit"][pid] = {
             k: bp.get(k) for k in ("price", "quarterly_price", "annual_price", "allows_billing_toggle")
         }
+
+    # Stored beneficiary_plans drift (observed on preview 2026-09-08: flat-rate tiers stored 1.99/1.79/1.59).
+    # get_subscription_settings() must heal the stored copy on load and persist it.
+    doc = await db.subscription_settings.find_one({"_id": "global"}, {"_id": 0, "beneficiary_plans": 1})
+    drift = {"ben_military": (1.99, 1.79, 1.59), "ben_premium": (2.99, 9.99, 9.99)}
+    for p in doc["beneficiary_plans"]:
+        if p["id"] in drift:
+            p["price"], p["quarterly_price"], p["annual_price"] = drift[p["id"]]
+            p.pop("allows_billing_toggle", None)  # older stored rows predate this key
+    await db.subscription_settings.update_one(
+        {"_id": "global"}, {"$set": {"beneficiary_plans": doc["beneficiary_plans"]}}
+    )
+    await get_subscription_settings()
+    healed = await db.subscription_settings.find_one({"_id": "global"}, {"_id": 0, "beneficiary_plans": 1})
+    out["settings_ben_cycle_heal"] = {
+        p["id"]: {k: p.get(k) for k in ("price", "quarterly_price", "annual_price", "allows_billing_toggle")}
+        for p in healed["beneficiary_plans"]
+        if p["id"] in drift
+    }
     return out
 
 

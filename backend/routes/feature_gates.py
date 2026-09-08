@@ -123,6 +123,7 @@ TIER_IDS = [
     "military",
     "hospice",
     "veteran",
+    "seniors",
     "enterprise",
     "free_mode",
 ]
@@ -171,13 +172,10 @@ async def get_feature_gates() -> dict:
 
 
 def get_enabled_features_for_tier(gates: dict, tier_id: str) -> list[str]:
-    """Return list of feature keys enabled for a specific tier."""
-    enabled = []
-    for key in FEATURE_KEYS:
-        tier_gates = gates.get(key, {})
-        if tier_gates.get(tier_id, True):
-            enabled.append(key)
-    return enabled
+    """Feature keys enabled for a tier. ben_<tier> inherits <tier>; an unknown tier gets nothing."""
+    if tier_id and tier_id.startswith("ben_"):
+        tier_id = tier_id[len("ben_") :]
+    return [key for key in FEATURE_KEYS if gates.get(key, {}).get(tier_id, False)]
 
 
 # ─── Admin API ──────────────────────────────────────────────────

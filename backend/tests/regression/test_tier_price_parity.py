@@ -57,98 +57,9 @@ PAID_TIERS = [t for t in TIERS if float(PLAN[t]["price"]) > 0]
 PAID_BEN_TIERS = [b for b in BEN_TIERS if float(BEN_PLAN.get(b, {}).get("price", 0)) > 0]
 CYCLES = ("monthly", "quarterly", "annual")
 
-# ---- known defects (stage, tier) -> reason. Remove an entry once the code is fixed. ----
-KNOWN = {
-    ("feature_gates.TIER_IDS", "seniors"): "B1 routes/feature_gates.py:118-128 TIER_IDS lacks seniors",
-    (
-        "plans_payload.tier_features",
-        "seniors",
-    ): "B1 tier_features built from TIER_IDS (status.py:38) — no seniors column",
-    (
-        "apple_webhook.APPLE_TO_PLAN",
-        "ben_new_adult",
-    ): "B2 routes/subscriptions/apple_webhook.py:25-72 lacks ben_new_adult",
-    ("iap.js", "ben_new_adult"): "B2 frontend/src/services/iap.js lacks ben_new_adult products",
-    ("apple_iap.activation", "ben_new_adult"): "B2 no product maps to ben_new_adult → 400 Unknown product",
-    ("admin.users.valid_tiers", "seniors"): "B3 routes/admin/users.py:362 valid_tiers lacks seniors",
-    ("admin.bulk_ops.valid_tiers", "seniors"): "B3 routes/admin/bulk_ops.py:37 valid_tiers lacks seniors",
-    ("FeatureGatesCard.TIER_LABELS", "seniors"): "B4 components/admin/FeatureGatesCard.js TIER_LABELS lacks seniors",
-    ("FeatureGatesCard.TIER_COLORS", "seniors"): "B4 components/admin/FeatureGatesCard.js TIER_COLORS lacks seniors",
-    ("UsersTab.options", "seniors"): "B4 components/admin/UsersTab.js:278-292 tier <select> lacks seniors",
-    (
-        "SubscriptionManagement.TIER_STYLES",
-        "seniors",
-    ): "B4 components/settings/SubscriptionManagement.js:20-36 lacks seniors",
-    (
-        "SubscriptionManagement.TIER_STYLES",
-        "ben_seniors",
-    ): "B4 components/settings/SubscriptionManagement.js:20-36 lacks ben_seniors",
-    (
-        "SubscriptionManagement.TIER_STYLES",
-        "ben_new_adult",
-    ): "B4 components/settings/SubscriptionManagement.js:20-36 lacks ben_new_adult",
-    (
-        "SubscriptionManagement.TIER_STYLES",
-        "ben_enterprise",
-    ): "B4 components/settings/SubscriptionManagement.js:20-36 lacks ben_enterprise",
-    (
-        "status.dob_eligibility",
-        "seniors",
-    ): "B6 status.py:154-163 DOB eligibility covers new_adult (18–25) only, not seniors (65+)",
-    (
-        "lifecycle.age_out",
-        "new_adult",
-    ): "B7 verification_and_lifecycle.py:824-833 age-out writes plan_id 'ben_standard' on a benefactor subscription",
-    (
-        "SubscriptionPaywall.family_copy",
-        "family",
-    ): "B10 SubscriptionPaywall.js:978,983,1031,1035 legacy 'flat $3.49/mo' / '$1/mo' copy",
-    ("trial_email.source", "trial_reminders.py"): "B11 routes/trial_reminders.py:83,147 hardcoded '$7.99/mo'",
-    ("trial_email.starting_price", "reminder"): "B11 routes/trial_reminders.py:83 hardcoded '$7.99/mo'",
-    ("trial_email.starting_price", "expired"): "B11 routes/trial_reminders.py:147 hardcoded '$7.99/mo'",
-    (
-        "ben_price_display",
-        "SubscriptionPaywall",
-    ): "C7 SubscriptionPaywall.js:799-804 ben_price × 0.8/0.9 — flat-rate ben tiers shown discounted",
-    (
-        "ben_price_display",
-        "SubscriptionManagement",
-    ): "C7 SubscriptionManagement.js:845-850 ben_price × 0.8/0.9 — flat-rate ben tiers shown discounted",
-    (
-        "admin.ben_price_edit",
-        "ben_military",
-    ): "C8 subscriptions/admin.py:337-338 flat-rate ben plan recomputed ×0.9/×0.8",
-    (
-        "feature_gates.unknown_tier",
-        "unknown",
-    ): "C9 feature_gates.py:177 unknown tier → every feature visible (:485 denies)",
-}
-for _b in BEN_TIERS:
-    KNOWN[("checkout.beneficiary", _b)] = (
-        "B5 routes/subscriptions/checkout.py:76-79 resolves settings['plans'] only → 400 Invalid plan for every ben_*"
-    )
-    KNOWN[("checkout.beta.beneficiary", _b)] = (
-        "B5/C1 checkout.py:51 beta branch resolves settings['plans'] only → ben_* preference never recorded"
-    )
-    KNOWN[("change_plan.beneficiary", _b)] = (
-        "B5/C2+C3 checkout.py:675 ben_* → 404 Plan not found; :709-721 ben_price mixed with benefactor cycle prices"
-    )
-    KNOWN[("change_billing.beneficiary", _b)] = (
-        "B5/C5 checkout.py:896-899 resolves settings['plans'] only → 400 Current plan not found for ben_*"
-    )
-for _t in PAID_TIERS:
-    KNOWN[("change_plan.discounted_benefactor", _t)] = (
-        "C4 checkout.py:712-721 custom_discount applied to base_price only → dropped on quarterly/annual"
-    )
-for _t in PAID_TIERS + PAID_BEN_TIERS:
-    if _t != "ben_new_adult" and _t.replace("_", " ").title() != ANY_PLAN[_t]["name"]:
-        KNOWN[("apple_iap.activation", _t)] = (
-            "C10 apple_iap.py:136 plan_name = plan_id.title() instead of the catalog name"
-        )
-for _t in TIERS:
-    KNOWN[("family.preview_beneficiary", _t)] = (
-        "B9 family_plan.py:180 estates queried by user_id (schema key is owner_id) → preview tree lists the FPO only"
-    )
+# ---- known defects (stage, tier) -> reason. Empty: every catalog tier resolves to its own price
+# at every stage. Add an entry ONLY while a defect is being fixed on the same branch. ----
+KNOWN = {}
 
 
 def tier_params(stage, tiers):
@@ -579,6 +490,18 @@ def test_admin_beneficiary_price_edit_respects_billing_toggle(world, tier):
         assert _close(got["quarterly_price"], 2.49) and _close(got["annual_price"], 2.49), (
             f"{tier}: flat-rate plan must keep one price on every cycle, got {got}"
         )
+
+
+@pytest.mark.parametrize("tier", tier_params("settings.ben_cycle_heal", ["ben_military", "ben_premium"]))
+def test_stored_beneficiary_cycle_prices_self_heal_on_load(world, tier):
+    """A drifted stored beneficiary plan (e.g. flat-rate tier saved as 1.99/1.79/1.59) is healed on settings load."""
+    got = world["settings_ben_cycle_heal"][tier]
+    cat = BEN_PLAN[tier]
+    assert got.get("allows_billing_toggle") == cat["allows_billing_toggle"], (
+        f"{tier}: missing key not merged from code: {got}"
+    )
+    for k in ("price", "quarterly_price", "annual_price"):
+        assert _close(got[k], cat[k]), f"{tier}: stored {k}={got[k]} not healed to catalog {cat[k]} — {got}"
 
 
 # ------------------------------------------------ stage 8: benefactor charges are frozen ----

@@ -285,6 +285,7 @@ export const UsersTab = ({ users, setUsers, currentUserId, getAuthHeaders, opera
                         <option value="military">Military</option>
                         <option value="hospice">Hospice</option>
                         <option value="veteran">Veteran</option>
+                        <option value="seniors">Seniors</option>
                         <option value="enterprise">Enterprise</option>
                       </select>
                     </div>

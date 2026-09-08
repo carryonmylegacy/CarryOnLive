@@ -22,8 +22,9 @@ from config import db, logger
 from utils import get_current_user
 from routes.subscriptions.plans import (
     router,
-    DEFAULT_PLANS,
+    cycle_total,
     get_subscription_settings,
+    plan_lookup,
     validate_origin_url,
     SubscriptionCheckoutRequest,
 )
@@ -48,7 +49,7 @@ async def create_subscription_checkout(
 
     if settings.get("beta_mode", True):
         # During beta, still record the user's chosen plan preference
-        plans_lookup = {p["id"]: p for p in settings.get("plans", DEFAULT_PLANS)}
+        plans_lookup = plan_lookup(settings)
         plan = plans_lookup.get(data.plan_id)
         if plan:
             now = datetime.now(timezone.utc)
@@ -73,25 +74,15 @@ async def create_subscription_checkout(
             "message": f"All features are free during beta! Your {plan['name'] if plan else ''} plan preference has been saved.",
         }
 
-    plans = {p["id"]: p for p in settings.get("plans", DEFAULT_PLANS)}
+    plans = plan_lookup(settings)
     plan = plans.get(data.plan_id)
     if not plan:
         raise HTTPException(status_code=400, detail=f"Invalid plan: {data.plan_id}")
 
-    # Calculate price based on billing cycle
-    monthly_price = float(plan["price"])
-    if data.billing_cycle == "annual":
-        amount = round(float(plan.get("annual_price", monthly_price * 0.8)) * 12, 2)
-    elif data.billing_cycle == "quarterly":
-        amount = round(float(plan.get("quarterly_price", monthly_price * 0.9)) * 3, 2)
-    else:
-        amount = monthly_price
-
-    # Apply per-user discount
+    # Full-period amount from the plan's own cycle prices, then the per-user discount
     override = await db.subscription_overrides.find_one({"user_id": current_user["id"]}, {"_id": 0})
     discount = override.get("custom_discount", 0) if override else 0
-    if discount > 0:
-        amount = round(amount * (1 - discount / 100), 2)
+    amount = cycle_total(plan, data.billing_cycle, discount)
 
     if amount <= 0:
         # Free plan, just activate
@@ -650,7 +641,7 @@ async def change_subscription_plan(
 
     # During beta, just switch the plan directly
     if settings.get("beta_mode", True):
-        all_plans = {p["id"]: p for p in settings.get("plans", DEFAULT_PLANS)}
+        all_plans = plan_lookup(settings)
         new_plan = all_plans.get(data.plan_id)
         if not new_plan:
             raise HTTPException(status_code=404, detail="Plan not found")
@@ -672,7 +663,7 @@ async def change_subscription_plan(
             "message": f"Switched to {new_plan['name']} ({data.billing_cycle}). Free during beta!",
         }
 
-    plans = {p["id"]: p for p in settings.get("plans", DEFAULT_PLANS)}
+    plans = plan_lookup(settings)
     new_plan = plans.get(data.plan_id)
     if not new_plan:
         raise HTTPException(status_code=404, detail="Plan not found")
@@ -704,23 +695,11 @@ async def change_subscription_plan(
 
     remaining_credit = round(old_total_paid * unused_fraction, 2)
 
-    # --- Calculate new plan cost ---
-    role = current_user.get("role", "benefactor")
-    base_price = new_plan.get("ben_price", new_plan["price"]) if role == "beneficiary" else new_plan["price"]
-
-    # Apply per-user discount
+    # --- Calculate new plan cost: the plan's own cycle prices, then the per-user discount ---
     override = await db.subscription_overrides.find_one({"user_id": current_user["id"]}, {"_id": 0})
     discount = override.get("custom_discount", 0) if override else 0
-    if discount > 0:
-        base_price = base_price * (1 - discount / 100)
-
     cycle = data.billing_cycle
-    if cycle == "quarterly":
-        new_total = round(float(new_plan.get("quarterly_price", base_price * 0.9)) * 3, 2)
-    elif cycle == "annual":
-        new_total = round(float(new_plan.get("annual_price", base_price * 0.8)) * 12, 2)
-    else:
-        new_total = round(base_price, 2)
+    new_total = cycle_total(new_plan, cycle, discount)
 
     # --- Proration ---
     net_amount = round(new_total - remaining_credit, 2)
@@ -893,25 +872,15 @@ async def change_billing_cycle(
 
     # Get plan pricing
     settings = await get_subscription_settings()
-    plans = {p["id"]: p for p in settings.get("plans", DEFAULT_PLANS)}
+    plans = plan_lookup(settings)
     plan = plans.get(sub.get("plan_id"))
     if not plan:
         raise HTTPException(status_code=400, detail="Current plan not found")
 
-    # Calculate full-period amount for new cycle
-    monthly_price = float(plan["price"])
-    if cycle == "annual":
-        amount = round(float(plan.get("annual_price", monthly_price * 0.8)) * 12, 2)
-    elif cycle == "quarterly":
-        amount = round(float(plan.get("quarterly_price", monthly_price * 0.9)) * 3, 2)
-    else:
-        amount = monthly_price
-
-    # Apply per-user discount
+    # Full-period amount for the new cycle from the plan's own cycle prices, then the per-user discount
     override = await db.subscription_overrides.find_one({"user_id": current_user["id"]}, {"_id": 0})
     discount = override.get("custom_discount", 0) if override else 0
-    if discount > 0:
-        amount = round(amount * (1 - discount / 100), 2)
+    amount = cycle_total(plan, cycle, discount)
 
     if amount <= 0:
         # Free — just update cycle

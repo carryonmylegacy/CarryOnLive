@@ -333,9 +333,10 @@ async def update_beneficiary_plan_price(
     for plan in ben_plans:
         if plan["id"] == plan_id:
             plan["price"] = price
-            # Recalculate quarterly and annual prices to stay in sync
-            plan["quarterly_price"] = round(price * 0.9, 2)
-            plan["annual_price"] = round(price * 0.8, 2)
+            # Flat-rate plans (no billing toggle) carry one price on every cycle
+            flat = not plan.get("allows_billing_toggle", True)
+            plan["quarterly_price"] = price if flat else round(price * 0.9, 2)
+            plan["annual_price"] = price if flat else round(price * 0.8, 2)
             found = True
             break
 

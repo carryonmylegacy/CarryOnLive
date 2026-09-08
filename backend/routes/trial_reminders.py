@@ -18,6 +18,8 @@ from routes.admin.trial_policy import (
     get_reminder_intervals,
     get_trial_days,
 )
+from routes.subscriptions.plans import get_subscription_settings
+from routes.subscriptions.plans import starting_monthly_price as catalog_starting_price
 
 CHECK_INTERVAL_HOURS = 6  # how often to scan for reminders
 
@@ -35,7 +37,7 @@ def _undeliverable(email):
     return any(domain == d or domain.endswith(d) for d in _RESERVED_DOMAINS)
 
 
-def build_trial_reminder_email(user_name, days_remaining, app_url, trial_days):
+def build_trial_reminder_email(user_name, days_remaining, app_url, trial_days, starting_price):
     """Build HTML email for trial reminder."""
     urgency = "urgent" if days_remaining <= 3 else "standard"
     subject = (
@@ -80,7 +82,7 @@ def build_trial_reminder_email(user_name, days_remaining, app_url, trial_days):
         </div>
 
         <p style="color: #A0AABF; font-size: 13px; margin: 0 0 20px;">
-          Plans start at just <strong style="color: #d4af37;">$7.99/mo</strong>. Military/First Responder and Hospice discounts available.
+          Plans start at just <strong style="color: #d4af37;">${starting_price:.2f}/mo</strong>. Military/First Responder and Hospice discounts available.
         </p>
 
         <div style="text-align: center;">
@@ -103,7 +105,7 @@ def build_trial_reminder_email(user_name, days_remaining, app_url, trial_days):
     return subject, html
 
 
-def build_trial_expired_email(user_name, app_url, trial_days):
+def build_trial_expired_email(user_name, app_url, trial_days, starting_price):
     """Build HTML email for trial expiration — sent on the day access is restricted."""
     subject = "Your CarryOn™ free trial has ended"
 
@@ -144,7 +146,7 @@ def build_trial_expired_email(user_name, app_url, trial_days):
         </div>
 
         <p style="color: #A0AABF; font-size: 14px; line-height: 1.6; margin: 0 0 20px;">
-          <strong style="color: #d4af37;">Subscribe now</strong> to restore full access instantly. Plans start at just <strong style="color: #d4af37;">$7.99/mo</strong>.
+          <strong style="color: #d4af37;">Subscribe now</strong> to restore full access instantly. Plans start at just <strong style="color: #d4af37;">${starting_price:.2f}/mo</strong>.
         </p>
 
         <div style="text-align: center;">
@@ -167,6 +169,11 @@ def build_trial_expired_email(user_name, app_url, trial_days):
     return subject, html
 
 
+async def starting_monthly_price():
+    """Catalog-derived 'Plans start at' figure quoted in the trial emails."""
+    return catalog_starting_price(await get_subscription_settings())
+
+
 async def send_trial_reminders():
     """Scan users and send reminders at the cadence dictated by the
     current global trial policy + an expired-day notice. Reminder
@@ -176,6 +183,7 @@ async def send_trial_reminders():
         return 0
 
     trial_days = await get_trial_days()
+    starting_price = await starting_monthly_price()
     reminder_intervals = get_reminder_intervals(trial_days)
 
     now = datetime.now(timezone.utc)
@@ -210,6 +218,7 @@ async def send_trial_reminders():
                     days,
                     app_url,
                     trial_days,
+                    starting_price,
                 )
 
                 await asyncio.to_thread(
@@ -266,6 +275,7 @@ async def send_trial_reminders():
                 user.get("name", user.get("first_name", "")),
                 app_url,
                 trial_days,
+                starting_price,
             )
 
             await asyncio.to_thread(

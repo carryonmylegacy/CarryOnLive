@@ -17,7 +17,7 @@ from fastapi import Depends, HTTPException, Request
 from config import db, logger
 from utils import get_current_user
 from routes.subscriptions.apple_webhook import APPLE_TO_PLAN
-from routes.subscriptions.plans import router
+from routes.subscriptions.plans import router, get_subscription_settings, plan_lookup
 
 
 async def verify_apple_receipt_with_server(receipt_data: str) -> dict:
@@ -127,13 +127,14 @@ async def validate_apple_receipt(
     )
 
     # Store the Apple subscription
+    plan_name = plan_lookup(await get_subscription_settings()).get(plan_id, {}).get("name", plan_id)
     await db.user_subscriptions.update_one(
         {"user_id": current_user["id"]},
         {
             "$set": {
                 "user_id": current_user["id"],
                 "plan_id": plan_id,
-                "plan_name": plan_id.replace("_", " ").title(),
+                "plan_name": plan_name,
                 "status": "active",
                 "billing_cycle": billing_cycle,
                 "payment_provider": "apple_iap",

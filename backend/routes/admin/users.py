@@ -359,7 +359,18 @@ async def set_estate_tier(estate_id: str, request: Request, current_user: dict =
     body = await request.json()
     tier = body.get("tier")
 
-    valid_tiers = ["premium", "standard", "base", "new_adult", "military", "hospice", "veteran", "enterprise", ""]
+    valid_tiers = [
+        "premium",
+        "standard",
+        "base",
+        "new_adult",
+        "military",
+        "hospice",
+        "veteran",
+        "seniors",
+        "enterprise",
+        "",
+    ]
     if tier is not None and tier not in valid_tiers:
         raise HTTPException(status_code=400, detail=f"Invalid tier: {tier}")
 

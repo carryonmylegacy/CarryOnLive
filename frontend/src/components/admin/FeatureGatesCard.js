@@ -15,6 +15,7 @@ const TIER_LABELS = {
   military: 'Military',
   hospice: 'Hospice',
   veteran: 'Veteran',
+  seniors: 'Seniors',
   enterprise: 'Enterpr.',
   free_mode: 'Free Mode',
 };
@@ -27,6 +28,7 @@ const TIER_COLORS = {
   military: '#F59E0B',
   hospice: '#ec4899',
   veteran: '#F59E0B',
+  seniors: '#FBBF24',
   enterprise: '#8B5CF6',
   free_mode: '#4ADE80',
 };
