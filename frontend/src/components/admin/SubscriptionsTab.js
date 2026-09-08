@@ -9,13 +9,12 @@ import { Switch } from '../ui/switch';
 import { toast } from '../../utils/toast';
 import { API_URL } from '../../config';
 import { FeatureGatesCard } from './FeatureGatesCard';
+import { PlanPricingRow } from './PlanPricingRow';
 
 export const SubscriptionsTab = ({ getAuthHeaders, users: _users, operatorMode = false }) => {
   const [settings, setSettings] = useState(null);
   const [userSubs, setUserSubs] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [editingPrice, setEditingPrice] = useState(null);
-  const [newPrice, setNewPrice] = useState('');
   const [editingUser, setEditingUser] = useState(null);
   const [discountInput, setDiscountInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -55,15 +54,12 @@ export const SubscriptionsTab = ({ getAuthHeaders, users: _users, operatorMode =
     } catch (_err) { toast.error('Failed to update'); }
   };
 
-  const updatePrice = async (planId) => {
+  const updatePlanPricing = async (planId, payload) => {
     try {
-      const formData = new FormData();
-      formData.append('price', parseFloat(newPrice));
-      await apiClient.put(`${API_URL}/admin/plans/${planId}/price`, formData, { headers });
-      // toast removed
-      setEditingPrice(null);
+      await apiClient.put(`${API_URL}/admin/plans/${planId}/pricing`, payload, { headers: { ...headers, 'Content-Type': 'application/json' } });
       fetchData();
-    } catch (err) { toast.error(err.response?.data?.detail || 'Failed to update price'); }
+      return true;
+    } catch (err) { toast.error(err.response?.data?.detail || 'Failed to update pricing'); return false; }
   };
 
   const updateUserOverride = async (userId, data) => {
@@ -283,30 +279,10 @@ export const SubscriptionsTab = ({ getAuthHeaders, users: _users, operatorMode =
             <DollarSign className="w-5 h-5 text-[var(--gold)]" />
             Benefactor Plan Pricing
           </h3>
+          <p className="text-xs text-[var(--t5)] mb-3">Set the monthly price and the quarterly / annual discount for each tier. Cycle prices follow automatically; 0% / 0% makes a tier flat-rate.</p>
           <div className="space-y-2">
             {(settings?.plans || []).map(plan => (
-              <div key={plan.id} className="flex items-center justify-between p-3 rounded-xl bg-[var(--s)]" data-testid={`plan-row-${plan.id}`}>
-                <div>
-                  <span className="font-bold text-[var(--t)] text-sm">{plan.name}</span>
-                  {plan.note && <span className="text-xs text-[var(--t5)] ml-2">({plan.note})</span>}
-                </div>
-                <div className="flex items-center gap-3">
-                  {editingPrice === plan.id ? (
-                    <div className="flex items-center gap-2">
-                      <span className="text-[var(--t4)]">$</span>
-                      <Input type="number" step="0.01" value={newPrice} onChange={e => setNewPrice(e.target.value)} className="input-field w-20 text-base" autoFocus />
-                      <Button size="sm" className="gold-button text-xs" onClick={() => updatePrice(plan.id)}>Save</Button>
-                      <Button size="sm" variant="outline" className="text-xs border-[var(--b)]" onClick={() => setEditingPrice(null)}>Cancel</Button>
-                    </div>
-                  ) : (
-                    <>
-                      <span className="text-[var(--gold)] font-bold text-lg">${plan.price?.toFixed(2)}</span>
-                      <span className="text-xs text-[var(--t5)]">/mo</span>
-                      <Button size="sm" variant="outline" className="text-xs border-[var(--b)] text-[var(--t4)]" onClick={() => { setEditingPrice(plan.id); setNewPrice(plan.price?.toString() || ''); }}>Edit</Button>
-                    </>
-                  )}
-                </div>
-              </div>
+              <PlanPricingRow key={plan.id} plan={plan} accent="var(--gold)" testIdPrefix="plan" onSave={updatePlanPricing} />
             ))}
           </div>
         </CardContent>
@@ -323,36 +299,7 @@ export const SubscriptionsTab = ({ getAuthHeaders, users: _users, operatorMode =
           </h3>
           <div className="space-y-2">
             {(settings?.beneficiary_plans || []).map(plan => (
-              <div key={plan.id} className="flex items-center justify-between p-3 rounded-xl bg-[var(--s)]" data-testid={`ben-plan-row-${plan.id}`}>
-                <div>
-                  <span className="font-bold text-[var(--t)] text-sm">{plan.name}</span>
-                  {plan.note && <span className="text-xs text-[var(--t5)] ml-2">({plan.note})</span>}
-                </div>
-                <div className="flex items-center gap-3">
-                  {editingPrice === `ben_${plan.id}` ? (
-                    <div className="flex items-center gap-2">
-                      <span className="text-[var(--t4)]">$</span>
-                      <Input type="number" step="0.01" value={newPrice} onChange={e => setNewPrice(e.target.value)} className="input-field w-20 text-base" autoFocus />
-                      <Button size="sm" className="gold-button text-xs" onClick={async () => {
-                        try {
-                          const formData = new FormData();
-                          formData.append('price', parseFloat(newPrice));
-                          await apiClient.put(`${API_URL}/admin/beneficiary-plans/${plan.id}/price`, formData, { headers });
-                          setEditingPrice(null);
-                          fetchData();
-                        } catch (err) { toast.error(err.response?.data?.detail || 'Failed to update'); }
-                      }}>Save</Button>
-                      <Button size="sm" variant="outline" className="text-xs border-[var(--b)]" onClick={() => setEditingPrice(null)}>Cancel</Button>
-                    </div>
-                  ) : (
-                    <>
-                      <span className="text-[#60A5FA] font-bold text-lg">${plan.price?.toFixed(2)}</span>
-                      <span className="text-xs text-[var(--t5)]">/mo</span>
-                      <Button size="sm" variant="outline" className="text-xs border-[var(--b)] text-[var(--t4)]" onClick={() => { setEditingPrice(`ben_${plan.id}`); setNewPrice(plan.price?.toString() || ''); }}>Edit</Button>
-                    </>
-                  )}
-                </div>
-              </div>
+              <PlanPricingRow key={plan.id} plan={plan} accent="#60A5FA" testIdPrefix="ben-plan" onSave={updatePlanPricing} />
             ))}
           </div>
         </CardContent>

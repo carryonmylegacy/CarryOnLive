@@ -98,8 +98,8 @@ const PriceDisplay = ({ plan, billing }) => {
   if (basePrice === 0) return <span className="text-3xl font-bold" style={{ fontFamily: 'var(--sans)' }}>Free</span>;
 
   let displayPrice = basePrice;
-  if (billing === 'quarterly') displayPrice = plan.quarterly_price || basePrice * 0.9;
-  else if (billing === 'annual') displayPrice = plan.annual_price || basePrice * 0.8;
+  if (billing === 'quarterly') displayPrice = plan.quarterly_price ?? basePrice;
+  else if (billing === 'annual') displayPrice = plan.annual_price ?? basePrice;
 
   const annualTotal = (displayPrice * 12).toFixed(0);
 

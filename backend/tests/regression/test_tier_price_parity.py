@@ -504,7 +504,13 @@ def test_stored_beneficiary_cycle_prices_self_heal_on_load(world, tier):
         assert _close(got[k], cat[k]), f"{tier}: stored {k}={got[k]} not healed to catalog {cat[k]} — {got}"
 
 
-HEAL_MAY_TOUCH = {"quarterly_price", "annual_price", "allows_billing_toggle"}
+HEAL_MAY_TOUCH = {
+    "quarterly_price",
+    "annual_price",
+    "allows_billing_toggle",
+    "quarterly_discount_percent",
+    "annual_discount_percent",
+}
 
 
 def test_settings_heal_touches_only_beneficiary_cycle_prices(world):
@@ -531,6 +537,74 @@ def test_settings_heal_touches_only_beneficiary_cycle_prices(world):
     assert set(changed) == {"ben_military", "ben_premium"}, f"heal touched undrifted plans: {changed}"
     for pid, keys in changed.items():
         assert set(keys) <= HEAL_MAY_TOUCH, f"{pid}: heal changed {keys} (allowed: {sorted(HEAL_MAY_TOUCH)})"
+
+
+# --------------------------------------------- stage 9: founder pricing rules (Scope #3) ----
+def _derived(price, q_pct, a_pct):
+    return {
+        "quarterly_price": round(price * (1 - q_pct / 100), 2),
+        "annual_price": round(price * (1 - a_pct / 100), 2),
+        "allows_billing_toggle": q_pct > 0 or a_pct > 0,
+    }
+
+
+@pytest.mark.parametrize("tier", tier_params("catalog.cycle_derivation", TIERS + BEN_TIERS))
+def test_catalog_cycle_prices_derive_from_plan_percents(tier):
+    plan = ANY_PLAN[tier]
+    exp = _derived(
+        float(plan["price"]), float(plan["quarterly_discount_percent"]), float(plan["annual_discount_percent"])
+    )
+    for k, v in exp.items():
+        assert plan[k] == v, f"{tier}: {k}={plan[k]} but percents say {v}"
+
+
+def test_no_hardcoded_cycle_discount_in_backend():
+    files = list(Path(BACKEND, "routes/subscriptions").glob("*.py")) + [Path(BACKEND, "routes/family_plan.py")]
+    for f in files:
+        assert not re.search(r"\*\s*0\.[89]\b", f.read_text()), (
+            f"{f.name}: hardcoded ×0.9/×0.8 cycle discount — must come from the plan's own discount percents"
+        )
+
+
+def test_no_hardcoded_cycle_discount_in_frontend():
+    for rel in (
+        "components/SubscriptionPaywall.js",
+        "components/settings/SubscriptionManagement.js",
+        "components/landing/LandingPricing.js",
+        "components/admin/PlanPricingRow.js",
+    ):
+        assert not re.search(r"price\s*\*\s*0\.[89]\b", Path(FRONTEND, rel).read_text()), (
+            f"{rel}: derives a cycle price with a hardcoded ×0.9/×0.8 — render quarterly_price/annual_price from the API"
+        )
+
+
+def test_founder_pricing_rules_drive_cycle_prices_and_charges(world):
+    """PUT /admin/plans/{id}/pricing: per-plan percents (0/0 = flat) set cycle prices, the paywall flag, and
+    the amount Stripe is asked for; a ben_* monthly price mirrors into the benefactor plan's ben_price;
+    untouched plans are byte-identical."""
+    pr = world["pricing_rules"]
+    assert pr["base_untouched"], "editing other plans changed the untouched base plan"
+
+    premium = pr["plans"]["premium"]
+    assert (premium["quarterly_discount_percent"], premium["annual_discount_percent"]) == (15, 25)
+    assert (premium["quarterly_price"], premium["annual_price"], premium["allows_billing_toggle"]) == (8.49, 7.49, True)
+    assert premium["ben_price"] == 6.99, "ben_premium price 6.99 must mirror into premium.ben_price"
+
+    standard = pr["plans"]["standard"]
+    assert (
+        standard["allows_billing_toggle"] is False
+        and standard["quarterly_price"] == standard["annual_price"] == standard["price"]
+    ), f"0/0 must make standard flat-rate: {standard}"
+
+    mil = pr["plans"]["ben_military"]
+    assert mil["allows_billing_toggle"] is True and (mil["quarterly_price"], mil["annual_price"]) == (
+        round(mil["price"] * 0.95, 2),
+        round(mil["price"] * 0.90, 2),
+    ), f"5/10 on a flat plan must enable cycles: {mil}"
+    assert (pr["plans"]["ben_premium"]["quarterly_price"], pr["plans"]["ben_premium"]["annual_price"]) == (6.29, 5.59)
+
+    for pid, plan in (("premium", premium), ("standard", standard), ("ben_military", mil)):
+        _assert_amounts(pr["checkout"][pid], plan, f"{pid} checkout under founder pricing rules")
 
 
 # ------------------------------------------------ stage 8: benefactor charges are frozen ----

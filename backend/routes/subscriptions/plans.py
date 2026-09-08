@@ -139,13 +139,32 @@ async def save_dts_payment_method(
 # ===================== STRIPE SUBSCRIPTIONS =====================
 
 
+DEFAULT_QUARTERLY_DISCOUNT_PERCENT = 10
+DEFAULT_ANNUAL_DISCOUNT_PERCENT = 20
+
+
+def cycle_fields(plan):
+    """Cycle prices derived from the plan's own founder-set discount percents (0/0 = flat rate)."""
+    legacy_flat = plan.get("allows_billing_toggle") is False  # stored rows that predate the percent fields
+    q = float(plan.get("quarterly_discount_percent", 0 if legacy_flat else DEFAULT_QUARTERLY_DISCOUNT_PERCENT))
+    a = float(plan.get("annual_discount_percent", 0 if legacy_flat else DEFAULT_ANNUAL_DISCOUNT_PERCENT))
+    price = float(plan["price"])
+    return {
+        "quarterly_discount_percent": q,
+        "annual_discount_percent": a,
+        "quarterly_price": round(price * (1 - q / 100), 2),
+        "annual_price": round(price * (1 - a / 100), 2),
+        "allows_billing_toggle": q > 0 or a > 0,
+    }
+
+
 DEFAULT_PLANS = [
     {
         "id": "premium",
         "name": "Premium",
         "price": 9.99,
-        "quarterly_price": 8.99,
-        "annual_price": 7.99,
+        "quarterly_discount_percent": 10,
+        "annual_discount_percent": 20,
         "ben_price": 2.99,
         "adjustable": True,
         "features": [
@@ -158,8 +177,8 @@ DEFAULT_PLANS = [
         "id": "standard",
         "name": "Standard",
         "price": 8.99,
-        "quarterly_price": 8.09,
-        "annual_price": 7.19,
+        "quarterly_discount_percent": 10,
+        "annual_discount_percent": 20,
         "ben_price": 3.99,
         "adjustable": True,
         "features": [
@@ -173,8 +192,8 @@ DEFAULT_PLANS = [
         "id": "base",
         "name": "Base",
         "price": 7.99,
-        "quarterly_price": 7.19,
-        "annual_price": 6.39,
+        "quarterly_discount_percent": 10,
+        "annual_discount_percent": 20,
         "ben_price": 4.99,
         "adjustable": True,
         "features": [
@@ -187,8 +206,8 @@ DEFAULT_PLANS = [
         "id": "new_adult",
         "name": "New Adult",
         "price": 3.99,
-        "quarterly_price": 3.59,
-        "annual_price": 3.19,
+        "quarterly_discount_percent": 10,
+        "annual_discount_percent": 20,
         "ben_price": 1.99,
         "adjustable": False,
         "note": "Ages 18–25 · Requires verification",
@@ -208,8 +227,8 @@ DEFAULT_PLANS = [
         "id": "military",
         "name": "Military / First Responder",
         "price": 5.99,
-        "quarterly_price": 5.39,
-        "annual_price": 4.79,
+        "quarterly_discount_percent": 10,
+        "annual_discount_percent": 20,
         "ben_price": 1.99,
         "adjustable": False,
         "note": "Requires verification",
@@ -225,8 +244,8 @@ DEFAULT_PLANS = [
         "id": "veteran",
         "name": "Veteran",
         "price": 5.99,
-        "quarterly_price": 5.39,
-        "annual_price": 4.79,
+        "quarterly_discount_percent": 10,
+        "annual_discount_percent": 20,
         "ben_price": 1.99,
         "adjustable": False,
         "note": "Requires verification",
@@ -242,8 +261,8 @@ DEFAULT_PLANS = [
         "id": "seniors",
         "name": "Seniors",
         "price": 12.99,
-        "quarterly_price": 11.69,
-        "annual_price": 10.39,
+        "quarterly_discount_percent": 10,
+        "annual_discount_percent": 20,
         "ben_price": 1.99,
         "adjustable": False,
         "note": "Ages 65+ · Requires verification",
@@ -264,8 +283,8 @@ DEFAULT_PLANS = [
         "id": "hospice",
         "name": "Hospice",
         "price": 0.00,
-        "quarterly_price": 0.00,
-        "annual_price": 0.00,
+        "quarterly_discount_percent": 10,
+        "annual_discount_percent": 20,
         "ben_price": 4.99,
         "adjustable": False,
         "note": "Requires hospice verification",
@@ -281,8 +300,8 @@ DEFAULT_PLANS = [
         "id": "enterprise",
         "name": "Enterprise / B2B Partner",
         "price": 0.00,
-        "quarterly_price": 0.00,
-        "annual_price": 0.00,
+        "quarterly_discount_percent": 10,
+        "annual_discount_percent": 20,
         "ben_price": 0.00,
         "adjustable": False,
         "note": "Requires partner code",
@@ -301,9 +320,8 @@ BENEFICIARY_PLANS = [
         "id": "ben_premium",
         "name": "Premium",
         "price": 2.99,
-        "quarterly_price": 2.69,
-        "annual_price": 2.39,
-        "allows_billing_toggle": True,
+        "quarterly_discount_percent": 10,
+        "annual_discount_percent": 20,
         "features": [
             "Everything in Standard",
             "Priority human support",
@@ -313,9 +331,8 @@ BENEFICIARY_PLANS = [
         "id": "ben_standard",
         "name": "Standard",
         "price": 3.99,
-        "quarterly_price": 3.59,
-        "annual_price": 3.19,
-        "allows_billing_toggle": True,
+        "quarterly_discount_percent": 10,
+        "annual_discount_percent": 20,
         "features": [
             "Everything in Base",
             "Expanded vault access",
@@ -326,9 +343,8 @@ BENEFICIARY_PLANS = [
         "id": "ben_base",
         "name": "Base",
         "price": 4.99,
-        "quarterly_price": 4.49,
-        "annual_price": 3.99,
-        "allows_billing_toggle": True,
+        "quarterly_discount_percent": 10,
+        "annual_discount_percent": 20,
         "features": [
             "Immediate Action Checklist",
             "Basic vault access",
@@ -339,9 +355,8 @@ BENEFICIARY_PLANS = [
         "id": "ben_new_adult",
         "name": "New Adult",
         "price": 1.99,
-        "quarterly_price": 1.99,
-        "annual_price": 1.99,
-        "allows_billing_toggle": False,
+        "quarterly_discount_percent": 0,
+        "annual_discount_percent": 0,
         "note": "Ages 18-25",
         "features": [
             "Full platform access",
@@ -352,9 +367,8 @@ BENEFICIARY_PLANS = [
         "id": "ben_military",
         "name": "Military / First Responder",
         "price": 1.99,
-        "quarterly_price": 1.99,
-        "annual_price": 1.99,
-        "allows_billing_toggle": False,
+        "quarterly_discount_percent": 0,
+        "annual_discount_percent": 0,
         "note": "",
         "features": [
             "Full platform access",
@@ -365,9 +379,8 @@ BENEFICIARY_PLANS = [
         "id": "ben_veteran",
         "name": "Veteran",
         "price": 1.99,
-        "quarterly_price": 1.99,
-        "annual_price": 1.99,
-        "allows_billing_toggle": False,
+        "quarterly_discount_percent": 0,
+        "annual_discount_percent": 0,
         "note": "",
         "features": [
             "Full platform access",
@@ -378,9 +391,8 @@ BENEFICIARY_PLANS = [
         "id": "ben_seniors",
         "name": "Seniors",
         "price": 1.99,
-        "quarterly_price": 1.99,
-        "annual_price": 1.99,
-        "allows_billing_toggle": False,
+        "quarterly_discount_percent": 0,
+        "annual_discount_percent": 0,
         "note": "Ages 65+",
         "features": [
             "Full platform access",
@@ -391,9 +403,8 @@ BENEFICIARY_PLANS = [
         "id": "ben_hospice",
         "name": "Hospice Transition",
         "price": 4.99,
-        "quarterly_price": 4.49,
-        "annual_price": 3.99,
-        "allows_billing_toggle": True,
+        "quarterly_discount_percent": 10,
+        "annual_discount_percent": 20,
         "note": "After benefactor's transition · 30-day grace period",
         "features": [
             "All Base features",
@@ -404,9 +415,8 @@ BENEFICIARY_PLANS = [
         "id": "ben_enterprise",
         "name": "Enterprise / B2B",
         "price": 0.00,
-        "quarterly_price": 0.00,
-        "annual_price": 0.00,
-        "allows_billing_toggle": False,
+        "quarterly_discount_percent": 0,
+        "annual_discount_percent": 0,
         "note": "Covered by partner agreement",
         "features": [
             "Full platform access",
@@ -414,6 +424,9 @@ BENEFICIARY_PLANS = [
         ],
     },
 ]
+
+for _plan in (*DEFAULT_PLANS, *BENEFICIARY_PLANS):
+    _plan.update(cycle_fields(_plan))
 
 GRACE_PERIOD_DAYS = 30
 
@@ -455,6 +468,12 @@ class SubscriptionCheckoutRequest(BaseModel):
 class AdminSubscriptionSettings(BaseModel):
     beta_mode: Optional[bool] = None
     plans: Optional[List[Dict[str, Any]]] = None
+
+
+class PlanPricingUpdate(BaseModel):
+    price: Optional[float] = None
+    quarterly_discount_percent: Optional[float] = None  # 0-100; 0/0 = flat rate
+    annual_discount_percent: Optional[float] = None
 
 
 class AdminUserSubscriptionOverride(BaseModel):
@@ -499,19 +518,14 @@ async def get_subscription_settings():
                         if stored_plan.get("features") != plan.get("features"):
                             stored_plan["features"] = plan["features"]
                             needs_update = True
-                        # Ensure quarterly/annual prices stay in sync with monthly price
-                        expected_q = round(stored_plan["price"] * 0.9, 2)
-                        expected_a = round(stored_plan["price"] * 0.8, 2)
-                        if stored_plan.get("quarterly_price") != expected_q:
-                            stored_plan["quarterly_price"] = expected_q
-                            needs_update = True
-                        if stored_plan.get("annual_price") != expected_a:
-                            stored_plan["annual_price"] = expected_a
-                            needs_update = True
+                        # Cycle prices always derive from the founder-set monthly price + discount percents
+                        for key, value in cycle_fields(stored_plan).items():
+                            if stored_plan.get(key) != value:
+                                stored_plan[key] = value
+                                needs_update = True
                         break
         # Ensure any new beneficiary plans from code are added to stored settings, merge
-        # missing keys, and keep cycle prices consistent: flat-rate plans (no billing
-        # toggle) carry one price on every cycle; toggle plans follow the ×0.9 / ×0.8 rule.
+        # missing keys, and derive cycle prices from each plan's own discount percents.
         stored_ben = {p["id"]: p for p in settings.get("beneficiary_plans", [])}
         for bplan in BENEFICIARY_PLANS:
             sp = stored_ben.get(bplan["id"])
@@ -523,12 +537,10 @@ async def get_subscription_settings():
                 if key not in sp:
                     sp[key] = bplan[key]
                     needs_update = True
-            flat = not sp.get("allows_billing_toggle", True)
-            expected_q = sp["price"] if flat else round(sp["price"] * 0.9, 2)
-            expected_a = sp["price"] if flat else round(sp["price"] * 0.8, 2)
-            if sp.get("quarterly_price") != expected_q or sp.get("annual_price") != expected_a:
-                sp["quarterly_price"], sp["annual_price"] = expected_q, expected_a
-                needs_update = True
+            for key, value in cycle_fields(sp).items():
+                if sp.get(key) != value:
+                    sp[key] = value
+                    needs_update = True
         # Self-heal ben_price on benefactor plans from beneficiary plan prices
         ben_plans = settings.get("beneficiary_plans", [])
         ben_price_map = {}
@@ -585,11 +597,9 @@ def calculate_trial_status(user_doc):
 
 
 def get_price_for_cycle(plan, billing_cycle):
-    """Get the correct price based on billing cycle"""
-    if billing_cycle == "quarterly":
-        return plan.get("quarterly_price", round(plan["price"] * 0.9, 2))
-    elif billing_cycle == "annual":
-        return plan.get("annual_price", round(plan["price"] * 0.8, 2))
+    """Per-month price for a billing cycle, from the plan's own discount percents."""
+    if billing_cycle in ("quarterly", "annual"):
+        return cycle_fields(plan)[f"{billing_cycle}_price"]
     return plan["price"]
 
 
@@ -603,13 +613,12 @@ def plan_lookup(settings):
 
 def cycle_total(plan, billing_cycle, discount_percent=0):
     """Full-period charge for a plan on a cycle (its own cycle prices), then the per-user discount."""
-    monthly_price = float(plan["price"])
     if billing_cycle == "annual":
-        amount = round(float(plan.get("annual_price", monthly_price * 0.8)) * 12, 2)
+        amount = round(float(get_price_for_cycle(plan, "annual")) * 12, 2)
     elif billing_cycle == "quarterly":
-        amount = round(float(plan.get("quarterly_price", monthly_price * 0.9)) * 3, 2)
+        amount = round(float(get_price_for_cycle(plan, "quarterly")) * 3, 2)
     else:
-        amount = monthly_price
+        amount = float(plan["price"])
     if discount_percent > 0:
         amount = round(amount * (1 - discount_percent / 100), 2)
     return amount

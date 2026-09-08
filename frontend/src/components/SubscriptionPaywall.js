@@ -171,8 +171,8 @@ export default function SubscriptionPaywall({ onDismiss }) {
 
   const getPrice = (plan) => {
     if (plan.price === 0) return 'Free';
-    if (billing === 'quarterly') return `$${plan.quarterly_price?.toFixed(2) || (plan.price * 0.9).toFixed(2)}`;
-    if (billing === 'annual') return `$${plan.annual_price?.toFixed(2) || (plan.price * 0.8).toFixed(2)}`;
+    if (billing === 'quarterly') return `$${(plan.quarterly_price ?? plan.price).toFixed(2)}`;
+    if (billing === 'annual') return `$${(plan.annual_price ?? plan.price).toFixed(2)}`;
     return `$${plan.price.toFixed(2)}`;
   };
 

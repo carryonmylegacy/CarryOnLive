@@ -19,6 +19,8 @@ from routes.subscriptions.plans import (
     get_subscription_settings,
     AdminSubscriptionSettings,
     AdminUserSubscriptionOverride,
+    PlanPricingUpdate,
+    cycle_fields,
 )
 
 
@@ -276,43 +278,62 @@ async def admin_reset_subscription(
     }
 
 
-@router.put("/admin/plans/{plan_id}/price")
-async def update_plan_price(
+@router.put("/admin/plans/{plan_id}/pricing")
+async def update_plan_pricing(
     plan_id: str,
-    price: float = Form(...),
+    data: PlanPricingUpdate,
     current_user: dict = Depends(get_current_user),
 ):
-    """Update a plan's price (admin only)"""
+    """Founder pricing control for any plan (benefactor or ben_*): monthly price and the
+    quarterly / annual discount percents. Cycle prices are derived; 0 / 0 = flat rate."""
     if current_user.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
+    if data.price is not None and data.price < 0:
+        raise HTTPException(status_code=400, detail="Price must be 0 or more")
+    for field in ("quarterly_discount_percent", "annual_discount_percent"):
+        value = getattr(data, field)
+        if value is not None and not 0 <= value <= 100:
+            raise HTTPException(status_code=400, detail=f"{field} must be between 0 and 100")
 
     settings = await get_subscription_settings()
     plans = settings.get("plans", DEFAULT_PLANS)
-
-    found = False
-    for plan in plans:
-        if plan["id"] == plan_id:
-            plan["price"] = price
-            # Recalculate quarterly and annual prices to stay in sync
-            plan["quarterly_price"] = round(price * 0.9, 2)
-            plan["annual_price"] = round(price * 0.8, 2)
-            found = True
-            break
-
-    if not found:
+    ben_plans = settings.get("beneficiary_plans", BENEFICIARY_PLANS[:])
+    plan = next((p for p in [*plans, *ben_plans] if p["id"] == plan_id), None)
+    if not plan:
         raise HTTPException(status_code=404, detail=f"Plan not found: {plan_id}")
+
+    for field, value in data.model_dump(exclude_none=True).items():
+        plan[field] = value
+    plan.update(cycle_fields(plan))
+
+    # A beneficiary plan's monthly price is mirrored as ben_price on its benefactor plan
+    if plan_id.startswith("ben_") and data.price is not None:
+        for p in plans:
+            if p["id"] == plan_id[len("ben_") :]:
+                p["ben_price"] = plan["price"]
+                break
 
     await db.subscription_settings.update_one(
         {"_id": "global"},
         {
             "$set": {
                 "plans": plans,
+                "beneficiary_plans": ben_plans,
                 "updated_at": datetime.now(timezone.utc).isoformat(),
             }
         },
     )
+    return {"success": True, "message": f"{plan['name']} pricing updated", "plan": plan}
 
-    return {"success": True, "message": f"Price updated to ${price:.2f}"}
+
+@router.put("/admin/plans/{plan_id}/price")
+async def update_plan_price(
+    plan_id: str,
+    price: float = Form(...),
+    current_user: dict = Depends(get_current_user),
+):
+    """Legacy form endpoint — monthly price only."""
+    return await update_plan_pricing(plan_id, PlanPricingUpdate(price=price), current_user)
 
 
 @router.put("/admin/beneficiary-plans/{plan_id}/price")
@@ -321,49 +342,8 @@ async def update_beneficiary_plan_price(
     price: float = Form(...),
     current_user: dict = Depends(get_current_user),
 ):
-    """Update a beneficiary plan's price (admin only)"""
-    if current_user.get("role") != "admin":
-        raise HTTPException(status_code=403, detail="Admin access required")
-
-    # Beneficiary plans are stored in code, sync to DB
-    settings = await get_subscription_settings()
-    ben_plans = settings.get("beneficiary_plans", BENEFICIARY_PLANS[:])
-
-    found = False
-    for plan in ben_plans:
-        if plan["id"] == plan_id:
-            plan["price"] = price
-            # Flat-rate plans (no billing toggle) carry one price on every cycle
-            flat = not plan.get("allows_billing_toggle", True)
-            plan["quarterly_price"] = price if flat else round(price * 0.9, 2)
-            plan["annual_price"] = price if flat else round(price * 0.8, 2)
-            found = True
-            break
-
-    if not found:
-        raise HTTPException(status_code=404, detail=f"Beneficiary plan not found: {plan_id}")
-
-    # Also sync ben_price on the corresponding benefactor plan
-    # Mapping: ben_premium → premium, ben_standard → standard, etc.
-    benefactor_plan_id = plan_id.replace("ben_", "", 1)
-    plans = settings.get("plans", DEFAULT_PLANS)
-    for p in plans:
-        if p["id"] == benefactor_plan_id:
-            p["ben_price"] = price
-            break
-
-    await db.subscription_settings.update_one(
-        {"_id": "global"},
-        {
-            "$set": {
-                "beneficiary_plans": ben_plans,
-                "plans": plans,
-                "updated_at": datetime.now(timezone.utc).isoformat(),
-            }
-        },
-    )
-
-    return {"success": True, "message": f"Beneficiary price updated to ${price:.2f}"}
+    """Legacy form endpoint — beneficiary monthly price only."""
+    return await update_plan_pricing(plan_id, PlanPricingUpdate(price=price), current_user)
 
 
 @router.get("/admin/family-discount-settings")

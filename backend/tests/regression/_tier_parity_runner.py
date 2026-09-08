@@ -292,7 +292,9 @@ async def run(tiers, paid, paid_ben):
     for p in doc["beneficiary_plans"]:
         if p["id"] in drift:
             p["quarterly_price"], p["annual_price"] = drift[p["id"]]
-    next(p for p in doc["beneficiary_plans"] if p["id"] == "ben_military").pop("allows_billing_toggle", None)
+    legacy_row = next(p for p in doc["beneficiary_plans"] if p["id"] == "ben_military")
+    for key in ("allows_billing_toggle", "quarterly_discount_percent", "annual_discount_percent"):
+        legacy_row.pop(key, None)  # stored rows that predate the derived / percent fields
     await db.subscription_settings.update_one(
         {"_id": "global"}, {"$set": {"beneficiary_plans": doc["beneficiary_plans"]}}
     )
@@ -328,6 +330,43 @@ async def run(tiers, paid, paid_ben):
         settings = await get_subscription_settings()
         bp = next(p for p in settings["beneficiary_plans"] if p["id"] == pid)
         out["admin_ben_price_edit"][pid] = {k: bp.get(k) for k in keys}
+
+    # Founder pricing rules — per-plan quarterly/annual discount percents drive cycle prices and charges.
+    from routes.subscriptions.plans import PlanPricingUpdate, plan_lookup
+
+    def frozen(plan):
+        return json.loads(json.dumps(plan, sort_keys=True, default=str))
+
+    base_before = frozen(plan_lookup(await get_subscription_settings())["base"])
+    edits = (
+        ("premium", PlanPricingUpdate(quarterly_discount_percent=15, annual_discount_percent=25)),
+        ("standard", PlanPricingUpdate(quarterly_discount_percent=0, annual_discount_percent=0)),
+        ("ben_military", PlanPricingUpdate(quarterly_discount_percent=5, annual_discount_percent=10)),
+        ("ben_premium", PlanPricingUpdate(price=6.99)),
+    )
+    for pid, data in edits:
+        await adm.update_plan_pricing(pid, data, current_user=admin)
+    by_id = plan_lookup(await get_subscription_settings())
+    fields = (
+        "price",
+        "quarterly_discount_percent",
+        "annual_discount_percent",
+        "quarterly_price",
+        "annual_price",
+        "allows_billing_toggle",
+        "ben_price",
+    )
+    out["pricing_rules"] = {
+        "plans": {
+            pid: {k: by_id[pid].get(k) for k in fields if k in by_id[pid]}
+            for pid in ("premium", "standard", "base", "ben_military", "ben_premium")
+        },
+        "base_untouched": frozen(by_id["base"]) == base_before,
+        "checkout": {
+            pid: {c: await checkout_amount(_user(f"pr-{pid}", role), pid, c) for c in CYCLES}
+            for pid, role in (("premium", "benefactor"), ("standard", "benefactor"), ("ben_military", "beneficiary"))
+        },
+    }
     return out
 
 
