@@ -11,7 +11,7 @@ from models import UserCreate
 from routes.admin.trial_policy import get_trial_days
 from routes.subscriptions.plans import age_eligible_plan_ids, get_subscription_settings
 from services.encryption import generate_estate_salt
-from utils import generate_otp, hash_password, send_otp_email
+from utils import generate_otp, hash_password_async, send_otp_email
 
 from ._core import (
     _user_response,
@@ -81,6 +81,7 @@ async def register(data: UserCreate):
     elif "enterprise" in special_statuses:
         eligible_tier = "enterprise"
 
+    password_hash = await hash_password_async(data.password)
     user = {
         "id": user_id,
         "email": data.email,
@@ -88,7 +89,7 @@ async def register(data: UserCreate):
         "email_verified": False,
         "username": username,
         "username_lower": username_lower,
-        "password": hash_password(data.password),
+        "password": password_hash,
         "name": full_name,
         "first_name": data.first_name,
         "middle_name": data.middle_name,

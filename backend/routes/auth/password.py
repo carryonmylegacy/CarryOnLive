@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from config import db
 from services.audit import get_client_ip, log_audit_event
 from services.email import send_email
-from utils import get_current_user, hash_password, send_otp_email, verify_password
+from utils import get_current_user, hash_password_async, send_otp_email, verify_password_async
 from services.token_blacklist import revoke_all_user_tokens
 
 from ._core import resolve_user_by_identifier, router
@@ -26,7 +26,7 @@ class VerifyPasswordRequest(BaseModel):
 async def verify_password_endpoint(data: VerifyPasswordRequest):
     """Verify account password without logging in. Used for sensitive settings changes."""
     user = await resolve_user_by_identifier(data.email)
-    if not user or not verify_password(data.password, user["password"]):
+    if not user or not await verify_password_async(data.password, user["password"]):
         raise HTTPException(status_code=401, detail="Invalid password")
     return {"verified": True}
 
@@ -47,10 +47,10 @@ async def change_password(
         raise HTTPException(status_code=400, detail="New password must be at least 8 characters")
 
     user_doc = await db.users.find_one({"id": current_user["id"]}, {"_id": 0, "id": 1, "password": 1})
-    if not user_doc or not verify_password(data.current_password, user_doc["password"]):
+    if not user_doc or not await verify_password_async(data.current_password, user_doc["password"]):
         raise HTTPException(status_code=401, detail="Current password is incorrect")
 
-    new_hash = hash_password(data.new_password)
+    new_hash = await hash_password_async(data.new_password)
     await db.users.update_one({"id": current_user["id"]}, {"$set": {"password": new_hash}})
 
     await revoke_all_user_tokens(current_user["id"])
@@ -136,7 +136,8 @@ async def reset_password(data: ResetPasswordRequest):
     except (ValueError, TypeError):
         raise HTTPException(status_code=400, detail="Invalid reset code")
 
-    await db.users.update_one({"id": user["id"]}, {"$set": {"password": hash_password(data.new_password)}})
+    new_hash = await hash_password_async(data.new_password)
+    await db.users.update_one({"id": user["id"]}, {"$set": {"password": new_hash}})
     await db.otp_codes.delete_many({"user_id": user["id"], "purpose": "password_reset"})
     return {"message": "Password reset successfully. You can now log in with your new password."}
 

@@ -538,7 +538,7 @@ bug — fix it in the preview DB immediately (snippet in
 - Hardcoded `rgba(212,175,55,…)` → `var(--gold-rgb)` sweep.
 
 ### Last verified end-to-end working item
-**Sep 8 2026 — `feat/founder-pricing-rules` (`d07c5c7a` + `a7d3f194`) ready for Push #3, NOT PUSHED:** founder controls every pricing rule in Admin → Finance → Subs — per-tier price + quarterly/annual %, name/note/features, verification + docs, age windows + age-out target, display order, grace period, proration. Parity suite 357/0 xfail, check.sh ALL CLEAR, testing-agent frontend sweep 10/11 (miss = pre-existing `/` routing). After push: verify prod, run read-only `readonly_ben_tier_billing_audit.py --quick` on Render, then DAV Legacy Programs Phase 0 (docs only). App Store Connect `ben_new_adult_*` products still to be created by founder.
+**Sep 9 2026 — Reddit-launch hardening on `feat/founder-pricing-rules`, NOT PUSHED (see CHANGELOG Sep 9):** bcrypt + invitation email + webpush moved off the event loop; 1-CPU load test shows other users' p95 8–10 ms during a 200-signup burst (was frozen >30 s); signup ceiling ~4/s/CPU at bcrypt cost 12. Runbook at `docs/ops/launch-day-runbook.md`. check.sh ALL CLEAR, housekeeping 0/0, parity 357/0, QA iteration_193 12/12. Pending founder decisions: bcrypt cost, Resend 429 retry, Render plan; Stripe Webhooks tab screenshot still owed. After push: verify prod `/api/health/ready`, run `readonly_ben_tier_billing_audit.py --quick` on Render, then DAV Legacy Programs Phase 0 (docs only).
 
 ---
 

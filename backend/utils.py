@@ -4,6 +4,7 @@ import asyncio
 import base64
 import json as json_module
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -92,6 +93,21 @@ def hash_password(password: str) -> str:
 
 def verify_password(password: str, hashed: str) -> bool:
     return bcrypt.checkpw(password.encode(), hashed.encode())
+
+
+# Public hot paths (login / register / invite-accept / password reset) use these
+# so a ~250 ms bcrypt round never blocks the event loop for other requests.
+# Dedicated small pool: bcrypt is CPU-bound, so more threads than the container's
+# CPU quota only adds cgroup throttling jitter to the event loop.
+_hash_pool = ThreadPoolExecutor(max_workers=2, thread_name_prefix="bcrypt")
+
+
+async def hash_password_async(password: str) -> str:
+    return await asyncio.get_running_loop().run_in_executor(_hash_pool, hash_password, password)
+
+
+async def verify_password_async(password: str, hashed: str) -> bool:
+    return await asyncio.get_running_loop().run_in_executor(_hash_pool, verify_password, password, hashed)
 
 
 def create_token(
@@ -492,7 +508,8 @@ async def send_push_notification(
     success_count = 0
     for sub in subscriptions:
         try:
-            webpush(
+            await asyncio.to_thread(
+                webpush,
                 subscription_info={"endpoint": sub["endpoint"], "keys": sub["keys"]},
                 data=payload,
                 vapid_private_key=vapid_private_key_for_webpush,

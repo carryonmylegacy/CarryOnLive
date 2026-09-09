@@ -10262,3 +10262,23 @@ www.carryon.us confirmed live: 0 SOURCE NEEDED / <<< markers on / + /about + /wi
 - **Frontend:** `utils/planRules.js` (ageLabel, tierDisplayName, isDiscountTier, verifiesBeforeCheckout, verificationDocs, verificationBadge, discountTiersBlurb, savingsLabel) replaces every tier/age/discount literal in SubscriptionPaywall, SubscriptionManagement, LandingPricing. Age-window tiers now render locked ("Ages X only") instead of hidden when the DOB doesn't qualify (was: new_adult hidden, seniors locked). Admin: `PlanDetailsEditor`, `BillingRulesCard`, order arrows.
 - Tests: parity suite 357 passed / 0 xfail (+ live proofs: eligibility after age edit, age-out to founder target, copy persists across reloads, order, grace end date, proration on/off, validation 400/403; static guards for every removed literal). check.sh ALL CLEAR (fast suite 457). Testing agent frontend sweep (iteration_192): 10/11 pass; the miss is pre-existing — `/` renders LoginPage/LandingContent, LandingPricing lives on `/landing-consumer`. Hydration `<span data-ve-dynamic>` warnings are preview dev instrumentation; 403 bursts are unrelated endpoints.
 - Production first load after deploy: stored plans gain the percent/age keys, settings gain the three rule keys; no price, cycle value, name or feature changes (features were identical to code until now).
+
+## Sep 9, 2026 — Reddit-launch hardening (`feat/founder-pricing-rules`, on top of `a7d3f194`) · NOT PUSHED
+
+**Infra audit (founder screenshots/PDFs):** Atlas M20 dedicated ✅ · Render Standard 1 CPU/2 GB, autoscale max 2 ✅ (scheduler lock already wired in `server.py`, so 2 pods are safe) · Resend Pro, DKIM/SPF verified, **default 10 emails/sec/team** ⚠️ · Sentry Team 68/50k errors, 2 error monitors, uptime monitor being added for `/api/health/ready` · Emergent key 101.65 credits, auto-recharge on ✅ · Stripe 0 alerts (webhook tab still to confirm). `api.carryon.us` does NOT resolve — live API is `carryon-api-kacr.onrender.com`.
+
+**Event-loop blockers removed on the signup path:**
+- `utils.hash_password_async` / `verify_password_async` — bcrypt on a dedicated `ThreadPoolExecutor(max_workers=2)` (bounded on purpose: with a 20-thread default pool under a cgroup CPU quota the loop got throttled — bystander p95 2 s; with 2 workers p95 14–30 ms). Used by `/auth/login`, `/auth/register`, `/auth/verify-password`, `/auth/change-password`, `/auth/reset-password`, `/invitations/accept`, `/invitations/accept-existing`. Admin/rare paths keep the sync helpers.
+- `resend.Emails.send` in `routes/beneficiaries/invitations.py` + `services/invitation_sender.py` → `asyncio.to_thread`.
+- `webpush()` in `utils.send_push_notification` → `asyncio.to_thread` (was a sync HTTP call per device on every `notify.founder`).
+
+**Load test (`backend/scripts/loadtest_signup.py`, preview pinned to 1 CPU, emails suppressed, everything cleaned up):**
+| burst | before: others frozen | after: others p95 | signup throughput |
+| 50 | 9.5 s | 8 ms | 4.1/s |
+| 100 | 21 s | 8 ms | 4.1/s |
+| 200 | >30 s (probe timeout) | 10 ms | 4.0/s |
+Throughput ceiling = bcrypt cost 12 on 1 CPU (~4/s/CPU). Reports: `/app/test_reports/loadtest_before_*.json`, `loadtest_after_pool2_1cpu.json`.
+
+**Also in this batch (housekeeping 0 WARN/0 FAIL):** `_age_out_subscribers` N+1 batched (`$in` + map); `PlanPricingRow` badge 10px → `text-xs font-bold`; deps aiohttp 3.14.3 / pyasn1 0.6.4 / msgpack 1.2.1 / httplib2 0.32.0 (pip-audit 39 → 21, baseline ratcheted to 21; remaining: litellm, cryptography, click, ecdsa — deliberate, not pre-launch). Runbook: `docs/ops/launch-day-runbook.md`. QA: iteration_193 12/12 (`tests/test_auth_bcrypt_offload_regression.py`).
+
+**Open founder decisions:** bcrypt cost 12→11 for 2× signup throughput? · add 429 retry/backoff to Resend sends (10/s cap)? · Render Pro for campaign window? · invitations `accept` auto-links an existing account on email match with token as the only gate (QA review note, pre-existing).

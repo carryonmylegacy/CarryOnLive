@@ -830,60 +830,69 @@ async def _age_out_subscribers(now):
     """Move subscribers past a plan's founder-set age_max onto that plan's age_out_plan_id."""
     settings = await get_subscription_settings()
     plans_by_id = catalog_lookup(settings)
-    moved = 0
+    capped = {}
     for plan in settings.get("plans", []):
         target = plans_by_id.get(plan.get("age_out_plan_id") or "")
-        if plan.get("age_max") is None or not target:
+        if plan.get("age_max") is not None and target:
+            capped[plan["id"]] = (plan, target)
+    if not capped:
+        return 0
+    subs = await db.user_subscriptions.find(
+        {"plan_id": {"$in": list(capped)}, "status": "active"},
+        {"_id": 0, "user_id": 1, "plan_id": 1},  # pre-push-invariants: allow-missing-id
+    ).to_list(50000)
+    users_by_id = {
+        u["id"]: u
+        for u in await db.users.find(
+            {"id": {"$in": [s["user_id"] for s in subs]}},
+            {"_id": 0, "id": 1, "email": 1, "name": 1, "date_of_birth": 1},
+        ).to_list(50000)
+    }
+    moved = 0
+    for sub in subs:
+        plan, target = capped[sub["plan_id"]]
+        user_doc = users_by_id.get(sub["user_id"])
+        if not user_doc or not user_doc.get("date_of_birth"):
             continue
-        subs = await db.user_subscriptions.find(
-            {"plan_id": plan["id"], "status": "active"},
-            {"_id": 0, "user_id": 1},  # pre-push-invariants: allow-missing-id
-        ).to_list(5000)
-        for sub in subs:
-            user_doc = await db.users.find_one(
-                {"id": sub["user_id"]}, {"_id": 0, "id": 1, "email": 1, "name": 1, "date_of_birth": 1}
-            )
-            if not user_doc or not user_doc.get("date_of_birth"):
-                continue
-            try:
-                dob = datetime.fromisoformat(user_doc["date_of_birth"].replace("Z", "+00:00"))
-            except (ValueError, TypeError):
-                continue
-            if dob.tzinfo is None:
-                dob = dob.replace(tzinfo=timezone.utc)
-            if (now - dob).days // 365 <= plan["age_max"]:
-                continue
-            await db.user_subscriptions.update_one(
-                {"user_id": user_doc["id"]},
-                {
-                    "$set": {
-                        "plan_id": target["id"],
-                        "plan_name": target["name"],
-                        "updated_at": now.isoformat(),
-                        "migration_reason": f"aged_out_{plan['id']}",
-                    }
-                },
-            )
-            await db.lifecycle_events.insert_one(
-                {"user_id": user_doc["id"], "event": f"aged_out_{plan['id']}", "triggered_at": now.isoformat()}
-            )
-            moved += 1
-            try:
-                from services.email import send_email
+        try:
+            dob = datetime.fromisoformat(user_doc["date_of_birth"].replace("Z", "+00:00"))
+        except (ValueError, TypeError):
+            continue
+        if dob.tzinfo is None:
+            dob = dob.replace(tzinfo=timezone.utc)
+        if (now - dob).days // 365 <= plan["age_max"]:
+            continue
+        await db.user_subscriptions.update_one(
+            {"user_id": user_doc["id"]},
+            {
+                "$set": {
+                    "plan_id": target["id"],
+                    "plan_name": target["name"],
+                    "updated_at": now.isoformat(),
+                    "migration_reason": f"aged_out_{plan['id']}",
+                }
+            },
+        )
+        await db.lifecycle_events.insert_one(
+            {"user_id": user_doc["id"], "event": f"aged_out_{plan['id']}", "triggered_at": now.isoformat()}
+        )
+        moved += 1
+        try:
+            from services.email import send_email
 
-                first = user_doc.get("name", "").split()[0] if user_doc.get("name") else "there"
-                await send_email(
-                    to=user_doc["email"],
-                    subject="Your CarryOn plan has been updated",
-                    html=f"""
-                    <p>Hi {first},</p>
-                    <p>As you've turned {plan["age_max"] + 1}, your {plan["name"]} tier has transitioned to
-                    {target["name"]} pricing. No action needed — your access continues uninterrupted.</p>
-                    <p>— The CarryOn Team</p>
-                    """,
-                )
-            except Exception:
-                pass
+            first = user_doc.get("name", "").split()[0] if user_doc.get("name") else "there"
+            await send_email(
+                to=user_doc["email"],
+                subject="Your CarryOn plan has been updated",
+                html=f"""
+                <p>Hi {first},</p>
+                <p>As you've turned {plan["age_max"] + 1}, your {plan["name"]} tier has transitioned to
+                {target["name"]} pricing. No action needed — your access continues uninterrupted.</p>
+                <p>— The CarryOn Team</p>
+                """,
+            )
+        except Exception:
+            pass
     return moved
 
 

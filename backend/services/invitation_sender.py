@@ -4,6 +4,7 @@ Reusable function that sends a beneficiary invitation email.
 Called from auth.py (registration) and beneficiaries.py (add/save).
 """
 
+import asyncio
 import os
 from datetime import datetime, timezone
 
@@ -99,13 +100,14 @@ async def send_invitation_email(beneficiary: dict, benefactor: dict):
             </div>
             """
 
-            resend.Emails.send(
+            await asyncio.to_thread(
+                resend.Emails.send,
                 {
                     "from": SENDER_EMAIL,
                     "to": email,
                     "subject": f"{benefactor_name} has included you in their family plan on CarryOn™",
                     "html": email_html,
-                }
+                },
             )
             logger.info(f"Invitation email sent to {email}")
         else:

@@ -9,8 +9,8 @@ from routes.auth import generate_unique_username, validate_username
 from utils import (
     create_token,
     get_current_user,
-    hash_password,
-    verify_password,
+    hash_password_async,
+    verify_password_async,
     log_activity,
     send_push_notification,
 )
@@ -134,13 +134,14 @@ async def deliver_invitation(beneficiary: dict, benefactor: dict, *, actor_id: s
             </div>
             """
 
-            resend.Emails.send(
+            await asyncio.to_thread(
+                resend.Emails.send,
                 {
                     "from": SENDER_EMAIL,
                     "to": beneficiary["email"],
                     "subject": f"{benefactor['name']} has included you in their family plan on CarryOn™",
                     "html": email_html,
-                }
+                },
             )
             logger.info(f"Invitation email sent to {beneficiary['email']}")
         else:
@@ -311,12 +312,13 @@ async def accept_invitation(data: AcceptInvitationRequest):
         username = await generate_unique_username(beneficiary["first_name"], beneficiary["last_name"])
         username_lower = username.lower()
 
+    password_hash = await hash_password_async(data.password)
     new_user = {
         "id": user_id,
         "email": beneficiary["email"].lower().strip(),
         "username": username,
         "username_lower": username_lower,
-        "password": hash_password(data.password),
+        "password": password_hash,
         "name": full_name,
         "first_name": beneficiary["first_name"],
         "middle_name": beneficiary.get("middle_name"),
@@ -420,7 +422,7 @@ async def accept_invitation_existing(data: LinkExistingAccountRequest):
 
     # Authenticate with existing credentials
     user = await db.users.find_one({"username_lower": data.username.lower().strip()}, {"_id": 0})
-    if not user or not verify_password(data.password, user["password"]):
+    if not user or not await verify_password_async(data.password, user["password"]):
         raise HTTPException(
             status_code=401,
             detail="Invalid username or password. Please check your credentials.",

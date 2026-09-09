@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from config import db, logger
 from models import TokenResponse, UserLogin
 from services.audit import get_client_ip, log_audit_event
-from utils import generate_otp, send_otp_email, send_otp_sms, verify_password
+from utils import generate_otp, send_otp_email, send_otp_sms, verify_password_async
 
 from ._core import (
     _reconcile_beneficiary_by_email,
@@ -114,7 +114,7 @@ async def login(data: UserLogin, request: Request):
         from routes.trustee_access import find_active_trustee_grant_by_username
 
         trustee_grant = await find_active_trustee_grant_by_username(login_lower)
-        if trustee_grant and verify_password(data.password, trustee_grant.get("password_hash", "")):
+        if trustee_grant and await verify_password_async(data.password, trustee_grant.get("password_hash", "")):
             benefactor = await db.users.find_one({"id": trustee_grant["benefactor_id"]}, {"_id": 0})
             if not benefactor:
                 raise HTTPException(status_code=401, detail="Benefactor account not found.")
@@ -185,7 +185,7 @@ async def login(data: UserLogin, request: Request):
             )
             return {"access_token": token, "token_type": "bearer", "user": benefactor_response_dict}
 
-    if not user or not verify_password(data.password, user["password"]):
+    if not user or not await verify_password_async(data.password, user["password"]):
         if not user:
             pending_invite = await db.beneficiaries.find_one(
                 {"email": login_lower, "invitation_status": {"$in": ["sent", "pending"]}},

@@ -54,7 +54,7 @@ export const PlanPricingRow = ({ plan, accent, testIdPrefix, onSave, benefactorP
           </span>
         )}
         <span className="font-bold text-[var(--t)] text-sm" data-testid={`${testIdPrefix}-${plan.id}-name`}>{plan.name}</span>
-        {badge && <span className="text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-[var(--gold)]/15 text-[var(--gold)]">{badge}</span>}
+        {badge && <span className="text-xs font-bold uppercase tracking-wide px-1.5 py-0.5 rounded bg-[var(--gold)]/15 text-[var(--gold)]">{badge}</span>}
         {plan.note && <span className="text-xs text-[var(--t5)] ml-1">({plan.note})</span>}
       </div>
       {editing ? (
