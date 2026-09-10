@@ -538,7 +538,7 @@ bug — fix it in the preview DB immediately (snippet in
 - Hardcoded `rgba(212,175,55,…)` → `var(--gold-rgb)` sweep.
 
 ### Last verified end-to-end working item
-**Sep 9 2026 — Reddit-launch hardening on `feat/founder-pricing-rules`, NOT PUSHED (see CHANGELOG Sep 9):** bcrypt + invitation email + webpush moved off the event loop; 1-CPU load test shows other users' p95 8–10 ms during a 200-signup burst (was frozen >30 s); signup ceiling ~4/s/CPU at bcrypt cost 12. Runbook at `docs/ops/launch-day-runbook.md`. check.sh ALL CLEAR, housekeeping 0/0, parity 357/0, QA iteration_193 12/12. Pending founder decisions: bcrypt cost, Resend 429 retry, Render plan; Stripe Webhooks tab screenshot still owed. After push: verify prod `/api/health/ready`, run `readonly_ben_tier_billing_audit.py --quick` on Render, then DAV Legacy Programs Phase 0 (docs only).
+**Sep 9 2026 — Reddit-launch hardening on `feat/founder-pricing-rules`, NOT PUSHED (see CHANGELOG Sep 9):** bcrypt + invitation email + webpush moved off the event loop; 1-CPU load test shows other users' p95 8–10 ms during a 200-signup burst (was frozen >30 s); signup ceiling ~4/s/CPU at bcrypt cost 12. Runbook at `docs/ops/launch-day-runbook.md`. check.sh ALL CLEAR, housekeeping 0/0, parity 357/0, QA iteration_193 12/12. Pending founder decisions: bcrypt cost, Resend 429 retry, Render plan; Stripe Webhooks tab screenshot still owed. Sep 10: founder pushed; prod billing audit run on Render → 0/0, exposure CLOSED; Stripe webhook re-pointed from dead Railway host to Render (verified). Still to confirm: Render Events shows today's deploy live. Then DAV Legacy Programs Phase 0 (docs only).
 
 ---
 
