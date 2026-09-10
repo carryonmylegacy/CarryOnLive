@@ -20,7 +20,7 @@ Live hosts: API `https://carryon-api-kacr.onrender.com` · App `https://app.carr
 | Emergent key | Emergent → Universal Key | balance ≥ 50 credits, auto-recharge ON |
 | Sentry uptime monitor | Sentry → Monitors | `/api/health/ready` monitor exists and is green |
 | Stripe webhook | Stripe → Developers → Webhooks | endpoint `…/api/subscriptions/webhook/stripe` **Enabled**, 0 failing |
-| Signup OTP gate | Admin → Platform | `signup_otp_disabled` = **OFF** (`LAUNCH_MODE=true` on Render forces it off anyway) |
+| Signup OTP gate | app.carryon.us, logged in as founder → left sidebar tile **"Signup OTP"** | must read **Enabled** (green). Also Render → Environment: `LAUNCH_MODE=true` present (forces the gate on even if the tile is flipped by mistake) |
 
 ---
 
