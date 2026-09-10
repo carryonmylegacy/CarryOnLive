@@ -399,16 +399,9 @@ async def register(data: UserCreate):
         await send_otp_email(data.email, otp, data.first_name)
         logger.info(f"Registration OTP sent for {data.email} (username: {username})")
 
-    from services.notifications import notify
+    from services.signup_alerts import on_signup
 
-    asyncio.create_task(
-        notify.founder(
-            "New User Signup",
-            f"{full_name} ({data.email}, @{username}) registered as {user['role']}",
-            url="/admin",
-            priority="normal",
-        )
-    )
+    asyncio.create_task(on_signup(full_name, data.email, username, user["role"]))
 
     if skip_signup_otp:
         # Brand-new account — hasn't built any estate state yet. Match the

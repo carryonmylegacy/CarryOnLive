@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Bell, Plus, Edit, Trash2, Loader2, X, Check } from 'lucide-react';
 import { Switch } from '../ui/switch';
 import { API_URL } from '../../config';
+import { SignupAlertMeter } from './SignupAlertMeter';
 
 export const NotificationCategoriesTab = ({ getAuthHeaders }) => {
   const [categories, setCategories] = useState([]);
@@ -77,6 +78,8 @@ export const NotificationCategoriesTab = ({ getAuthHeaders }) => {
 
   return (
     <div data-testid="notification-categories-tab" className="space-y-5">
+      <SignupAlertMeter getAuthHeaders={getAuthHeaders} />
+
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-bold text-[var(--t)]">Notification Categories</h2>

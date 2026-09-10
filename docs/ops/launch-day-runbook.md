@@ -21,6 +21,7 @@ Live hosts: API `https://carryon-api-kacr.onrender.com` · App `https://app.carr
 | Sentry uptime monitor | Sentry → Monitors | `/api/health/ready` monitor exists and is green |
 | Stripe webhook | Stripe → Developers → Webhooks | endpoint `…/api/subscriptions/webhook/stripe` **Enabled**, 0 failing |
 | Signup OTP gate | app.carryon.us, logged in as founder → left sidebar tile **"Signup OTP"** | must read **Enabled** (green). Also Render → Environment: `LAUNCH_MODE=true` present (forces the gate on even if the tile is flipped by mistake) |
+| Signup alert volume | Admin → **Notifications** → *New Signup Alerts* → "Ping me" dropdown | your choice: *Every signup* (jackpot mode) at launch; meter down to *Every 25th* / *Hourly summary* / *Off* whenever the pings get old. Counters keep running regardless |
 
 ---
 

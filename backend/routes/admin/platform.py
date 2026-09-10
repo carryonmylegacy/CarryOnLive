@@ -5,8 +5,9 @@ import io
 from datetime import datetime, timezone
 
 from bson import Binary
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from PIL import Image, ImageOps
+from pydantic import BaseModel
 
 from config import db, logger
 from guards import require_admin
@@ -89,6 +90,50 @@ async def update_platform_settings(data: dict, current_user: dict = Depends(requ
         "platform_free_mode": False,
         "ai_burn_guard_enabled": False,
     }
+
+
+# ===================== SIGNUP ALERT METER =====================
+
+
+class SignupAlertModeUpdate(BaseModel):
+    mode: str
+
+
+async def _signup_alerts_payload() -> dict:
+    from services.signup_alerts import MODES, get_settings, signup_stats
+
+    return {**(await get_settings()), "modes": MODES, "stats": await signup_stats()}
+
+
+@router.get("/admin/signup-alerts")
+async def get_signup_alerts(current_user: dict = Depends(require_admin)):
+    """Founder: how often the admin team is pinged about new signups, plus live counts."""
+    return await _signup_alerts_payload()
+
+
+@router.put("/admin/signup-alerts")
+async def update_signup_alerts(
+    data: SignupAlertModeUpdate, request: Request, current_user: dict = Depends(require_admin)
+):
+    from services.audit import get_client_ip, log_audit_event
+    from services.signup_alerts import MODES, get_settings, set_mode
+
+    if data.mode not in MODES:
+        raise HTTPException(status_code=400, detail=f"mode must be one of: {', '.join(MODES)}")
+    before = (await get_settings())["mode"]
+    await set_mode(data.mode)
+    await log_audit_event(
+        actor_id=current_user["id"],
+        actor_email=current_user.get("email", ""),
+        actor_role=current_user.get("role", "admin"),
+        action="signup_alert_mode_change",
+        category="platform",
+        resource_type="settings",
+        resource_id="signup_alerts",
+        details={"from": before, "to": data.mode},
+        ip_address=get_client_ip(request),
+    )
+    return await _signup_alerts_payload()
 
 
 # ===================== FOUNDER HEADSHOT (About page) =====================
