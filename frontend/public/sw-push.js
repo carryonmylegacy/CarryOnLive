@@ -1,4 +1,5 @@
 // CarryOn™ Push Notification Service Worker
+/* global clients */
 
 self.addEventListener('push', function(event) {
   console.log('[Service Worker] Push Received.');

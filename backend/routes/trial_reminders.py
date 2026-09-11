@@ -7,9 +7,8 @@ Runs as a background task alongside the weekly digest scheduler.
 import asyncio
 from datetime import datetime, timedelta, timezone
 
-import resend
 
-from config import RESEND_API_KEY, SENDER_EMAIL, db, logger
+from config import RESEND_API_KEY, db, logger
 
 REMINDER_INTERVALS = [10, 5, 3, 1]  # days before trial ends
 CHECK_INTERVAL_HOURS = 6  # how often to scan for reminders
@@ -177,15 +176,9 @@ async def send_trial_reminders():
                     app_url,
                 )
 
-                await asyncio.to_thread(
-                    resend.Emails.send,
-                    {
-                        "from": SENDER_EMAIL,
-                        "to": [user["email"]],
-                        "subject": subject,
-                        "html": html,
-                    },
-                )
+                from services.email import send_email as _send
+
+                await _send(user["email"], subject, html)
 
                 # Mark as sent so we don't re-send
                 await db.users.update_one(
@@ -229,15 +222,9 @@ async def send_trial_reminders():
                 app_url,
             )
 
-            await asyncio.to_thread(
-                resend.Emails.send,
-                {
-                    "from": SENDER_EMAIL,
-                    "to": [user["email"]],
-                    "subject": subject,
-                    "html": html,
-                },
-            )
+            from services.email import send_email as _send
+
+            await _send(user["email"], subject, html)
 
             await db.users.update_one(
                 {"id": user["id"]},

@@ -4,15 +4,13 @@ Sends a weekly email to admin(s) every Monday with key metrics:
 MRR trend, new signups, trial conversions, churn summary, and tier breakdown.
 """
 
-import asyncio
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
-import resend
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
-from config import RESEND_API_KEY, SENDER_EMAIL, db, logger
+from config import RESEND_API_KEY, db, logger
 from guards import require_admin
 
 router = APIRouter()
@@ -310,16 +308,11 @@ async def send_admin_analytics_digest():
     sent = 0
     for admin in admins:
         try:
-            await asyncio.to_thread(
-                resend.Emails.send,
-                {
-                    "from": SENDER_EMAIL,
-                    "to": [admin["email"]],
-                    "subject": subject,
-                    "html": html,
-                },
-            )
-            sent += 1
+            from services.email import send_email as _send
+
+            result = await _send(admin["email"], subject, html)
+            if result:
+                sent += 1
             logger.info(f"Analytics digest sent to {admin['email']}")
         except Exception as e:
             logger.error(f"Failed to send analytics digest to {admin['email']}: {e}")
@@ -558,16 +551,11 @@ async def send_audit_digest():
     sent = 0
     for email in recipients:
         try:
-            await asyncio.to_thread(
-                resend.Emails.send,
-                {
-                    "from": SENDER_EMAIL,
-                    "to": [email],
-                    "subject": subject,
-                    "html": html,
-                },
-            )
-            sent += 1
+            from services.email import send_email as _send
+
+            result = await _send(email, subject, html)
+            if result:
+                sent += 1
         except Exception as e:
             logger.error(f"Failed to send audit digest to {email}: {e}")
 

@@ -81,9 +81,6 @@ async def _send_ffn_email(
     others_text: str,
 ):
     """Send a chat message notification email to an FFN contact."""
-    import asyncio
-
-    import resend
 
     from config import RESEND_API_KEY, SENDER_EMAIL, logger
 
@@ -103,15 +100,9 @@ This message was sent via {channel_name} on CarryOn™. You are receiving this b
 </p>
 </div>"""
     try:
-        await asyncio.to_thread(
-            resend.Emails.send,
-            {
-                "from": SENDER_EMAIL,
-                "to": [to_email],
-                "subject": subject,
-                "html": html,
-            },
-        )
+        from services.email import send_email as _send
+
+        await _send(to_email, subject, html)
     except Exception as e:
         logger.warning(f"FFN email delivery failed to {to_email}: {e}")
 

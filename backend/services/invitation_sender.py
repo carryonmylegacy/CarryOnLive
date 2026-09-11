@@ -7,9 +7,8 @@ Called from auth.py (registration) and beneficiaries.py (add/save).
 import os
 from datetime import datetime, timezone
 
-import resend
 
-from config import RESEND_API_KEY, SENDER_EMAIL, db, logger
+from config import RESEND_API_KEY, db, logger
 
 
 async def send_invitation_email(beneficiary: dict, benefactor: dict):
@@ -99,13 +98,12 @@ async def send_invitation_email(beneficiary: dict, benefactor: dict):
             </div>
             """
 
-            resend.Emails.send(
-                {
-                    "from": SENDER_EMAIL,
-                    "to": email,
-                    "subject": f"{benefactor_name} has included you in their family plan on CarryOn™",
-                    "html": email_html,
-                }
+            from services.email import send_email as _send
+
+            await _send(
+                email,
+                f"{benefactor_name} has included you in their family plan on CarryOn™",
+                email_html,
             )
             logger.info(f"Invitation email sent to {email}")
         else:

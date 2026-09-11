@@ -9,7 +9,6 @@ from pathlib import Path
 
 import bcrypt
 import jwt
-import resend
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
@@ -25,7 +24,6 @@ from config import (
     JWT_EXPIRATION_HOURS,
     JWT_SECRET,
     RESEND_API_KEY,
-    SENDER_EMAIL,
     TWILIO_PHONE_NUMBER,
     VAPID_CLAIMS_EMAIL,
     VAPID_PRIVATE_KEY_INLINE,
@@ -184,17 +182,12 @@ async def send_otp_email(email: str, otp: str, name: str = "User"):
 </table>
 </body></html>"""
     try:
-        await asyncio.to_thread(
-            resend.Emails.send,
-            {
-                "from": SENDER_EMAIL,
-                "to": [email],
-                "subject": f"Your CarryOn™ Verification Code: {otp[:2]}****",
-                "html": html_content,
-            },
-        )
-        logger.info(f"OTP email sent to {email}")
-        return True
+        from services.email import send_email as _send
+
+        result = await _send(email, f"Your CarryOn\u2122 Verification Code: {otp[:2]}****", html_content)
+        if result:
+            logger.info(f"OTP email sent to {email}")
+        return result
     except Exception as e:
         logger.error(f"Failed to send OTP email: {e}")
         logger.info(f"OTP delivery failed for {email} — user must retry")

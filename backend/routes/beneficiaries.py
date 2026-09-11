@@ -6,11 +6,10 @@ import uuid
 from datetime import datetime, timezone
 from typing import Optional
 
-import resend
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from pydantic import BaseModel
 
-from config import RESEND_API_KEY, SENDER_EMAIL, db, logger
+from config import RESEND_API_KEY, db, logger
 from guards import is_benefactor_or_admin, require_benefactor_role
 from models import Beneficiary, BeneficiaryCreate
 from routes.auth import generate_unique_username, validate_username
@@ -876,13 +875,12 @@ async def send_beneficiary_invitation(beneficiary_id: str, current_user: dict = 
             </div>
             """
 
-            resend.Emails.send(
-                {
-                    "from": SENDER_EMAIL,
-                    "to": beneficiary["email"],
-                    "subject": f"{benefactor['name']} has included you in their family plan on CarryOn™",
-                    "html": email_html,
-                }
+            from services.email import send_email as _send
+
+            await _send(
+                beneficiary["email"],
+                f"{benefactor['name']} has included you in their family plan on CarryOn™",
+                email_html,
             )
             logger.info(f"Invitation email sent to {beneficiary['email']}")
         else:
