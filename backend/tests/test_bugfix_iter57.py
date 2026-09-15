@@ -1,4 +1,5 @@
 """Tests for iteration 57 bug fixes: founder photo upload + site content."""
+
 import io
 import os
 import struct
@@ -64,9 +65,7 @@ def test_update_platform_settings_persists_founder(token):
         "founder_name": "Barnet Harris",
         "founder_linkedin_url": "https://www.linkedin.com/in/barnetharris/",
     }
-    r = requests.put(
-        f"{BASE_URL}/api/admin/platform-settings", json=payload, headers=headers, timeout=15
-    )
+    r = requests.put(f"{BASE_URL}/api/admin/platform-settings", json=payload, headers=headers, timeout=15)
     assert r.status_code == 200, r.text
     # Verify persistence via public endpoint
     r2 = requests.get(f"{BASE_URL}/api/public/site-content", timeout=15)
@@ -79,9 +78,7 @@ def test_founder_photo_upload(token):
     headers = {"Authorization": f"Bearer {token}"}
     png = _make_png_bytes()
     files = {"file": ("founder.png", io.BytesIO(png), "image/png")}
-    r = requests.post(
-        f"{BASE_URL}/api/admin/founder-photo", headers=headers, files=files, timeout=30
-    )
+    r = requests.post(f"{BASE_URL}/api/admin/founder-photo", headers=headers, files=files, timeout=30)
     assert r.status_code == 200, f"Upload failed: {r.status_code} {r.text}"
     d = r.json()
     assert d.get("success") is True

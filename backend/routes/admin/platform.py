@@ -82,9 +82,7 @@ async def upload_founder_photo(file: UploadFile = File(...), current_user: dict 
         raise HTTPException(status_code=400, detail="Photo must be under 5 MB")
 
     photo_url = await upload_photo(raw, "founder", "profile")
-    await db.platform_settings.update_one(
-        {"_id": "global"}, {"$set": {"founder_photo_url": photo_url}}, upsert=True
-    )
+    await db.platform_settings.update_one({"_id": "global"}, {"$set": {"founder_photo_url": photo_url}}, upsert=True)
     return {"success": True, "photo_url": photo_url}
 
 
