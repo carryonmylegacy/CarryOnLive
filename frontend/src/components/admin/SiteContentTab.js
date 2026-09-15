@@ -302,16 +302,20 @@ export const SiteContentTab = ({ getAuthHeaders }) => {
                 if (file.size > 5 * 1024 * 1024) { toast.error('Photo must be under 5 MB'); return; }
                 setUploadingPhoto(true);
                 try {
-                  const form = new FormData();
-                  form.append('file', file);
-                  const res = await axios.post(`${API_URL}/admin/founder-photo`, form, {
-                    headers: { ...getAuthHeaders().headers },
-                  });
-                  setFounderPhotoUrl(res.data.photo_url);
-                  setSavedFounder(prev => ({ ...prev, photo: res.data.photo_url }));
-                  toast.success('Photo uploaded');
-                } catch { toast.error('Upload failed'); }
-                setUploadingPhoto(false);
+                  const reader = new FileReader();
+                  reader.onload = async () => {
+                    try {
+                      const base64 = reader.result.split(',')[1];
+                      const res = await axios.post(`${API_URL}/admin/founder-photo`, { photo_data: base64 }, getAuthHeaders());
+                      setFounderPhotoUrl(res.data.photo_url);
+                      setSavedFounder(prev => ({ ...prev, photo: res.data.photo_url }));
+                      toast.success('Photo uploaded');
+                    } catch (err) { toast.error(err.response?.data?.detail || 'Upload failed'); }
+                    setUploadingPhoto(false);
+                  };
+                  reader.onerror = () => { toast.error('Could not read file'); setUploadingPhoto(false); };
+                  reader.readAsDataURL(file);
+                } catch { toast.error('Upload failed'); setUploadingPhoto(false); }
                 e.target.value = '';
               }} data-testid="founder-photo-file-input" />
               <button onClick={() => founderPhotoRef.current?.click()} disabled={uploadingPhoto}

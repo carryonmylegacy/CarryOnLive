@@ -2,7 +2,7 @@
 
 import base64
 
-from fastapi import APIRouter, Depends, File, UploadFile
+from fastapi import APIRouter, Depends
 
 from config import db, logger
 from guards import require_admin
@@ -71,11 +71,25 @@ async def update_platform_settings(data: dict, current_user: dict = Depends(requ
 
 
 @router.post("/admin/founder-photo")
-async def upload_founder_photo(file: UploadFile = File(...), current_user: dict = Depends(require_admin)):
-    """Upload founder profile photo to S3 and store URL in platform settings."""
+async def upload_founder_photo(data: dict, current_user: dict = Depends(require_admin)):
+    """Upload founder profile photo (base64) to S3 and store URL in platform settings."""
+    import base64 as b64
+
     from services.photo_storage import upload_photo
 
-    raw = await file.read()
+    photo_data = data.get("photo_data", "")
+    if not photo_data:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=400, detail="No photo data provided")
+
+    try:
+        raw = b64.b64decode(photo_data)
+    except Exception:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=400, detail="Invalid base64 data")
+
     if len(raw) > 5 * 1024 * 1024:
         from fastapi import HTTPException
 
