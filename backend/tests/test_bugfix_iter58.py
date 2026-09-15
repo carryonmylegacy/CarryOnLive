@@ -1,4 +1,5 @@
 """Iteration 58 — Founder photo upload via base64 JSON (production proxy fix)."""
+
 import base64
 import io
 import os
@@ -71,9 +72,7 @@ def test_founder_photo_upload_invalid_base64(auth_headers):
 
 
 def test_founder_photo_requires_auth():
-    r = requests.post(
-        f"{BASE_URL}/api/admin/founder-photo", json={"photo_data": _make_jpeg_b64()}, timeout=30
-    )
+    r = requests.post(f"{BASE_URL}/api/admin/founder-photo", json={"photo_data": _make_jpeg_b64()}, timeout=30)
     assert r.status_code in (401, 403)
 
 
@@ -85,9 +84,7 @@ def test_update_platform_settings_persists_founder(auth_headers):
         "founder_bio": "Test bio iter58.",
         "founder_linkedin_url": "https://linkedin.com/in/barnetharris",
     }
-    r = requests.put(
-        f"{BASE_URL}/api/admin/platform-settings", json=payload, headers=auth_headers, timeout=30
-    )
+    r = requests.put(f"{BASE_URL}/api/admin/platform-settings", json=payload, headers=auth_headers, timeout=30)
     assert r.status_code == 200
 
     g = requests.get(f"{BASE_URL}/api/public/site-content", timeout=30)
