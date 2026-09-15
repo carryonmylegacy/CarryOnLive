@@ -76,39 +76,48 @@ const HomePage = () => {
         <meta name="twitter:title" content="CarryOn - Family Preparedness Platform" />
         <meta name="twitter:description" content="Secure your family's future. Estate plans, documents, milestone messages, and financial tracking in one platform." />
       </Helmet>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
-        "@context": "https://schema.org",
-        "@type": "WebApplication",
-        "name": "CarryOn",
-        "alternateName": "CarryOn Family Preparedness Platform",
-        "url": "https://carryon.us",
-        "description": "CarryOn helps families organize estate plans, secure important documents, manage beneficiaries, and prepare for life's transitions — all in one secure platform.",
-        "applicationCategory": "LifestyleApplication",
-        "operatingSystem": "Web, iOS",
-        "offers": {
-          "@type": "AggregateOffer",
-          "lowPrice": "3.99",
-          "highPrice": "24.99",
-          "priceCurrency": "USD",
-          "offerCount": 7
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify([
+        {
+          "@context": "https://schema.org",
+          "@type": "WebApplication",
+          "name": "CarryOn",
+          "alternateName": "CarryOn Family Preparedness Platform",
+          "url": "https://carryon.us",
+          "description": "CarryOn helps families organize estate plans, secure important documents, manage beneficiaries, and prepare for life's transitions — all in one secure platform.",
+          "applicationCategory": "LifestyleApplication",
+          "operatingSystem": "Web, iOS",
+          "offers": {
+            "@type": "AggregateOffer",
+            "lowPrice": "3.99",
+            "highPrice": "24.99",
+            "priceCurrency": "USD",
+            "offerCount": 7
+          },
+          "featureList": [
+            "AES-256 Encrypted Document Vault",
+            "AI-Powered Estate Guardian Advisor (50-State Legal Intelligence)",
+            "Milestone Messages (Written, Voice, Video)",
+            "Beneficiary Management with Succession Ordering",
+            "Contingency Protocols for Family Emergencies",
+            "Estate Communications Tool (Encrypted Family Messaging)",
+            "Financial Portal with Bill & Debt Tracking",
+            "Immediate Action Checklist for Beneficiaries",
+            "Digital Access Vault for Passwords & Credentials",
+            "Family & Friends Notification System"
+          ],
+          "provider": {
+            "@type": "Organization",
+            "name": "CarryOn Technologies LLC",
+            "url": "https://carryon.us"
+          }
         },
-        "featureList": [
-          "AES-256 Encrypted Document Vault",
-          "AI-Powered Estate Guardian Advisor (50-State Legal Intelligence)",
-          "Milestone Messages (Written, Voice, Video)",
-          "Beneficiary Management with Succession Ordering",
-          "Contingency Protocols for Family Emergencies",
-          "Estate Communications Tool (Encrypted Family Messaging)",
-          "Financial Portal with Bill & Debt Tracking",
-          "Immediate Action Checklist for Beneficiaries",
-          "Digital Access Vault for Passwords & Credentials",
-          "Family & Friends Notification System"
-        ],
-        "provider": {
+        {
+          "@context": "https://schema.org",
           "@type": "Organization",
           "name": "CarryOn Technologies LLC",
           "url": "https://carryon.us",
           "logo": "https://carryon.us/carryon-icon.jpg",
+          "description": "CarryOn is the first complete digital family preparedness platform — helping American families organize estate plans, secure documents, and prepare for life's transitions.",
           "address": {
             "@type": "PostalAddress",
             "streetAddress": "1550 Wilson Boulevard, 7th Floor",
@@ -122,33 +131,11 @@ const HomePage = () => {
             "telephone": "+1-703-889-0017",
             "email": "info@carryon.us",
             "contactType": "customer service"
-          }
+          },
+          "foundingDate": "2024",
+          "areaServed": "US"
         }
-      }) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
-        "@context": "https://schema.org",
-        "@type": "Organization",
-        "name": "CarryOn Technologies LLC",
-        "url": "https://carryon.us",
-        "logo": "https://carryon.us/carryon-icon.jpg",
-        "description": "CarryOn is the first complete digital family preparedness platform — helping American families organize estate plans, secure documents, and prepare for life's transitions.",
-        "address": {
-          "@type": "PostalAddress",
-          "streetAddress": "1550 Wilson Boulevard, 7th Floor",
-          "addressLocality": "Arlington",
-          "addressRegion": "VA",
-          "postalCode": "22209",
-          "addressCountry": "US"
-        },
-        "contactPoint": {
-          "@type": "ContactPoint",
-          "telephone": "+1-703-889-0017",
-          "email": "info@carryon.us",
-          "contactType": "customer service"
-        },
-        "foundingDate": "2024",
-        "areaServed": "US"
-      }) }} />
+      ]) }} />
 
       {/* NAV BAR */}
       <nav className="fixed top-0 w-full z-[100]" style={{ borderBottom: '1px solid rgba(14,165,233,0.06)', background: 'rgba(11,18,33,0.97)', paddingTop: 'env(safe-area-inset-top, 0px)' }}>

@@ -73,14 +73,14 @@ const FAQ_ITEMS = [
 /**
  * FaqItem — expandable FAQ question/answer
  */
-const FaqItem = ({ q, a, isOpen, onToggle }) => (
+const FaqItem = ({ q, a, isOpen, onToggle, index }) => (
   <div className="border-b border-white/5">
-    <button onClick={onToggle} className="w-full flex items-center justify-between py-5 text-left group">
+    <button onClick={onToggle} className="w-full flex items-center justify-between py-5 text-left group" data-testid={`faq-question-${index}`} aria-expanded={isOpen}>
       <span className="text-white text-base font-medium pr-4 group-hover:text-[#d4af37] transition-colors">{q}</span>
       <ChevronDown className={`w-5 h-5 text-[#d4af37] flex-shrink-0 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
     </button>
     {isOpen && (
-      <p className="text-[#7b879e] text-sm leading-relaxed pb-5 pr-8">{a}</p>
+      <p className="text-[#7b879e] text-sm leading-relaxed pb-5 pr-8" data-testid={`faq-answer-${index}`}>{a}</p>
     )}
   </div>
 );
@@ -370,7 +370,7 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
           <RevealSection delay={0.1}>
             <div className="rounded-2xl p-6 lg:p-8" style={{ background: 'rgba(15,26,46,0.6)', border: '1px solid rgba(255,255,255,0.06)' }}>
               {FAQ_ITEMS.map((item, i) => (
-                <FaqItem key={i} q={item.q} a={item.a} isOpen={openFaq === i} onToggle={() => setOpenFaq(openFaq === i ? null : i)} />
+                <FaqItem key={i} q={item.q} a={item.a} isOpen={openFaq === i} onToggle={() => setOpenFaq(openFaq === i ? null : i)} index={i} />
               ))}
             </div>
           </RevealSection>
