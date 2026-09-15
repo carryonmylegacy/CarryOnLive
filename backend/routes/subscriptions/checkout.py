@@ -61,6 +61,7 @@ async def get_subscription_plans():
         "family_plan_enabled": settings.get("family_plan_enabled", True),
         "family_benefactor_discount_percent": settings.get("family_benefactor_discount_percent", 0),
         "family_beneficiary_discount_percent": settings.get("family_beneficiary_discount_percent", 0),
+        "trial_duration_days": settings.get("trial_duration_days", 30),
         "tier_features": tier_features,
     }
 
@@ -298,15 +299,42 @@ async def create_subscription_checkout(
     success_url = f"{origin}/subscription?session_id={{CHECKOUT_SESSION_ID}}"
     cancel_url = f"{origin}/subscription"
 
-    # Use backend's own URL for webhook, not frontend origin
-    backend_url = os.environ.get("RAILWAY_PUBLIC_URL", os.environ.get("BACKEND_URL", ""))
-    webhook_url = f"{backend_url}/api/webhook/stripe" if backend_url else f"{origin}/api/webhook/stripe"
+    # Build lookup key for Stripe Price
+    cycle_key = data.billing_cycle  # monthly, quarterly, annual
+    lookup_key = f"carryon_{data.plan_id}_{cycle_key}"
 
-    stripe_checkout = StripeCheckout(api_key=api_key, webhook_url=webhook_url)
+    # Find the Stripe Price by lookup key
+    prices = stripe.Price.list(lookup_keys=[lookup_key], active=True, limit=1).data
+    if not prices:
+        raise HTTPException(status_code=400, detail=f"Stripe price not found for {lookup_key}. Run catalog setup.")
 
-    checkout_request = CheckoutSessionRequest(
-        amount=amount,
-        currency="usd",
+    # Get or create Stripe customer
+    user_doc = await db.users.find_one({"id": current_user["id"]}, {"_id": 0})
+    customer_id = (user_doc or {}).get("stripe_customer_id")
+    if not customer_id:
+        customer = stripe.Customer.create(
+            email=current_user.get("email", ""),
+            name=current_user.get("name", ""),
+            metadata={
+                "carryon_user_id": current_user["id"],
+                "plan_id": data.plan_id,
+            },
+        )
+        customer_id = customer.id
+        await db.users.update_one({"id": current_user["id"]}, {"$set": {"stripe_customer_id": customer_id}})
+
+    # Capture UTM data from user record
+    utm_meta = {}
+    for key in ("utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content", "ref"):
+        val = (user_doc or {}).get(key)
+        if val:
+            utm_meta[key] = str(val)[:500]
+
+    # Create Stripe Checkout Session in subscription mode
+    session = stripe.checkout.Session.create(
+        customer=customer_id,
+        line_items=[{"price": prices[0].id, "quantity": 1}],
+        mode="subscription",
         success_url=success_url,
         cancel_url=cancel_url,
         metadata={
@@ -316,15 +344,21 @@ async def create_subscription_checkout(
             "plan_name": plan["name"],
             "billing_cycle": data.billing_cycle,
             "discount_applied": str(discount),
+            **utm_meta,
+        },
+        subscription_data={
+            "metadata": {
+                "user_id": current_user["id"],
+                "plan_id": data.plan_id,
+                "billing_cycle": data.billing_cycle,
+            },
         },
     )
-
-    session = await stripe_checkout.create_checkout_session(checkout_request)
 
     # Record transaction
     await db.payment_transactions.insert_one(
         {
-            "session_id": session.session_id,
+            "session_id": session.id,
             "user_id": current_user["id"],
             "user_email": current_user["email"],
             "plan_id": data.plan_id,
@@ -338,26 +372,28 @@ async def create_subscription_checkout(
         }
     )
 
-    return {"url": session.url, "session_id": session.session_id}
+    return {"url": session.url, "session_id": session.id}
 
 
 @router.get("/subscriptions/checkout-status/{session_id}")
 async def get_checkout_status(session_id: str, current_user: dict = Depends(get_current_user)):
     """Poll checkout session status"""
-    api_key = os.environ.get("STRIPE_API_KEY")
-    if not api_key:
-        raise HTTPException(status_code=500, detail="Payment service not configured")
+    try:
+        checkout_session = stripe.checkout.Session.retrieve(session_id)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Session not found: {e}")
 
-    stripe_checkout = StripeCheckout(api_key=api_key, webhook_url="")
-    checkout_status = await stripe_checkout.get_checkout_status(session_id)
+    payment_status = checkout_session.payment_status or "unpaid"
+    session_status = checkout_session.status or "open"
 
     # Update transaction
     txn = await db.payment_transactions.find_one({"session_id": session_id}, {"_id": 0})
     if txn and txn.get("payment_status") != "paid":
-        new_status = checkout_status.payment_status
+        new_status = "paid" if payment_status == "paid" else payment_status
         update_data = {
             "payment_status": new_status,
-            "status": checkout_status.status,
+            "status": session_status,
+            "stripe_subscription_id": checkout_session.subscription,
             "updated_at": datetime.now(timezone.utc).isoformat(),
         }
         await db.payment_transactions.update_one({"session_id": session_id}, {"$set": update_data})
@@ -401,146 +437,184 @@ async def get_checkout_status(session_id: str, current_user: dict = Depends(get_
                 await cancel_grace_period(est["id"], txn["user_id"], "re-subscribed")
 
     return {
-        "status": checkout_status.status,
-        "payment_status": checkout_status.payment_status,
-        "amount_total": checkout_status.amount_total,
-        "currency": checkout_status.currency,
+        "status": session_status,
+        "payment_status": payment_status,
+        "amount_total": checkout_session.amount_total,
+        "currency": checkout_session.currency,
     }
 
 
 @router.post("/webhook/stripe")
 async def stripe_webhook(request: Request):
-    """Handle Stripe webhooks — payment success, failure, and subscription events."""
+    """Handle Stripe webhooks — checkout completion, invoice events, subscription lifecycle."""
     body = await request.body()
-    sig = request.headers.get("Stripe-Signature", "")
-
-    api_key = os.environ.get("STRIPE_API_KEY")
-    if not api_key:
-        return {"received": True}
+    import json
 
     try:
-        # Try structured webhook handling first
-        stripe_checkout = StripeCheckout(api_key=api_key, webhook_url="")
-        event = await stripe_checkout.handle_webhook(body, sig)
+        raw_event = json.loads(body)
+    except Exception:
+        return {"received": True}
 
-        if event.payment_status == "paid" and event.session_id:
-            txn = await db.payment_transactions.find_one({"session_id": event.session_id}, {"_id": 0})
-            if txn and txn.get("payment_status") != "paid":
-                await db.payment_transactions.update_one(
-                    {"session_id": event.session_id},
-                    {
-                        "$set": {
-                            "payment_status": "paid",
-                            "updated_at": datetime.now(timezone.utc).isoformat(),
-                        }
-                    },
-                )
-                # Also activate the subscription (critical fallback if checkout-status wasn't called)
-                now = datetime.now(timezone.utc)
-                cycle = txn.get("billing_cycle", "monthly")
-                if cycle == "annual":
-                    period_end = now + timedelta(days=365)
-                elif cycle == "quarterly":
-                    period_end = now + timedelta(days=90)
-                else:
-                    period_end = now + timedelta(days=30)
-                await db.user_subscriptions.update_one(
-                    {"user_id": txn["user_id"]},
-                    {
-                        "$set": {
-                            "user_id": txn["user_id"],
-                            "plan_id": txn.get("plan_id", ""),
-                            "plan_name": txn.get("plan_name", ""),
-                            "status": "active",
-                            "billing_cycle": cycle,
-                            "amount": txn.get("amount", 0),
-                            "stripe_session_id": event.session_id,
-                            "current_period_start": now.isoformat(),
-                            "current_period_end": period_end.isoformat(),
-                            "activated_at": now.isoformat(),
-                            "payment_provider": "stripe",
-                        }
-                    },
-                    upsert=True,
-                )
+    event_type = raw_event.get("type", "")
+    data_obj = raw_event.get("data", {}).get("object", {})
+    logger.info(f"Stripe webhook: {event_type}")
 
-                # Reactivate if was in grace/dormant
+    # ── checkout.session.completed ──
+    if event_type == "checkout.session.completed":
+        session_id = data_obj.get("id", "")
+        payment_status = data_obj.get("payment_status", "")
+        stripe_sub_id = data_obj.get("subscription", "")
+        metadata = data_obj.get("metadata", {})
+        user_id = metadata.get("user_id", "")
+
+        if payment_status == "paid" and session_id:
+            txn = await db.payment_transactions.find_one({"session_id": session_id}, {"_id": 0})
+            if not txn:
+                txn = {
+                    "user_id": user_id,
+                    "plan_id": metadata.get("plan_id", ""),
+                    "plan_name": metadata.get("plan_name", ""),
+                    "billing_cycle": metadata.get("billing_cycle", "monthly"),
+                    "amount": 0,
+                }
+
+            await db.payment_transactions.update_one(
+                {"session_id": session_id},
+                {
+                    "$set": {
+                        "payment_status": "paid",
+                        "stripe_subscription_id": stripe_sub_id,
+                        "updated_at": datetime.now(timezone.utc).isoformat(),
+                    }
+                },
+            )
+
+            # Activate subscription
+            now = datetime.now(timezone.utc)
+            cycle = txn.get("billing_cycle", "monthly")
+            if cycle == "annual":
+                period_end = now + timedelta(days=365)
+            elif cycle == "quarterly":
+                period_end = now + timedelta(days=90)
+            else:
+                period_end = now + timedelta(days=30)
+
+            await db.user_subscriptions.update_one(
+                {"user_id": txn["user_id"]},
+                {
+                    "$set": {
+                        "user_id": txn["user_id"],
+                        "plan_id": txn.get("plan_id", ""),
+                        "plan_name": txn.get("plan_name", ""),
+                        "status": "active",
+                        "billing_cycle": cycle,
+                        "amount": txn.get("amount", 0),
+                        "stripe_session_id": session_id,
+                        "stripe_subscription_id": stripe_sub_id,
+                        "current_period_start": now.isoformat(),
+                        "current_period_end": period_end.isoformat(),
+                        "activated_at": now.isoformat(),
+                        "payment_provider": "stripe",
+                    }
+                },
+                upsert=True,
+            )
+
+            from services.billing_lifecycle import handle_payment_succeeded
+
+            await handle_payment_succeeded(txn["user_id"])
+
+            from services.grace_period import cancel_grace_period
+
+            user_estates = await db.estates.find({"owner_id": txn["user_id"]}, {"_id": 0, "id": 1}).to_list(50)
+            for est in user_estates:
+                await cancel_grace_period(est["id"], txn["user_id"], "subscribed")
+
+            from services.notifications import notify
+
+            asyncio.create_task(
+                notify.founder(
+                    "Subscription Payment Received",
+                    f"Payment confirmed for {txn.get('plan_name', 'plan')} ({cycle})",
+                    url="/admin/subscriptions",
+                )
+            )
+
+    # ── invoice.payment_failed ──
+    elif event_type == "invoice.payment_failed":
+        customer_email = data_obj.get("customer_email", "")
+        if customer_email:
+            user = await db.users.find_one({"email": customer_email}, {"_id": 0, "id": 1})
+            if user:
+                from services.billing_lifecycle import handle_payment_failed
+
+                await handle_payment_failed(user["id"])
+                logger.info(f"Payment failed webhook processed for {customer_email}")
+
+    # ── invoice.payment_succeeded (renewal) ──
+    elif event_type == "invoice.payment_succeeded":
+        customer_email = data_obj.get("customer_email", "")
+        if customer_email:
+            user = await db.users.find_one({"email": customer_email}, {"_id": 0, "id": 1})
+            if user:
                 from services.billing_lifecycle import handle_payment_succeeded
 
-                await handle_payment_succeeded(txn["user_id"])
+                await handle_payment_succeeded(user["id"])
 
-                # Notification
-                from services.notifications import notify
+                # Update subscription period
+                sub_id = data_obj.get("subscription", "")
+                if sub_id:
+                    period_start = data_obj.get("period_start")
+                    period_end = data_obj.get("period_end")
+                    update = {"status": "active", "updated_at": datetime.now(timezone.utc).isoformat()}
+                    if period_start:
+                        update["current_period_start"] = datetime.fromtimestamp(
+                            period_start, tz=timezone.utc
+                        ).isoformat()
+                    if period_end:
+                        update["current_period_end"] = datetime.fromtimestamp(period_end, tz=timezone.utc).isoformat()
+                    await db.user_subscriptions.update_one({"user_id": user["id"]}, {"$set": update})
 
-                asyncio.create_task(
-                    notify.founder(
-                        "Subscription Payment Received",
-                        f"Payment confirmed for {txn.get('plan_name', 'plan')} ({cycle})",
-                        url="/admin/subscriptions",
-                    )
-                )
+                logger.info(f"Payment succeeded webhook processed for {customer_email}")
 
-        return {"received": True}
-    except Exception:
-        pass
+    # ── customer.subscription.deleted / updated ──
+    elif event_type in ("customer.subscription.deleted", "customer.subscription.updated"):
+        customer_id = data_obj.get("customer", "")
+        sub_status = data_obj.get("status", "")
 
-    # Fallback: parse raw Stripe event for invoice/subscription events
-    try:
-        import json
-
-        raw_event = json.loads(body)
-        event_type = raw_event.get("type", "")
-        data_obj = raw_event.get("data", {}).get("object", {})
-
-        if event_type == "invoice.payment_failed":
-            # Payment charge failed — start grace period
+        user = None
+        if customer_id:
+            user = await db.users.find_one({"stripe_customer_id": customer_id}, {"_id": 0, "id": 1})
+        if not user:
             customer_email = data_obj.get("customer_email", "")
             if customer_email:
                 user = await db.users.find_one({"email": customer_email}, {"_id": 0, "id": 1})
-                if user:
-                    from services.billing_lifecycle import handle_payment_failed
 
-                    await handle_payment_failed(user["id"])
-                    logger.info(f"Payment failed webhook processed for {customer_email}")
+        if user and sub_status in ("unpaid", "canceled", "incomplete_expired"):
+            from services.billing_lifecycle import handle_payment_failed
 
-        elif event_type == "invoice.payment_succeeded":
-            # Payment succeeded — reactivate if in grace/dormant
-            customer_email = data_obj.get("customer_email", "")
-            if customer_email:
-                user = await db.users.find_one({"email": customer_email}, {"_id": 0, "id": 1})
-                if user:
-                    from services.billing_lifecycle import handle_payment_succeeded
+            await handle_payment_failed(user["id"])
 
-                    await handle_payment_succeeded(user["id"])
-                    logger.info(f"Payment succeeded webhook processed for {customer_email}")
+            from services.grace_period import create_grace_period
 
-        elif event_type in ("customer.subscription.deleted", "customer.subscription.updated"):
-            customer_email = data_obj.get("customer_email", "") or ""
-            sub_status = data_obj.get("status", "")
-            if customer_email and sub_status in ("unpaid", "canceled", "incomplete_expired"):
-                user = await db.users.find_one({"email": customer_email}, {"_id": 0, "id": 1})
-                if user:
-                    from services.billing_lifecycle import handle_payment_failed
+            estates = await db.estates.find(
+                {"owner_id": user["id"]}, {"_id": 0, "id": 1, "is_transitioned": 1}
+            ).to_list(50)
+            for est in estates:
+                if not est.get("is_transitioned"):
+                    await create_grace_period(est["id"], user["id"], days=90)
 
-                    await handle_payment_failed(user["id"])
+            await db.user_subscriptions.update_one(
+                {"user_id": user["id"]},
+                {"$set": {"status": "cancelled", "cancelled_at": datetime.now(timezone.utc).isoformat()}},
+            )
+            logger.info(f"Subscription {event_type} processed for user {user['id']}")
 
-                    # Create grace period for each estate owned by this user
-                    from services.grace_period import create_grace_period
+        elif user and sub_status == "active":
+            # Reactivation
+            from services.billing_lifecycle import handle_payment_succeeded
 
-                    estates = await db.estates.find(
-                        {"owner_id": user["id"]},
-                        {"_id": 0, "id": 1, "is_transitioned": 1},
-                    ).to_list(50)
-                    for est in estates:
-                        await create_grace_period(
-                            estate_id=est["id"],
-                            user_id=user["id"],
-                            trigger="subscription_expired",
-                            is_transitioned=est.get("is_transitioned", False),
-                        )
-
-    except Exception as e:
-        logger.error(f"Webhook fallback error: {e}")
+            await handle_payment_succeeded(user["id"])
 
     return {"received": True}
 
@@ -970,6 +1044,8 @@ async def update_admin_subscription_settings(
         update["beta_mode"] = data.beta_mode
     if data.plans is not None:
         update["plans"] = data.plans
+    if data.trial_duration_days is not None:
+        update["trial_duration_days"] = max(1, min(365, data.trial_duration_days))
 
     if update:
         update["updated_at"] = datetime.now(timezone.utc).isoformat()

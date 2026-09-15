@@ -166,7 +166,12 @@ async def _reconcile_beneficiary_by_email(user: dict):
 
 router = APIRouter()
 
-TRIAL_DURATION_DAYS = 30
+
+async def _get_trial_days():
+    """Get trial duration from subscription settings."""
+    from routes.subscriptions.plans import get_trial_duration_days
+
+    return await get_trial_duration_days()
 
 
 async def create_session_token(user_id, email, role):
@@ -559,7 +564,8 @@ async def register(data: UserCreate):
     # Create user
     user_id = str(uuid.uuid4())
     now = datetime.now(timezone.utc)
-    trial_ends_at = (now + timedelta(days=TRIAL_DURATION_DAYS)).isoformat()
+    trial_days = await _get_trial_days()
+    trial_ends_at = (now + timedelta(days=trial_days)).isoformat()
 
     # Determine eligible tier from age and special status
     eligible_tier = None

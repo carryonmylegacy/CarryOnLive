@@ -382,7 +382,13 @@ BENEFICIARY_PLANS = [
 
 GRACE_PERIOD_DAYS = 30
 
-TRIAL_DURATION_DAYS = 30
+TRIAL_DURATION_DAYS = 30  # Default fallback — actual value from subscription_settings
+
+
+async def get_trial_duration_days():
+    """Get trial duration from subscription_settings (Founder Portal configurable)."""
+    settings = await db.subscription_settings.find_one({"_id": "global"}, {"_id": 0, "trial_duration_days": 1})
+    return settings.get("trial_duration_days", TRIAL_DURATION_DAYS) if settings else TRIAL_DURATION_DAYS
 
 
 class SubscriptionCheckoutRequest(BaseModel):
@@ -394,6 +400,7 @@ class SubscriptionCheckoutRequest(BaseModel):
 class AdminSubscriptionSettings(BaseModel):
     beta_mode: Optional[bool] = None
     plans: Optional[List[Dict[str, Any]]] = None
+    trial_duration_days: Optional[int] = None
 
 
 class AdminUserSubscriptionOverride(BaseModel):
@@ -414,6 +421,7 @@ async def get_subscription_settings():
             "beta_mode": True,
             "plans": DEFAULT_PLANS,
             "family_plan_enabled": True,
+            "trial_duration_days": TRIAL_DURATION_DAYS,
         }
         await db.subscription_settings.update_one({"_id": "global"}, {"$set": settings}, upsert=True)
     else:

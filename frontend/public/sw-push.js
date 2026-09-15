@@ -1,5 +1,6 @@
 // CarryOn™ Push Notification Service Worker
-/* global clients */
+/* eslint-disable no-undef */
+/* global self, clients */
 
 self.addEventListener('push', function(event) {
   console.log('[Service Worker] Push Received.');

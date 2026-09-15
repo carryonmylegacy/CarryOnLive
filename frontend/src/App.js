@@ -47,6 +47,7 @@ const FFNPage = lazy(() => import('./pages/FFNPage'));
 const EstateChatPage = lazy(() => import('./pages/EstateChatPage'));
 const ConnectedProtocolPage = lazy(() => import('./pages/ConnectedProtocolPage'));
 const FinancialPortalPage = lazy(() => import('./pages/FinancialPortalPage'));
+const StartPage = lazy(() => import('./pages/StartPage'));
 const BeneficiaryCCPPage = lazy(() => import('./pages/beneficiary/BeneficiaryCCPPage'));
 const TransitionPage = lazy(() => import('./pages/TransitionPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
@@ -263,6 +264,7 @@ function AppRoutes() {
       <Route path="/founder-about/:token" element={<FounderAboutPage />} />
       <Route path="/home" element={<HomePage />} />
       <Route path="/get-started" element={<GetStartedPage />} />
+      <Route path="/start" element={<StartPage />} />
 
       {/* Invitation Accept Route - Public */}
       <Route path="/accept-invitation/:token" element={<AcceptInvitationPage />} />
