@@ -305,8 +305,7 @@ export const SiteContentTab = ({ getAuthHeaders }) => {
                   const form = new FormData();
                   form.append('file', file);
                   const res = await axios.post(`${API_URL}/admin/founder-photo`, form, {
-                    ...getAuthHeaders(),
-                    headers: { ...getAuthHeaders().headers, 'Content-Type': 'multipart/form-data' },
+                    headers: { ...getAuthHeaders().headers },
                   });
                   setFounderPhotoUrl(res.data.photo_url);
                   setSavedFounder(prev => ({ ...prev, photo: res.data.photo_url }));

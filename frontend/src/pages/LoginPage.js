@@ -744,6 +744,7 @@ const LoginPage = () => {
               { label: 'Features', href: '#features' },
               { label: 'Security', href: '#security' },
               { label: 'How It Works', href: '#steps' },
+              { label: 'Pricing', href: '/pricing' },
               { label: 'About', href: '/about' },
             ].map(item => (
               <a key={item.label} href={item.href} className="text-[#6b7a90] text-sm font-medium hover:text-[#d4af37] transition-colors duration-300">{item.label}</a>
@@ -788,7 +789,7 @@ const LoginPage = () => {
                     <span className="block text-[#d4af37] mt-1" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.7), 0 1px 4px rgba(0,0,0,0.5)' }}>Ready.</span>
                   </h1>
                   <p className="text-white/80 text-sm xl:text-base max-w-lg leading-relaxed mb-5" style={{ textShadow: '0 1px 8px rgba(0,0,0,0.6)' }}>
-                    The digital family preparedness platform that brings together every aspect of your life &mdash; so you and your loved ones can CarryOn through anything.
+                    So your family knows where everything lives, who to call first, and what to do next &mdash; if something happens to you.
                   </p>
                   <div className="flex items-center gap-5 justify-center sm:justify-start mb-5">
                     {['AES-256 Encrypted', 'Per-Estate Keys', '2FA Protected'].map(badge => (
@@ -798,12 +799,13 @@ const LoginPage = () => {
                       </div>
                     ))}
                   </div>
-                  <a href="#about" className="flex w-fit flex-col items-center justify-center gap-1 mt-10 mx-auto px-5 py-3 rounded-xl cursor-pointer animate-bounce text-center"
+                  <a href="#features" className="flex w-fit flex-col items-center justify-center gap-1 mt-10 mx-auto px-5 py-3 rounded-xl cursor-pointer text-center"
                     data-testid="scroll-explore-desktop"
-                    style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.28), rgba(212,175,55,0.16))', border: '2px solid rgba(212,175,55,0.45)', boxShadow: '0 4px 30px rgba(212,175,55,0.20), 0 0 50px rgba(212,175,55,0.08)', backdropFilter: 'blur(8px)' }}>
-                    <span className="text-white text-2xl sm:text-3xl font-bold text-center" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>Scroll to explore</span>
-                    <ChevronDown className="w-10 h-10 text-[#d4af37]" strokeWidth={3} />
+                    style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.28), rgba(212,175,55,0.16))', border: '2px solid rgba(212,175,55,0.45)', boxShadow: '0 4px 30px rgba(212,175,55,0.20)', backdropFilter: 'blur(8px)' }}>
+                    <span className="text-white text-xl sm:text-2xl font-bold text-center" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>See How It Works</span>
+                    <ChevronDown className="w-6 h-6 text-[#d4af37]" />
                   </a>
+                  <a href="/pricing" className="block w-fit mx-auto mt-3 text-[#d4af37] text-sm font-medium hover:text-[#fcd34d] transition-colors underline underline-offset-4">View Pricing</a>
                 </div>
               </div>
             </RevealSection>
@@ -928,7 +930,7 @@ const LoginPage = () => {
                     <span className="block text-[#d4af37] mt-1" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.7), 0 1px 4px rgba(0,0,0,0.5)' }}>Ready.</span>
                   </h2>
                   <p className="text-white/80 text-base max-w-sm leading-relaxed mb-5" style={{ textShadow: '0 1px 8px rgba(0,0,0,0.6)' }}>
-                    The digital family preparedness platform that brings together every aspect of your life &mdash; so you and your loved ones can CarryOn through anything.
+                    So your family knows where everything lives, who to call first, and what to do next &mdash; if something happens to you.
                   </p>
                   <div className="flex items-center gap-4 justify-center mb-4">
                     {['AES-256 Encrypted', 'Per-Estate Keys', '2FA Protected'].map(badge => (
@@ -938,12 +940,13 @@ const LoginPage = () => {
                       </div>
                     ))}
                   </div>
-                  <a href="#about" className="flex flex-col items-center justify-center gap-1 mt-8 mb-20 mx-auto px-5 py-3 rounded-xl cursor-pointer animate-bounce text-center"
+                  <a href="#features" className="flex flex-col items-center justify-center gap-1 mt-8 mb-20 mx-auto px-5 py-3 rounded-xl cursor-pointer text-center"
                     data-testid="scroll-explore-mobile"
-                    style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.28), rgba(212,175,55,0.16))', border: '2px solid rgba(212,175,55,0.45)', boxShadow: '0 4px 30px rgba(212,175,55,0.20), 0 0 50px rgba(212,175,55,0.08)', backdropFilter: 'blur(8px)' }}>
-                    <span className="text-white text-xl sm:text-2xl font-bold text-center" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>Scroll to explore</span>
-                    <ChevronDown className="w-9 h-9 text-[#d4af37]" strokeWidth={3} />
+                    style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.28), rgba(212,175,55,0.16))', border: '2px solid rgba(212,175,55,0.45)', boxShadow: '0 4px 30px rgba(212,175,55,0.20)', backdropFilter: 'blur(8px)' }}>
+                    <span className="text-white text-lg sm:text-xl font-bold text-center" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>See How It Works</span>
+                    <ChevronDown className="w-6 h-6 text-[#d4af37]" />
                   </a>
+                  <a href="/pricing" className="block w-fit mx-auto -mt-16 mb-16 text-[#d4af37] text-sm font-medium hover:text-[#fcd34d] transition-colors underline underline-offset-4">View Pricing</a>
                 </div>
               </RevealSection>
             </div>
