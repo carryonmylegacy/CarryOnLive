@@ -306,9 +306,10 @@ export const SiteContentTab = ({ getAuthHeaders }) => {
                   reader.onload = async () => {
                     try {
                       const base64 = reader.result.split(',')[1];
-                      const res = await axios.post(`${API_URL}/admin/founder-photo`, { photo_data: base64 }, getAuthHeaders());
-                      setFounderPhotoUrl(res.data.photo_url);
-                      setSavedFounder(prev => ({ ...prev, photo: res.data.photo_url }));
+                      const res = await axios.put(`${API_URL}/admin/platform-settings`, { founder_photo_data: base64 }, getAuthHeaders());
+                      const newUrl = res.data?.founder_photo_url || '';
+                      setFounderPhotoUrl(newUrl);
+                      setSavedFounder(prev => ({ ...prev, photo: newUrl }));
                       toast.success('Photo uploaded');
                     } catch (err) { toast.error(err.response?.data?.detail || 'Upload failed'); }
                     setUploadingPhoto(false);

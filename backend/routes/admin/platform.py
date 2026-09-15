@@ -56,6 +56,25 @@ async def update_platform_settings(data: dict, current_user: dict = Depends(requ
         "founder_photo_url",
         "founder_linkedin_url",
     }
+
+    # Handle inline founder photo upload (base64)
+    founder_photo_data = data.pop("founder_photo_data", None)
+    if founder_photo_data:
+        import base64 as b64
+
+        from fastapi import HTTPException
+
+        from services.photo_storage import upload_photo
+
+        try:
+            raw = b64.b64decode(founder_photo_data)
+        except Exception:
+            raise HTTPException(status_code=400, detail="Invalid base64 photo data")
+        if len(raw) > 5 * 1024 * 1024:
+            raise HTTPException(status_code=400, detail="Photo must be under 5 MB")
+        photo_url = await upload_photo(raw, "founder", "profile")
+        data["founder_photo_url"] = photo_url
+
     update = {k: v for k, v in data.items() if k in allowed_keys}
     if update:
         # Check if we're turning 2FA ON (otp_disabled going from True to False)
