@@ -89,36 +89,6 @@ async def update_platform_settings(data: dict, current_user: dict = Depends(requ
     return settings or {"otp_disabled": False}
 
 
-@router.post("/admin/founder-photo")
-async def upload_founder_photo(data: dict, current_user: dict = Depends(require_admin)):
-    """Upload founder profile photo (base64) to S3 and store URL in platform settings."""
-    import base64 as b64
-
-    from services.photo_storage import upload_photo
-
-    photo_data = data.get("photo_data", "")
-    if not photo_data:
-        from fastapi import HTTPException
-
-        raise HTTPException(status_code=400, detail="No photo data provided")
-
-    try:
-        raw = b64.b64decode(photo_data)
-    except Exception:
-        from fastapi import HTTPException
-
-        raise HTTPException(status_code=400, detail="Invalid base64 data")
-
-    if len(raw) > 5 * 1024 * 1024:
-        from fastapi import HTTPException
-
-        raise HTTPException(status_code=400, detail="Photo must be under 5 MB")
-
-    photo_url = await upload_photo(raw, "founder", "profile")
-    await db.platform_settings.update_one({"_id": "global"}, {"$set": {"founder_photo_url": photo_url}}, upsert=True)
-    return {"success": True, "photo_url": photo_url}
-
-
 # ===================== CODE HEALTH =====================
 
 
