@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { Save, ExternalLink, Play, Loader2, MapPin, Monitor, Smartphone } from 'lucide-react';
+import { Save, ExternalLink, Play, Loader2, MapPin, Monitor, Smartphone, User, Linkedin, Upload } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { toast } from '../../utils/toast';
 import { API_URL } from '../../config';
@@ -15,6 +15,15 @@ export const SiteContentTab = ({ getAuthHeaders }) => {
   const [footerLine2, setFooterLine2] = useState('');
   const [footerPhone, setFooterPhone] = useState('');
   const [savedFooter, setSavedFooter] = useState({ line1: '', line2: '', phone: '' });
+  const [founderName, setFounderName] = useState('');
+  const [founderTitle, setFounderTitle] = useState('');
+  const [founderBio, setFounderBio] = useState('');
+  const [founderPhotoUrl, setFounderPhotoUrl] = useState('');
+  const [founderLinkedin, setFounderLinkedin] = useState('');
+  const [savedFounder, setSavedFounder] = useState({ name: '', title: '', bio: '', photo: '', linkedin: '' });
+  const [savingFounder, setSavingFounder] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const founderPhotoRef = useRef(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savingFooter, setSavingFooter] = useState(false);
@@ -36,6 +45,14 @@ export const SiteContentTab = ({ getAuthHeaders }) => {
         setFooterLine2(l2);
         setFooterPhone(ph);
         setSavedFooter({ line1: l1, line2: l2, phone: ph });
+        const fn = res.data?.founder_name || '';
+        const ft = res.data?.founder_title || '';
+        const fb = res.data?.founder_bio || '';
+        const fp = res.data?.founder_photo_url || '';
+        const fl = res.data?.founder_linkedin_url || '';
+        setFounderName(fn); setFounderTitle(ft); setFounderBio(fb);
+        setFounderPhotoUrl(fp); setFounderLinkedin(fl);
+        setSavedFounder({ name: fn, title: ft, bio: fb, photo: fp, linkedin: fl });
       } catch { /* ignore */ }
       setLoading(false);
     };
@@ -247,6 +264,120 @@ export const SiteContentTab = ({ getAuthHeaders }) => {
             data-testid="save-footer-btn">
             {savingFooter ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             Save Footer Info
+          </button>
+        </CardContent>
+      </Card>
+
+      {/* Founder Profile */}
+      <Card className="border-[var(--b)] bg-[var(--s)]">
+        <CardContent className="p-5 space-y-5">
+          <div className="flex items-center gap-2">
+            <User className="w-4 h-4 text-[var(--gold)]" />
+            <h3 className="text-base font-bold text-[var(--t)]">Founder Profile</h3>
+          </div>
+          <p className="text-sm text-[var(--t4)]">
+            Your name, photo, and LinkedIn appear on the About page and build trust with visitors.
+          </p>
+
+          {/* Photo upload */}
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              {founderPhotoUrl ? (
+                <img src={founderPhotoUrl} alt="Founder" className="w-20 h-20 rounded-full object-cover" style={{ border: '2px solid var(--gold)' }} data-testid="founder-photo-preview" />
+              ) : (
+                <div className="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-bold" style={{ background: 'rgba(212,175,55,0.12)', color: 'var(--gold)', border: '2px solid var(--b2)' }} data-testid="founder-photo-placeholder-admin">
+                  {founderName ? founderName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() : 'FP'}
+                </div>
+              )}
+              {uploadingPhoto && (
+                <div className="absolute inset-0 flex items-center justify-center rounded-full" style={{ background: 'rgba(0,0,0,0.5)' }}>
+                  <Loader2 className="w-6 h-6 animate-spin text-white" />
+                </div>
+              )}
+            </div>
+            <div>
+              <input type="file" ref={founderPhotoRef} accept="image/*" className="hidden" onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                if (file.size > 5 * 1024 * 1024) { toast.error('Photo must be under 5 MB'); return; }
+                setUploadingPhoto(true);
+                try {
+                  const form = new FormData();
+                  form.append('file', file);
+                  const res = await axios.post(`${API_URL}/admin/founder-photo`, form, {
+                    ...getAuthHeaders(),
+                    headers: { ...getAuthHeaders().headers, 'Content-Type': 'multipart/form-data' },
+                  });
+                  setFounderPhotoUrl(res.data.photo_url);
+                  setSavedFounder(prev => ({ ...prev, photo: res.data.photo_url }));
+                  toast.success('Photo uploaded');
+                } catch { toast.error('Upload failed'); }
+                setUploadingPhoto(false);
+                e.target.value = '';
+              }} data-testid="founder-photo-file-input" />
+              <button onClick={() => founderPhotoRef.current?.click()} disabled={uploadingPhoto}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition-all"
+                style={{ background: 'var(--b)', border: '1px solid var(--b2)', color: 'var(--t)' }}
+                data-testid="founder-photo-upload-btn">
+                <Upload className="w-3.5 h-3.5" /> {founderPhotoUrl ? 'Change Photo' : 'Upload Photo'}
+              </button>
+              <p className="text-[10px] text-[var(--t5)] mt-1">JPG or PNG, max 5 MB</p>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs font-bold text-[var(--t4)] block mb-1">Full Name</label>
+              <input type="text" value={founderName} onChange={e => setFounderName(e.target.value)}
+                placeholder="e.g. Barnet Harris"
+                className="w-full px-3 py-2.5 rounded-lg bg-[var(--b)] border border-[var(--b2)] text-[var(--t)] text-base focus:outline-none focus:border-[var(--gold)]"
+                data-testid="founder-name-input" />
+            </div>
+            <div>
+              <label className="text-xs font-bold text-[var(--t4)] block mb-1">Title / Role</label>
+              <input type="text" value={founderTitle} onChange={e => setFounderTitle(e.target.value)}
+                placeholder="e.g. Founder & CEO · 24-Year U.S. Military Veteran"
+                className="w-full px-3 py-2.5 rounded-lg bg-[var(--b)] border border-[var(--b2)] text-[var(--t)] text-base focus:outline-none focus:border-[var(--gold)]"
+                data-testid="founder-title-input" />
+            </div>
+            <div>
+              <label className="text-xs font-bold text-[var(--t4)] block mb-1">Bio</label>
+              <textarea value={founderBio} onChange={e => setFounderBio(e.target.value)} rows={3}
+                placeholder="Short bio for the About page..."
+                className="w-full px-3 py-2.5 rounded-lg bg-[var(--b)] border border-[var(--b2)] text-[var(--t)] text-base focus:outline-none focus:border-[var(--gold)] resize-none"
+                data-testid="founder-bio-input" />
+            </div>
+            <div>
+              <label className="text-xs font-bold text-[var(--t4)] block mb-1">
+                <Linkedin className="w-3.5 h-3.5 inline mr-1" />LinkedIn URL
+              </label>
+              <input type="url" value={founderLinkedin} onChange={e => setFounderLinkedin(e.target.value)}
+                placeholder="https://linkedin.com/in/your-profile"
+                className="w-full px-3 py-2.5 rounded-lg bg-[var(--b)] border border-[var(--b2)] text-[var(--t)] text-base focus:outline-none focus:border-[var(--gold)]"
+                data-testid="founder-linkedin-input" />
+            </div>
+          </div>
+
+          <button onClick={async () => {
+            setSavingFounder(true);
+            try {
+              await axios.put(`${API_URL}/admin/platform-settings`, {
+                founder_name: founderName.trim(),
+                founder_title: founderTitle.trim(),
+                founder_bio: founderBio.trim(),
+                founder_linkedin_url: founderLinkedin.trim(),
+              }, getAuthHeaders());
+              setSavedFounder(prev => ({ ...prev, name: founderName.trim(), title: founderTitle.trim(), bio: founderBio.trim(), linkedin: founderLinkedin.trim() }));
+              toast.success('Founder profile updated');
+            } catch { toast.error('Failed to save'); }
+            setSavingFounder(false);
+          }}
+            disabled={savingFounder || (founderName === savedFounder.name && founderTitle === savedFounder.title && founderBio === savedFounder.bio && founderLinkedin === savedFounder.linkedin)}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all disabled:opacity-40"
+            style={{ background: (founderName !== savedFounder.name || founderTitle !== savedFounder.title || founderBio !== savedFounder.bio || founderLinkedin !== savedFounder.linkedin) ? 'var(--gold)' : 'var(--b2)', color: (founderName !== savedFounder.name || founderTitle !== savedFounder.title || founderBio !== savedFounder.bio || founderLinkedin !== savedFounder.linkedin) ? '#0F1629' : 'var(--t4)' }}
+            data-testid="save-founder-btn">
+            {savingFounder ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            Save Founder Profile
           </button>
         </CardContent>
       </Card>

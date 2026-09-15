@@ -2,7 +2,7 @@
 
 import base64
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, File, UploadFile
 
 from config import db, logger
 from guards import require_admin
@@ -15,7 +15,7 @@ router = APIRouter()
 
 @router.get("/public/site-content")
 async def get_public_site_content():
-    """Public endpoint — returns non-sensitive site content settings (video ID, footer info, etc.)."""
+    """Public endpoint — returns non-sensitive site content settings (video ID, footer info, founder profile, etc.)."""
     settings = await db.platform_settings.find_one({"_id": "global"}, {"_id": 0}) or {}
     return {
         "homepage_video_id": settings.get("homepage_video_id", "EhU-jojs1jk"),
@@ -23,6 +23,11 @@ async def get_public_site_content():
         "footer_address_line1": settings.get("footer_address_line1", "1550 Wilson Boulevard 7th Floor"),
         "footer_address_line2": settings.get("footer_address_line2", "Arlington, VA 22209 U.S.A."),
         "footer_phone": settings.get("footer_phone", "(703) 884-1527"),
+        "founder_name": settings.get("founder_name", ""),
+        "founder_title": settings.get("founder_title", ""),
+        "founder_bio": settings.get("founder_bio", ""),
+        "founder_photo_url": settings.get("founder_photo_url", ""),
+        "founder_linkedin_url": settings.get("founder_linkedin_url", ""),
     }
 
 
@@ -45,6 +50,11 @@ async def update_platform_settings(data: dict, current_user: dict = Depends(requ
         "footer_address_line1",
         "footer_address_line2",
         "footer_phone",
+        "founder_name",
+        "founder_title",
+        "founder_bio",
+        "founder_photo_url",
+        "founder_linkedin_url",
     }
     update = {k: v for k, v in data.items() if k in allowed_keys}
     if update:
@@ -58,6 +68,24 @@ async def update_platform_settings(data: dict, current_user: dict = Depends(requ
         await db.platform_settings.update_one({"_id": "global"}, {"$set": update}, upsert=True)
     settings = await db.platform_settings.find_one({"_id": "global"}, {"_id": 0})
     return settings or {"otp_disabled": False}
+
+
+@router.post("/admin/founder-photo")
+async def upload_founder_photo(file: UploadFile = File(...), current_user: dict = Depends(require_admin)):
+    """Upload founder profile photo to S3 and store URL in platform settings."""
+    from services.photo_storage import upload_photo
+
+    raw = await file.read()
+    if len(raw) > 5 * 1024 * 1024:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=400, detail="Photo must be under 5 MB")
+
+    photo_url = await upload_photo(raw, "founder", "profile")
+    await db.platform_settings.update_one(
+        {"_id": "global"}, {"$set": {"founder_photo_url": photo_url}}, upsert=True
+    )
+    return {"success": True, "photo_url": photo_url}
 
 
 # ===================== CODE HEALTH =====================

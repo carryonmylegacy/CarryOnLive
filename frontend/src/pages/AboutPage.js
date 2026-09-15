@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { ChevronRight, ChevronLeft } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Linkedin } from 'lucide-react';
+import axios from 'axios';
+import { API_URL } from '../config';
 
 /* ─── scroll-reveal hook ─── */
 const useReveal = (threshold = 0.15) => {
@@ -31,6 +33,20 @@ const RevealSection = ({ children, className = '', delay = 0, direction = 'up', 
 };
 
 const AboutPage = () => {
+  const [founder, setFounder] = useState({ name: '', title: '', bio: '', photo_url: '', linkedin_url: '' });
+
+  useEffect(() => {
+    axios.get(`${API_URL}/public/site-content`).then(res => {
+      const d = res.data || {};
+      setFounder({
+        name: d.founder_name || 'Barnet Harris',
+        title: d.founder_title || 'Founder & CEO \u00b7 24-Year U.S. Military Veteran',
+        bio: d.founder_bio || 'After 24 years of military service, Barnet saw firsthand what happens when families aren\u2019t prepared. He built CarryOn so that no family \u2014 military or civilian \u2014 has to face a crisis wondering where things are, who to call, or what to do next.',
+        photo_url: d.founder_photo_url || '',
+        linkedin_url: d.founder_linkedin_url || '',
+      });
+    }).catch(() => {});
+  }, []);
 
   return (
     <div className="min-h-screen" style={{ background: '#0d1b2a' }}>
@@ -242,19 +258,26 @@ const AboutPage = () => {
               </p>
             </RevealSection>
 
-            {/* Founder Block (D3.3) */}
+            {/* Founder Block (D3.3) — data from Founder Portal */}
             <RevealSection delay={0.18}>
               <div className="rounded-2xl p-6 lg:p-8 mb-10 flex flex-col sm:flex-row items-center gap-6" style={{ background: 'rgba(212,175,55,0.04)', border: '1px solid rgba(212,175,55,0.15)' }}>
-                <div className="w-24 h-24 rounded-full flex-shrink-0 flex items-center justify-center text-3xl font-bold" style={{ background: 'rgba(212,175,55,0.12)', color: '#d4af37', border: '2px solid rgba(212,175,55,0.3)' }} data-testid="founder-photo-placeholder">
-                  BH
-                </div>
+                {founder.photo_url ? (
+                  <img src={founder.photo_url} alt={founder.name} className="w-24 h-24 rounded-full object-cover flex-shrink-0" style={{ border: '2px solid rgba(212,175,55,0.3)' }} data-testid="founder-photo" />
+                ) : (
+                  <div className="w-24 h-24 rounded-full flex-shrink-0 flex items-center justify-center text-3xl font-bold" style={{ background: 'rgba(212,175,55,0.12)', color: '#d4af37', border: '2px solid rgba(212,175,55,0.3)' }} data-testid="founder-photo-placeholder">
+                    {founder.name ? founder.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() : 'BH'}
+                  </div>
+                )}
                 <div className="text-center sm:text-left">
-                  <h3 className="text-white text-lg font-bold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Barnet Harris</h3>
-                  <p className="text-[#d4af37] text-xs font-semibold mb-3">Founder & CEO &middot; 24-Year U.S. Military Veteran</p>
-                  <p className="text-[#7b879e] text-sm leading-relaxed">
-                    After 24 years of military service, Barnet saw firsthand what happens when families aren&apos;t prepared. He built CarryOn so that no family &mdash; military or civilian &mdash; has to face a crisis wondering where things are, who to call, or what to do next.
-                  </p>
-                  {/* FLAG: Replace placeholder initials with real founder photo and add LinkedIn URL */}
+                  <h3 className="text-white text-lg font-bold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>{founder.name}</h3>
+                  <p className="text-[#d4af37] text-xs font-semibold mb-3">{founder.title}</p>
+                  <p className="text-[#7b879e] text-sm leading-relaxed">{founder.bio}</p>
+                  {founder.linkedin_url && (
+                    <a href={founder.linkedin_url} target="_blank" rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 mt-3 text-xs font-semibold text-[#0A66C2] hover:text-[#004182] transition-colors" data-testid="founder-linkedin-link">
+                      <Linkedin className="w-4 h-4" /> LinkedIn Profile
+                    </a>
+                  )}
                 </div>
               </div>
             </RevealSection>
