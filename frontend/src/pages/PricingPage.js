@@ -57,8 +57,8 @@ const PricingPage = () => {
     setCheckoutLoading(null);
   };
 
-  const mainTiers = plans.filter(p => !['military', 'veteran', 'new_adult'].includes(p.id));
-  const specialTiers = plans.filter(p => ['military', 'veteran', 'new_adult'].includes(p.id));
+  const mainTiers = plans.filter(p => ['premium', 'standard', 'base'].includes(p.id));
+  const specialTiers = plans.filter(p => !['premium', 'standard', 'base', 'hospice', 'enterprise'].includes(p.id));
 
   if (loading) {
     return (
@@ -221,9 +221,9 @@ const PricingPage = () => {
                 <button onClick={() => handleSelect(plan.id)} disabled={checkoutLoading === plan.id}
                   className="w-full py-3 rounded-xl text-sm font-bold transition-all active:scale-[0.97]"
                   style={{
-                    background: isPopular ? 'linear-gradient(135deg, #d4af37, #F0C95C)' : 'rgba(255,255,255,0.06)',
-                    color: isPopular ? '#080e1a' : 'var(--t)',
-                    border: `1px solid ${isPopular ? 'transparent' : 'var(--b)'}`,
+                    background: 'linear-gradient(135deg, #d4af37, #F0C95C)',
+                    color: '#080e1a',
+                    border: '1px solid transparent',
                   }}
                   data-testid={`pricing-select-${plan.id}`}>
                   <CreditCard className="w-4 h-4 inline mr-1.5" />

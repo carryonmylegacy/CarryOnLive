@@ -16,7 +16,10 @@ router = APIRouter()
 @router.get("/public/site-content")
 async def get_public_site_content():
     """Public endpoint — returns non-sensitive site content settings (video ID, footer info, founder profile, etc.)."""
+    from services.photo_urls import resolve_photo_url
+
     settings = await db.platform_settings.find_one({"_id": "global"}, {"_id": 0}) or {}
+    raw_photo = settings.get("founder_photo_url", "")
     return {
         "homepage_video_id": settings.get("homepage_video_id", "EhU-jojs1jk"),
         "homepage_video_id_vertical": settings.get("homepage_video_id_vertical", ""),
@@ -26,7 +29,7 @@ async def get_public_site_content():
         "founder_name": settings.get("founder_name", ""),
         "founder_title": settings.get("founder_title", ""),
         "founder_bio": settings.get("founder_bio", ""),
-        "founder_photo_url": settings.get("founder_photo_url", ""),
+        "founder_photo_url": resolve_photo_url(raw_photo) if raw_photo else "",
         "founder_linkedin_url": settings.get("founder_linkedin_url", ""),
     }
 
