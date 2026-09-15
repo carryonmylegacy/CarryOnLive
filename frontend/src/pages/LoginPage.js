@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
 import { Mail, Lock, Eye, EyeOff, Loader2, Shield, ChevronRight, ChevronDown, Sparkles, ExternalLink } from 'lucide-react';
@@ -734,6 +735,38 @@ const LoginPage = () => {
       ...(exiting ? { transform: 'scale(0.98)' } : {}),
       transition: 'opacity 0.45s ease, transform 0.45s ease',
     }}>
+      <Helmet>
+        <title>CarryOn - Secure Family Preparedness & Estate Planning Platform</title>
+        <meta name="description" content="So your family knows where everything lives, who to call first, and what to do next — if something happens to you. AES-256 encryption. AI-powered Estate Guardian. Plans from $3.99/month." />
+        <link rel="canonical" href="https://carryon.us/" />
+        <meta property="og:title" content="CarryOn - Every American Family. Ready." />
+        <meta property="og:description" content="So your family knows where everything lives, who to call first, and what to do next — if something happens to you." />
+        <meta property="og:url" content="https://carryon.us" />
+      </Helmet>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "CarryOn Technologies LLC",
+        "url": "https://carryon.us",
+        "logo": "https://carryon.us/carryon-icon.jpg",
+        "description": "CarryOn is the first complete digital family preparedness platform — helping American families organize estate plans, secure documents, and prepare for life's transitions.",
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": "1550 Wilson Boulevard, 7th Floor",
+          "addressLocality": "Arlington",
+          "addressRegion": "VA",
+          "postalCode": "22209",
+          "addressCountry": "US"
+        },
+        "contactPoint": {
+          "@type": "ContactPoint",
+          "telephone": "+1-703-889-0017",
+          "email": "info@carryon.us",
+          "contactType": "customer service"
+        },
+        "foundingDate": "2024",
+        "areaServed": "US"
+      }) }} />
 
       {/* NAV BAR */}
       <nav className="fixed top-0 w-full z-[100]" style={{ borderBottom: '1px solid rgba(14,165,233,0.06)', background: 'rgba(11,18,33,0.97)', paddingTop: 'env(safe-area-inset-top, 0px)' }}>
