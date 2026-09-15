@@ -24,13 +24,18 @@ const StartPage = () => {
   const [familyDiscount, setFamilyDiscount] = useState(0);
 
   useEffect(() => {
-    // Track funnel event
+    // Track funnel event + capture UTM and partner params
     const utm = {};
     for (const [k, v] of searchParams.entries()) {
-      if (k.startsWith('utm_') || k === 'ref') utm[k] = v;
+      if (k.startsWith('utm_') || k === 'ref' || k === 'code' || k === 'partner') utm[k] = v;
     }
     if (Object.keys(utm).length > 0) {
       sessionStorage.setItem('carryon_utm', JSON.stringify(utm));
+    }
+    // Preserve partner/B2B code for signup flow
+    const partnerCode = searchParams.get('code') || searchParams.get('partner');
+    if (partnerCode) {
+      sessionStorage.setItem('carryon_partner_code', partnerCode);
     }
     fetchPlans();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -67,7 +72,9 @@ const StartPage = () => {
     if (!user) {
       // Store intent and redirect to signup
       sessionStorage.setItem('carryon_checkout_intent', JSON.stringify({ planId, cycle: selectedCycle }));
-      navigate('/signup?redirect=start');
+      const partnerCode = sessionStorage.getItem('carryon_partner_code');
+      const signupUrl = partnerCode ? `/signup?redirect=start&code=${partnerCode}` : '/signup?redirect=start';
+      navigate(signupUrl);
       return;
     }
     setCheckoutLoading(true);
@@ -179,7 +186,10 @@ const StartPage = () => {
               ))}
             </ul>
             <button
-              onClick={() => navigate('/signup')}
+              onClick={() => {
+                const partnerCode = sessionStorage.getItem('carryon_partner_code');
+                navigate(partnerCode ? `/signup?code=${partnerCode}` : '/signup');
+              }}
               className="w-full py-3.5 rounded-xl text-base font-bold transition-all active:scale-[0.97]"
               style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid var(--b)', color: 'var(--t)' }}
               data-testid="door-explore-cta">

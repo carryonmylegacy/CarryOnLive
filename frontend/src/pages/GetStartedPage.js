@@ -577,8 +577,8 @@ export default function GetStartedPage() {
                           <div style={{ borderTop: '1px solid rgba(0,0,0,0.06)', margin: '0.5rem 0' }} />
                           <p style={{ fontWeight: 600, fontSize: '0.8125rem', color: '#94a3b8', marginTop: '0.75rem', marginBottom: '0.75rem', lineHeight: 1.5 }}>
                             {kept.length > 0
-                              ? "And just in case you change your mind, these are included free during your trial — so you can experience them firsthand."
-                              : "All of our features are included free during your trial — explore everything and decide what fits."}
+                              ? "And just in case you change your mind, these are included during your exploration period — so you can experience them firsthand."
+                              : "All of our features are included during your exploration period — explore everything and decide what fits."}
                           </p>
                           <div className="space-y-1.5">
                             {skipped.map(f => (
@@ -622,7 +622,7 @@ export default function GetStartedPage() {
                   </h1>
                   <p style={{ fontWeight: 600, fontSize: '0.9375rem', color: '#64748b', maxWidth: '28rem', margin: '0 auto' }}>
                     Join families across the country who are securing their legacy with CarryOn.
-                    Start your free 30-day trial today.
+                    Start your exploration period today.
                   </p>
                 </div>
 
@@ -631,7 +631,7 @@ export default function GetStartedPage() {
                   {[
                     { value: '130+', label: 'Families Protected' },
                     { value: 'AES-256', label: 'Bank-Grade Encryption' },
-                    { value: '30 days', label: 'Free Trial' },
+                    { value: '30 days', label: 'Exploration Period' },
                   ].map(stat => (
                     <div key={stat.label} style={{
                       background: 'rgba(255,255,255,0.7)', borderRadius: '1rem',
@@ -688,7 +688,7 @@ export default function GetStartedPage() {
                   className="w-full flex items-center justify-center gap-2 active:scale-[0.98] hover:brightness-105 cursor-pointer"
                   data-testid="funnel-start-trial-btn"
                 >
-                  Start My Free Trial <ChevronRight className="w-5 h-5" />
+                  Start Exploring <ChevronRight className="w-5 h-5" />
                 </button>
 
                 <p style={{ fontWeight: 600, fontSize: '0.75rem', color: '#94a3b8', textAlign: 'center', marginTop: '0.75rem' }}>

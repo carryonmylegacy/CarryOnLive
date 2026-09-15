@@ -85,8 +85,9 @@ Build and maintain a comprehensive family preparedness platform that helps users
 - Twilio SMS: Waiting on A2P 10DLC campaign approval
 
 ## Upcoming Tasks
-- (P0) Phase 1 continued: Update HomePage CTAs → `/start`, update "free" language, `/pricing` page, UTM persistence, funnel events panel, 90-day purge scheduler, trial banner/paywall updates
-- (P0) Phase 2: Homepage + marketing page overhaul (hero, legal entity, security page, about page)
+- (P0) Phase 1 remaining: `/pricing` dedicated page, remove "130+ Families", HomePage CTA → `/start`
+- (P0) Phase 2: Homepage hero CTA, legal entity standardization, `/security` Railway→Render, `/about` founder photo
+- (P0) 90-day trial data purge scheduler
 - (P0) Google Play Store Launch
 
 ## Future/Backlog

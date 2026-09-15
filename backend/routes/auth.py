@@ -615,6 +615,11 @@ async def register(data: UserCreate):
         "subscription_status": "trialing",
         "created_at": now.isoformat(),
     }
+    # Persist UTM/referral data
+    for utm_key in ("utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content", "ref", "referrer"):
+        val = getattr(data, utm_key, None)
+        if val:
+            user[utm_key] = str(val)[:500]
     await db.users.insert_one(user)
 
     # --- Auto-create estate and beneficiary stubs for benefactors ---

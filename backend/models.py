@@ -39,6 +39,14 @@ class UserCreate(BaseModel):
     address_line2: Optional[str] = None
     beneficiary_enrollments: Optional[list] = None
     role: str = "benefactor"
+    # UTM / referral tracking
+    utm_source: Optional[str] = None
+    utm_medium: Optional[str] = None
+    utm_campaign: Optional[str] = None
+    utm_term: Optional[str] = None
+    utm_content: Optional[str] = None
+    ref: Optional[str] = None
+    referrer: Optional[str] = None
 
 
 class UserLogin(BaseModel):

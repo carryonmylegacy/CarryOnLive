@@ -263,6 +263,8 @@ const SignupPage = () => {
         role: 'benefactor',
         special_status: specialStatus.length > 0 ? specialStatus : null,
         b2b_code: specialStatus.includes('enterprise') ? b2bCodeSignup : null,
+        // UTM / referral tracking from session
+        ...(JSON.parse(sessionStorage.getItem('carryon_utm') || '{}')),
       });
       setRegisteredEmail(email);
       setOtpHint(response.data.otp_hint);
