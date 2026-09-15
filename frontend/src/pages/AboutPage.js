@@ -262,12 +262,12 @@ const AboutPage = () => {
             <RevealSection delay={0.18}>
               <div className="rounded-2xl p-6 lg:p-8 mb-10 flex flex-col sm:flex-row items-center gap-6" style={{ background: 'rgba(212,175,55,0.04)', border: '1px solid rgba(212,175,55,0.15)' }}>
                 {founder.photo_url ? (
-                  <img src={founder.photo_url} alt={founder.name} className="w-24 h-24 rounded-full object-cover flex-shrink-0" style={{ border: '2px solid rgba(212,175,55,0.3)' }} data-testid="founder-photo" />
-                ) : (
-                  <div className="w-24 h-24 rounded-full flex-shrink-0 flex items-center justify-center text-3xl font-bold" style={{ background: 'rgba(212,175,55,0.12)', color: '#d4af37', border: '2px solid rgba(212,175,55,0.3)' }} data-testid="founder-photo-placeholder">
-                    {founder.name ? founder.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() : 'BH'}
-                  </div>
-                )}
+                  <img src={founder.photo_url} alt={founder.name} className="w-24 h-24 rounded-full object-cover flex-shrink-0" style={{ border: '2px solid rgba(212,175,55,0.3)' }} data-testid="founder-photo"
+                    onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }} />
+                ) : null}
+                <div className="w-24 h-24 rounded-full flex-shrink-0 items-center justify-center text-3xl font-bold" style={{ background: 'rgba(212,175,55,0.12)', color: '#d4af37', border: '2px solid rgba(212,175,55,0.3)', display: founder.photo_url ? 'none' : 'flex' }} data-testid="founder-photo-placeholder">
+                  {founder.name ? founder.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() : 'BH'}
+                </div>
                 <div className="text-center sm:text-left">
                   <h3 className="text-white text-lg font-bold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>{founder.name}</h3>
                   <p className="text-[#d4af37] text-xs font-semibold mb-3">{founder.title}</p>
