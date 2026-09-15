@@ -119,7 +119,7 @@ const PricingPage = () => {
     <div className="min-h-screen" style={{ background: 'var(--bg)' }} data-testid="pricing-page">
       <Helmet>
         <title>Pricing - CarryOn Family Preparedness Platform</title>
-        <meta name="description" content={`CarryOn pricing starts at $${lowestPrice}/month. Plans include secure document storage, Estate Guardian AI, milestone messages, and financial tracking. Cancel anytime.`} />
+        <meta name="description" content={`Simple, transparent pricing for family preparedness. Plans from $${lowestPrice} to $${mainTiers.length > 0 ? Math.max(...mainTiers.map(p => p.price)).toFixed(2) : '24.99'} per month with free hospice access and military discounts. Cancel anytime.`} />
         <link rel="canonical" href="https://carryon.us/pricing" />
         <meta property="og:type" content="website" />
         <meta property="og:title" content="CarryOn Pricing - Simple, Transparent Plans" />
@@ -151,9 +151,16 @@ const PricingPage = () => {
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-[var(--t)] mb-3" style={{ fontFamily: 'Outfit, sans-serif' }}>
             Simple, transparent pricing
           </h1>
-          <p className="text-base sm:text-lg text-[var(--t4)] max-w-lg mx-auto">
+          <p className="text-base sm:text-lg text-[var(--t4)] max-w-lg mx-auto mb-6">
             Cancel anytime. Your data is yours alone.
           </p>
+          {/* Value anchor (D4.3) */}
+          <div className="max-w-2xl mx-auto rounded-xl p-4" style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.15)' }}>
+            <p className="text-sm text-[var(--t3)] leading-relaxed">
+              Less than the cost of one hour with an estate attorney &mdash; and your family stays ready every month, not just once.
+              <span className="block text-xs text-[var(--t5)] mt-1">Settling an estate without organized records takes an average of 570 hours. CarryOn starts at ${lowestPrice}/month.</span>
+            </p>
+          </div>
         </div>
 
         {/* Billing cycle toggle */}
@@ -252,6 +259,71 @@ const PricingPage = () => {
                   </div>
                 );
               })}
+            </div>
+          </div>
+        )}
+
+        {/* Comparison table (D4.2) */}
+        {mainTiers.length > 0 && (
+          <div className="mb-10">
+            <h2 className="text-xl font-bold text-[var(--t)] mb-6 text-center" style={{ fontFamily: 'Outfit, sans-serif' }}>
+              Compare Plans
+            </h2>
+            <div className="overflow-x-auto rounded-xl" style={{ border: '1px solid var(--b)' }}>
+              <table className="w-full text-sm" data-testid="pricing-comparison-table">
+                <thead>
+                  <tr style={{ background: 'var(--s)' }}>
+                    <th className="text-left p-3 text-[var(--t4)] font-medium">Feature</th>
+                    {mainTiers.map(p => (
+                      <th key={p.id} className="p-3 text-center text-[var(--t)] font-bold">{p.name}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    { label: 'Secure Document Vault', tiers: { base: 'Basic', standard: 'Expanded', premium: 'Unlimited' } },
+                    { label: 'Immediate Action Checklist', tiers: { base: true, standard: true, premium: true } },
+                    { label: 'Milestone Messages', tiers: { base: false, standard: true, premium: true } },
+                    { label: 'Estate Guardian AI Analysis', tiers: { base: false, standard: true, premium: true } },
+                    { label: 'Contingency Protocols', tiers: { base: false, standard: true, premium: true } },
+                    { label: 'Estate Communications Tool', tiers: { base: false, standard: true, premium: true } },
+                    { label: 'Digital Access Vault', tiers: { base: true, standard: true, premium: true } },
+                    { label: 'Financial Portal', tiers: { base: true, standard: true, premium: true } },
+                    { label: 'Beneficiary Limit', tiers: { base: 'Up to 3', standard: 'Up to 5', premium: 'Unlimited' } },
+                    { label: 'Priority Support', tiers: { base: false, standard: false, premium: true } },
+                  ].map((row, i) => (
+                    <tr key={i} style={{ borderTop: '1px solid var(--b)' }}>
+                      <td className="p-3 text-[var(--t3)]">{row.label}</td>
+                      {mainTiers.map(p => {
+                        const val = row.tiers[p.id];
+                        return (
+                          <td key={p.id} className="p-3 text-center">
+                            {val === true ? <Check className="w-4 h-4 text-[#10b981] mx-auto" /> :
+                             val === false ? <span className="text-[var(--t5)]">&mdash;</span> :
+                             <span className="text-xs text-[var(--t3)] font-medium">{val}</span>}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                  <tr style={{ borderTop: '1px solid var(--b)', background: 'var(--s)' }}>
+                    <td className="p-3 text-[var(--t)] font-bold">Per beneficiary add-on</td>
+                    {mainTiers.map(p => (
+                      <td key={p.id} className="p-3 text-center text-xs font-bold text-[var(--t)]">${p.ben_price}/mo</td>
+                    ))}
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            {/* Decision helper */}
+            <div className="mt-6 rounded-xl p-5 text-center" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
+              <p className="text-sm font-bold text-[var(--t)] mb-2">Which plan is right for you?</p>
+              <p className="text-xs text-[var(--t4)] leading-relaxed">
+                <strong>New adult or student?</strong> Start at the New Adult rate.{' '}
+                <strong>Single family household?</strong> Base has the essentials.{' '}
+                <strong>Want AI analysis and messages?</strong> Standard unlocks the full platform.{' '}
+                <strong>Blended family or multi-estate?</strong> Premium gives unlimited beneficiaries and priority support.
+              </p>
             </div>
           </div>
         )}

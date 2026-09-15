@@ -1,5 +1,5 @@
-import React from 'react';
-import { Shield, Users, ChevronRight, Lock as LockIcon, Sparkles, FileCheck, UserCheck, Trash2, ClipboardCheck, MessageSquare, Key, Layers, Smartphone, MapPin, ShieldAlert, ArrowUpDown, SlidersHorizontal, Radio, MessageCircle } from 'lucide-react';
+import React, { useState } from 'react';
+import { Shield, Users, ChevronRight, ChevronDown, Lock as LockIcon, Sparkles, FileCheck, UserCheck, Trash2, ClipboardCheck, MessageSquare, Key, Layers, Smartphone, MapPin, ShieldAlert, ArrowUpDown, SlidersHorizontal, Radio, MessageCircle, HelpCircle } from 'lucide-react';
 import { RevealSection } from './RevealSection';
 
 /* ── data: 8 pillars ── */
@@ -61,6 +61,30 @@ const SECURITY_ITEMS = [
   { icon: FileCheck, text: 'SOC 2 compliance architecture with full audit trail and GDPR data rights built in' },
 ];
 
+/* ── data: FAQ items (D1.4) ── */
+const FAQ_ITEMS = [
+  { q: 'Does CarryOn replace my estate attorney?', a: 'No. CarryOn organizes everything your attorney creates — wills, trusts, powers of attorney, insurance policies — and flags gaps or contradictions your attorney should review. Think of it as the operating system your estate plan lives inside, not a replacement for legal counsel.' },
+  { q: 'What happens to my family\'s documents if CarryOn closes?', a: 'Your data is yours. You can export everything at any time. We also maintain a continuity escrow to ensure document access even in the unlikely event of a business closure. Your family\'s preparedness never depends on a single company.' },
+  { q: 'Is hospice access really free?', a: 'Yes — full platform access, no exceptions, for all U.S. citizens and resident aliens enrolled in certified hospice care. No credit card, no trial timer, no reduced features. This is a core part of our mission.' },
+  { q: 'How does military and veteran pricing verification work?', a: 'Select the Military or Veteran tier during signup. We verify service status through a simple document upload — a military ID, DD214, or VA Benefits Letter. Verification is typically completed within 24 hours.' },
+  { q: 'Can my family access the vault if I\'m overseas or unreachable?', a: 'Yes. CarryOn\'s Emergency Access protocol allows designated beneficiaries to request vault access when a benefactor is incapacitated or unreachable. Access requests are verified by our Transition Verification Team — real people, not algorithms — to ensure security.' },
+];
+
+/**
+ * FaqItem — expandable FAQ question/answer
+ */
+const FaqItem = ({ q, a, isOpen, onToggle }) => (
+  <div className="border-b border-white/5">
+    <button onClick={onToggle} className="w-full flex items-center justify-between py-5 text-left group">
+      <span className="text-white text-base font-medium pr-4 group-hover:text-[#d4af37] transition-colors">{q}</span>
+      <ChevronDown className={`w-5 h-5 text-[#d4af37] flex-shrink-0 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
+    </button>
+    {isOpen && (
+      <p className="text-[#7b879e] text-sm leading-relaxed pb-5 pr-8">{a}</p>
+    )}
+  </div>
+);
+
 /**
  * LandingContent — all shared marketing sections rendered below the hero.
  *
@@ -69,7 +93,9 @@ const SECURITY_ITEMS = [
  * @param {string}  [testIdSuffix='']  — appended to data-testid values (e.g. '-home')
  * @param {React.ReactNode} [beforeAbout]  — optional slot rendered before the About section (e.g. video)
  */
-const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', beforeAbout }) => (
+const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', beforeAbout }) => {
+  const [openFaq, setOpenFaq] = useState(null);
+  return (
   <>
     {beforeAbout}
 
@@ -329,6 +355,42 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
       </div>
     </section>
 
+    {/* ═══════════════════ FAQ (D1.4) ═══════════════════ */}
+    <section className="relative z-[55] -mt-1" id="faq">
+      <div className="rounded-t-[2rem] py-20 lg:py-24 relative overflow-hidden" style={{ background: '#0D1B2A', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
+        <div className="max-w-[800px] mx-auto px-6 relative z-10">
+          <RevealSection>
+            <div className="flex items-center gap-3 justify-center mb-8">
+              <HelpCircle className="w-6 h-6 text-[#d4af37]" />
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white" style={{ fontFamily: 'Outfit, sans-serif' }}>
+                Common Questions
+              </h2>
+            </div>
+          </RevealSection>
+          <RevealSection delay={0.1}>
+            <div className="rounded-2xl p-6 lg:p-8" style={{ background: 'rgba(15,26,46,0.6)', border: '1px solid rgba(255,255,255,0.06)' }}>
+              {FAQ_ITEMS.map((item, i) => (
+                <FaqItem key={i} q={item.q} a={item.a} isOpen={openFaq === i} onToggle={() => setOpenFaq(openFaq === i ? null : i)} />
+              ))}
+            </div>
+          </RevealSection>
+        </div>
+        {/* FAQPage JSON-LD for AI discovery */}
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "mainEntity": FAQ_ITEMS.map(item => ({
+            "@type": "Question",
+            "name": item.q,
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": item.a
+            }
+          }))
+        }) }} />
+      </div>
+    </section>
+
     {/* ═══════════════════ HOSPICE ═══════════════════ */}
     <section className="relative z-[60] -mt-1">
       <div className="rounded-t-[2rem] py-20 lg:py-24 relative overflow-hidden" style={{ background: '#111F34', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
@@ -398,6 +460,8 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
         <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
           <img src="/carryon-logo.png" alt="CarryOn" className="h-8 opacity-60" />
           <div className="flex items-center gap-6">
+            <a href="/pricing" className="text-[#334155] text-xs hover:text-[#7b879e] transition-colors" data-testid={`landing-footer-pricing-link${testIdSuffix}`}>Pricing</a>
+            <a href="/about" className="text-[#334155] text-xs hover:text-[#7b879e] transition-colors" data-testid={`landing-footer-about-link${testIdSuffix}`}>About</a>
             <a href="/privacy" className="text-[#334155] text-xs hover:text-[#7b879e] transition-colors" data-testid={`landing-footer-privacy-link${testIdSuffix}`}>Privacy Policy</a>
             <a href="/terms" className="text-[#334155] text-xs hover:text-[#7b879e] transition-colors" data-testid={`landing-footer-terms-link${testIdSuffix}`}>Terms of Service</a>
             <span className="text-[#334155] text-xs">Accessibility</span>
@@ -412,6 +476,7 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
       </div>
     </footer>
   </>
-);
+  );
+};
 
 export default LandingContent;

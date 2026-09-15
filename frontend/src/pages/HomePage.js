@@ -87,32 +87,67 @@ const HomePage = () => {
         "operatingSystem": "Web, iOS",
         "offers": {
           "@type": "AggregateOffer",
-          "lowPrice": "7.99",
-          "highPrice": "9.99",
+          "lowPrice": "3.99",
+          "highPrice": "24.99",
           "priceCurrency": "USD",
-          "offerCount": 3
+          "offerCount": 7
         },
         "featureList": [
           "AES-256 Encrypted Document Vault",
-          "AI-Powered Estate Guardian Advisor",
+          "AI-Powered Estate Guardian Advisor (50-State Legal Intelligence)",
           "Milestone Messages (Written, Voice, Video)",
           "Beneficiary Management with Succession Ordering",
+          "Contingency Protocols for Family Emergencies",
+          "Estate Communications Tool (Encrypted Family Messaging)",
           "Financial Portal with Bill & Debt Tracking",
           "Immediate Action Checklist for Beneficiaries",
-          "Digital Access Vault",
-          "Push Notification Reminders",
-          "Family Plan Support"
+          "Digital Access Vault for Passwords & Credentials",
+          "Family & Friends Notification System"
         ],
         "provider": {
           "@type": "Organization",
-          "name": "CarryOn Technologies",
+          "name": "CarryOn Technologies LLC",
           "url": "https://carryon.us",
+          "logo": "https://carryon.us/carryon-icon.jpg",
+          "address": {
+            "@type": "PostalAddress",
+            "streetAddress": "1550 Wilson Boulevard, 7th Floor",
+            "addressLocality": "Arlington",
+            "addressRegion": "VA",
+            "postalCode": "22209",
+            "addressCountry": "US"
+          },
           "contactPoint": {
             "@type": "ContactPoint",
+            "telephone": "+1-703-889-0017",
             "email": "info@carryon.us",
             "contactType": "customer service"
           }
         }
+      }) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "CarryOn Technologies LLC",
+        "url": "https://carryon.us",
+        "logo": "https://carryon.us/carryon-icon.jpg",
+        "description": "CarryOn is the first complete digital family preparedness platform — helping American families organize estate plans, secure documents, and prepare for life's transitions.",
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": "1550 Wilson Boulevard, 7th Floor",
+          "addressLocality": "Arlington",
+          "addressRegion": "VA",
+          "postalCode": "22209",
+          "addressCountry": "US"
+        },
+        "contactPoint": {
+          "@type": "ContactPoint",
+          "telephone": "+1-703-889-0017",
+          "email": "info@carryon.us",
+          "contactType": "customer service"
+        },
+        "foundingDate": "2024",
+        "areaServed": "US"
       }) }} />
 
       {/* NAV BAR */}
@@ -124,13 +159,19 @@ const HomePage = () => {
               { label: 'Features', href: '#features' },
               { label: 'Security', href: '#security' },
               { label: 'How It Works', href: '#steps' },
+              { label: 'Pricing', href: '/pricing' },
             ].map(item => (
               <a key={item.label} href={item.href} className="text-[#6b7a90] text-sm font-medium hover:text-[#d4af37] transition-colors duration-300">{item.label}</a>
             ))}
           </div>
-          <button onClick={() => navigateWithFade('/login')} className="text-[#d4af37] text-sm font-semibold hover:text-[#fcd34d] transition-colors flex items-center gap-1" data-testid="home-sign-in-nav">
-            Sign In <ChevronRight className="w-3.5 h-3.5" />
-          </button>
+          <div className="flex items-center gap-4">
+            <button onClick={() => navigateWithFade('/start')} className="hidden sm:inline-flex items-center gap-1 px-5 py-2 rounded-lg text-sm font-bold transition-all active:scale-95" style={{ background: '#d4af37', color: '#0B1221' }} data-testid="home-nav-get-started">
+              Get Started
+            </button>
+            <button onClick={() => navigateWithFade('/login')} className="text-[#d4af37] text-sm font-semibold hover:text-[#fcd34d] transition-colors flex items-center gap-1" data-testid="home-sign-in-nav">
+              Sign In <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
       </nav>
 
@@ -153,7 +194,7 @@ const HomePage = () => {
               <span className="block text-[#d4af37] mt-1" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.7), 0 1px 4px rgba(0,0,0,0.5)' }}>Ready.</span>
             </h1>
             <p className="text-white/80 text-base lg:text-lg max-w-lg mx-auto leading-relaxed mb-8" style={{ textShadow: '0 1px 8px rgba(0,0,0,0.6)' }}>
-              The digital family preparedness platform that brings together every aspect of your life &mdash; so you and your loved ones can CarryOn through anything.
+              So your family knows where everything lives, who to call first, and what to do next &mdash; if something happens to you.
             </p>
             <div className="flex items-center gap-4 justify-center flex-wrap mb-8">
               <button onClick={() => navigateWithFade('/start')} className="inline-flex items-center gap-2 px-8 py-3.5 rounded-lg font-bold text-base transition-transform duration-150 active:scale-95" data-testid="home-get-started-hero"
@@ -175,12 +216,16 @@ const HomePage = () => {
             </div>
           </RevealSection>
           <RevealSection delay={0.4}>
-            <a href="#about" className="inline-flex flex-col items-center justify-center gap-1 mt-10 px-5 py-3 rounded-xl cursor-pointer animate-bounce text-center"
-              data-testid="scroll-explore-home"
-              style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.28), rgba(212,175,55,0.16))', border: '2px solid rgba(212,175,55,0.45)', boxShadow: '0 4px 30px rgba(212,175,55,0.20), 0 0 50px rgba(212,175,55,0.08)', backdropFilter: 'blur(8px)' }}>
-              <span className="text-white text-2xl sm:text-3xl font-bold text-center" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>Scroll to explore</span>
-              <ChevronDown className="w-10 h-10 text-[#d4af37]" strokeWidth={3} />
-            </a>
+            <div className="flex flex-col items-center gap-3 mt-10">
+              <a href="#features" className="inline-flex items-center gap-2 px-8 py-3.5 rounded-lg font-bold text-base transition-all active:scale-95 cursor-pointer"
+                data-testid="scroll-explore-home"
+                style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.28), rgba(212,175,55,0.16))', border: '2px solid rgba(212,175,55,0.45)', boxShadow: '0 4px 30px rgba(212,175,55,0.20)', backdropFilter: 'blur(8px)', color: 'white', textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>
+                See How It Works <ChevronDown className="w-5 h-5 text-[#d4af37]" />
+              </a>
+              <a href="/pricing" className="text-[#d4af37] text-sm font-medium hover:text-[#fcd34d] transition-colors underline underline-offset-4" data-testid="hero-pricing-link">
+                View Pricing
+              </a>
+            </div>
           </RevealSection>
         </div>
       </section>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
 
 /* ─── scroll-reveal hook ─── */
@@ -33,6 +34,14 @@ const AboutPage = () => {
 
   return (
     <div className="min-h-screen" style={{ background: '#0d1b2a' }}>
+      <Helmet>
+        <title>About CarryOn - Family Preparedness Mission & Team</title>
+        <meta name="description" content="Why CarryOn exists: to make family readiness accessible to every American family, not just the wealthy. Founded by a 24-year military veteran." />
+        <link rel="canonical" href="https://carryon.us/about" />
+        <meta property="og:title" content="About CarryOn - Family Preparedness Mission & Team" />
+        <meta property="og:description" content="Why CarryOn exists: to make family readiness accessible to every American family, not just the wealthy." />
+        <meta property="og:url" content="https://carryon.us/about" />
+      </Helmet>
 
       {/* NAV BAR */}
       <nav className="fixed top-0 w-full z-50" style={{ borderBottom: '1px solid rgba(30,48,80,0.3)', background: 'rgba(13,27,42,0.97)', paddingTop: 'env(safe-area-inset-top, 0px)' }}>
@@ -231,6 +240,23 @@ const AboutPage = () => {
               <p className="text-[#7b879e] text-base leading-relaxed mb-10">
                 Our operational workforce is a nationwide network of remote professionals working through a proprietary task assignment system. They&apos;re trained for empathy, precision, and the kind of care this work demands. Three teams. One mission.
               </p>
+            </RevealSection>
+
+            {/* Founder Block (D3.3) */}
+            <RevealSection delay={0.18}>
+              <div className="rounded-2xl p-6 lg:p-8 mb-10 flex flex-col sm:flex-row items-center gap-6" style={{ background: 'rgba(212,175,55,0.04)', border: '1px solid rgba(212,175,55,0.15)' }}>
+                <div className="w-24 h-24 rounded-full flex-shrink-0 flex items-center justify-center text-3xl font-bold" style={{ background: 'rgba(212,175,55,0.12)', color: '#d4af37', border: '2px solid rgba(212,175,55,0.3)' }} data-testid="founder-photo-placeholder">
+                  BH
+                </div>
+                <div className="text-center sm:text-left">
+                  <h3 className="text-white text-lg font-bold mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>Barnet Harris</h3>
+                  <p className="text-[#d4af37] text-xs font-semibold mb-3">Founder & CEO &middot; 24-Year U.S. Military Veteran</p>
+                  <p className="text-[#7b879e] text-sm leading-relaxed">
+                    After 24 years of military service, Barnet saw firsthand what happens when families aren&apos;t prepared. He built CarryOn so that no family &mdash; military or civilian &mdash; has to face a crisis wondering where things are, who to call, or what to do next.
+                  </p>
+                  {/* FLAG: Replace placeholder initials with real founder photo and add LinkedIn URL */}
+                </div>
+              </div>
             </RevealSection>
 
             {/* Team Cards */}
