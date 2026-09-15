@@ -498,7 +498,7 @@ export const SubscriptionManagement = ({
                    currentSub?.status === 'active'
                     ? `${currentSub.plan_name} · ${currentSub.billing_cycle}`
                     : subscriptionStatus.trial?.trial_active
-                      ? `Free Trial · ${subscriptionStatus.trial.days_remaining} days left`
+                      ? `Exploration Period · ${subscriptionStatus.trial.days_remaining} days left`
                       : 'Choose a payment option that best suits you. (Monthly/Quarterly/Annual)'}
                 </span>
                 {isBeta && (

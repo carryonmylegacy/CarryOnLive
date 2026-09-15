@@ -386,7 +386,7 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
           </p>
           <button onClick={() => navigateWithFade('/start')} className="inline-flex items-center gap-2 px-10 py-4 rounded-lg font-semibold text-base transition-transform duration-150 active:scale-95"
             style={{ background: '#d4af37', color: '#0B1221', transition: 'all 0.3s' }}>
-            Start Your Free Trial <ChevronRight className="w-4 h-4" />
+            Start Now <ChevronRight className="w-4 h-4" />
           </button>
         </RevealSection>
       </div>
