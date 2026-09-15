@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import axios from 'axios';
 import { ChevronRight, ChevronDown } from 'lucide-react';
 import { API_URL } from '../config';
@@ -62,6 +63,57 @@ const HomePage = () => {
       ...(exiting ? { transform: 'scale(0.98)' } : {}),
       transition: 'opacity 0.45s ease, transform 0.45s ease',
     }}>
+      <Helmet>
+        <title>CarryOn - Secure Family Preparedness & Estate Planning Platform</title>
+        <meta name="description" content="CarryOn helps families organize estate plans, secure important documents, manage beneficiaries, and prepare for life's transitions. AES-256 encryption. AI-powered Estate Guardian. Start free." />
+        <link rel="canonical" href="https://carryon.us/" />
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content="CarryOn - Protect What Matters Most" />
+        <meta property="og:description" content="Organize your estate plan, secure your documents, leave milestone messages, and prepare your family — all in one encrypted platform." />
+        <meta property="og:url" content="https://carryon.us" />
+        <meta property="og:site_name" content="CarryOn" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="CarryOn - Family Preparedness Platform" />
+        <meta name="twitter:description" content="Secure your family's future. Estate plans, documents, milestone messages, and financial tracking in one platform." />
+      </Helmet>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "CarryOn",
+        "alternateName": "CarryOn Family Preparedness Platform",
+        "url": "https://carryon.us",
+        "description": "CarryOn helps families organize estate plans, secure important documents, manage beneficiaries, and prepare for life's transitions — all in one secure platform.",
+        "applicationCategory": "LifestyleApplication",
+        "operatingSystem": "Web, iOS",
+        "offers": {
+          "@type": "AggregateOffer",
+          "lowPrice": "7.99",
+          "highPrice": "9.99",
+          "priceCurrency": "USD",
+          "offerCount": 3
+        },
+        "featureList": [
+          "AES-256 Encrypted Document Vault",
+          "AI-Powered Estate Guardian Advisor",
+          "Milestone Messages (Written, Voice, Video)",
+          "Beneficiary Management with Succession Ordering",
+          "Financial Portal with Bill & Debt Tracking",
+          "Immediate Action Checklist for Beneficiaries",
+          "Digital Access Vault",
+          "Push Notification Reminders",
+          "Family Plan Support"
+        ],
+        "provider": {
+          "@type": "Organization",
+          "name": "CarryOn Technologies",
+          "url": "https://carryon.us",
+          "contactPoint": {
+            "@type": "ContactPoint",
+            "email": "info@carryon.us",
+            "contactType": "customer service"
+          }
+        }
+      }) }} />
 
       {/* NAV BAR */}
       <nav className="fixed top-0 w-full z-[100]" style={{ borderBottom: '1px solid rgba(14,165,233,0.06)', background: 'rgba(11,18,33,0.97)', paddingTop: 'env(safe-area-inset-top, 0px)' }}>
@@ -104,7 +156,7 @@ const HomePage = () => {
               The digital family preparedness platform that brings together every aspect of your life &mdash; so you and your loved ones can CarryOn through anything.
             </p>
             <div className="flex items-center gap-4 justify-center flex-wrap mb-8">
-              <button onClick={() => navigateWithFade('/signup')} className="inline-flex items-center gap-2 px-8 py-3.5 rounded-lg font-bold text-base transition-transform duration-150 active:scale-95" data-testid="home-get-started-hero"
+              <button onClick={() => navigateWithFade('/start')} className="inline-flex items-center gap-2 px-8 py-3.5 rounded-lg font-bold text-base transition-transform duration-150 active:scale-95" data-testid="home-get-started-hero"
                 style={{ background: '#d4af37', color: '#0B1221' }}>
                 Get Started <ChevronRight className="w-4 h-4" />
               </button>

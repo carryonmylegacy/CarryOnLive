@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import {
@@ -104,8 +105,63 @@ const StartPage = () => {
     );
   }
 
+  const startPageJsonLd = plans.length > 0 ? JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": "Get Started with CarryOn",
+    "description": "Choose how to begin protecting your family with CarryOn. Start with a paid subscription or explore the platform free.",
+    "url": "https://carryon.us/start",
+    "mainEntity": {
+      "@type": "ItemList",
+      "name": "CarryOn Subscription Plans",
+      "itemListElement": plans.filter(p => p.price > 0).map((p, i) => ({
+        "@type": "ListItem",
+        "position": i + 1,
+        "item": {
+          "@type": "Product",
+          "name": `CarryOn ${p.name} Plan`,
+          "description": (p.features || []).join('. '),
+          "offers": {
+            "@type": "Offer",
+            "price": p.price,
+            "priceCurrency": "USD",
+            "priceSpecification": {
+              "@type": "UnitPriceSpecification",
+              "price": p.price,
+              "priceCurrency": "USD",
+              "unitText": "MONTH",
+              "billingDuration": "P1M"
+            },
+            "availability": "https://schema.org/InStock"
+          }
+        }
+      }))
+    },
+    "provider": {
+      "@type": "Organization",
+      "name": "CarryOn Technologies",
+      "url": "https://carryon.us"
+    }
+  }) : null;
+
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg)' }} data-testid="start-page">
+      <Helmet>
+        <title>Get Started with CarryOn - Family Preparedness Platform</title>
+        <meta name="description" content="Choose how to begin protecting your family with CarryOn. Start with a paid subscription or explore the platform free for 30 days. Secure documents, estate plans, and milestone messages." />
+        <link rel="canonical" href="https://carryon.us/start" />
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content="Get Started with CarryOn - Protect What Matters Most" />
+        <meta property="og:description" content="Choose your plan or explore free. CarryOn helps families organize estate plans, secure documents, and prepare for life's transitions." />
+        <meta property="og:url" content="https://carryon.us/start" />
+        <meta property="og:site_name" content="CarryOn" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Get Started with CarryOn - Family Preparedness" />
+        <meta name="twitter:description" content="Start today with a paid plan or explore free. Secure your family's future in one platform." />
+      </Helmet>
+      {startPageJsonLd && (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: startPageJsonLd }} />
+      )}
       {/* Header */}
       <header className="flex items-center justify-between px-4 sm:px-8 py-4" style={{ borderBottom: '1px solid var(--b)' }}>
         <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>

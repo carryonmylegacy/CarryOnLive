@@ -1,5 +1,6 @@
 import React, { useEffect, useState, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { HelmetProvider } from 'react-helmet-async';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { SectionLockProvider } from './components/security/SectionLock';
@@ -48,6 +49,7 @@ const EstateChatPage = lazy(() => import('./pages/EstateChatPage'));
 const ConnectedProtocolPage = lazy(() => import('./pages/ConnectedProtocolPage'));
 const FinancialPortalPage = lazy(() => import('./pages/FinancialPortalPage'));
 const StartPage = lazy(() => import('./pages/StartPage'));
+const PricingPage = lazy(() => import('./pages/PricingPage'));
 const BeneficiaryCCPPage = lazy(() => import('./pages/beneficiary/BeneficiaryCCPPage'));
 const TransitionPage = lazy(() => import('./pages/TransitionPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
@@ -265,6 +267,7 @@ function AppRoutes() {
       <Route path="/home" element={<HomePage />} />
       <Route path="/get-started" element={<GetStartedPage />} />
       <Route path="/start" element={<StartPage />} />
+      <Route path="/pricing" element={<PricingPage />} />
 
       {/* Invitation Accept Route - Public */}
       <Route path="/accept-invitation/:token" element={<AcceptInvitationPage />} />
@@ -412,6 +415,7 @@ function App() {
   }, []);
 
   return (
+    <HelmetProvider>
     <ForceUpdateGate>
     <ThemeProvider>
       <AuthProvider>
@@ -429,6 +433,7 @@ function App() {
       </AuthProvider>
     </ThemeProvider>
     </ForceUpdateGate>
+    </HelmetProvider>
   );
 }
 

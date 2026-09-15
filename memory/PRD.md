@@ -49,66 +49,73 @@ Build and maintain a comprehensive family preparedness platform that helps users
 - Getting Started Multi-Step Dismiss Logic with frosted glass overlays
 - All prior platform-wide fixes (Google Places, phone formatting, date formatting, etc.)
 
-### Completed (Current Session — Apr 12, 2026)
-- **CarryOn Financial Portal (CFP)**: Complete new feature with 3 sub-modules
-  - **Bill Tracker (CBT)**: Full CRUD for bills with 13 default categories + custom user categories, due day tracking, auto-pay indicator, payment method/account, biller contact info, reminder schedule (customizable per-bill), priority levels, DAV deep-linking, notes for beneficiaries
-  - **Debt Tracker (CDT)**: Full CRUD for debts with categories (mortgage, auto loan, student loan, etc.), outstanding balance, interest rate, monthly payment, loan term, collateral, co-signer, life insurance linkage, DAV deep-linking
-  - **Accounts Registry (CAR)**: Full CRUD for financial accounts with categories (checking, savings, investment, retirement, etc.), balance tracking, institution info, ownership type (individual, joint, trust, POD/TOD), named beneficiary at institution, DAV deep-linking
-  - **Financial Summary Dashboard**: Real-time aggregation cards showing Monthly Bills total, Total Debt, Total Assets, Net Position
-  - **Bill Calendar**: Interactive monthly calendar with colored dots per bill category, day selection shows bill details, monthly total footer
-  - **Per-Beneficiary Designation**: Each bill/debt/account supports per-beneficiary visibility with Pre/Post transition timing toggles (same SDV pattern)
-  - **Custom Categories**: Benefactors can create custom categories via +Add New Category in any form dropdown; custom categories instantly appear as filter bubbles
-  - **Mark as Paid**: Bill payment tracking with history
-  - **Dashboard Tile**: CFP tile on benefactor dashboard showing summary stats and upcoming bills
-  - **Sidebar Navigation**: CFP nav item added to benefactor sidebar
-  - **Feature Access Toggle**: `cfp_access` toggle added to beneficiary feature access settings
-  - **Section Permissions**: `financial_portal` added to ALL_SECTIONS for section-level gating
-  - **Beneficiary Financial Page**: Read-only view at `/beneficiary/financial` with Mark as Paid button (post-transition only), calendar view, summary cards, and 3 sub-tabs
-  - **Bill Reminder Scheduler**: `bill_reminder_scheduler` runs daily at 9 AM EST, sends push + in-app notifications to beneficiaries of transitioned estates at 10, 7, 5, 3, 1, and 0 days before each bill's due date
-  - **Financial Health Score**: New gauge on dashboard showing a 0-100 score based on: coverage (bills/debts/accounts), auto-pay %, beneficiary designations, DAV links, and notes/instructions
-  - **Dual Dashboard Gauges**: Estate Readiness Score (left) + Financial Health Score (right) displayed side-by-side like speedometer and tachometer
-  - **Bill Cancellation Advisor**: Post-transition overlay for optional/subscription bills with 5-step cancellation checklist, benefactor's pre-written instructions, click-to-call biller phone, portal URL link, and auto-pay warning
-  - **CFP Dock Items**: Financial Portal added to mobile bottom dock defaults for both benefactor (`/financial`) and beneficiary (`/beneficiary/financial`) with DollarSign icon
-  - **Smart Bill Categorization**: AI-powered auto-fill using xAI (grok-3-mini) — when user types a bill/debt/account name and tabs out, AI auto-detects category, biller phone, website, payment method, auto-pay status, and frequency. Sparkles icon indicator during loading. Works across all three form types (Bills, Debts, Accounts).
-  - **Email Deliverability Fix**: Centralized all email sends through validated `send_email()` service with: email format validation, test domain blocking (test.com, example.com, etc.), suppression list (bounced addresses auto-blocked), Resend bounce webhook at `/api/webhooks/resend`. Pre-suppressed 152 test/fake email addresses. 10 files updated to route through centralized service.
-  - **Platform-Wide Light Mode Audit**: Extended color variable fixes to ConnectedProtocolPage.js (32+ fixes), VaultPage.js (6 fixes), PrivacyPolicyPage.js, TermsPage.js, DockCustomizer.js — zero hardcoded #F1F3F8/#525C72/#7B879E/#A0AABF remaining in the codebase
-  - **Quick Add (Bulk Bill Import)**: AI-powered batch creation — type multiple names (one per line), click "Categorize with AI", review results with category badges + phone + auto-pay info, deselect unwanted, batch-save. Works across Bills, Debts, and Accounts.
-  - Backend: `/app/backend/routes/financial_portal.py` (21 routes, 741 lines)
-  - Frontend: `/app/frontend/src/pages/FinancialPortalPage.js` + 7 components in `/app/frontend/src/components/financial/` + `/app/frontend/src/pages/beneficiary/BeneficiaryFinancialPage.js`
-  - MongoDB collections: `bills`, `debts`, `financial_accounts`, `bill_categories`, `bill_payments`
-  - DB indexes: 6 new indexes for financial collections
-  - Testing: 40/40 tests pass (27 initial + 13 extension), all frontend UI verified
-  - Housekeeping: 64/65 PASS, 0 FAIL
+### Completed (Apr 12, 2026 Session)
+- **CarryOn Financial Portal (CFP)**: Complete feature with Bill Tracker, Debt Tracker, Accounts Registry, Financial Summary Dashboard, Bill Calendar, Per-Beneficiary Designation, Custom Categories, Mark as Paid, Dashboard Tile, Sidebar Nav, Bill Reminder Scheduler, Financial Health Score, Dual Dashboard Gauges, Bill Cancellation Advisor, CFP Dock Items, Smart Bill Categorization, Quick Add (Bulk Import)
+- **Email Deliverability Fix**: Centralized email service with bounce handling
+- **Platform-Wide Light Mode Audit**: Complete color variable fixes
+- Backend: `/app/backend/routes/financial_portal.py` (21 routes)
+- Frontend: `/app/frontend/src/pages/FinancialPortalPage.js` + 7 components
+- Testing: 40/40 tests pass, Housekeeping: 64/65 PASS
+
+### Completed (Sep 15, 2026 Session — Revenue Funnel Overhaul)
+- **Stripe Subscription Migration**: Converted to native Stripe Subscriptions via `setup_stripe_catalog.py` (18 prices)
+- **Funnel Intake Page**: Built `/start` with two-door funnel ("Start today" / "Explore first")
+- **Trial Enhancements**: DB-configurable trial duration, "exploration period" language, non-dismissable TrialBanner, hard paywall at expiry
+- **Analytics**: UTM capture during signup, persisting to user record
+- **Email Bounce Handlers**: Resend webhook + centralized email service
+- **Marketing Pages**: `/pricing` page with portal-driven pricing, removed "130+ Families" stat, homepage CTAs → `/start`
+- **Phase 3 Zero-Regression Guardrails**: All 9 verification tests PASSED
+  1. Admin login ✅
+  2. Plans API (8 plans, correct pricing) ✅
+  3. Subscription status (trial/beta/access flags) ✅
+  4. Checkout flow (beta mode → free) ✅
+  5. Webhook endpoint (accepts payloads) ✅
+  6. Plan change (beta mode switch) ✅
+  7. Cancel flow ✅
+  8. Admin settings API ✅
+  9. User subscriptions data integrity ✅
+- **SEO / AI-Readability Overhaul**: 
+  - Installed `react-helmet-async` with `HelmetProvider` in App.js
+  - Added per-page `<Helmet>` with custom title, description, OG, Twitter meta tags to `/start`, `/pricing`, `/home`
+  - Added JSON-LD structured data (Schema.org) to all 3 pages:
+    - `/home`: WebApplication with featureList + AggregateOffer
+    - `/start`: WebPage with ItemList of Product/Offer plans
+    - `/pricing`: WebPage with ItemList of Product/Offer plans (6 plans with prices)
+  - Updated sitemap.xml: 3 → 9 URLs (/start, /pricing, /home, /about, /privacy, /terms added)
+  - Fixed sitemap namespace typo (sitemapns.org → sitemaps.org)
+  - Testing: 4/4 SEO tests PASSED
+- Housekeeping: 64/64 PASS, 0 FAIL
 
 ## Blocked Items
 - Apple IAP: Waiting on Paid Applications Agreement
 - Twilio SMS: Waiting on A2P 10DLC campaign approval
 
 ## Upcoming Tasks
-- (P0) Phase 1 remaining: `/pricing` dedicated page, remove "130+ Families", HomePage CTA → `/start`
-- (P0) Phase 2: Homepage hero CTA, legal entity standardization, `/security` Railway→Render, `/about` founder photo
-- (P0) 90-day trial data purge scheduler
 - (P0) Google Play Store Launch
+- (P1) iOS Share Extension Setup
+- (P1) iOS Live Updates (Capgo)
+- (P2) iOS Font Size Fix (37 sub-11px font instances in housekeeping WARN)
 
 ## Future/Backlog
 - (P2) CFP Getting Started Integration — Add CFP step to onboarding wizard
 - (P2) Readiness Scoring Policy Page
 - (P3) ECT Security Comparison Landing Page
 
-
 ## Refactoring Completed
-- **EstateChatPage.js refactored** (Apr 12, 2026): Reduced from 2516 → 2029 lines (~487 lines extracted)
-  - `/app/frontend/src/components/estate-chat/useVoiceRecorder.js` — Voice recorder hook
-  - `/app/frontend/src/components/estate-chat/VoiceMessagePlayer.js` — Inline audio player component
-  - `/app/frontend/src/components/estate-chat/AuthMedia.js` — AuthImage, AuthVideo, AuthFileLink + cachedFetch utility
-  - `/app/frontend/src/components/estate-chat/ECTSecurityIntro.js` — Two-step security walkthrough overlay
-  - `/app/frontend/src/components/estate-chat/ImagePreviewModal.js` — Fullscreen photo preview with Save/Share
+- **EstateChatPage.js refactored** (Apr 12, 2026): Reduced from 2516 → 2029 lines
 
 ## Key Technical Notes
-- Housekeeping: `bash /app/housekeeping.sh` must pass 65/65 before every push
+- Housekeeping: `bash /app/housekeeping.sh` must pass 64+ before every push
 - State sync: Frontend media removals must explicitly call backend DELETE endpoints
 - Narrative: Use "family preparedness" not "estate planning"
 - MongoDB: Always exclude `_id` from responses
 - First-visit intros use localStorage: `carryon_ccp_intro_seen`, `ect_security_seen`
 - Financial Portal uses soft-delete (`deleted_at` field) on all records
-- Custom categories stored in `bill_categories` collection, module-scoped (bills/debts/accounts)
+- Custom categories stored in `bill_categories` collection, module-scoped
+- **Dynamic Pricing**: Never hardcode prices — always fetched from Founder Portal DB config
+- **Stripe Native Subscriptions**: `checkout.py` uses `mode='subscription'` with lookup keys
+- **UTM Capture**: `utm_*` tags captured in sessionStorage, persisted to user record
+- **JSON-LD Structured Data**: Rendered via `dangerouslySetInnerHTML` outside `<Helmet>` (Helmet crashes with dynamic script children)
+- **react-helmet-async**: HelmetProvider wraps app in App.js. Per-page Helmet in StartPage, PricingPage, HomePage
+- **LIVE Stripe keys**: Exercise extreme caution when testing billing
+- **Beta mode currently ON**: Checkout returns `{free: true}` instead of creating Stripe sessions
