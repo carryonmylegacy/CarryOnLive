@@ -15,6 +15,7 @@ import { haptics } from '../utils/haptics';
 import { API_URL } from '../config';
 import { RevealSection } from '../components/landing/RevealSection';
 import LandingContent from '../components/landing/LandingContent';
+import { HERO } from '../components/landing/heroCopy';
 
 const useIsMobileViewport = (breakpoint = 768) => {
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < breakpoint);
@@ -736,12 +737,12 @@ const LoginPage = () => {
       transition: 'opacity 0.45s ease, transform 0.45s ease',
     }}>
       <Helmet>
-        <title>CarryOn - Secure Family Preparedness & Estate Planning Platform</title>
-        <meta name="description" content="So your family knows where everything lives, who to call first, and what to do next — if something happens to you. AES-256 encryption. AI-powered Estate Guardian. Plans from $3.99/month." />
-        <link rel="canonical" href="https://carryon.us/" />
-        <meta property="og:title" content="CarryOn - Every American Family. Ready." />
+        <title>Sign In - CarryOn | Get Your Family&apos;s Affairs in Order</title>
+        <meta name="description" content="Sign in to CarryOn — one secure place for your documents, passwords, who to call first, and what to do next, so your family can handle what comes next. AES-256 encrypted. Plans from $3.99/month." />
+        <link rel="canonical" href="https://carryon.us/login" />
+        <meta property="og:title" content="CarryOn - Get your family's affairs in order, in one secure place" />
         <meta property="og:description" content="So your family knows where everything lives, who to call first, and what to do next — if something happens to you." />
-        <meta property="og:url" content="https://carryon.us" />
+        <meta property="og:url" content="https://carryon.us/login" />
       </Helmet>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
         "@context": "https://schema.org",
@@ -749,7 +750,7 @@ const LoginPage = () => {
         "name": "CarryOn Technologies LLC",
         "url": "https://carryon.us",
         "logo": "https://carryon.us/carryon-icon.jpg",
-        "description": "CarryOn is the first complete digital family preparedness platform — helping American families organize estate plans, secure documents, and prepare for life's transitions.",
+        "description": "CarryOn helps American families get their affairs in order in one secure place — documents, passwords, who to call first, and what to do next.",
         "address": {
           "@type": "PostalAddress",
           "streetAddress": "1550 Wilson Boulevard, 7th Floor",
@@ -817,22 +818,23 @@ const LoginPage = () => {
                   <img src="/carryon-logo.png" alt="CarryOn" className="w-[200px] xl:w-[260px] h-auto" />
                 </div>
                 <div className="text-center sm:text-left flex-1 sm:pt-2">
-                  <h1 className="text-3xl sm:text-4xl xl:text-5xl font-bold text-white leading-[1.08] mb-3" style={{ fontFamily: 'Outfit, sans-serif', textShadow: '0 2px 12px rgba(0,0,0,0.7), 0 1px 4px rgba(0,0,0,0.5)' }}>
-                    Every American Family.
-                    <span className="block text-[#d4af37] mt-1" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.7), 0 1px 4px rgba(0,0,0,0.5)' }}>Ready.</span>
+                  <p className="text-[#d4af37] text-xs font-bold uppercase tracking-[0.22em] mb-3" style={{ textShadow: '0 1px 6px rgba(0,0,0,0.6)' }} data-testid="hero-eyebrow-desktop">{HERO.eyebrow}</p>
+                  <h1 className="text-3xl sm:text-4xl xl:text-5xl font-bold text-white leading-[1.08] mb-3" style={{ fontFamily: 'Outfit, sans-serif', textWrap: 'balance', textShadow: '0 2px 12px rgba(0,0,0,0.7), 0 1px 4px rgba(0,0,0,0.5)' }} data-testid="hero-h1-desktop">
+                    {HERO.h1a}
+                    <span className="block text-[#d4af37] mt-1" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.7), 0 1px 4px rgba(0,0,0,0.5)' }}>{HERO.h1b}</span>
                   </h1>
                   <p className="text-white/80 text-sm xl:text-base max-w-lg leading-relaxed mb-5" style={{ textShadow: '0 1px 8px rgba(0,0,0,0.6)' }}>
-                    So your family knows where everything lives, who to call first, and what to do next &mdash; if something happens to you.
+                    {HERO.sub}
                   </p>
                   <div className="flex items-center gap-5 justify-center sm:justify-start mb-5">
-                    {['AES-256 Encrypted', 'Per-Estate Keys', '2FA Protected'].map(badge => (
+                    {HERO.badges.map(badge => (
                       <div key={badge} className="flex items-center gap-2">
                         <div className="w-2 h-2 rounded-full bg-[#10b981]" />
                         <span className="text-white/70 text-sm font-medium" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>{badge}</span>
                       </div>
                     ))}
                   </div>
-                  <a href="#features" className="flex w-fit flex-col items-center justify-center gap-1 mt-10 mx-auto px-5 py-3 rounded-xl cursor-pointer text-center"
+                  <a href="#preview" className="flex w-fit flex-col items-center justify-center gap-1 mt-10 mx-auto px-5 py-3 rounded-xl cursor-pointer text-center"
                     data-testid="scroll-explore-desktop"
                     style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.28), rgba(212,175,55,0.16))', border: '2px solid rgba(212,175,55,0.45)', boxShadow: '0 4px 30px rgba(212,175,55,0.20)', backdropFilter: 'blur(8px)' }}>
                     <span className="text-white text-xl sm:text-2xl font-bold text-center" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>See How It Works</span>
@@ -958,22 +960,23 @@ const LoginPage = () => {
               <RevealSection delay={0.5}>
                 <div className="flex flex-col items-center text-center mt-2">
                   <img src="/carryon-logo.png" alt="CarryOn" className="w-[240px] h-auto mb-5" />
-                  <h2 className="text-3xl sm:text-4xl font-bold text-white leading-[1.08] mb-3" style={{ fontFamily: 'Outfit, sans-serif', textShadow: '0 2px 12px rgba(0,0,0,0.7), 0 1px 4px rgba(0,0,0,0.5)' }}>
-                    Every American Family.
-                    <span className="block text-[#d4af37] mt-1" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.7), 0 1px 4px rgba(0,0,0,0.5)' }}>Ready.</span>
+                  <p className="text-[#d4af37] text-xs font-bold uppercase tracking-[0.22em] mb-3" style={{ textShadow: '0 1px 6px rgba(0,0,0,0.6)' }} data-testid="hero-eyebrow-mobile">{HERO.eyebrow}</p>
+                  <h2 className="text-3xl sm:text-4xl font-bold text-white leading-[1.08] mb-3" style={{ fontFamily: 'Outfit, sans-serif', textWrap: 'balance', textShadow: '0 2px 12px rgba(0,0,0,0.7), 0 1px 4px rgba(0,0,0,0.5)' }} data-testid="hero-h1-mobile">
+                    {HERO.h1a}
+                    <span className="block text-[#d4af37] mt-1" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.7), 0 1px 4px rgba(0,0,0,0.5)' }}>{HERO.h1b}</span>
                   </h2>
                   <p className="text-white/80 text-base max-w-sm leading-relaxed mb-5" style={{ textShadow: '0 1px 8px rgba(0,0,0,0.6)' }}>
-                    So your family knows where everything lives, who to call first, and what to do next &mdash; if something happens to you.
+                    {HERO.sub}
                   </p>
                   <div className="flex items-center gap-4 justify-center mb-4">
-                    {['AES-256 Encrypted', 'Per-Estate Keys', '2FA Protected'].map(badge => (
+                    {HERO.badges.map(badge => (
                       <div key={badge} className="flex items-center gap-2">
                         <div className="w-2 h-2 rounded-full bg-[#10b981]" />
                         <span className="text-white/70 text-sm font-medium" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>{badge}</span>
                       </div>
                     ))}
                   </div>
-                  <a href="#features" className="flex flex-col items-center justify-center gap-1 mt-8 mb-20 mx-auto px-5 py-3 rounded-xl cursor-pointer text-center"
+                  <a href="#preview" className="flex flex-col items-center justify-center gap-1 mt-8 mb-20 mx-auto px-5 py-3 rounded-xl cursor-pointer text-center"
                     data-testid="scroll-explore-mobile"
                     style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.28), rgba(212,175,55,0.16))', border: '2px solid rgba(212,175,55,0.45)', boxShadow: '0 4px 30px rgba(212,175,55,0.20)', backdropFilter: 'blur(8px)' }}>
                     <span className="text-white text-lg sm:text-xl font-bold text-center" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>See How It Works</span>

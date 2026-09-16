@@ -1,73 +1,90 @@
 import React, { useState } from 'react';
-import { Shield, Users, ChevronRight, ChevronDown, Lock as LockIcon, Sparkles, FileCheck, UserCheck, Trash2, ClipboardCheck, MessageSquare, Key, Layers, Smartphone, MapPin, ShieldAlert, ArrowUpDown, SlidersHorizontal, Radio, MessageCircle, HelpCircle } from 'lucide-react';
+import { Shield, Users, ChevronRight, ChevronDown, Lock as LockIcon, Sparkles, FileCheck, UserCheck, Trash2, ClipboardCheck, MessageSquare, Key, Layers, Smartphone, MapPin, ShieldAlert, ArrowUpDown, SlidersHorizontal, Radio, MessageCircle, HelpCircle, Heart, HandHeart, EyeOff, Download, Clock, Medal } from 'lucide-react';
 import { RevealSection } from './RevealSection';
+import { ProductPreview } from './ProductPreview';
 
-/* ── data: 8 pillars ── */
+/* ── data: the eight tools (plain-language title, product name as sub-label) ── */
 const PILLARS = [
-  { num: '01', icon: MessageSquare, title: 'Milestone Messages', abbr: 'MM',
-    bold: 'Your words at their wedding. Your voice on their birthday. Your love \u2014 delivered exactly when it matters.',
-    desc: 'Record written, audio, or video messages for the milestones you want to be part of \u2014 even if you can\'t be there. Graduations, births, first homes, or any moment you choose. Create them infinitely over time, and they\'re delivered exactly as you envision.' },
-  { num: '02', icon: LockIcon, title: 'Secure Document Vault', abbr: 'SDV',
-    bold: 'Every will, trust, policy, and deed \u2014 encrypted, organized, and accessible to the right people at the right time.',
-    desc: 'Upload your most critical family documents into a per-estate encrypted vault with AES-256 encryption and Triple Lock protection. Your beneficiaries access exactly what you authorize \u2014 and your documents become the foundation that powers everything else.' },
-  { num: '03', icon: Sparkles, title: 'Estate Guardian\u2122 AI', abbr: 'EGA',
-    bold: 'An AI analyst trained on U.S. law across all 50 states \u2014 working inside your encrypted vault to find what you missed.',
-    desc: 'EGA analyzes your uploaded documents for contradictions, gaps, outdated provisions, and missing pieces. It identifies critical details \u2014 claim phone numbers, executor contacts, filing deadlines \u2014 and auto-populates the beginnings of your personalized action plan. No team reads your documents. The AI works entirely within your encryption.' },
-  { num: '04', icon: ClipboardCheck, title: 'Immediate Action Checklist', abbr: 'IAC',
+  { num: '01', icon: MessageSquare, title: 'Messages for the moments you\u2019ll miss', product: 'Milestone Messages',
+    bold: 'Your words at their wedding. Your voice on their birthday. Delivered exactly when it matters.',
+    desc: 'Record written, audio, or video messages for graduations, births, first homes \u2014 any moment you want to be part of, even if you can\u2019t be there. Add as many as you like, whenever you like.' },
+  { num: '02', icon: LockIcon, title: 'Every important document, in one place', product: 'Secure Document Vault',
+    bold: 'Wills, trusts, insurance policies, deeds \u2014 encrypted, organized, and shared only with the people you choose.',
+    desc: 'Upload the paperwork your family would otherwise tear the house apart looking for. Each family\u2019s vault has its own AES-256 encryption key, and nobody at CarryOn can read what\u2019s inside. Your loved ones see exactly what you allow \u2014 nothing more.' },
+  { num: '03', icon: Sparkles, title: 'A second set of eyes on your paperwork', product: 'Estate Guardian\u2122 AI',
+    bold: 'An AI review, tuned to your state\u2019s laws, that finds what you missed \u2014 without anyone else reading your documents.',
+    desc: 'It looks for contradictions, gaps, outdated provisions, and missing pieces, then pulls out the details your family will need in a hurry: claim phone numbers, executor contacts, filing deadlines. It works entirely inside your encrypted vault.' },
+  { num: '04', icon: ClipboardCheck, title: 'What to do first', product: 'Immediate Action Checklist',
     bold: 'A step-by-step guide your family can follow on the hardest days of their lives.',
-    desc: 'Partially auto-created by EGA from your documents and fully customizable by you. When a crisis hits, your family opens the IAC and knows exactly what to do, who to call, where to find every document, and what deadlines matter. No guessing. No searching. No overwhelm.' },
-  { num: '05', icon: Radio, title: 'Contingency Protocols', abbr: 'CCP',
-    bold: 'Response plans your family can build now for the scenarios they might face \u2014 ready to activate at a moment\u2019s notice.',
-    desc: 'Build contingency protocols for any situation: medical emergencies, natural disasters, financial disruptions, or the passing of a family member. Each protocol connects your people, your documents, your checklists, and your communication channels into one coordinated plan your family can execute together.' },
-  { num: '06', icon: MessageCircle, title: 'Estate Communications Tool', abbr: 'ECT',
-    bold: 'Secure, private family messaging that powers your protocols and keeps your family connected when it counts.',
-    desc: 'ECT is the communication backbone of your family\'s readiness infrastructure. Encrypted, access-controlled conversations between benefactors and beneficiaries, purpose-built for sensitive family coordination. When a contingency protocol activates, ECT is how your family stays in sync \u2014 privately and securely.' },
-  { num: '07', icon: Key, title: 'Digital Access Vault', abbr: 'DAV',
-    bold: 'Passwords, accounts, crypto keys, and digital credentials \u2014 saved, encrypted, and assigned to the right people.',
-    desc: 'The modern family has dozens of digital accounts, subscriptions, financial platforms, and access credentials that need to be passed down and organized. DAV stores them all in your encrypted vault, assigned to specific beneficiaries, so nothing is lost and nothing is forgotten.' },
-  { num: '08', icon: Users, title: 'Family & Friends Notification', abbr: 'FFN',
+    desc: 'Started for you from your documents and finished by you. When something happens, your family opens one list and knows what to do, who to call, where every document is, and which deadlines matter. No guessing. No searching.' },
+  { num: '05', icon: Radio, title: 'Emergency plans', product: 'Contingency Protocols',
+    bold: 'Plans your family builds now for the situations they might face \u2014 ready the moment they\u2019re needed.',
+    desc: 'A medical emergency. A natural disaster. A job loss. The passing of a family member. Each plan connects the right people, documents, checklists, and conversations so your family can act together instead of scrambling.' },
+  { num: '06', icon: MessageCircle, title: 'Private family messaging', product: 'Estate Communications Tool',
+    bold: 'A secure place for the conversations that shouldn\u2019t happen over group text.',
+    desc: 'Encrypted, access-controlled messaging between you and the people you\u2019ve chosen, built for sensitive family coordination. When an emergency plan kicks in, this is how everyone stays on the same page \u2014 privately.' },
+  { num: '07', icon: Key, title: 'Passwords & accounts', product: 'Digital Access Vault',
+    bold: 'Logins, subscriptions, crypto keys, and account numbers \u2014 saved, encrypted, and assigned to the right person.',
+    desc: 'The average family has dozens of accounts nobody else can get into. Store them here, decide who gets what, and nothing gets locked away forever or forgotten.' },
+  { num: '08', icon: Users, title: 'Who to notify', product: 'Family & Friends Notification',
     bold: 'The people who matter most should never hear important news through the grapevine.',
-    desc: 'Build a personalized notification list of family, friends, colleagues, and anyone your beneficiaries should contact during a transition or emergency. Names, phone numbers, relationships, and special notes \u2014 all organized and ready so your family can coordinate outreach without scrambling.' },
+    desc: 'Keep a list of family, friends, colleagues, and anyone else your loved ones should reach out to. Names, numbers, relationships, and notes \u2014 organized so your family can make the calls without hunting through your phone.' },
 ];
 
 /* ── data: platform features ── */
 const PLATFORM_FEATURES = [
-  { icon: UserCheck, title: 'Benefactor & Beneficiary System', desc: 'Enroll the people who matter most. Control what each person can see, access, and manage within your family\'s readiness plan.' },
-  { icon: ArrowUpDown, title: 'Succession Hierarchy', desc: 'Ranked beneficiary succession with automatic promotion when a primary can no longer serve. Your chain of responsibility never breaks.' },
-  { icon: Layers, title: 'Multi-Estate Support', desc: 'Manage multiple estates under one account &mdash; built for blended, extended, and modern families with complex structures.' },
-  { icon: Users, title: 'Family Plan Savings', desc: 'Bundle your household for percentage-based discounts on every tier. The more family members you prepare, the more you save.' },
-  { icon: ShieldAlert, title: 'Emergency Access', desc: 'Verified protocol for beneficiaries to request vault access when a benefactor is incapacitated. Built for real emergencies.' },
-  { icon: SlidersHorizontal, title: 'Section Permissions', desc: 'Control exactly what each beneficiary can see &mdash; vault, messages, checklists, protocols, and more. Granular, per-person access.' },
-  { icon: Smartphone, title: 'Native Mobile App', desc: 'iOS and Android with biometric login, push notifications, and full platform access. Your family\'s readiness goes wherever you go.' },
-  { icon: MapPin, title: '50-State Legal Intelligence', desc: 'Estate Guardian calibrates every analysis to your declared state of residence and its specific laws. Personalized, not generic.' },
+  { icon: UserCheck, title: 'Your people, your rules', desc: 'Invite the people you trust. Decide exactly what each person can see, access, and manage.' },
+  { icon: ArrowUpDown, title: 'A backup for your backup', desc: 'Rank who steps in if your first choice can&rsquo;t. If someone can no longer serve, the next person is promoted automatically.' },
+  { icon: Layers, title: 'More than one household', desc: 'Manage a parent&rsquo;s affairs alongside your own &mdash; built for blended, extended, and modern families.' },
+  { icon: Users, title: 'Family plan savings', desc: 'Bundle your household for a discount on every tier. The more family members you prepare, the more you save.' },
+  { icon: ShieldAlert, title: 'Emergency access', desc: 'A verified way for the people you&rsquo;ve chosen to request access if you&rsquo;re incapacitated or unreachable.' },
+  { icon: SlidersHorizontal, title: 'Share only what&rsquo;s needed', desc: 'Your spouse sees the accounts. Your attorney sees the will. Your kids see the messages. You decide, per person.' },
+  { icon: Smartphone, title: 'On your phone', desc: 'iOS and Android with face or fingerprint login and push alerts. Your plan goes wherever you go.' },
+  { icon: MapPin, title: 'Tuned to your state', desc: 'Estate Guardian&trade; AI reviews your documents against the laws of the state you live in &mdash; not generic advice.' },
 ];
 
 /* ── data: five steps ── */
 const FIVE_STEPS = [
-  { step: '1', title: 'Enroll Your Family', desc: 'Invite your beneficiaries \u2014 the people who matter most. Set their roles, permissions, and access levels. Your family\'s readiness starts with the people in it.' },
-  { step: '2', title: 'Leave Your Messages', desc: 'Record Milestone Messages for the moments you want to be part of \u2014 graduations, weddings, birthdays, or just a Tuesday. Create them over time, as many as you want, delivered exactly as you envision.' },
-  { step: '3', title: 'Upload & Analyze', desc: 'Upload your documents into the Secure Document Vault. Estate Guardian\u2122 AI analyzes everything and auto-creates the beginnings of your personalized Immediate Action Checklist \u2014 so your family has a clear plan from day one.' },
-  { step: '4', title: 'Build Your Protocols', desc: 'Create Contingency Protocols for the scenarios that matter to your family. Connect your documents, checklists, and communication channels into coordinated response plans. Use the Estate Communications Tool to keep everyone in sync.' },
-  { step: '5', title: 'Live Your Life', desc: 'Your family\'s readiness infrastructure is built. Save credentials in the Digital Access Vault, organize contacts in Family & Friends Notification, and update your plan whenever life changes. When any challenge comes \u2014 your family will never be left searching.' },
+  { step: '1', title: 'Add your people', desc: 'Invite the people who matter most \u2014 spouse, kids, a sibling, your attorney. Decide what each of them can see.' },
+  { step: '2', title: 'Leave your messages', desc: 'Record messages for the moments you want to be part of \u2014 graduations, weddings, birthdays, or just a Tuesday. Add more whenever you like.' },
+  { step: '3', title: 'Upload your documents', desc: 'Add wills, policies, deeds, and account details to your vault. Estate Guardian\u2122 AI reviews them and starts your family\u2019s what-to-do-first list for you.' },
+  { step: '4', title: 'Build your plans', desc: 'Set up emergency plans for the situations that worry you. Connect the right people, documents, and checklists so everyone knows their part.' },
+  { step: '5', title: 'Live your life', desc: 'Save your passwords and accounts, list who to notify, and update things when life changes. That\u2019s it. Your family will never be left searching.' },
 ];
 
 /* ── data: security items ── */
 const SECURITY_ITEMS = [
-  { icon: LockIcon, text: 'AES-256 per-estate encryption \u2014 your family\'s data is never accessed by our team' },
-  { icon: Sparkles, text: 'Estate Guardian\u2122 AI operates entirely within your encrypted vault \u2014 no data ever leaves' },
-  { icon: Shield, text: 'Two-factor authentication on every login with device trust options for your family' },
-  { icon: Users, text: 'Transition verification by a human team \u2014 not algorithms, not AI. Real people confirming real events.' },
-  { icon: Trash2, text: 'Post-execution record destruction \u2014 sensitive records are permanently eliminated after tasks complete' },
-  { icon: FileCheck, text: 'SOC 2 compliance architecture with full audit trail and GDPR data rights built in' },
+  { icon: LockIcon, text: 'AES-256 encryption with a separate key for every family \u2014 nobody at CarryOn can read your documents' },
+  { icon: Sparkles, text: 'Estate Guardian\u2122 AI reviews your documents inside your encrypted vault \u2014 nothing leaves it' },
+  { icon: Shield, text: 'Two-step sign-in on every login, with trusted-device options for your family' },
+  { icon: Users, text: 'Real people \u2014 not algorithms \u2014 confirm a death or incapacity before anything unlocks' },
+  { icon: Trash2, text: 'Sensitive records are permanently destroyed after your family\u2019s tasks are complete' },
+  { icon: FileCheck, text: 'A full audit trail of who saw what and when, built on a SOC 2 compliance architecture with GDPR data rights' },
+];
+
+/* ── data: why families do this (emotional + social outcomes) ── */
+const OUTCOMES = [
+  { icon: Heart, title: 'Stop carrying it in your head', desc: 'Once it\u2019s written down and shared, you get to stop worrying about the what-ifs.' },
+  { icon: HandHeart, title: 'Be the one who made it easy', desc: 'Your family will remember that when everything else was hard, this part wasn\u2019t.' },
+  { icon: MessageSquare, title: 'No awkward conversations required', desc: 'Share what each person needs to know, when they need to know it \u2014 on your terms.' },
+];
+
+/* ── data: honest trust signals (no fabricated social proof) ── */
+const TRUST_ITEMS = [
+  { icon: Medal, title: 'Built by a 24-year veteran who put his name on it', desc: 'Barnet Harris founded CarryOn after watching families face a crisis with nothing written down.', link: { href: '/about', label: 'Read his story' } },
+  { icon: EyeOff, title: 'Nobody here can read your documents', desc: 'Each family\u2019s vault has its own encryption key. Not support, not engineers, not the founder.' },
+  { icon: Download, title: 'Your data is yours. Leave anytime.', desc: 'Export everything whenever you want and cancel from your account. No hoops, no phone calls.' },
+  { icon: Clock, title: 'Try it before you pay', desc: 'Every plan starts with an exploration period. Set up your vault, invite one person, and see if it fits.' },
 ];
 
 /* ── data: FAQ items (D1.4) ── */
 const FAQ_ITEMS = [
-  { q: 'Does CarryOn replace my estate attorney?', a: 'No. CarryOn organizes everything your attorney creates — wills, trusts, powers of attorney, insurance policies — and flags gaps or contradictions your attorney should review. Think of it as the operating system your estate plan lives inside, not a replacement for legal counsel.' },
+  { q: 'Does CarryOn replace my estate attorney?', a: 'No. CarryOn organizes everything your attorney creates — wills, trusts, powers of attorney, insurance policies — and flags gaps or contradictions your attorney should review. Think of it as the place your estate plan lives, not a replacement for legal counsel.' },
+  { q: 'CarryOn is new. How do I know it will be around?', a: 'Fair question. CarryOn was founded in 2024 and is founder-led. Your documents never depend on us: you can export everything at any time, and we maintain a continuity escrow so access continues even if the company doesn\'t. We would rather earn your trust with those guarantees than with numbers we can\'t back up.' },
   { q: 'What happens to my family\'s documents if CarryOn closes?', a: 'Your data is yours. You can export everything at any time. We also maintain a continuity escrow to ensure document access even in the unlikely event of a business closure. Your family\'s preparedness never depends on a single company.' },
-  { q: 'Is hospice access really free?', a: 'Yes — full platform access, no exceptions, for all U.S. citizens and resident aliens enrolled in certified hospice care. No credit card, no trial timer, no reduced features. This is a core part of our mission.' },
+  { q: 'Is hospice access really free?', a: 'Yes — full platform access, no exceptions, for all U.S. citizens and resident aliens enrolled in certified hospice care. No credit card, no timer, no reduced features. This is a core part of our mission.' },
   { q: 'How does military and veteran pricing verification work?', a: 'Select the Military or Veteran tier during signup. We verify service status through a simple document upload — a military ID, DD214, or VA Benefits Letter. Verification is typically completed within 24 hours.' },
-  { q: 'Can my family access the vault if I\'m overseas or unreachable?', a: 'Yes. CarryOn\'s Emergency Access protocol allows designated beneficiaries to request vault access when a benefactor is incapacitated or unreachable. Access requests are verified by our Transition Verification Team — real people, not algorithms — to ensure security.' },
+  { q: 'Can my family access the vault if I\'m overseas or unreachable?', a: 'Yes. CarryOn\'s Emergency Access protocol lets the people you\'ve designated request vault access when you are incapacitated or unreachable. Every request is verified by our Transition Verification Team — real people, not algorithms.' },
 ];
 
 /**
@@ -97,23 +114,26 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
   const [openFaq, setOpenFaq] = useState(null);
   return (
   <>
+    {/* ═══════════════════ PRODUCT PREVIEW (D1.5) ═══════════════════ */}
+    <ProductPreview testIdSuffix={testIdSuffix} />
+
     {beforeAbout}
 
-    {/* ═══════════════════ ABOUT ═══════════════════ */}
+    {/* ═══════════════════ THE PROBLEM (D1.2) ═══════════════════ */}
     <section id="about" className="relative z-10 -mt-2">
       <div className="rounded-t-[2.5rem] py-24 lg:py-32 relative overflow-hidden" style={{ background: '#0E1829', boxShadow: '0 -20px 60px rgba(0,0,0,0.5)' }}>
         <div className="absolute inset-0 opacity-[0.25]" style={{ backgroundImage: 'url(/texture-roots.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
         <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 70% 60% at 50% 40%, rgba(212,175,55,0.03) 0%, transparent 60%), linear-gradient(180deg, rgba(14,24,41,0.35) 0%, rgba(14,24,41,0.85) 100%)' }} />
         <RevealSection className="max-w-[800px] mx-auto px-6 text-center relative z-10">
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-6 leading-tight" style={{ fontFamily: 'Outfit, sans-serif' }}>
-            More Than Estate Planning.<br />
-            <span className="text-[#d4af37]">Total Family Preparedness.</span>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-6 leading-tight" style={{ fontFamily: 'Outfit, sans-serif' }} data-testid={`problem-heading${testIdSuffix}`}>
+            Nobody knows where anything is.<br />
+            <span className="text-[#d4af37]">Until now.</span>
           </h2>
           <p className="text-[#7b879e] text-base lg:text-lg leading-relaxed mb-6">
-            Life doesn&apos;t wait for the perfect moment to throw a challenge your way. A sudden illness. A natural disaster. An unexpected loss. The families that get through it aren&apos;t the ones who saw it coming &mdash; they&apos;re the ones who were prepared.
+            When something happens, the first days look the same for almost every family: opening drawers, looking for a will that might not exist, calling numbers you&apos;re not sure are right, guessing at passwords. Not because anyone was careless &mdash; because nobody ever wrote it all down in one place.
           </p>
           <p className="text-[#7b879e] text-base lg:text-lg leading-relaxed mb-8">
-            CarryOn&#8482; is the first complete digital family preparedness platform &mdash; a secure place to organize your documents, leave messages for the people you love, build action plans for any scenario, and ensure that no matter what happens, your family has everything they need to maintain continuity, stay connected, and move forward together.
+            CarryOn&#8482; is that place. One secure spot to get your affairs in order &mdash; your documents, your passwords, the people to call, the messages you want to leave, and a clear plan your loved ones can actually follow &mdash; so they can handle what comes next instead of trying to figure it out alone.
           </p>
           <button onClick={() => navigateWithFade('/start')} className="inline-flex items-center gap-2 px-8 py-3.5 rounded-lg font-semibold text-sm transition-transform duration-150 active:scale-95"
             style={{ background: '#d4af37', color: '#0B1221', transition: 'all 0.3s' }}>
@@ -121,36 +141,49 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
           </button>
           <RevealSection delay={0.2}>
             <p className="mt-10 text-[#d4af37] text-sm lg:text-base italic font-medium">
-              CarryOn&#8482; helps your family stay organized, connected, and prepared &mdash; not just for the unexpected, but for everything in between. It&apos;s just as valuable today as it is decades from now.
+              Useful today &mdash; finding the deed, sharing a policy with your spouse &mdash; and essential on the day your family needs it most.
             </p>
           </RevealSection>
         </RevealSection>
       </div>
     </section>
 
-    {/* ═══════════════════ REFRAME ═══════════════════ */}
+    {/* ═══════════════════ WHY FAMILIES DO THIS (D1.3) ═══════════════════ */}
     <section className="relative z-20 -mt-1">
       <div className="rounded-t-[2rem] py-20 lg:py-28 relative overflow-hidden" style={{ background: 'linear-gradient(180deg, #111F34, #0E1829)', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
         <div className="absolute inset-0 opacity-[0.45]" style={{ backgroundImage: 'url(/texture-reframe.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
         <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(14,24,41,0.35) 0%, rgba(14,24,41,0.7) 100%)' }} />
-        <RevealSection className="max-w-[800px] mx-auto px-6 text-center relative z-10">
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-6 leading-tight" style={{ fontFamily: 'Outfit, sans-serif' }}>
-            Valuable Right Now.<br />
-            <span className="text-[#d4af37]">Essential When It Matters Most.</span>
-          </h2>
-          <p className="text-[#7b879e] text-base leading-relaxed mb-8">
-            Family preparedness isn&apos;t something you do once and forget. It&apos;s a living system that grows with your family. Every document you upload, every message you record, every plan you build &mdash; it all becomes part of a readiness infrastructure your family can rely on through any of life&apos;s biggest challenges. A job loss. A health crisis. A move across the country. The passing of someone you love. CarryOn&#8482; ensures your family never has to wonder where to look, who to call, or what to do next.
-          </p>
-          <RevealSection delay={0.15}>
-            <p className="text-white text-base lg:text-lg font-semibold italic leading-relaxed">
-              CarryOn&#8482; isn&apos;t something you set up and forget. It&apos;s a living system your family uses today &mdash; to organize, coordinate, and communicate &mdash; and relies on tomorrow when it matters most.
+        <div className="max-w-[900px] mx-auto px-6 text-center relative z-10">
+          <RevealSection>
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-6 leading-tight" style={{ fontFamily: 'Outfit, sans-serif' }}>
+              For your peace of mind today.<br />
+              <span className="text-[#d4af37]">For their relief when it counts.</span>
+            </h2>
+            <p className="text-[#7b879e] text-base leading-relaxed mb-12 max-w-[760px] mx-auto">
+              Getting your affairs in order isn&apos;t really about paperwork. It&apos;s about being the parent, spouse, or child who took care of it &mdash; so nobody has to guess what you would have wanted, and nobody has to carry the weight of finding out.
             </p>
           </RevealSection>
-        </RevealSection>
+          <div className="grid sm:grid-cols-3 gap-5 mb-12" data-testid={`outcomes-grid${testIdSuffix}`}>
+            {OUTCOMES.map(({ icon: Icon, title, desc }, i) => (
+              <RevealSection key={title} delay={i * 0.1}>
+                <div className="rounded-xl p-6 h-full text-left" style={{ background: 'rgba(15,26,46,0.6)', border: '1px solid rgba(212,175,55,0.2)' }}>
+                  <Icon className="w-5 h-5 text-[#d4af37] mb-3" />
+                  <h4 className="text-white text-base font-semibold mb-1.5" style={{ fontFamily: 'Outfit, sans-serif' }}>{title}</h4>
+                  <p className="text-[#8b97ab] text-sm leading-relaxed">{desc}</p>
+                </div>
+              </RevealSection>
+            ))}
+          </div>
+          <RevealSection delay={0.15}>
+            <p className="text-white text-base lg:text-lg font-semibold italic leading-relaxed">
+              CarryOn&#8482; isn&apos;t something you set up and forget. It&apos;s a living plan your family uses today and relies on tomorrow.
+            </p>
+          </RevealSection>
+        </div>
       </div>
     </section>
 
-    {/* ═══════════════════ EIGHT PILLARS ═══════════════════ */}
+    {/* ═══════════════════ THE EIGHT TOOLS ═══════════════════ */}
     <section id="features" className="relative z-30 -mt-1">
       <div className="rounded-t-[2rem] py-24 lg:py-32 relative overflow-hidden" style={{ background: 'linear-gradient(180deg, #0f1d30 0%, #132240 50%, #0f1d30 100%)', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
         <div className="absolute top-0 left-0 right-0 h-[280px] sm:hidden opacity-[0.55]" style={{ backgroundImage: 'url(/texture-pillars.jpg)', backgroundSize: 'cover', backgroundPosition: 'center top' }} />
@@ -159,11 +192,11 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
         <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(15,29,48,0.4) 0%, rgba(15,29,48,0.7) 100%)' }} />
         <div className="max-w-[900px] mx-auto px-6 relative z-10">
           <RevealSection>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white text-center mb-4" style={{ fontFamily: 'Outfit, sans-serif' }}>
-              Eight Pillars of Family Readiness.
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white text-center mb-4" style={{ fontFamily: 'Outfit, sans-serif' }} data-testid={`features-heading${testIdSuffix}`}>
+              Everything your family will need. In one place.
             </h2>
             <p className="text-[#a0aec0] text-base text-center max-w-[650px] mx-auto mb-16 leading-relaxed">
-              Each pillar builds on the last &mdash; creating a complete family preparedness architecture, one step at a time.
+              Each piece builds on the last &mdash; so you can start with what matters most and add the rest over time.
             </p>
           </RevealSection>
 
@@ -190,9 +223,10 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
                 }} />
 
               <div className="relative z-10 flex flex-col gap-6">
-                {PILLARS.map(({ num, icon: Icon, title, abbr, bold, desc }, i) => (
+                {PILLARS.map(({ num, icon: Icon, title, product, bold, desc }, i) => (
                   <RevealSection key={num} delay={i * 0.06} distance={40} duration={0.8}>
                     <div className="rounded-2xl p-6 lg:p-8 relative overflow-hidden"
+                      data-testid={`pillar-card-${num}${testIdSuffix}`}
                       style={{
                         background: 'linear-gradient(160deg, #1a2d4d 0%, #16284a 50%, #142240 100%)',
                         border: '1.5px solid rgba(212,175,55,0.45)',
@@ -210,10 +244,8 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
                           </div>
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-baseline gap-3 mb-2">
-                            <h4 className="text-white text-lg font-bold leading-tight" style={{ fontFamily: 'Outfit, sans-serif' }}>{title}</h4>
-                            <span className="text-[#8b97ab] text-xs font-semibold tracking-wider flex-shrink-0">{abbr}</span>
-                          </div>
+                          <h4 className="text-white text-lg font-bold leading-tight mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>{title}</h4>
+                          <span className="text-[#8b97ab] text-xs font-semibold tracking-wide block mb-2.5">{product}</span>
                           <p className="text-sm font-medium mb-2.5 leading-relaxed" style={{ color: '#e8c972' }}>{bold}</p>
                           <p className="text-[#8b97ab] text-sm leading-relaxed">{desc}</p>
                         </div>
@@ -239,10 +271,10 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
                     <Shield className="w-6 h-6 text-[#d4af37]" />
                   </div>
                   <h3 className="text-2xl sm:text-3xl font-bold text-[#d4af37] mb-3" style={{ fontFamily: 'Outfit, sans-serif' }}>
-                    Comprehensive Family Preparedness.
+                    It&apos;s handled.
                   </h3>
                   <p className="text-[#a0aec0] text-sm lg:text-base leading-relaxed mb-4">
-                    Eight pillars. One family. A living system that grows with you, protects what matters most, and ensures that no matter what life brings &mdash; your family is never left searching, wondering, or scrambling.
+                    Eight tools. One family. A living plan that grows with you &mdash; so that whatever life brings, your family is never left searching, wondering, or scrambling. And you get to stop carrying it all in your head.
                   </p>
                   <p className="text-white text-2xl font-semibold italic">
                     They&apos;re ready. Because you prepared.
@@ -268,7 +300,7 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
               Built for Real Families.
             </h2>
             <p className="text-[#7b879e] text-base text-center max-w-[650px] mx-auto mb-14 leading-relaxed">
-              Beyond the core pillars, CarryOn&#8482; gives your family a complete readiness infrastructure with tools designed for how modern families actually live.
+              Beyond the essentials, CarryOn&#8482; is built around how families actually live &mdash; blended, spread out, busy, and human.
             </p>
           </RevealSection>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
@@ -279,7 +311,7 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
                   <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-3" style={{ background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.12)' }}>
                     <Icon className="w-4 h-4 text-[#d4af37]" />
                   </div>
-                  <h4 className="text-white text-sm font-semibold mb-1.5">{title}</h4>
+                  <h4 className="text-white text-sm font-semibold mb-1.5" dangerouslySetInnerHTML={{ __html: title }} />
                   <p className="text-[#6b7a90] text-xs leading-relaxed" dangerouslySetInnerHTML={{ __html: desc }} />
                 </div>
               </RevealSection>
@@ -299,10 +331,10 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
         <div className="max-w-[800px] mx-auto px-6 text-center relative z-10">
           <RevealSection>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-5" style={{ fontFamily: 'Outfit, sans-serif' }}>
-              Family Readiness in Five Steps.
+              Your affairs in order, in five steps.
             </h2>
             <p className="text-[#7b879e] text-base max-w-[600px] mx-auto mb-14 leading-relaxed">
-              You don&apos;t need to do it all at once. Start with what matters most and build your family&apos;s readiness over time.
+              You don&apos;t need to do it all at once. Start with what matters most and build the rest over time.
             </p>
           </RevealSection>
           <div className="space-y-12 text-left">
@@ -337,7 +369,7 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
               Your Family&apos;s Privacy Is Non-Negotiable.
             </h2>
             <p className="text-[#7b879e] text-base max-w-[700px] mx-auto mb-14 leading-relaxed">
-              The most important things your family will ever share live on this platform. That&apos;s why every layer of CarryOn&#8482; is built with the same security standards that protect financial institutions and government systems &mdash; because your family deserves nothing less.
+              The most important things your family will ever share live here. That&apos;s why every layer of CarryOn&#8482; is built to the same standards that protect banks and government systems &mdash; because your family deserves nothing less.
             </p>
           </RevealSection>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -347,6 +379,37 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
                   style={{ background: 'rgba(14,24,41,0.25)', border: '1.5px solid rgba(255,255,255,0.15)', boxShadow: '0 8px 48px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08)' }}>
                   <Icon className="w-6 h-6 text-[#7b879e] mx-auto mb-4 transition-colors duration-300 group-hover:text-[#d4af37]" />
                   <p className="text-[#94a3b8] text-sm leading-relaxed">{text}</p>
+                </div>
+              </RevealSection>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+
+    {/* ═══════════════════ HONEST TRUST (D1.4) ═══════════════════ */}
+    <section className="relative z-[52] -mt-1" id="trust">
+      <div className="rounded-t-[2rem] py-20 lg:py-24 relative overflow-hidden" style={{ background: 'linear-gradient(180deg, #111F34, #0D1B2A)', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
+        <div className="max-w-[1000px] mx-auto px-6 relative z-10">
+          <RevealSection>
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white text-center mb-4" style={{ fontFamily: 'Outfit, sans-serif' }} data-testid={`trust-heading${testIdSuffix}`}>
+              We&apos;re new. Here&apos;s what we can promise.
+            </h2>
+            <p className="text-[#7b879e] text-base text-center max-w-[640px] mx-auto mb-12 leading-relaxed">
+              You won&apos;t find invented testimonials or made-up customer counts here. When our first families are ready to speak, you&apos;ll see them. Until then, these are the things we can stand behind today.
+            </p>
+          </RevealSection>
+          <div className="grid sm:grid-cols-2 gap-5" data-testid={`trust-grid${testIdSuffix}`}>
+            {TRUST_ITEMS.map(({ icon: Icon, title, desc, link }, i) => (
+              <RevealSection key={title} delay={i * 0.08}>
+                <div className="rounded-xl p-6 h-full flex gap-4" style={{ background: 'rgba(15,26,46,0.6)', border: '1px solid rgba(212,175,55,0.2)' }}>
+                  <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.15)' }}>
+                    <Icon className="w-5 h-5 text-[#d4af37]" />
+                  </div>
+                  <div>
+                    <h4 className="text-white text-base font-semibold mb-1.5" style={{ fontFamily: 'Outfit, sans-serif' }}>{title}</h4>
+                    <p className="text-[#8b97ab] text-sm leading-relaxed">{desc}{link && <> <a href={link.href} className="text-[#d4af37] hover:text-[#fcd34d] underline underline-offset-4" data-testid={`trust-founder-link${testIdSuffix}`}>{link.label}</a></>}</p>
+                  </div>
                 </div>
               </RevealSection>
             ))}
@@ -407,7 +470,7 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
               At any given time, over 300,000 Americans are in hospice &mdash; and the vast majority have no plan in place for their families. CarryOn&#8482; is offered at no cost to all U.S. citizens and resident aliens enrolled in certified hospice care. Full platform access. No exceptions.
             </p>
             <p className="text-white text-base font-semibold italic leading-relaxed">
-              No one should be denied the ability to organize their affairs and prepare their family &mdash; simply because of their circumstances.
+              No one should be denied the ability to get their affairs in order and prepare their family &mdash; simply because of their circumstances.
             </p>
           </div>
         </RevealSection>
@@ -425,7 +488,7 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
             <div className="rounded-xl p-6 text-center transition-all duration-500 hover:-translate-y-1 hover:border-[#d4af37]/20 backdrop-blur-md" style={{ background: 'rgba(15,26,46,0.55)', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 4px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)' }}>
               <h4 className="text-white text-base font-bold mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>New Adult Tier (18&ndash;25)</h4>
               <p className="text-[#7b879e] text-sm leading-relaxed">
-                A dedicated tier for young Americans just starting out. Because family preparedness shouldn&apos;t start when you think you need it &mdash; it should start the day you&apos;re responsible for yourself.
+                A dedicated tier for young Americans just starting out. Because getting your affairs in order shouldn&apos;t start when you think you need it &mdash; it should start the day you&apos;re responsible for yourself.
               </p>
             </div>
             </RevealSection>
@@ -441,10 +504,10 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
         <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 80% 70% at 50% 50%, rgba(14,24,41,0.3) 0%, rgba(14,24,41,0.75) 100%)' }} />
         <RevealSection className="max-w-[600px] mx-auto px-6 text-center relative z-10">
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-5" style={{ fontFamily: 'Outfit, sans-serif' }}>
-            Readiness Starts Today.
+            Start getting your affairs in order today.
           </h2>
           <p className="text-[#7b879e] text-base mb-8">
-            Join the families who are choosing preparedness over uncertainty. Whatever comes next &mdash; your family will be ready.
+            Upload one document and invite one person &mdash; that&apos;s a real start. Whatever comes next, your family will know where to look, who to call, and what to do.
           </p>
           <button onClick={() => navigateWithFade('/start')} className="inline-flex items-center gap-2 px-10 py-4 rounded-lg font-semibold text-base transition-transform duration-150 active:scale-95"
             style={{ background: '#d4af37', color: '#0B1221', transition: 'all 0.3s' }}>

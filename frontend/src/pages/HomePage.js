@@ -6,7 +6,7 @@ import { ChevronRight, ChevronDown } from 'lucide-react';
 import { API_URL } from '../config';
 import { RevealSection } from '../components/landing/RevealSection';
 import LandingContent from '../components/landing/LandingContent';
-import { isIOS, isAndroid } from '../utils/pwaDetect';
+import { HERO } from '../components/landing/heroCopy';
 
 const useIsMobileViewport = (breakpoint = 768) => {
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < breakpoint);
@@ -64,17 +64,17 @@ const HomePage = () => {
       transition: 'opacity 0.45s ease, transform 0.45s ease',
     }}>
       <Helmet>
-        <title>CarryOn - Secure Family Preparedness & Estate Planning Platform</title>
-        <meta name="description" content="CarryOn helps families organize estate plans, secure important documents, manage beneficiaries, and prepare for life's transitions. AES-256 encryption. AI-powered Estate Guardian. Start free." />
+        <title>CarryOn - Get Your Family&apos;s Affairs in Order, In One Secure Place</title>
+        <meta name="description" content="CarryOn is one secure place for your documents, passwords, who to call first, and what to do next — so your family can handle what comes next. AES-256 encrypted. Built by a 24-year veteran." />
         <link rel="canonical" href="https://carryon.us/" />
         <meta property="og:type" content="website" />
-        <meta property="og:title" content="CarryOn - Protect What Matters Most" />
-        <meta property="og:description" content="Organize your estate plan, secure your documents, leave milestone messages, and prepare your family — all in one encrypted platform." />
+        <meta property="og:title" content="CarryOn - Get your family's affairs in order, in one secure place" />
+        <meta property="og:description" content="So your family knows where everything lives, who to call first, and what to do next — if something happens to you." />
         <meta property="og:url" content="https://carryon.us" />
         <meta property="og:site_name" content="CarryOn" />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="CarryOn - Family Preparedness Platform" />
-        <meta name="twitter:description" content="Secure your family's future. Estate plans, documents, milestone messages, and financial tracking in one platform." />
+        <meta name="twitter:title" content="CarryOn - Get your family's affairs in order" />
+        <meta name="twitter:description" content="One secure place for your documents, passwords, who to call first, and what to do next." />
       </Helmet>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify([
         {
@@ -83,7 +83,7 @@ const HomePage = () => {
           "name": "CarryOn",
           "alternateName": "CarryOn Family Preparedness Platform",
           "url": "https://carryon.us",
-          "description": "CarryOn helps families organize estate plans, secure important documents, manage beneficiaries, and prepare for life's transitions — all in one secure platform.",
+          "description": "CarryOn helps American families get their affairs in order in one secure place — documents, passwords, who to call first, and what to do next — so loved ones can handle what comes next.",
           "applicationCategory": "LifestyleApplication",
           "operatingSystem": "Web, iOS",
           "offers": {
@@ -94,16 +94,16 @@ const HomePage = () => {
             "offerCount": 7
           },
           "featureList": [
-            "AES-256 Encrypted Document Vault",
-            "AI-Powered Estate Guardian Advisor (50-State Legal Intelligence)",
-            "Milestone Messages (Written, Voice, Video)",
-            "Beneficiary Management with Succession Ordering",
-            "Contingency Protocols for Family Emergencies",
-            "Estate Communications Tool (Encrypted Family Messaging)",
-            "Financial Portal with Bill & Debt Tracking",
-            "Immediate Action Checklist for Beneficiaries",
-            "Digital Access Vault for Passwords & Credentials",
-            "Family & Friends Notification System"
+            "Encrypted document vault for wills, trusts, policies, and deeds (Secure Document Vault, AES-256)",
+            "AI review that finds gaps and contradictions in your paperwork, tuned to your state (Estate Guardian AI)",
+            "Messages for the moments you'll miss — written, voice, or video (Milestone Messages)",
+            "Who to call first, with a ranked backup for every person",
+            "Emergency plans for medical, disaster, and financial situations (Contingency Protocols)",
+            "Private encrypted family messaging (Estate Communications Tool)",
+            "Bill and debt tracking (Financial Portal)",
+            "What-to-do-first checklist for your family (Immediate Action Checklist)",
+            "Passwords and accounts, assigned to the right person (Digital Access Vault)",
+            "Who to notify list (Family & Friends Notification)"
           ],
           "provider": {
             "@type": "Organization",
@@ -117,7 +117,7 @@ const HomePage = () => {
           "name": "CarryOn Technologies LLC",
           "url": "https://carryon.us",
           "logo": "https://carryon.us/carryon-icon.jpg",
-          "description": "CarryOn is the first complete digital family preparedness platform — helping American families organize estate plans, secure documents, and prepare for life's transitions.",
+          "description": "CarryOn helps American families get their affairs in order in one secure place — documents, passwords, who to call first, and what to do next.",
           "address": {
             "@type": "PostalAddress",
             "streetAddress": "1550 Wilson Boulevard, 7th Floor",
@@ -176,12 +176,13 @@ const HomePage = () => {
         <div className="max-w-[900px] mx-auto px-6 w-full relative z-10 text-center">
           <RevealSection delay={0.1}>
             <img src="/carryon-logo.png" alt="CarryOn" className="w-[200px] lg:w-[260px] h-auto mx-auto mb-6" />
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-[1.08] mb-4" style={{ fontFamily: 'Outfit, sans-serif', textShadow: '0 2px 12px rgba(0,0,0,0.7), 0 1px 4px rgba(0,0,0,0.5)' }}>
-              Every American Family.
-              <span className="block text-[#d4af37] mt-1" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.7), 0 1px 4px rgba(0,0,0,0.5)' }}>Ready.</span>
+            <p className="text-[#d4af37] text-xs sm:text-sm font-bold uppercase tracking-[0.22em] mb-4" style={{ textShadow: '0 1px 6px rgba(0,0,0,0.6)' }} data-testid="hero-eyebrow-home">{HERO.eyebrow}</p>
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-[1.08] mb-4" style={{ fontFamily: 'Outfit, sans-serif', textWrap: 'balance', textShadow: '0 2px 12px rgba(0,0,0,0.7), 0 1px 4px rgba(0,0,0,0.5)' }} data-testid="hero-h1-home">
+              {HERO.h1a}
+              <span className="block text-[#d4af37] mt-1" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.7), 0 1px 4px rgba(0,0,0,0.5)' }}>{HERO.h1b}</span>
             </h1>
             <p className="text-white/80 text-base lg:text-lg max-w-lg mx-auto leading-relaxed mb-8" style={{ textShadow: '0 1px 8px rgba(0,0,0,0.6)' }}>
-              So your family knows where everything lives, who to call first, and what to do next &mdash; if something happens to you.
+              {HERO.sub}
             </p>
             <div className="flex items-center gap-4 justify-center flex-wrap mb-8">
               <button onClick={() => navigateWithFade('/start')} className="inline-flex items-center gap-2 px-8 py-3.5 rounded-lg font-bold text-base transition-transform duration-150 active:scale-95" data-testid="home-get-started-hero"
@@ -194,7 +195,7 @@ const HomePage = () => {
               </button>
             </div>
             <div className="flex items-center gap-5 justify-center mb-6">
-              {['AES-256 Encrypted', 'Per-Estate Keys', '2FA Protected'].map(badge => (
+              {HERO.badges.map(badge => (
                 <div key={badge} className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-[#10b981]" />
                   <span className="text-white/70 text-sm font-medium" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>{badge}</span>
@@ -204,7 +205,7 @@ const HomePage = () => {
           </RevealSection>
           <RevealSection delay={0.4}>
             <div className="flex flex-col items-center gap-3 mt-10">
-              <a href="#features" className="inline-flex items-center gap-2 px-8 py-3.5 rounded-lg font-bold text-base transition-all active:scale-95 cursor-pointer"
+              <a href="#preview" className="inline-flex items-center gap-2 px-8 py-3.5 rounded-lg font-bold text-base transition-all active:scale-95 cursor-pointer"
                 data-testid="scroll-explore-home"
                 style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.28), rgba(212,175,55,0.16))', border: '2px solid rgba(212,175,55,0.45)', boxShadow: '0 4px 30px rgba(212,175,55,0.20)', backdropFilter: 'blur(8px)', color: 'white', textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>
                 See How It Works <ChevronDown className="w-5 h-5 text-[#d4af37]" />

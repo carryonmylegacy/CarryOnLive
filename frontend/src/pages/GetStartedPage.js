@@ -621,8 +621,8 @@ export default function GetStartedPage() {
                     <span style={{ color: '#b8962e' }}>Ready.</span>
                   </h1>
                   <p style={{ fontWeight: 600, fontSize: '0.9375rem', color: '#64748b', maxWidth: '28rem', margin: '0 auto' }}>
-                    Join families across the country who are securing their legacy with CarryOn.
-                    Start your exploration period today.
+                    Get your affairs in order in one secure place.
+                    Start your exploration period today &mdash; cancel anytime.
                   </p>
                 </div>
 

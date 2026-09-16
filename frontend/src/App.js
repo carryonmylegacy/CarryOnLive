@@ -7,6 +7,7 @@ import { SectionLockProvider } from './components/security/SectionLock';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import { CapacitorUpdater } from '@capgo/capacitor-updater';
 import { isNative } from './services/native';
+import { isPWA } from './utils/pwaDetect';
 import SubscriptionPaywall from './components/SubscriptionPaywall';
 import DashboardLayout from './components/layout/DashboardLayout';
 import ShareUploadModal from './components/ShareUploadModal';
@@ -119,6 +120,12 @@ class RouteErrorBoundary extends React.Component {
     return this.props.children;
   }
 }
+
+// Root: marketing homepage for new web visitors; app shells and returning users go to login
+const RootRoute = () => {
+  if (isNative || isPWA() || localStorage.getItem('carryon_token')) return <Navigate to="/login" replace />;
+  return <HomePage />;
+};
 
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -358,7 +365,7 @@ function AppRoutes() {
       </Route>
 
       {/* Default Redirect */}
-      <Route path="/" element={<Navigate to="/login" replace />} />
+      <Route path="/" element={<RootRoute />} />
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
     </Suspense>
