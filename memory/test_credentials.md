@@ -24,3 +24,8 @@
 ## Email testing rule (Resend is LIVE)
 - Quiz result emails (`POST /api/quiz/results/{id}/email`) and any other outbound email tests: send ONLY to info@carryon.us, once per flow.
 - Test domains (@test.com, @example.com, …) are blocked by `services/email.py` and return 400 — useful for negative tests.
+
+## Testimonials (trust pipeline) — test hygiene
+- POST /api/testimonials creates PENDING items only; approving via PATCH /api/admin/testimonials/{id} makes them PUBLIC on carryon.us.
+- Any testimonial created during testing MUST be deleted (DELETE /api/admin/testimonials/{id}) before finishing. Never leave test quotes approved.
+- Restore `show_live_stats` to "auto" (PUT /api/admin/platform-settings) if changed during tests.

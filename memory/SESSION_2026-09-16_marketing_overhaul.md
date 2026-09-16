@@ -14,8 +14,31 @@
 | 5 | Quiz result tracking (backend) + optional email follow-up (Resend) + Founder Portal "Readiness Quiz" analytics tab | DONE | iteration_63, live email delivered to info@carryon.us |
 | 6 | Real app fix: Immediate Action Checklist cards no longer squeeze titles on phones | DONE | iteration_62 |
 | 7 | heycatch.ai "Conversion clarity" audit fixes D2.1–D2.5 + D2.B (CTA hierarchy, hero product shot, mobile hamburger, zoomable viewport, shorter scroll, scope honesty) | DONE | iteration_64 (67/67), housekeeping 65/65 |
+| 8 | heycatch.ai "Trust signals & social proof" D3 — **no fabrication**: real-testimonial pipeline + moderation, /customers, /changelog, founder card, live real stats (gated), transactional badges, Person JSON-LD | DONE | iteration_65 (13 backend + full frontend PASS), housekeeping 65/65 |
 
 All user-facing copy decisions were explicitly approved by the user (see §1).
+
+---
+
+## 1c. Trust & social-proof pass (D3) — what shipped (same day, later)
+
+User decisions: **no money-back guarantee** (keep "cancel anytime" + "no card needed"); **live numbers only when ≥ 25 families exist, with a Founder Portal toggle (auto / on / off)**. Nothing invented anywhere.
+
+| Audit item | Fix |
+|-----------|-----|
+| D3.1 quantity proof | `LiveStats` strip in the trust block shows **real counts from the DB** (`GET /api/public/platform-stats`: families = estates, documents, messages, checklist_items, people_invited; 10-min in-process cache). `visible` = `show_live_stats == 'on'` or (`'auto'` and families ≥ 25). Toggle lives in Founder Portal → Site Content → "Live Platform Numbers" (`live-stats-mode-auto|on|off`). Preview DB has 111 test estates → visible in preview; production decides itself. |
+| D3.2 story proof | **Real testimonial pipeline** (`routes/testimonials.py`): `POST /api/testimonials` (public, 60/min, quote 40–600 chars, consent required, `verified_member` = email exists in `users`) → status `pending` → Founder Portal **Marketing → Testimonials** (`/admin/testimonials`, approve / reject / feature / edit / delete) → `GET /api/testimonials` returns **approved only, never the email** → rendered by `TestimonialsBlock` in the homepage trust block and on `/customers`. Until the first approval, the site shows the honest empty state ("No published member stories yet — we only publish real ones…"). |
+| D3.2 `/customers` | New `pages/CustomersPage.js`: "Real families. Real words. Nothing invented.", honest empty state, `ProductPreview` (real screenshots as the "artifact"), founder video + `FounderCard`, **Share your story** form (`TestimonialForm`), Start Now + badges. Linked from footer, trust block, About mobile menu, sitemap. |
+| D3.3 founder | `FounderCard` (photo or initials, name, title, LinkedIn if set, "Read his story" → /about) in the trust block and /customers; Organization JSON-LD on `/` now has `founder` Person (+ `sameAs` LinkedIn when set); `/about` emits a Person JSON-LD (image, sameAs). **User still must upload the real photo + LinkedIn URL in Founder Portal → Site Content** — preview DB currently holds a purple test image. |
+| D3.4 transactional | `TrustBadges` ("No card needed to explore · Cancel anytime · Payments secured by Stripe · Export everything, anytime") in the trust block, `/pricing` (subhead now "Explore first with no card…"), `/start`, `/customers`. Trust item "Try it before you pay" now says "no credit card needed". No guarantee text anywhere (by decision). |
+| D3.5 recency | `public/changelog.json` (real dated entries; "Foundation 2024–Aug 2026" bucket has no fake dates) → `pages/ChangelogPage.js` (`/changelog`) and `LastUpdated` line in the trust block ("Last product update: September 16, 2026 · See what's new"). **Append to `changelog.json` whenever something ships.** |
+| Trust item copy | "Built by a 24-year veteran…" card replaced by FounderCard; new 4th item "Built in Arlington, Virginia since 2024" (real address/phone/registered LLC). |
+
+New test IDs: `founder-card{s}`, `founder-photo{s}` / `founder-initials{s}`, `founder-name{s}`, `founder-about-link{s}`, `founder-linkedin{s}`, `live-stats{s}`, `live-stat-{families|documents|messages|checklist_items|people_invited}{s}`, `testimonials-block{s}` / `testimonials-empty{s}`, `testimonial-card{s}`, `testimonials-customers-link{s}`, `trust-badges{s}`, `last-updated{s}`, `changelog-link{s}`, `landing-footer-customers-link{s}`, `landing-footer-changelog-link{s}`; `/customers`: `customers-page|h1|stories|empty|founder|founder-video|share|start-now`, `testimonial-form|name|location|role|since|quote|email|consent|submit|error|form-sent`; `/changelog`: `changelog-page|h1|entry-N|start-now`; `MarketingNav`: `marketing-nav{s}|-logo|-start|-sign-in`; admin: `testimonials-tab`, `testimonials-filter-{pending|approved|rejected|all}`, `testimonial-row-{id}`, `testimonial-{approve|reject|feature|save|delete|edit-name|edit-quote|status}-{id}`, `testimonials-empty`, `live-stats-preview`, `live-stats-mode-{auto|on|off}`. Removed: `trust-founder-link{s}`.
+
+Collection `testimonials`: `{id, name, display_name, location, role(benefactor|beneficiary|hospice_family|military|other), quote, email(private), member_since, verified_member, consent, status(pending|approved|rejected), featured, user_agent, created_at, approved_at, reviewed_by}`. Indexes: `id` unique, `(status, approved_at)`.
+
+Testing rule: any testimonial created during tests **must be deleted** afterwards and `show_live_stats` restored to `auto` (iteration_65 did both).
 
 ---
 

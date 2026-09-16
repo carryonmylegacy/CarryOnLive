@@ -16,15 +16,15 @@ const TestimonialRow = ({ t, onAction }) => {
     <div className="bg-[#0f1729] border border-[#1e293b] rounded-xl p-4 space-y-3" data-testid={`testimonial-row-${t.id}`}>
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div className="text-xs text-[#94a3b8] flex items-center gap-2 flex-wrap">
-          <span className="px-2 py-0.5 rounded-full font-bold uppercase text-[10px]" style={{ background: `${STATUS_COLOR[t.status]}22`, color: STATUS_COLOR[t.status] }} data-testid={`testimonial-status-${t.id}`}>{t.status}</span>
+          <span className="px-2 py-0.5 rounded-full font-bold uppercase text-xs" style={{ background: `${STATUS_COLOR[t.status]}22`, color: STATUS_COLOR[t.status] }} data-testid={`testimonial-status-${t.id}`}>{t.status}</span>
           {t.verified_member ? <span className="inline-flex items-center gap-1 text-[#10b981]"><BadgeCheck className="w-3.5 h-3.5" /> Verified member</span> : <span className="text-[#f87171]">Email not found in users</span>}
           {t.featured && <span className="inline-flex items-center gap-1 text-[#d4af37]"><Star className="w-3.5 h-3.5" /> Featured</span>}
           <span>{new Date(t.created_at).toLocaleString()}</span>
         </div>
         <div className="text-xs text-[#94a3b8]">{t.email} &middot; {t.role}{t.location ? ` · ${t.location}` : ''}{t.member_since ? ` · since ${t.member_since}` : ''}</div>
       </div>
-      <input value={name} onChange={e => setName(e.target.value)} className="w-full bg-[#1a2744] border border-[#1e293b] rounded-lg px-3 py-2 text-sm text-white" data-testid={`testimonial-edit-name-${t.id}`} />
-      <textarea value={quote} onChange={e => setQuote(e.target.value)} rows={3} className="w-full bg-[#1a2744] border border-[#1e293b] rounded-lg px-3 py-2 text-sm text-white leading-relaxed" data-testid={`testimonial-edit-quote-${t.id}`} />
+      <input value={name} onChange={e => setName(e.target.value)} className="w-full bg-[#1a2744] border border-[#1e293b] rounded-lg px-3 py-2 text-base text-white" data-testid={`testimonial-edit-name-${t.id}`} />
+      <textarea value={quote} onChange={e => setQuote(e.target.value)} rows={3} className="w-full bg-[#1a2744] border border-[#1e293b] rounded-lg px-3 py-2 text-base text-white leading-relaxed" data-testid={`testimonial-edit-quote-${t.id}`} />
       <div className="flex items-center gap-2 flex-wrap">
         {t.status !== 'approved' && <Button size="sm" onClick={() => onAction(t.id, { status: 'approved' })} className="bg-green-600 hover:bg-green-700 text-white text-xs" data-testid={`testimonial-approve-${t.id}`}><Check className="w-3.5 h-3.5 mr-1" /> Approve</Button>}
         {t.status !== 'rejected' && <Button size="sm" variant="ghost" onClick={() => onAction(t.id, { status: 'rejected' })} className="text-red-400 hover:text-red-300 text-xs" data-testid={`testimonial-reject-${t.id}`}><X className="w-3.5 h-3.5 mr-1" /> Reject</Button>}

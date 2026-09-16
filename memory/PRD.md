@@ -17,6 +17,14 @@ Build and maintain a comprehensive family preparedness platform that helps users
 
 ## What's Been Implemented
 
+### Completed (Sep 16, 2026 — heycatch.ai Trust & Social Proof D3, zero fabrication)
+- **Real testimonial pipeline**: `routes/testimonials.py` — public submit (consent, 40–600 chars, `verified_member` if email matches a user) → Founder Portal **Marketing → Testimonials** (approve/reject/feature/edit/delete) → public list returns approved only (email never exposed) → `TestimonialsBlock` in homepage trust block + `/customers`. Honest empty state until the first approval
+- **`/customers`** page (honest empty state, real screenshots, founder video + card, "Share your story" form) and **`/changelog`** page fed by `public/changelog.json` (append on every release) + "Last product update" line in trust block
+- **FounderCard** (photo/initials, LinkedIn, → /about) in trust block; Organization JSON-LD gains `founder` Person; `/about` emits Person JSON-LD. **USER ACTION: upload real founder photo + LinkedIn in Founder Portal → Site Content**
+- **LiveStats** — real DB counts (`GET /api/public/platform-stats`), shown only when ≥ 25 families or forced via Site Content → "Live Platform Numbers" (auto/on/off). Decision: no money-back guarantee
+- **TrustBadges** (no card to explore · cancel anytime · Stripe-secured · export anytime) on trust block, `/pricing`, `/start`, `/customers`; footer links Customer Stories + What's New; About page nav → `/#…` + mobile menu
+- Tested: iteration_65 (13 backend pytest + full frontend PASS, all test data cleaned); housekeeping 65/65 PASS
+
 ### Completed (Sep 16, 2026 — heycatch.ai Conversion Clarity Fixes D2.1–D2.5, D2.B)
 - Hero CTA hierarchy: primary **Start Now** → `/start`, secondary "See it in action" → `#preview`, micro-line "Explore first — no credit card needed · quiz · pricing" (`components/landing/HeroCtas.js`, used on `/` and `/login` desktop+mobile); hero Sign In button removed
 - Hero product visual: real dashboard screenshot below CTAs (`HeroShot.js`; browser frame / phone frame, fade mask)
@@ -83,11 +91,12 @@ Build and maintain a comprehensive family preparedness platform that helps users
 - Twilio SMS: Waiting on A2P 10DLC campaign approval
 
 ## Upcoming Tasks
-- (P1) Collect 3-5 real user testimonials with photos (D3.1, D3.2) — USER ACTION NEEDED (trust block promises "when our first families are ready to speak, you'll see them here")
+- (P1) Ask real members to share their story at carryon.us/customers, then approve in Founder Portal → Testimonials — USER ACTION NEEDED (pipeline is live; nothing shows until approved)
+- (P1) Upload real founder photo + LinkedIn URL in Founder Portal → Site Content (preview DB has a test image) — USER ACTION NEEDED
 - (P1) Replace OG image from favicon to 1200x630px preview image (D5.5) — USER ACTION NEEDED
 - (P2) 5th product-preview tab for Milestone Messages once the `petemitchell` demo account has a polished example message
 - (P2) After production deploy, re-run the capture script so the checklist screenshot reflects the shipped CSS (currently injected at capture time)
-- (P2) Build /vs comparison pages (D5.3); /customers page with real stories (D3.2)
+- (P2) Build /vs comparison pages (D5.3); build a real /features page before linking it
 - (P2) iOS Font Size Fix (38 sub-11px fonts, housekeeping WARN #50)
 - (P3) Quiz: weekly stats digest email to founder; A/B result-screen CTA copy
 
@@ -107,4 +116,5 @@ Build and maintain a comprehensive family preparedness platform that helps users
 - react-helmet-async: HelmetProvider wraps app in App.js
 - File uploads: Base64 JSON only (production proxy blocks multipart)
 - Marketing copy: keep `QUESTIONS` in `routes/quiz.py` and `ReadinessQuiz.js` in sync by index; avoid forbidden jargon list in the session log §3
+- NEVER seed/fabricate testimonials or stats. Tests must delete any testimonial they create and restore `show_live_stats` to `auto`. Append real releases to `frontend/public/changelog.json`
 - Screenshot capture needs `/opt/plugins-venv/bin/python` (Playwright) + `/usr/bin/chromium`; run after `yarn install` → `sudo supervisorctl restart frontend`
