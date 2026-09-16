@@ -14,3 +14,9 @@
 - OTPs are keyed by user_id (not email)
 - Forgot Password uses username, not email
 - Forgot Username sends username list to email
+
+## Production Demo Account (carryon.us — used for marketing screenshots)
+- Username: petemitchell
+- Password: Demo1234!!!
+- Role: benefactor (also beneficiary), direct login (no OTP)
+- Note: LIVE production account on https://www.carryon.us (API: carryon-api-kacr.onrender.com). Not present in the preview DB.

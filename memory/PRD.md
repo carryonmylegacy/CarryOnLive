@@ -14,7 +14,7 @@ Build and maintain a comprehensive family preparedness platform that helps users
 ### Completed (Sep 16, 2026 — heycatch.ai Positioning Audit Fixes, 16/25 → target 22+)
 - **D1.1**: New hero H1 "Get your family's affairs in order — in one secure place." with "Every American Family. Ready." demoted to a gold eyebrow (shared via `components/landing/heroCopy.js`, used by HomePage + LoginPage desktop/mobile heroes)
 - **D1.1**: Root `/` now renders marketing HomePage for new web visitors (`RootRoute` in App.js); native/PWA/returning users (localStorage `carryon_token`) still go to `/login`. `/login` unchanged functionally; canonical moved to `/login`
-- **D1.5**: New interactive "See inside CarryOn" product preview (`components/landing/ProductPreview.js`, `#preview`) — 4 tabs (dashboard readiness score, document vault, who to call first, what to do first) rendered live with a sample family. "See How It Works" CTA now scrolls to it
+- **D1.5**: "See inside CarryOn" product preview (`components/landing/ProductPreview.js`, `#preview`) now shows REAL screenshots captured from the live production account `petemitchell` (demo estate) — `/public/screenshots/{dashboard,vault,contacts,checklist}.webp` (2160×1350). Recapture anytime: `SHOT_USER=petemitchell SHOT_PASS=... /opt/plugins-venv/bin/python /app/scripts/capture_product_screenshots.py` (hides per-account nudges like "Section Unlocked"/notification popup before shooting). "See How It Works" CTA scrolls to it
 - **D1.6**: All acronym chips (MM/SDV/EGA/IAC/CCP/ECT/DAV/FFN) removed; 8 feature cards lead with plain-language titles, product name as sub-label. Purged "eight pillars", "benefactor", "per-estate encryption", "readiness infrastructure", "digital family preparedness platform" from marketing copy; hero badges now "AES-256 encrypted / Your own encryption key / Two-step sign-in"
 - **D1.2**: "More Than Estate Planning" → "Nobody knows where anything is. Until now." (pain-led copy in audience words)
 - **D1.3**: New outcomes grid (emotional + social JTBD): "Stop carrying it in your head / Be the one who made it easy / No awkward conversations required"
@@ -57,7 +57,6 @@ Build and maintain a comprehensive family preparedness platform that helps users
 
 ## Upcoming Tasks (from audit)
 - (P1) Collect 3-5 real user testimonials with photos (D3.1, D3.2) — USER ACTION NEEDED (trust block explicitly says "when our first families are ready to speak, you'll see them here")
-- (P1) Optional: replace React product preview with real annotated screenshots once user approves sharing UI (D1.5 — interactive preview already shipped)
 - (P1) Replace OG image from favicon to 1200x630px preview image (D5.5) — USER ACTION NEEDED
 - (P1) Deploy latest backend on Render so /about founder photo shows in production — USER ACTION NEEDED
 - (P2) Build /vs comparison pages (D5.3)
