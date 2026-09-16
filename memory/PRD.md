@@ -17,6 +17,12 @@ Build and maintain a comprehensive family preparedness platform that helps users
 
 ## What's Been Implemented
 
+### Completed (Sep 16, 2026 — heycatch.ai Paywall & Pricing D4)
+- `/pricing` rewritten around the confirmed model: **one plan for you; people you invite pay nothing while you're alive; after your passing they may keep access at `ben_price`/mo** (30-day grace). No free tier (decision) — free entry = explore 30 days, no card + hospice free
+- Per-price value anchors (≈ $/day · $/year), attorney-hour comparison computed from live prices, 3-step "How pricing works", "Why monthly, why more than three prices" explainer, effective-price example, reduced-pricing tiers behind a "Do you qualify?" collapsible (`#reduced`), comparison table rows in plain language + invited-people rows. `/start` copy aligned
+- Tested: iteration_66 all PASS; housekeeping 65/65
+- Follow-up flagged: `SubscriptionPaywall.js` Family Plan tile still has hardcoded $3.49 / $1 copy (legacy) — make dynamic
+
 ### Completed (Sep 16, 2026 — heycatch.ai Trust & Social Proof D3, zero fabrication)
 - **Real testimonial pipeline**: `routes/testimonials.py` — public submit (consent, 40–600 chars, `verified_member` if email matches a user) → Founder Portal **Marketing → Testimonials** (approve/reject/feature/edit/delete) → public list returns approved only (email never exposed) → `TestimonialsBlock` in homepage trust block + `/customers`. Honest empty state until the first approval
 - **`/customers`** page (honest empty state, real screenshots, founder video + card, "Share your story" form) and **`/changelog`** page fed by `public/changelog.json` (append on every release) + "Last product update" line in trust block

@@ -15,6 +15,7 @@
 | 6 | Real app fix: Immediate Action Checklist cards no longer squeeze titles on phones | DONE | iteration_62 |
 | 7 | heycatch.ai "Conversion clarity" audit fixes D2.1–D2.5 + D2.B (CTA hierarchy, hero product shot, mobile hamburger, zoomable viewport, shorter scroll, scope honesty) | DONE | iteration_64 (67/67), housekeeping 65/65 |
 | 8 | heycatch.ai "Trust signals & social proof" D3 — **no fabrication**: real-testimonial pipeline + moderation, /customers, /changelog, founder card, live real stats (gated), transactional badges, Person JSON-LD | DONE | iteration_65 (13 backend + full frontend PASS), housekeeping 65/65 |
+| 9 | heycatch.ai "Paywall & pricing" D4 — /pricing rewrite (one-plan model, invited people free while alive, anchors per price, reduced-pricing collapsible, why-this-model explainer, effective-price example) | DONE | iteration_66 (all PASS), housekeeping 65/65 |
 
 All user-facing copy decisions were explicitly approved by the user (see §1).
 
@@ -39,6 +40,20 @@ New test IDs: `founder-card{s}`, `founder-photo{s}` / `founder-initials{s}`, `fo
 Collection `testimonials`: `{id, name, display_name, location, role(benefactor|beneficiary|hospice_family|military|other), quote, email(private), member_since, verified_member, consent, status(pending|approved|rejected), featured, user_agent, created_at, approved_at, reviewed_by}`. Indexes: `id` unique, `(status, approved_at)`.
 
 Testing rule: any testimonial created during tests **must be deleted** afterwards and `show_live_stats` restored to `auto` (iteration_65 did both).
+
+---
+
+## 1d. Pricing pass (D4) — what shipped (same day, later)
+
+**Facts confirmed by the user:** *beneficiaries (people you invite) do not pay while the account owner is alive; after the owner's passing each may keep access at the per-plan beneficiary rate (`plan.ben_price`/mo, checkout.py line ~711) after a 30-day grace period.* **No free tier** (decision) — the free entry is "explore first, `trial_duration_days` (30) days, no card" + free hospice. All numbers stay live from `GET /api/subscriptions/plans`.
+
+`pages/PricingPage.js` was rewritten (structure top→bottom): header (Start Now / Sign In) → H1 **"One plan for you. Nobody you invite pays."** + subhead (trial days from API) + `TrustBadges` → **How pricing works** (3 steps: pick one plan / invite people free / after you pass they choose `$min–$max ben_price`) → billing toggle → 3 main cards, each with **anchor line** `≈ $/day · $/year` (`perDay = price*12/365`) and **"People you invite: free while you're alive · $ben_price/mo each to keep access after"**, CTA "Start Now" (logged-out → /start) / "Choose Plan" (logged-in → Stripe) → **value-anchor strip** ("one hour with an estate attorney $250–$500 … a full year of any plan costs less than N hour(s)", N computed from max annual total / 250) → **"Do you qualify for reduced pricing?"** collapsible (`pricing-special-toggle`, auto-open on `#reduced`; lists special tier names from API + "Hospice families: free") → comparison table (plain-language rows; "Invited people while you're alive = Free"; "Invited people after your passing = $ben_price/mo") + decision helper → **"Why monthly, and why more than three prices?"** explainer (D4.4) + **"Real example"** (Standard, annual, 4 invited → total = plan only) → family callout ("More than one household?") → hospice link → trust footer.
+
+`pages/StartPage.js`: plan-card line now "People you invite: free while you're alive" (`start-invited-{id}`); callout "One plan. Nobody you invite pays."
+
+Not touched (legacy, flagged for later): `components/SubscriptionPaywall.js` Family-Plan tile still has hardcoded "$3.49/mo" / "$1/mo discount" copy that contradicts the live settings — should be made dynamic or removed. `paired_price` exists in the backend (admin-editable "post-transition price") but the frontend never uses it; `ben_price` is what checkout charges beneficiaries.
+
+Test IDs: `pricing-h1`, `pricing-subhead`, `pricing-how-it-works`, `pricing-cycle-{monthly|quarterly|annual}`, `pricing-plan-{id}`, `pricing-anchor-{id}`, `pricing-invited-{id}`, `pricing-select-{id}`, `pricing-value-anchor`, `pricing-special-section|toggle|grid`, `pricing-comparison-table`, `pricing-why`, `pricing-example`, `pricing-example-total`, `pricing-hospice-link`, `pricing-nav-start`, `start-invited-{id}`.
 
 ---
 
