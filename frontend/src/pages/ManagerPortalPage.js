@@ -167,12 +167,15 @@ export default function ManagerPortalPage() {
   const [bensFor, setBensFor] = useState(null);
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState('newest');
+  const [onlyUninvited, setOnlyUninvited] = useState(false);
   const [noteFor, setNoteFor] = useState(null);
 
   const q = search.trim().toLowerCase();
-  const visibleClients = q
-    ? clients.filter(c => [c.name, c.email, c.username].some(v => (v || '').toLowerCase().includes(q)))
-    : clients;
+  const isUninvited = (c) => c.status === 'pending_claim' && !c.invite_sent_at;
+  const uninvitedCount = clients.filter(isUninvited).length;
+  const visibleClients = clients
+    .filter(c => !q || [c.name, c.email, c.username].some(v => (v || '').toLowerCase().includes(q)))
+    .filter(c => !onlyUninvited || isUninvited(c));
   const sortedClients = [...visibleClients].sort((a, b) => {
     if (sortBy === 'name') return (a.name || '').localeCompare(b.name || '');
     if (sortBy === 'subscribed') return (b.subscribed ? 1 : 0) - (a.subscribed ? 1 : 0);
@@ -427,6 +430,16 @@ export default function ManagerPortalPage() {
                   {label}
                 </button>
               ))}
+              {uninvitedCount > 0 && (
+                <button onClick={() => setOnlyUninvited(v => !v)} data-testid="mgr-filter-uninvited"
+                  title="Clients whose portal exists but who have not been sent their claim invitation yet"
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-colors"
+                  style={onlyUninvited
+                    ? { background: 'rgba(245,158,11,0.15)', color: '#F59E0B', border: '1px solid rgba(245,158,11,0.5)' }
+                    : { color: '#F59E0B', border: '1px solid rgba(245,158,11,0.35)' }}>
+                  <Mail className="w-3 h-3" /> Not yet invited ({uninvitedCount})
+                </button>
+              )}
               <button onClick={exportCsv} data-testid="mgr-roster-export"
                 title="Download the current view as a CSV (statuses, counts, and your private notes)"
                 className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-colors"

@@ -5,11 +5,12 @@
  */
 
 import React, { useRef } from 'react';
-import { FileSpreadsheet, Loader2, Upload, Download, Send, Clock, RotateCcw, CheckCircle2 } from 'lucide-react';
+import { FileSpreadsheet, Loader2, Upload, Download, Send, Clock } from 'lucide-react';
 import { Button } from '../ui/button';
 import { useRosterImport } from '../../hooks/useRosterImport';
 import { RosterMappingEditor } from './RosterMappingEditor';
 import { RosterPreviewTable, RosterSummary } from './RosterPreviewTable';
+import { RosterImportProgress } from './RosterImportProgress';
 
 const downloadTemplate = () => {
   const csv = 'First Name,Last Name,Email\r\nJane,Dawson,jane.dawson@example.com\r\n';
@@ -45,19 +46,6 @@ const ImportHistory = ({ history }) => history.length > 0 && (
   </details>
 );
 
-const ResultCard = ({ result, onReset }) => (
-  <div className="rounded-xl p-4 mb-4" style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.35)' }} data-testid="roster-import-result">
-    <div className="flex items-center gap-2 text-sm font-bold text-[#10b981] mb-1"><CheckCircle2 className="w-4 h-4" /> Import complete</div>
-    <p className="text-sm text-[var(--t3)]" data-testid="roster-import-result-text">
-      {result.summary.added} added · {result.summary.renamed} renamed · {result.summary.already_client} already clients
-      {result.summary.failed ? ` · ${result.summary.failed} failed` : ''} · {result.summary.invites_sent ? `${result.summary.invites_sent} invitations sending now` : 'no invitations sent — use Send Invite on each client when ready'}
-    </p>
-    <Button size="sm" variant="outline" className="text-xs border-[var(--b)] mt-3" onClick={onReset} data-testid="roster-import-another">
-      <RotateCcw className="w-3 h-3 mr-1" /> Import another file
-    </Button>
-  </div>
-);
-
 export const RosterImportPanel = ({ api, headers, onImported, title = 'Import your client roster' }) => {
   const fileRef = useRef(null);
   const s = useRosterImport({ api, headers, onImported });
@@ -74,10 +62,10 @@ export const RosterImportPanel = ({ api, headers, onImported, title = 'Import yo
         </button>
       </div>
 
-      {!s.plan && !s.result && <HowItWorks />}
-      {s.result && <ResultCard result={s.result} onReset={s.reset} />}
+      {!s.plan && !s.job && <HowItWorks />}
+      {s.job && <RosterImportProgress job={s.job} onReset={s.reset} />}
 
-      {!s.plan && !s.result && (
+      {!s.plan && !s.job && (
         <div
           className="rounded-xl p-6 text-center cursor-pointer transition-colors hover:border-[var(--gold)]"
           style={{ border: '2px dashed var(--b)', background: 'var(--s)' }}
@@ -102,6 +90,14 @@ export const RosterImportPanel = ({ api, headers, onImported, title = 'Import yo
             <>
               <RosterSummary summary={s.plan.summary} />
               <RosterPreviewTable rows={s.plan.rows} notInUpload={s.plan.not_in_upload} />
+              {!canCommit && (
+                <div className="rounded-xl p-4 mb-4 text-sm text-[var(--t3)]" style={{ background: 'var(--s)', border: '1px solid var(--b)' }} data-testid="roster-nothing-to-do">
+                  {s.plan.summary.needs_email + s.plan.summary.needs_name + s.plan.summary.no_seat > 0
+                    ? 'Nothing can be added yet — fix the rows marked “Needs attention” in your spreadsheet and upload it again.'
+                    : 'Everyone in this file is already on your roster — nothing to add.'}
+                </div>
+              )}
+              {s.plan.summary.add > 0 && (
               <div className="rounded-xl p-4 mb-4" style={{ background: 'var(--s)', border: '1px solid var(--b)' }} data-testid="roster-invite-choice">
                 <p className="text-sm font-bold text-[var(--t)] mb-2">Claim invitations for the {s.plan.summary.add} new client{s.plan.summary.add === 1 ? '' : 's'}</p>
                 <div className="flex flex-col sm:flex-row gap-2">
@@ -121,6 +117,7 @@ export const RosterImportPanel = ({ api, headers, onImported, title = 'Import yo
                   ))}
                 </div>
               </div>
+              )}
             </>
           )}
           <div className="flex items-center gap-2 flex-wrap">

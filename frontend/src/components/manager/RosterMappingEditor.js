@@ -51,7 +51,7 @@ export const RosterMappingEditor = ({ plan, busy, onRemap }) => {
       </div>
       <div className="flex items-center justify-between gap-3 mt-3 flex-wrap">
         <p className="text-xs text-[var(--t5)]">
-          {plan.row_count} data row{plan.row_count === 1 ? '' : 's'} in <span className="text-[var(--t3)]">{plan.filename}</span>.
+          {plan.row_count} data row{plan.row_count === 1 ? '' : 's'} in <span className="text-[var(--t3)]">{plan.filename}</span>{plan.sheet_name ? <> (sheet “{plan.sheet_name}”)</> : null}.
           Use First + Last name, or a single Full name column.
         </p>
         <Button size="sm" className="gold-button text-xs" disabled={!dirty || !complete || busy === 'remap'} onClick={() => onRemap(draft)} data-testid="roster-remap-btn">

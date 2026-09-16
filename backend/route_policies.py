@@ -388,6 +388,15 @@ ROUTE_POLICIES: dict = {
         "auth": "required",
         "notes": "Manager-token gated; partner-scoped import history (counts only, no PII)",
     },
+    "GET /api/manager/roster/imports/{import_id}": {
+        "auth": "required",
+        "notes": "Manager-token gated; live progress of one import job (polled by the UI)",
+    },
+    "GET /api/admin/partners/{partner_id}/roster/imports/{import_id}": {
+        "auth": "required",
+        "roles": ["admin"],
+        "notes": "Founder-only (_ensure_founder); live progress of one import job",
+    },
     "POST /api/admin/partners/{partner_id}/roster/analyze": {
         "auth": "required",
         "roles": ["admin"],

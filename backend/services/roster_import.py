@@ -32,10 +32,43 @@ SAMPLE_ROWS = 3
 FIELDS = ("email", "first_name", "last_name", "full_name")
 
 _HEADER_HINTS = {
-    "email": ("email", "emailaddress", "clientemail", "primaryemail", "mail", "e-mail", "emailprimary"),
-    "first_name": ("firstname", "first", "fname", "givenname", "given", "clientfirstname", "firstnm"),
-    "last_name": ("lastname", "last", "lname", "surname", "familyname", "clientlastname", "lastnm"),
-    "full_name": ("name", "fullname", "clientname", "client", "contact", "contactname", "customer", "customername"),
+    "email": (
+        "email",
+        "emailaddress",
+        "clientemail",
+        "primaryemail",
+        "mail",
+        "emailprimary",
+        "memberemail",
+        "contactemail",
+    ),
+    "first_name": (
+        "firstname",
+        "first",
+        "fname",
+        "givenname",
+        "given",
+        "clientfirstname",
+        "firstnm",
+        "memberfirstname",
+    ),
+    "last_name": ("lastname", "last", "lname", "surname", "familyname", "clientlastname", "lastnm", "memberlastname"),
+    "full_name": (
+        "name",
+        "fullname",
+        "clientname",
+        "client",
+        "contact",
+        "contactname",
+        "customer",
+        "customername",
+        "member",
+        "membername",
+        "participant",
+        "participantname",
+        "employee",
+        "employeename",
+    ),
 }
 _SECONDARY_WORDS = ("alt", "alternate", "secondary", "spouse", "partner", "2", "other", "backup", "assistant")
 
@@ -70,13 +103,14 @@ def _clean(v) -> str:
     return str(v).strip()
 
 
-def parse_spreadsheet(filename: str, content: bytes) -> tuple[list[str], list[list[str]]]:
-    """→ (headers, rows). First non-empty row is the header. CSV or XLSX."""
+def parse_spreadsheet(filename: str, content: bytes) -> tuple[list[str], list[list[str]], str]:
+    """→ (headers, rows, sheet_name). Title/banner rows are skipped; CSV or XLSX."""
     if len(content) > MAX_FILE_BYTES:
-        raise ValueError("File is larger than 5 MB.")
+        raise ValueError("That file is larger than 5 MB. Remove extra sheets or images and try again.")
     name = (filename or "").lower()
+    sheet_name = ""
     if name.endswith((".xlsx", ".xlsm")):
-        table = _read_xlsx(content)
+        table, sheet_name = _read_xlsx(content)
     elif name.endswith((".csv", ".txt")):
         table = _read_csv(content)
     elif name.endswith(".xls"):
@@ -86,17 +120,23 @@ def parse_spreadsheet(filename: str, content: bytes) -> tuple[list[str], list[li
 
     table = [[_clean(c) for c in row] for row in table]
     table = [row for row in table if any(row)]
-    if not table:
-        raise ValueError("The file has no rows.")
+    if len(table) < 2:
+        raise ValueError(
+            "We couldn't find any people in that file. It needs a header row (e.g. First Name, Last Name, Email) followed by one row per person."
+        )
     start = _header_row_index(table)
     headers = table[start]
     width = max(len(r) for r in table[start:])
     headers = headers + [f"Column {i + 1}" for i in range(len(headers), width)]
     headers = [h or f"Column {i + 1}" for i, h in enumerate(headers)]
     rows = [r + [""] * (width - len(r)) for r in table[start + 1 :]]
+    if not rows:
+        raise ValueError("That file only has a header row — add one row per person and try again.")
     if len(rows) > MAX_ROWS:
-        raise ValueError(f"Too many rows — the limit is {MAX_ROWS:,} per upload.")
-    return headers, rows
+        raise ValueError(
+            f"Too many rows — the limit is {MAX_ROWS:,} per upload. Split the sheet and import it in parts."
+        )
+    return headers, rows, sheet_name
 
 
 def _header_row_index(table: list[list[str]]) -> int:
@@ -118,18 +158,23 @@ def _read_csv(content: bytes) -> list[list]:
     return list(csv.reader(io.StringIO(text), dialect))
 
 
-def _read_xlsx(content: bytes) -> list[list]:
+def _read_xlsx(content: bytes) -> tuple[list[list], str]:
+    """Reads the sheet with the most filled rows (people usually live on one tab)."""
     from openpyxl import load_workbook
 
-    wb = load_workbook(io.BytesIO(content), read_only=True, data_only=True)
+    try:
+        wb = load_workbook(io.BytesIO(content), read_only=True, data_only=True)
+    except Exception:  # noqa: BLE001
+        raise ValueError("That doesn't look like a valid Excel file. Save it as .xlsx and try again.")
     best: list[list] = []
+    best_name = ""
     for ws in wb.worksheets:
         rows = [list(r) for r in ws.iter_rows(values_only=True, max_row=MAX_ROWS + 50)]
         rows = [r for r in rows if any(_clean(c) for c in r)]
         if len(rows) > len(best):
-            best = rows
+            best, best_name = rows, ws.title
     wb.close()
-    return best
+    return best, best_name
 
 
 # ─── Mapping ─────────────────────────────────────────────────────────────
