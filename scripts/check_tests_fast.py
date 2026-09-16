@@ -19,6 +19,7 @@ from __future__ import annotations
 import argparse
 import subprocess
 import sys
+from pathlib import Path
 
 FAST_SUITE = [
     "tests/test_idor_guards.py",
@@ -78,8 +79,18 @@ def main() -> int:
     ap.add_argument("--strict", action="store_true", help="Exit 1 on test failure")
     args = ap.parse_args()
 
-    cmd = ["pytest", *FAST_SUITE, "-q", "--tb=short", "--no-header"]
-    print(f"Running fast suite: {' '.join(FAST_SUITE)}")
+    # backend/tests/test_*.py is gitignored (may hold credentials), so a fresh
+    # checkout only carries the committed regression/ files — run what exists.
+    present = [t for t in FAST_SUITE if (Path("/app/backend") / t).exists()]
+    missing = [t for t in FAST_SUITE if t not in present]
+    if missing:
+        print(f"Skipping {len(missing)} gitignored/absent test file(s): {' '.join(missing)}")
+    if not present:
+        print("\n❌ Fast suite: no test files present.")
+        return 1 if args.strict else 0
+
+    cmd = ["pytest", *present, "-q", "--tb=short", "--no-header"]
+    print(f"Running fast suite: {' '.join(present)}")
     proc = subprocess.run(cmd, cwd="/app/backend")
     if proc.returncode != 0:
         print(f"\n❌ Fast suite failed (exit {proc.returncode}).")

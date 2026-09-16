@@ -160,6 +160,9 @@ USER_UNLINK = {
     "estate_channels": {"pull": "members"},
     "family_plans": {"pull_members": "members"},
     "failed_logins": {"match_email": "email"},
+    # Anonymous readiness quiz (public funnel) — the only personal key is the optional
+    # follow-up email; erasing the user strips it and keeps the aggregate score.
+    "readiness_quiz_results": {"match_email": "email"},
 }
 
 # ---- anonymise in place ---------------------------------------------------------------

@@ -7,7 +7,15 @@ Status legend: ✅ delivered · ⚠️ partially / imprecise · ❌ not delivere
 
 ---
 
-## 0. P0 BLOCKER — two divergent backends (found during the audit)
+## 0. STATUS (Sep 16, 2026 — RESOLVED on branch `reconcile`, not yet pushed)
+
+Reconciliation done per `RECONCILIATION_PLAN.md` Option A. Every ❌/⚠️ marked **FIXED** below shipped in this session; items marked **OPEN** are still outstanding. Preview DB now mirrors live (`backend/scripts/mirror_live_config.py`).
+
+Fixed: plain-English security copy everywhere (§1b rows 1–3, 6, 7 reworded honestly); "continuity escrow" → Wind-Down Promise link; 24/7 / nationwide / iOS-Android removed; About CTA → `/start`; `/pricing` table reads portal gates (no "Up to 3/5", no vault tiers, no priority-support row); "Family plan savings" copy; StartPage "Unlimited storage"; paywall 24-48h → 24h; paywall Family tile already dynamic in Job L; GetStarted trial days already dynamic in Job L; Privacy already names xAI, uses carryon.us contacts, no voice biometrics (Job L).
+
+Still OPEN (backend/product work, founder to prioritise): §1a Priority support by tier; §1a referral +7 convert/invite flow; §1a hospice deep-link preselect; §1b user-facing "Access history" card; §1b full ZIP export button (Job L has per-document downloads + JSON export — verify against Wind-Down Promise wording); §1b Terms additions (auto-renew, post-transition pricing, retention); §1c CCP example list ("job loss") vs PLAN_TYPES; Privacy disclosures for Meta Pixel / Firebase / Google Places / Resend / S3 / 90-day retention.
+
+## 0-old. P0 BLOCKER — two divergent backends (found during the audit)
 
 | Environment | Backend build (`/api/health`) | Evidence |
 |---|---|---|

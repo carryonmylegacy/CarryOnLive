@@ -124,15 +124,21 @@ const FaqItem = ({ q, a, link, isOpen, onToggle, index }) => (
  * @param {string}  [testIdSuffix='']  — appended to data-testid values (e.g. '-home')
  * @param {React.ReactNode} [beforeAbout]  — optional slot rendered before the About section (e.g. video)
  */
-const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', beforeAbout }) => {
+const DEFAULT_FOOTER = { line1: '1550 Wilson Boulevard 7th Floor', line2: 'Arlington, VA 22209 U.S.A.', phone: '(703) 884-1527' };
+
+const LandingContent = ({ navigateWithFade, footerInfo = DEFAULT_FOOTER, testIdSuffix = '', beforeAbout, skipToRealFamilies = false, ctaOverride }) => {
   const [openFaq, setOpenFaq] = useState(null);
   return (
   <>
-    {/* ═══════════════════ PRODUCT PREVIEW (D1.5) ═══════════════════ */}
+    {!skipToRealFamilies && (
+    /* ═══════════════════ PRODUCT PREVIEW (D1.5) ═══════════════════ */
     <ProductPreview testIdSuffix={testIdSuffix} />
+    )}
 
     {beforeAbout}
 
+    {!skipToRealFamilies && (
+    <>
     {/* ═══════════════════ THE PROBLEM (D1.2) ═══════════════════ */}
     <section id="about" className="relative z-10 -mt-2">
       <div className="rounded-t-[2.5rem] py-24 lg:py-32 relative overflow-hidden" style={{ background: '#0E1829', boxShadow: '0 -20px 60px rgba(0,0,0,0.5)' }}>
@@ -293,6 +299,8 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
         </div>
       </div>
     </section>
+    </>
+    )}
 
     {/* ═══════════════════ PLATFORM FEATURES ═══════════════════ */}
     <section className="relative z-[35] -mt-1">
@@ -328,6 +336,8 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
       </div>
     </section>
 
+    {!skipToRealFamilies && (
+    <>
     {/* ═══════════════════ FIVE STEPS ═══════════════════ */}
     <section id="steps" className="relative z-40 -mt-1">
       <div className="rounded-t-[2rem] py-24 lg:py-32 relative overflow-hidden" style={{ background: 'linear-gradient(180deg, #111F34, #0E1829)', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
@@ -348,6 +358,8 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
         </div>
       </div>
     </section>
+    </>
+    )}
 
     {/* ═══════════════════ SECURITY ═══════════════════ */}
     <section id="security" className="relative z-50 -mt-1">
@@ -378,6 +390,8 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
       </div>
     </section>
 
+    {!skipToRealFamilies && (
+    <>
     {/* ═══════════════════ HONEST TRUST (D1.4) ═══════════════════ */}
     <section className="relative z-[52] -mt-1" id="trust">
       <div className="rounded-t-[2rem] py-20 lg:py-24 relative overflow-hidden" style={{ background: 'linear-gradient(180deg, #111F34, #0D1B2A)', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
@@ -459,6 +473,8 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
         }) }} />
       </div>
     </section>
+    </>
+    )}
 
     {/* ═══════════════════ HOSPICE ═══════════════════ */}
     <section className="relative z-[60] -mt-1">
@@ -515,9 +531,9 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
           <p className="text-[#7b879e] text-base mb-8">
             Upload one document and invite one person &mdash; that&apos;s a real start. Whatever comes next, your family will know where to look, who to call, and what to do.
           </p>
-          <button onClick={() => navigateWithFade('/start')} className="inline-flex items-center gap-2 px-10 py-4 rounded-lg font-semibold text-base transition-transform duration-150 active:scale-95"
-            style={{ background: '#d4af37', color: '#0B1221', transition: 'all 0.3s' }}>
-            Start Now <ChevronRight className="w-4 h-4" />
+          <button onClick={ctaOverride?.onClick || (() => navigateWithFade('/start'))} className="inline-flex items-center gap-2 px-10 py-4 rounded-lg font-semibold text-base transition-transform duration-150 active:scale-95"
+            style={{ background: '#d4af37', color: '#0B1221', transition: 'all 0.3s' }} data-testid={`landing-final-cta${testIdSuffix}`}>
+            {ctaOverride?.label || 'Start Now'} <ChevronRight className="w-4 h-4" />
           </button>
         </RevealSection>
       </div>

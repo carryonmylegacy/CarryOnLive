@@ -173,6 +173,11 @@ async def erase_user(user_id: str, *, actor: dict, reason: str = "admin_delete",
         r = await db.failed_logins.delete_many({"email": {"$in": [email, email.lower(), user_id]}})
         if r.deleted_count:
             counts["failed_logins"] = r.deleted_count
+        r = await db.readiness_quiz_results.update_many(
+            {"email": {"$in": [email, email.lower()]}}, {"$unset": {"email": ""}}
+        )
+        if r.modified_count:
+            counts["readiness_quiz_results:unlinked"] = r.modified_count
 
     # 5) anonymise telemetry / financial / compliance rows
     for coll, entry in m.ANONYMISE.items():

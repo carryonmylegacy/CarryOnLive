@@ -1,5 +1,9 @@
 # Backend/Frontend Lineage Reconciliation — facts, evidence, plan (Sep 16, 2026)
 
+> **STATUS Sep 16 (night): Phases 1–3 DONE on branch `reconcile` (merge 70bc0420 + follow-ups). Phase 4 (ship) is the founder's: Save to GitHub → main (force) from THIS chat → CI → Render → Republish → branch protection. See CHANGELOG Sep 16.**
+> Decision taken for §5.2: Job F's homepage narrative is the public face; Job L's public pages (Our Promise, Security, Voices, Founders Circle, Speak With Us, Accessibility, Wind-Down Promise, QuickStart) are all routed and reachable. Job L's Jun-2026 homepage sections (continuity timeline / four pillars) are NOT on `/` — founder may ask for a blend.
+> §5.3: "continuity escrow" → Wind-Down Promise (kept, linked); "24/7 support" → "Human support from the founder, in-app".
+
 > Read this before touching anything. Companion: `/app/memory/PUBLIC_CLAIMS_AUDIT.md` (§0).
 
 ## 1. What actually happened (verified, not guessed)

@@ -237,11 +237,13 @@ const LoginPage = () => {
   /* fetch homepage video ID */
   const [homepageVideoId, setHomepageVideoId] = useState('KlZ8egF_Nyw');
   const [verticalVideoId, setVerticalVideoId] = useState('5fDJ9e7bEUo');
+  const [footerInfo, setFooterInfo] = useState({ line1: '1550 Wilson Boulevard 7th Floor', line2: 'Arlington, VA 22209 U.S.A.', phone: '(703) 884-1527' });
   const isMobileView = useIsMobileViewport();
   useEffect(() => {
     apiClient.get(`${API_URL}/public/site-content`).then(r => {
       if (r.data?.homepage_video_id) setHomepageVideoId(r.data.homepage_video_id);
       if (r.data?.homepage_video_id_vertical) setVerticalVideoId(r.data.homepage_video_id_vertical);
+      if (r.data?.footer_address_line1) setFooterInfo({ line1: r.data.footer_address_line1, line2: r.data.footer_address_line2, phone: r.data.footer_phone });
     }).catch(() => {});
   }, []);
 
@@ -1156,6 +1158,7 @@ const LoginPage = () => {
 
       <LandingContent
         navigateWithFade={navigateWithFade}
+        footerInfo={footerInfo}
         beforeAbout={
           /* ═══════════════════ VIDEO — See CarryOn in Action ═══════════════════ */
           <section className="relative z-10">
