@@ -2,11 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import axios from 'axios';
-import { ChevronRight, ChevronDown } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import { API_URL } from '../config';
 import { RevealSection } from '../components/landing/RevealSection';
 import LandingContent from '../components/landing/LandingContent';
 import { HERO } from '../components/landing/heroCopy';
+import { MobileNav, MARKETING_LINKS } from '../components/landing/MobileNav';
+import { HeroCtas } from '../components/landing/HeroCtas';
+import { HeroShot } from '../components/landing/HeroShot';
 
 const useIsMobileViewport = (breakpoint = 768) => {
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < breakpoint);
@@ -142,29 +145,24 @@ const HomePage = () => {
         <div className="max-w-[1400px] mx-auto px-6 lg:px-10 h-16 flex items-center justify-between">
           <img src="/carryon-logo.png" alt="CarryOn" className="h-12 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} data-testid="home-logo" />
           <div className="hidden md:flex items-center gap-8">
-            {[
-              { label: 'Features', href: '#features' },
-              { label: 'Readiness Quiz', href: '#quiz' },
-              { label: 'Security', href: '#security' },
-              { label: 'How It Works', href: '#steps' },
-              { label: 'Pricing', href: '/pricing' },
-            ].map(item => (
+            {MARKETING_LINKS.map(item => (
               <a key={item.label} href={item.href} className="text-[#6b7a90] text-sm font-medium hover:text-[#d4af37] transition-colors duration-300">{item.label}</a>
             ))}
           </div>
           <div className="flex items-center gap-4">
             <button onClick={() => navigateWithFade('/start')} className="hidden sm:inline-flex items-center gap-1 px-5 py-2 rounded-lg text-sm font-bold transition-all active:scale-95" style={{ background: '#d4af37', color: '#0B1221' }} data-testid="home-nav-get-started">
-              Get Started
+              Start Now
             </button>
             <button onClick={() => navigateWithFade('/login')} className="text-[#d4af37] text-sm font-semibold hover:text-[#fcd34d] transition-colors flex items-center gap-1" data-testid="home-sign-in-nav">
               Sign In <ChevronRight className="w-3.5 h-3.5" />
             </button>
+            <MobileNav navigateWithFade={navigateWithFade} testIdSuffix="-home" />
           </div>
         </div>
       </nav>
 
       {/* HERO */}
-      <section className="min-h-screen flex items-center relative overflow-hidden" style={{ paddingTop: 'calc(5rem + env(safe-area-inset-top, 0px))' }}>
+      <section className="relative overflow-hidden" style={{ paddingTop: 'calc(7rem + env(safe-area-inset-top, 0px))' }}>
         <div className="absolute inset-0 z-0" style={{ opacity: flagOpacity * 0.85 }}>
           <img src="/flag-bg.jpg" alt="" className="w-full h-full object-cover" style={{ filter: 'brightness(1.3) contrast(1.05) saturate(1.1)' }} />
         </div>
@@ -174,7 +172,7 @@ const HomePage = () => {
         <div className="absolute inset-0 z-[2]" style={{ background: 'radial-gradient(ellipse 80% 70% at 85% 85%, rgba(255,255,255,0.14) 0%, transparent 55%)' }} />
         <div className="absolute inset-0 z-[2]" style={{ background: 'radial-gradient(ellipse 70% 50% at 35% 50%, rgba(212,175,55,0.04) 0%, transparent 70%)' }} />
 
-        <div className="max-w-[900px] mx-auto px-6 w-full relative z-10 text-center">
+        <div className="max-w-[1100px] mx-auto px-6 w-full relative z-10 text-center">
           <RevealSection delay={0.1}>
             <img src="/carryon-logo.png" alt="CarryOn" className="w-[200px] lg:w-[260px] h-auto mx-auto mb-6" />
             <p className="text-[#d4af37] text-xs sm:text-sm font-bold uppercase tracking-[0.22em] mb-4" style={{ textShadow: '0 1px 6px rgba(0,0,0,0.6)' }} data-testid="hero-eyebrow-home">{HERO.eyebrow}</p>
@@ -185,17 +183,8 @@ const HomePage = () => {
             <p className="text-white/80 text-base lg:text-lg max-w-lg mx-auto leading-relaxed mb-8" style={{ textShadow: '0 1px 8px rgba(0,0,0,0.6)' }}>
               {HERO.sub}
             </p>
-            <div className="flex items-center gap-4 justify-center flex-wrap mb-8">
-              <button onClick={() => navigateWithFade('/start')} className="inline-flex items-center gap-2 px-8 py-3.5 rounded-lg font-bold text-base transition-transform duration-150 active:scale-95" data-testid="home-get-started-hero"
-                style={{ background: '#d4af37', color: '#0B1221' }}>
-                Get Started <ChevronRight className="w-4 h-4" />
-              </button>
-              <button onClick={() => navigateWithFade('/login')} className="inline-flex items-center gap-2 px-8 py-3.5 rounded-lg font-semibold text-sm transition-all active:scale-95" data-testid="home-sign-in-hero"
-                style={{ background: 'rgba(255,255,255,0.08)', color: '#e2e8f0', border: '1px solid rgba(255,255,255,0.12)' }}>
-                Sign In
-              </button>
-            </div>
-            <div className="flex items-center gap-5 justify-center mb-6">
+            <HeroCtas navigateWithFade={navigateWithFade} testIdSuffix="-home" />
+            <div className="flex items-center gap-5 justify-center flex-wrap mt-8">
               {HERO.badges.map(badge => (
                 <div key={badge} className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-[#10b981]" />
@@ -204,17 +193,8 @@ const HomePage = () => {
               ))}
             </div>
           </RevealSection>
-          <RevealSection delay={0.4}>
-            <div className="flex flex-col items-center gap-3 mt-10">
-              <a href="#preview" className="inline-flex items-center gap-2 px-8 py-3.5 rounded-lg font-bold text-base transition-all active:scale-95 cursor-pointer"
-                data-testid="scroll-explore-home"
-                style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.28), rgba(212,175,55,0.16))', border: '2px solid rgba(212,175,55,0.45)', boxShadow: '0 4px 30px rgba(212,175,55,0.20)', backdropFilter: 'blur(8px)', color: 'white', textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>
-                See How It Works <ChevronDown className="w-5 h-5 text-[#d4af37]" />
-              </a>
-              <a href="/pricing" className="text-[#d4af37] text-sm font-medium hover:text-[#fcd34d] transition-colors underline underline-offset-4" data-testid="hero-pricing-link">
-                View Pricing
-              </a>
-            </div>
+          <RevealSection delay={0.35} distance={50}>
+            <HeroShot testIdSuffix="-home" />
           </RevealSection>
         </div>
       </section>

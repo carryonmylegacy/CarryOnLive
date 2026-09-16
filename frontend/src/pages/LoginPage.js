@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
-import { Mail, Lock, Eye, EyeOff, Loader2, Shield, ChevronRight, ChevronDown, Sparkles, ExternalLink } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, Loader2, Shield, ChevronRight, Sparkles, ExternalLink } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { toast } from '../utils/toast';
@@ -16,6 +16,8 @@ import { API_URL } from '../config';
 import { RevealSection } from '../components/landing/RevealSection';
 import LandingContent from '../components/landing/LandingContent';
 import { HERO } from '../components/landing/heroCopy';
+import { MobileNav, MARKETING_LINKS } from '../components/landing/MobileNav';
+import { HeroCtas } from '../components/landing/HeroCtas';
 
 const useIsMobileViewport = (breakpoint = 768) => {
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < breakpoint);
@@ -774,23 +776,16 @@ const LoginPage = () => {
         <div className="max-w-[1400px] mx-auto px-6 lg:px-10 h-16 flex items-center justify-between">
           <img src="/carryon-logo.png" alt="CarryOn" className="h-12 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} data-testid="login-logo" />
           <div className="hidden md:flex items-center gap-8">
-            {[
-              { label: 'Features', href: '#features' },
-              { label: 'Readiness Quiz', href: '#quiz' },
-              { label: 'Security', href: '#security' },
-              { label: 'How It Works', href: '#steps' },
-              { label: 'Pricing', href: '/pricing' },
-              { label: 'About', href: '/about' },
-            ].map(item => (
+            {MARKETING_LINKS.map(item => (
               <a key={item.label} href={item.href} className="text-[#6b7a90] text-sm font-medium hover:text-[#d4af37] transition-colors duration-300">{item.label}</a>
             ))}
             <button onClick={() => navigateWithFade('/founder-about')} className="text-[#6b7a90] text-sm font-medium hover:text-[#d4af37] transition-colors duration-300" data-testid="nav-founder-btn">Founder</button>
           </div>
           <div className="flex items-center gap-3 sm:gap-4">
-            <button onClick={() => navigateWithFade('/founder-about')} className="md:hidden text-[#6b7a90] text-xs font-medium hover:text-[#d4af37] transition-colors" data-testid="nav-founder-btn-mobile">Founder</button>
-            <button onClick={() => navigateWithFade('/signup')} className="text-[#d4af37] text-sm font-semibold hover:text-[#fcd34d] transition-colors flex items-center gap-1">
-              Open Account <ChevronRight className="w-3.5 h-3.5" />
+            <button onClick={() => navigateWithFade('/start')} className="text-[#d4af37] text-sm font-semibold hover:text-[#fcd34d] transition-colors flex items-center gap-1" data-testid="login-nav-start-now">
+              Start Now <ChevronRight className="w-3.5 h-3.5" />
             </button>
+            <MobileNav links={[...MARKETING_LINKS, { label: 'Founder', href: '/founder-about' }]} navigateWithFade={navigateWithFade} />
           </div>
         </div>
       </nav>
@@ -835,13 +830,9 @@ const LoginPage = () => {
                       </div>
                     ))}
                   </div>
-                  <a href="#preview" className="flex w-fit flex-col items-center justify-center gap-1 mt-10 mx-auto px-5 py-3 rounded-xl cursor-pointer text-center"
-                    data-testid="scroll-explore-desktop"
-                    style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.28), rgba(212,175,55,0.16))', border: '2px solid rgba(212,175,55,0.45)', boxShadow: '0 4px 30px rgba(212,175,55,0.20)', backdropFilter: 'blur(8px)' }}>
-                    <span className="text-white text-xl sm:text-2xl font-bold text-center" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>See How It Works</span>
-                    <ChevronDown className="w-6 h-6 text-[#d4af37]" />
-                  </a>
-                  <a href="/pricing" className="block w-fit mx-auto mt-3 text-[#d4af37] text-sm font-medium hover:text-[#fcd34d] transition-colors underline underline-offset-4">View Pricing</a>
+                  <div className="mt-8">
+                    <HeroCtas navigateWithFade={navigateWithFade} testIdSuffix="-desktop" align="left" />
+                  </div>
                 </div>
               </div>
             </RevealSection>
@@ -977,13 +968,9 @@ const LoginPage = () => {
                       </div>
                     ))}
                   </div>
-                  <a href="#preview" className="flex flex-col items-center justify-center gap-1 mt-8 mb-20 mx-auto px-5 py-3 rounded-xl cursor-pointer text-center"
-                    data-testid="scroll-explore-mobile"
-                    style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.28), rgba(212,175,55,0.16))', border: '2px solid rgba(212,175,55,0.45)', boxShadow: '0 4px 30px rgba(212,175,55,0.20)', backdropFilter: 'blur(8px)' }}>
-                    <span className="text-white text-lg sm:text-xl font-bold text-center" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>See How It Works</span>
-                    <ChevronDown className="w-6 h-6 text-[#d4af37]" />
-                  </a>
-                  <a href="/pricing" className="block w-fit mx-auto -mt-16 mb-16 text-[#d4af37] text-sm font-medium hover:text-[#fcd34d] transition-colors underline underline-offset-4">View Pricing</a>
+                  <div className="mt-8 mb-16">
+                    <HeroCtas navigateWithFade={navigateWithFade} testIdSuffix="-mobile" />
+                  </div>
                 </div>
               </RevealSection>
             </div>

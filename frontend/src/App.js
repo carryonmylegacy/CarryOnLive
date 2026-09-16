@@ -374,6 +374,12 @@ function AppRoutes() {
 }
 
 function App() {
+  // Installed app (native/PWA): lock zoom like a native shell. Web keeps pinch-to-zoom for accessibility.
+  useEffect(() => {
+    if (!isNative && !isPWA()) return;
+    document.querySelector('meta[name="viewport"]')?.setAttribute('content', 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover');
+  }, []);
+
   // Ensure WebView extends behind the status bar on native iOS.
   // With contentInset:'never' in capacitor.config + this call, only our
   // CSS env(safe-area-inset-top) handles the notch — no double padding.

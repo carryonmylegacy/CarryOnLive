@@ -3,6 +3,7 @@ import { Shield, Users, ChevronRight, ChevronDown, Lock as LockIcon, Sparkles, F
 import { RevealSection } from './RevealSection';
 import { ProductPreview } from './ProductPreview';
 import { ReadinessQuiz } from './ReadinessQuiz';
+import { StepsShowcase } from './StepsShowcase';
 
 /* ── data: the eight tools (plain-language title, product name as sub-label) ── */
 const PILLARS = [
@@ -145,6 +146,18 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
               Useful today &mdash; finding the deed, sharing a policy with your spouse &mdash; and essential on the day your family needs it most.
             </p>
           </RevealSection>
+          <RevealSection delay={0.3}>
+            <div className="grid sm:grid-cols-2 gap-4 mt-12 text-left" data-testid={`scope-block${testIdSuffix}`}>
+              <div className="rounded-xl p-5" style={{ background: 'rgba(15,26,46,0.6)', border: '1px solid rgba(212,175,55,0.25)' }}>
+                <p className="text-[#d4af37] text-xs font-bold uppercase tracking-wider mb-2">Built for</p>
+                <p className="text-[#e2e8f0] text-sm leading-relaxed">Everyday American families &mdash; a house, a phone full of accounts, a few policies, and people who&apos;d have to sort it all out. No estate attorney on retainer required.</p>
+              </div>
+              <div className="rounded-xl p-5" style={{ background: 'rgba(15,26,46,0.4)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <p className="text-[#8b97ab] text-xs font-bold uppercase tracking-wider mb-2">Probably not for</p>
+                <p className="text-[#a0aec0] text-sm leading-relaxed">Families with a family office or a full-time advisor already keeping everything current. If that&apos;s you, you&apos;re covered &mdash; and we&apos;d rather say so than sell you something you don&apos;t need.</p>
+              </div>
+            </div>
+          </RevealSection>
         </RevealSection>
       </div>
     </section>
@@ -205,44 +218,23 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
           </RevealSection>
 
           <div data-testid={`pillars-flow${testIdSuffix}`}>
-            <div className="relative" style={{ marginBottom: '20px' }}>
-              {/* Arrow shaft */}
-              <div className="absolute left-1/2 -translate-x-1/2 z-0"
-                style={{
-                  width: '100px',
-                  top: '20px',
-                  bottom: '-20px',
-                  background: 'linear-gradient(180deg, rgba(212,175,55,0.10) 0%, rgba(212,175,55,0.25) 10%, rgba(212,175,55,0.30) 100%)',
-                  borderRadius: '50px 50px 0 0',
-                }} />
-              {/* Arrow head */}
-              <div className="absolute left-1/2 -translate-x-1/2 z-0"
-                style={{
-                  width: '0',
-                  height: '0',
-                  bottom: '-60px',
-                  borderLeft: '70px solid transparent',
-                  borderRight: '70px solid transparent',
-                  borderTop: '40px solid rgba(212,175,55,0.32)',
-                }} />
-
-              <div className="relative z-10 flex flex-col gap-6">
+            <div className="grid md:grid-cols-2 gap-5">
                 {PILLARS.map(({ num, icon: Icon, title, product, bold, desc }, i) => (
-                  <RevealSection key={num} delay={i * 0.06} distance={40} duration={0.8}>
-                    <div className="rounded-2xl p-6 lg:p-8 relative overflow-hidden"
+                  <RevealSection key={num} delay={(i % 2) * 0.08} distance={30} duration={0.7}>
+                    <div className="rounded-2xl p-6 h-full relative overflow-hidden"
                       data-testid={`pillar-card-${num}${testIdSuffix}`}
                       style={{
                         background: 'linear-gradient(160deg, #1a2d4d 0%, #16284a 50%, #142240 100%)',
                         border: '1.5px solid rgba(212,175,55,0.45)',
                         boxShadow: '0 2px 16px rgba(0,0,0,0.15)',
                       }}>
-                      <div className="flex items-start gap-5">
-                        <div className="flex flex-col items-center gap-2.5 flex-shrink-0 pt-0.5">
-                          <div className="w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm"
+                      <div className="flex items-start gap-4">
+                        <div className="flex flex-col items-center gap-2 flex-shrink-0 pt-0.5">
+                          <div className="w-11 h-11 rounded-full flex items-center justify-center font-bold text-sm"
                             style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.12), rgba(212,175,55,0.06))', border: '1.5px solid rgba(212,175,55,0.25)', color: '#d4af37' }}>
                             {num}
                           </div>
-                          <div className="w-9 h-9 rounded-full flex items-center justify-center"
+                          <div className="w-8 h-8 rounded-full flex items-center justify-center"
                             style={{ background: 'rgba(212,175,55,0.06)' }}>
                             <Icon className="w-4 h-4 text-[#d4af37]/70" />
                           </div>
@@ -250,18 +242,17 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
                         <div className="flex-1 min-w-0">
                           <h4 className="text-white text-lg font-bold leading-tight mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>{title}</h4>
                           <span className="text-[#8b97ab] text-xs font-semibold tracking-wide block mb-2.5">{product}</span>
-                          <p className="text-sm font-medium mb-2.5 leading-relaxed" style={{ color: '#e8c972' }}>{bold}</p>
+                          <p className="text-sm font-medium mb-2 leading-relaxed" style={{ color: '#e8c972' }}>{bold}</p>
                           <p className="text-[#8b97ab] text-sm leading-relaxed">{desc}</p>
                         </div>
                       </div>
                     </div>
                   </RevealSection>
                 ))}
-              </div>
             </div>
 
             {/* End-state tile */}
-            <div className="pt-10">
+            <div className="pt-12">
               <RevealSection delay={0.5}>
                 <div className="relative z-20 mx-auto max-w-[640px] rounded-[1.75rem] p-8 lg:p-10 text-center"
                   data-testid={`complete-preparedness-tile${testIdSuffix}`}
@@ -332,7 +323,7 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
         <div className="absolute top-0 left-0 right-0 h-[320px] sm:hidden" style={{ background: 'linear-gradient(180deg, transparent 50%, #111F34 100%)' }} />
         <div className="absolute inset-0 opacity-[0.4] hidden sm:block" style={{ backgroundImage: 'url(/texture-pathway.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
         <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 60% 60% at 50% 30%, rgba(212,175,55,0.03) 0%, transparent 70%)' }} />
-        <div className="max-w-[800px] mx-auto px-6 text-center relative z-10">
+        <div className="max-w-[1000px] mx-auto px-6 text-center relative z-10">
           <RevealSection>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-5" style={{ fontFamily: 'Outfit, sans-serif' }}>
               Your affairs in order, in five steps.
@@ -341,23 +332,7 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
               You don&apos;t need to do it all at once. Start with what matters most and build the rest over time.
             </p>
           </RevealSection>
-          <div className="space-y-12 text-left">
-            {FIVE_STEPS.map(({ step, title, desc }, i) => (
-              <RevealSection key={step} delay={i * 0.15}>
-                <div className="flex gap-5 group">
-                  <div className="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center font-bold text-base" style={{ background: 'rgba(212,175,55,0.15)', color: '#d4af37', border: '1px solid rgba(212,175,55,0.25)' }}>
-                    {step}
-                  </div>
-                  <div>
-                    <p className="text-white text-base leading-relaxed">
-                      <span className="font-bold">Step {step} &mdash; {title}.</span>{' '}
-                      <span className="text-[#7b879e]">{desc}</span>
-                    </p>
-                  </div>
-                </div>
-              </RevealSection>
-            ))}
-          </div>
+          <StepsShowcase steps={FIVE_STEPS} testIdSuffix={testIdSuffix} />
         </div>
       </div>
     </section>

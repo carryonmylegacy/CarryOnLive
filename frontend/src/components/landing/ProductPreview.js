@@ -22,7 +22,7 @@ const TABS = [
 const Shots = ({ active, prefix, suffix }) => TABS.map(t => (
   <img key={t.id} src={`/screenshots/${prefix}${t.id}.webp`} alt={t.alt}
     width={prefix ? 780 : 2160} height={prefix ? 1328 : 1350}
-    loading={t.id === 'dashboard' ? 'eager' : 'lazy'}
+    loading={t.id === 'vault' ? 'eager' : 'lazy'}
     data-testid={t.id === active ? `preview-panel-${t.id}${suffix}` : undefined}
     className="absolute inset-0 w-full h-full object-cover object-top transition-opacity duration-300"
     style={{ opacity: t.id === active ? 1 : 0, pointerEvents: t.id === active ? 'auto' : 'none' }} />
@@ -53,7 +53,7 @@ const PhoneFrame = ({ active, testIdSuffix }) => (
 );
 
 export const ProductPreview = ({ testIdSuffix = '' }) => {
-  const [active, setActive] = useState('dashboard');
+  const [active, setActive] = useState('vault');
   const tab = TABS.find(t => t.id === active);
   return (
     <section id="preview" className="relative z-[5]" data-testid={`product-preview${testIdSuffix}`}>
