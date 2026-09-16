@@ -2,10 +2,19 @@ import React from 'react';
 import SEO from '../components/SEO';
 import PublicFooter from '../components/PublicFooter';
 import { Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { ArrowLeft, Shield } from 'lucide-react';
 
 const PrivacyPolicyPage = () => {
   return (
+    <>
+      <Helmet>
+        <title>Privacy Policy - CarryOn Family Preparedness</title>
+        <meta name="description" content="CarryOn's privacy policy. How we protect your family's data with AES-256 encryption, GDPR compliance, and SOC 2 architecture." />
+        <link rel="canonical" href="https://carryon.us/privacy" />
+        <meta property="og:title" content="Privacy Policy - CarryOn" />
+        <meta property="og:url" content="https://carryon.us/privacy" />
+      </Helmet>
     <div
       className="min-h-screen py-12 px-4"
       style={{ background: 'linear-gradient(145deg, #0F1629, #141C33 40%, #0F1629)' }}
@@ -136,6 +145,7 @@ const PrivacyPolicyPage = () => {
       </div>
       <PublicFooter />
     </div>
+    </>
   );
 };
 

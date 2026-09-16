@@ -393,7 +393,7 @@ const TrusteePage = () => {
               Designated Trustee Services
             </h2>
             <p className="text-sm text-[var(--t3)] leading-relaxed mb-6">
-              DTS is a premium feature that becomes available with an active subscription. Your free trial gives you full access to explore every other part of CarryOn — when you're ready, choose a plan to unlock DTS.
+              DTS is a premium feature that becomes available with an active subscription. Your exploration period gives you full access to explore every other part of CarryOn — when you're ready, choose a plan to unlock DTS.
             </p>
             <button
               onClick={() => window.history.back()}

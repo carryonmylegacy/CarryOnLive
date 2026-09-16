@@ -1,4 +1,7 @@
 // Platform: Capacitor
+/* eslint-disable */
+/* oxlint-disable */
+/* global Capacitor, cordova, self, clients, importScripts */
 /*
  Licensed to the Apache Software Foundation (ASF) under one
  or more contributor license agreements.  See the NOTICE file

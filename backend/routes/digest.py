@@ -3,10 +3,9 @@
 import asyncio
 from datetime import datetime, timedelta, timezone
 
-import resend
 from fastapi import APIRouter, Depends, HTTPException
 
-from config import RESEND_API_KEY, SENDER_EMAIL, db, logger
+from config import RESEND_API_KEY, db, logger
 from services.readiness import calculate_estate_readiness
 from utils import get_current_user
 from guards import require_benefactor_role
@@ -220,17 +219,11 @@ async def send_digest_for_user(user: dict, dashboard_url: str) -> bool:
     html = build_digest_html(name, current_score, prev_score, actions, dashboard_url)
 
     try:
-        await asyncio.to_thread(
-            resend.Emails.send,
-            {
-                "from": SENDER_EMAIL,
-                "to": [user["email"]],
-                "subject": f"CarryOn™ Weekly: Your estate is {current_score}% ready",
-                "html": html,
-            },
-        )
+        from services.email import send_email as _send
+
+        result = await _send(user["email"], f"CarryOn\u2122 Weekly: Your estate is {current_score}% ready", html)
         logger.info(f"Weekly digest sent to {user['email']} (score: {current_score}%)")
-        return True
+        return result
     except Exception as e:
         logger.error(f"Failed to send digest to {user['email']}: {e}")
         return False
@@ -1146,15 +1139,10 @@ async def send_enhanced_digest_for_user(user: dict, dashboard_url: str) -> bool:
         recipients = [user["email"]]
         if prefs and prefs.get("additional_recipients"):
             recipients.extend(prefs["additional_recipients"])
-        await asyncio.to_thread(
-            resend.Emails.send,
-            {
-                "from": SENDER_EMAIL,
-                "to": recipients,
-                "subject": f"CarryOn\u2122 Weekly: Your estate is {current_score}% ready",
-                "html": html,
-            },
-        )
+        from services.email import send_email as _send
+
+        for addr in recipients:
+            await _send(addr, f"CarryOn\u2122 Weekly: Your estate is {current_score}% ready", html)
         logger.info(f"Enhanced estate health digest sent to {user['email']} (score: {current_score}%)")
         return True
     except Exception as e:
@@ -1194,15 +1182,10 @@ async def send_role_digest(user: dict) -> bool:
         if prefs and prefs.get("additional_recipients"):
             recipients.extend(prefs["additional_recipients"])
 
-        await asyncio.to_thread(
-            resend.Emails.send,
-            {
-                "from": SENDER_EMAIL,
-                "to": recipients,
-                "subject": subject,
-                "html": html,
-            },
-        )
+        from services.email import send_email as _send
+
+        for addr in recipients:
+            await _send(addr, subject, html)
         logger.info(f"Role digest ({role_key}) sent to {user['email']}")
         return True
     except Exception as e:

@@ -1,0 +1,9 @@
+{
+  "globals": {
+    "Capacitor": "readonly",
+    "cordova": "readonly",
+    "self": "readonly",
+    "clients": "readonly",
+    "importScripts": "readonly"
+  }
+}
