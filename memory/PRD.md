@@ -91,8 +91,14 @@ Build and maintain a comprehensive family preparedness platform that helps users
 - iOS/Capacitor hybrid, Apple IAP integration
 - Admin/Founder multi-portal, feature gates
 
+## 🔴 P0 BLOCKER (Sep 16 night) — production backend is a DIFFERENT codebase
+- Live Render API (`/api/health` build `2026-04-28 pre-launch-refactor`) serves a Seniors plan, free_mode tier, CFP/BEC/CES/TMA feature gates, launch/final pricing — none of which ever existed in this repo (verified with `git log -S` over 4,686 commits). This repo's backend (build string stuck at `2026-03-10`) has quiz/testimonials/platform-stats/founder-profile which 404 on production. Production frontend IS from this repo (Sep 16 build).
+- **Do NOT deploy this backend to Render and do NOT "Save to GitHub" onto the Render branch until reconciled** — it would delete the Seniors tier & extra gates from the live product.
+- User decision: option **b** — reconcile backends first, then make every feature live in both environments and keep the preview DB mirroring live config. Awaiting user-pasted Render/GitHub/Emergent info (instructions given Sep 16 night).
+- Full audit + evidence + fix plan: `/app/memory/PUBLIC_CLAIMS_AUDIT.md` (claims matrix for all 13 public pages; user rulings: plain-language security copy, no "nationwide network/three teams", no "iOS and Android apps" yet, 24h verification OK, 76% stat OK, portal gates are the source of truth for tier features).
+
 ## Blocked Items (user action)
-- **Deploy**: Render backend + frontend are stale — none of the Sep 15/16 marketing work, founder photo, quiz, or checklist fix is live on carryon.us until the user redeploys
+- **Deploy**: see P0 above — reconcile before any Render deploy
 - Apple IAP: Waiting on Paid Applications Agreement
 - Twilio SMS: Waiting on A2P 10DLC campaign approval
 
