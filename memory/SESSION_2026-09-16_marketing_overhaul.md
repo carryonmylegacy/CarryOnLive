@@ -13,8 +13,25 @@
 | 4 | 60-second Readiness Quiz on `/` and `/login` (score, tiers, "Fix these first", CTA → `/start` with UTM) | DONE | iteration_62 |
 | 5 | Quiz result tracking (backend) + optional email follow-up (Resend) + Founder Portal "Readiness Quiz" analytics tab | DONE | iteration_63, live email delivered to info@carryon.us |
 | 6 | Real app fix: Immediate Action Checklist cards no longer squeeze titles on phones | DONE | iteration_62 |
+| 7 | heycatch.ai "Conversion clarity" audit fixes D2.1–D2.5 + D2.B (CTA hierarchy, hero product shot, mobile hamburger, zoomable viewport, shorter scroll, scope honesty) | DONE | iteration_64 (67/67), housekeeping 65/65 |
 
 All user-facing copy decisions were explicitly approved by the user (see §1).
+
+---
+
+## 1b. Conversion-clarity pass (D2) — what shipped (same day, later)
+
+| Audit item | Fix |
+|-----------|-----|
+| D2.1 sign-in form in hero / no product UI | Root `/` already marketing-only (D1). Hero now ends with a **real dashboard screenshot** (`components/landing/HeroShot.js`): browser frame ≥640px, phone frame <640px, bottom fade mask. |
+| D2.2 CTA hierarchy | `components/landing/HeroCtas.js` shared by `/` and `/login` (desktop + mobile heroes): **primary "Start Now" → `/start`**, secondary "See it in action" → `#preview`, micro-line "Explore first — no credit card needed. Or take the 60-second readiness quiz · view pricing". Hero "Sign In" button removed (nav keeps it). Nav button text "Get Started" → "Start Now"; `/login` nav "Open Account" (→/signup) replaced by "Start Now" (→/start). |
+| D2.3 long, text-heavy | 8 feature cards now a **2-column grid** (arrow shaft/head removed); Five Steps is a two-column `StepsShowcase` with a **sticky phone screenshot that changes per step** (IntersectionObserver, desktop only; map contacts/dashboard/vault/checklist/dashboard). Product preview default tab = vault (hero already shows dashboard). |
+| D2.4 mobile nav | `components/landing/MobileNav.js` hamburger (<md) with `MARKETING_LINKS` (Features, Readiness Quiz, Security, How It Works, Pricing, About) + Start Now / Sign In. `/login` adds Founder. `MARKETING_LINKS` is now the single source for the desktop nav on both pages. |
+| D2.5 `user-scalable=no` | `public/index.html` viewport → `width=device-width, initial-scale=1, viewport-fit=cover`. `App.js` re-applies the locked viewport **only** when `isNative || isPWA()`. iOS focus-zoom is already prevented by the global `input { font-size: max(16px, …) }` rules in `index.css`. |
+| D2.B scope honesty | `scope-block{suffix}` in the problem section: "Built for … No estate attorney on retainer required" / "Probably not for … family office or full-time advisor". |
+| `/features`, `/customers` unlinked | Those pages do not exist; nothing links to them and they are not in the sitemap. Create real pages before adding links. |
+
+New test IDs: `hero-ctas{s}`, `hero-start-now{s}`, `hero-no-card{s}`, `hero-quiz-link{s}`, `hero-pricing-link{s}`, `hero-product-shot-home`, `mobile-menu-toggle{s}`, `mobile-menu{s}`, `mobile-menu-link-{slug}{s}`, `mobile-menu-start{s}`, `mobile-menu-sign-in{s}`, `login-nav-start-now`, `scope-block{s}`, `step-{1..5}{s}`, `steps-phone{s}` (`data-active-shot`). Removed: `home-get-started-hero`, `home-sign-in-hero`, `nav-founder-btn-mobile`.
 
 ---
 

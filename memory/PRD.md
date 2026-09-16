@@ -17,6 +17,15 @@ Build and maintain a comprehensive family preparedness platform that helps users
 
 ## What's Been Implemented
 
+### Completed (Sep 16, 2026 — heycatch.ai Conversion Clarity Fixes D2.1–D2.5, D2.B)
+- Hero CTA hierarchy: primary **Start Now** → `/start`, secondary "See it in action" → `#preview`, micro-line "Explore first — no credit card needed · quiz · pricing" (`components/landing/HeroCtas.js`, used on `/` and `/login` desktop+mobile); hero Sign In button removed
+- Hero product visual: real dashboard screenshot below CTAs (`HeroShot.js`; browser frame / phone frame, fade mask)
+- Mobile hamburger nav (`MobileNav.js`, `MARKETING_LINKS` single source for both pages' nav); `/login` nav "Open Account" → "Start Now"
+- Viewport meta zoomable on web (`index.html`); locked only for native/PWA at runtime (`App.js`)
+- Shorter scroll: feature cards in 2-col grid (arrow removed); Five Steps = `StepsShowcase.js` with sticky per-step phone screenshot (desktop); preview default tab = vault
+- Scope-honesty block "Built for / Probably not for" in the problem section
+- Tested: iteration_64 (67/67 PASS); housekeeping 65/65 PASS
+
 ### Completed (Sep 16, 2026 — Quiz Tracking + Email Follow-Up + Founder Analytics)
 - **Backend** `routes/quiz.py`: `POST /api/quiz/results` (anonymous, validated, score/tier computed server-side, stores answers/utm/page/device), `POST /api/quiz/results/{id}/email` (validates via `services.email`, sends branded Resend email with score + 3 fixes + `/start` CTA, stores lead), `GET /api/admin/quiz/analytics` (admin + marketing scope). Collection `readiness_quiz_results` (indexes id/created_at/email). `/api/quiz/*` rate-limited 60/min/IP
 - **Frontend**: `ReadinessQuiz.js` posts results on reaching the result screen; `EmailCapture` form ("Want this in your inbox?") with validation/error/sent states. New Founder Portal tab **Marketing → Readiness Quiz** (`/admin/quiz`, `components/admin/QuizAnalyticsTab.js`): metrics, "Where families feel least prepared" gap chart, histogram, tiers, by source/device, Leads table + CSV export, Recent results
