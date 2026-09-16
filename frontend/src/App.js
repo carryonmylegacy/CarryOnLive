@@ -84,6 +84,8 @@ const CreateEstatePage = lazy(() => import('./pages/CreateEstatePage'));
 const GetStartedPage = lazy(() => import('./pages/GetStartedPage'));
 
 const AboutPage = lazy(() => import('./pages/AboutPage'));
+const CustomersPage = lazy(() => import('./pages/CustomersPage'));
+const ChangelogPage = lazy(() => import('./pages/ChangelogPage'));
 const FounderAboutPage = lazy(() => import('./pages/FounderAboutPage'));
 
 const HomePage = lazy(() => import('./pages/HomePage'));
@@ -269,6 +271,8 @@ function AppRoutes() {
       <Route path="/privacy" element={<PrivacyPolicyPage />} />
       <Route path="/terms" element={<TermsPage />} />
       <Route path="/about" element={<AboutPage />} />
+      <Route path="/customers" element={<CustomersPage />} />
+      <Route path="/changelog" element={<ChangelogPage />} />
       <Route path="/founder-about" element={<FounderAboutPage />} />
       <Route path="/founder-about/:token" element={<FounderAboutPage />} />
       <Route path="/home" element={<HomePage />} />

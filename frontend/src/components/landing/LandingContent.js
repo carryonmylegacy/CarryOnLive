@@ -4,6 +4,10 @@ import { RevealSection } from './RevealSection';
 import { ProductPreview } from './ProductPreview';
 import { ReadinessQuiz } from './ReadinessQuiz';
 import { StepsShowcase } from './StepsShowcase';
+import { FounderCard } from './FounderCard';
+import { LiveStats } from './LiveStats';
+import { TestimonialsBlock } from './TestimonialsBlock';
+import { TrustBadges, LastUpdated } from './TrustBadges';
 
 /* ── data: the eight tools (plain-language title, product name as sub-label) ── */
 const PILLARS = [
@@ -73,10 +77,10 @@ const OUTCOMES = [
 
 /* ── data: honest trust signals (no fabricated social proof) ── */
 const TRUST_ITEMS = [
-  { icon: Medal, title: 'Built by a 24-year veteran who put his name on it', desc: 'Barnet Harris founded CarryOn after watching families face a crisis with nothing written down.', link: { href: '/about', label: 'Read his story' } },
   { icon: EyeOff, title: 'Nobody here can read your documents', desc: 'Each family\u2019s vault has its own encryption key. Not support, not engineers, not the founder.' },
   { icon: Download, title: 'Your data is yours. Leave anytime.', desc: 'Export everything whenever you want and cancel from your account. No hoops, no phone calls.' },
-  { icon: Clock, title: 'Try it before you pay', desc: 'Every plan starts with an exploration period. Set up your vault, invite one person, and see if it fits.' },
+  { icon: Clock, title: 'Try it before you pay', desc: 'Every plan starts with an exploration period \u2014 no credit card needed. Set up your vault, invite one person, and see if it fits.' },
+  { icon: Medal, title: 'Built in Arlington, Virginia since 2024', desc: 'A registered U.S. company with a real address, a real phone number, and a founder who answers to his name.' },
 ];
 
 /* ── data: FAQ items (D1.4) ── */
@@ -375,11 +379,17 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
               We&apos;re new. Here&apos;s what we can promise.
             </h2>
             <p className="text-[#7b879e] text-base text-center max-w-[640px] mx-auto mb-12 leading-relaxed">
-              You won&apos;t find invented testimonials or made-up customer counts here. When our first families are ready to speak, you&apos;ll see them. Until then, these are the things we can stand behind today.
+              You won&apos;t find invented testimonials or made-up customer counts here. Every number and every story on this site is real, or it isn&apos;t here. These are the things we can stand behind today.
             </p>
           </RevealSection>
+          <RevealSection delay={0.05}>
+            <div className="mb-5"><FounderCard testIdSuffix={testIdSuffix} /></div>
+          </RevealSection>
+          <RevealSection delay={0.08}>
+            <div className="mb-5"><LiveStats testIdSuffix={testIdSuffix} /></div>
+          </RevealSection>
           <div className="grid sm:grid-cols-2 gap-5" data-testid={`trust-grid${testIdSuffix}`}>
-            {TRUST_ITEMS.map(({ icon: Icon, title, desc, link }, i) => (
+            {TRUST_ITEMS.map(({ icon: Icon, title, desc }, i) => (
               <RevealSection key={title} delay={i * 0.08}>
                 <div className="rounded-xl p-6 h-full flex gap-4" style={{ background: 'rgba(15,26,46,0.6)', border: '1px solid rgba(212,175,55,0.2)' }}>
                   <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.15)' }}>
@@ -387,12 +397,21 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
                   </div>
                   <div>
                     <h4 className="text-white text-base font-semibold mb-1.5" style={{ fontFamily: 'Outfit, sans-serif' }}>{title}</h4>
-                    <p className="text-[#8b97ab] text-sm leading-relaxed">{desc}{link && <> <a href={link.href} className="text-[#d4af37] hover:text-[#fcd34d] underline underline-offset-4" data-testid={`trust-founder-link${testIdSuffix}`}>{link.label}</a></>}</p>
+                    <p className="text-[#8b97ab] text-sm leading-relaxed">{desc}</p>
                   </div>
                 </div>
               </RevealSection>
             ))}
           </div>
+          <RevealSection delay={0.1}>
+            <div className="mt-12"><TestimonialsBlock testIdSuffix={testIdSuffix} /></div>
+          </RevealSection>
+          <RevealSection delay={0.12}>
+            <div className="mt-10 flex flex-col items-center gap-4">
+              <TrustBadges testIdSuffix={testIdSuffix} />
+              <LastUpdated testIdSuffix={testIdSuffix} />
+            </div>
+          </RevealSection>
         </div>
       </div>
     </section>
@@ -501,8 +520,10 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
       <div className="max-w-[1400px] mx-auto px-6 lg:px-10">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
           <img src="/carryon-logo.png" alt="CarryOn" className="h-8 opacity-60" />
-          <div className="flex items-center gap-6">
+          <div className="flex items-center justify-center gap-x-6 gap-y-2 flex-wrap">
             <a href="/pricing" className="text-[#334155] text-xs hover:text-[#7b879e] transition-colors" data-testid={`landing-footer-pricing-link${testIdSuffix}`}>Pricing</a>
+            <a href="/customers" className="text-[#334155] text-xs hover:text-[#7b879e] transition-colors" data-testid={`landing-footer-customers-link${testIdSuffix}`}>Customer Stories</a>
+            <a href="/changelog" className="text-[#334155] text-xs hover:text-[#7b879e] transition-colors" data-testid={`landing-footer-changelog-link${testIdSuffix}`}>What&apos;s New</a>
             <a href="/about" className="text-[#334155] text-xs hover:text-[#7b879e] transition-colors" data-testid={`landing-footer-about-link${testIdSuffix}`}>About</a>
             <a href="/privacy" className="text-[#334155] text-xs hover:text-[#7b879e] transition-colors" data-testid={`landing-footer-privacy-link${testIdSuffix}`}>Privacy Policy</a>
             <a href="/terms" className="text-[#334155] text-xs hover:text-[#7b879e] transition-colors" data-testid={`landing-footer-terms-link${testIdSuffix}`}>Terms of Service</a>

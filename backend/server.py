@@ -55,6 +55,7 @@ from routes.ffn import router as ffn_router
 from routes.feature_gates import router as feature_gates_router
 from routes.funnel import router as funnel_router
 from routes.quiz import router as quiz_router
+from routes.testimonials import router as testimonials_router
 from routes.founder_invites import router as founder_invites_router
 from routes.shift_scheduling import router as shift_scheduling_router
 from routes.team_chat import router as team_chat_router
@@ -255,6 +256,8 @@ async def lifespan(app):
         await db.readiness_quiz_results.create_index("id", unique=True)
         await db.readiness_quiz_results.create_index("created_at")
         await db.readiness_quiz_results.create_index("email")
+        await db.testimonials.create_index("id", unique=True)
+        await db.testimonials.create_index([("status", 1), ("approved_at", -1)])
         # Beneficiary grace periods index
         await db.beneficiary_grace_periods.create_index("beneficiary_id")
         # Subscription settings index
@@ -344,6 +347,7 @@ api_router.include_router(beta_router)
 api_router.include_router(ffn_router)
 api_router.include_router(funnel_router)
 api_router.include_router(quiz_router)
+api_router.include_router(testimonials_router)
 api_router.include_router(founder_invites_router)
 api_router.include_router(shift_scheduling_router)
 api_router.include_router(team_chat_router)

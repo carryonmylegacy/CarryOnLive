@@ -3,6 +3,7 @@ import { Helmet } from 'react-helmet-async';
 import { ChevronRight, ChevronLeft, Linkedin } from 'lucide-react';
 import axios from 'axios';
 import { API_URL } from '../config';
+import { MobileNav } from '../components/landing/MobileNav';
 
 /* ─── scroll-reveal hook ─── */
 const useReveal = (threshold = 0.15) => {
@@ -58,25 +59,38 @@ const AboutPage = () => {
         <meta property="og:description" content="Why CarryOn exists: to make family readiness accessible to every American family, not just the wealthy." />
         <meta property="og:url" content="https://carryon.us/about" />
       </Helmet>
+      {founder.name && (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Person",
+          "name": founder.name,
+          "jobTitle": founder.title,
+          "description": founder.bio,
+          "url": "https://carryon.us/about",
+          ...(founder.photo_url ? { "image": founder.photo_url } : {}),
+          ...(founder.linkedin_url ? { "sameAs": [founder.linkedin_url] } : {}),
+          "worksFor": { "@type": "Organization", "name": "CarryOn Technologies LLC", "url": "https://carryon.us" }
+        }) }} />
+      )}
 
       {/* NAV BAR */}
       <nav className="fixed top-0 w-full z-50" style={{ borderBottom: '1px solid rgba(30,48,80,0.3)', background: 'rgba(13,27,42,0.97)', paddingTop: 'env(safe-area-inset-top, 0px)' }}>
         <div className="max-w-[1400px] mx-auto px-6 lg:px-10 h-16 flex items-center justify-between">
-          <a href="/login" className="flex items-center" data-testid="about-logo">
+          <a href="/" className="flex items-center" data-testid="about-logo">
             <img src="/carryon-logo.png" alt="CarryOn" className="h-12 cursor-pointer" />
           </a>
           <div className="hidden md:flex items-center gap-8">
-            <a href="/login#features" className="text-[#6b7a90] text-sm font-medium hover:text-[#d4af37] transition-colors">Features</a>
-            <a href="/login#security" className="text-[#6b7a90] text-sm font-medium hover:text-[#d4af37] transition-colors">Security</a>
-            <a href="/login#steps" className="text-[#6b7a90] text-sm font-medium hover:text-[#d4af37] transition-colors">How It Works</a>
+            <a href="/#features" className="text-[#6b7a90] text-sm font-medium hover:text-[#d4af37] transition-colors">Features</a>
+            <a href="/#security" className="text-[#6b7a90] text-sm font-medium hover:text-[#d4af37] transition-colors">Security</a>
+            <a href="/#steps" className="text-[#6b7a90] text-sm font-medium hover:text-[#d4af37] transition-colors">How It Works</a>
             <span className="text-[#d4af37] text-sm font-medium">About</span>
             <a href="/founder-about" className="text-[#6b7a90] text-sm font-medium hover:text-[#d4af37] transition-colors">Founder</a>
           </div>
           <div className="flex items-center gap-3">
-            <a href="/founder-about" className="md:hidden text-[#6b7a90] text-xs font-medium hover:text-[#d4af37] transition-colors">Founder</a>
             <a href="/login" className="text-[#d4af37] text-sm font-semibold hover:text-[#fcd34d] transition-colors flex items-center gap-1">
               <ChevronLeft className="w-3.5 h-3.5" /> Sign In
             </a>
+            <MobileNav links={[{ label: 'Features', href: '/#features' }, { label: 'Readiness Quiz', href: '/#quiz' }, { label: 'Security', href: '/#security' }, { label: 'How It Works', href: '/#steps' }, { label: 'Pricing', href: '/pricing' }, { label: 'Customer Stories', href: '/customers' }, { label: 'Founder', href: '/founder-about' }]} navigateWithFade={(p) => { window.location.href = p; }} testIdSuffix="-about" />
           </div>
         </div>
       </nav>

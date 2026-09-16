@@ -1,0 +1,41 @@
+{
+  "entries": [
+    {
+      "date": "2026-09-16",
+      "title": "Readiness quiz, real screenshots, plainer language",
+      "items": [
+        "60-second \"How ready is your family?\" quiz on the homepage — score, three fixes, optional email copy",
+        "Homepage now shows actual screenshots of the dashboard, vault, who-to-call list, and first-steps checklist",
+        "Every feature renamed in plain language on the marketing pages (e.g. \"Passwords & accounts\"); the acronyms are gone",
+        "Fixed checklist cards squeezing titles on phones",
+        "Founder Portal: quiz analytics, testimonial review, live-stats toggle",
+        "Mobile menu on the marketing pages; pinch-to-zoom re-enabled on the web"
+      ]
+    },
+    {
+      "date": "2026-09-15",
+      "title": "Two-door start and live pricing",
+      "items": [
+        "New /start page: pay now, or explore first with no card",
+        "Pricing page reads live prices from the Founder Portal — nothing hardcoded",
+        "Billing moved to native Stripe subscriptions",
+        "\"Free trial\" language replaced with a clearly explained exploration period",
+        "Founder profile (photo, bio, LinkedIn) on the About page",
+        "FAQ, plan comparison table, and structured data for search and AI assistants"
+      ]
+    },
+    {
+      "date": null,
+      "title": "Foundation — 2024 to August 2026",
+      "items": [
+        "Secure Document Vault with AES-256-GCM encryption and a separate key per family",
+        "Estate Guardian™ AI review of uploaded documents, tuned to your state",
+        "Milestone Messages — written, voice, and video, delivered when you choose",
+        "Immediate Action Checklist, Contingency Protocols, Emergency Access with human verification",
+        "Financial Portal: bills, debts, and accounts",
+        "Passkeys, two-step sign-in, push notifications, iOS app",
+        "Free access for families in hospice care; reduced pricing for military and veterans"
+      ]
+    }
+  ]
+}

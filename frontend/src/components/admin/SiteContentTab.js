@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { Save, ExternalLink, Play, Loader2, MapPin, Monitor, Smartphone, User, Linkedin, Upload } from 'lucide-react';
+import { Save, ExternalLink, Play, Loader2, MapPin, Monitor, Smartphone, User, Linkedin, Upload, Activity } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { toast } from '../../utils/toast';
 import { API_URL } from '../../config';
@@ -22,6 +22,8 @@ export const SiteContentTab = ({ getAuthHeaders }) => {
   const [founderLinkedin, setFounderLinkedin] = useState('');
   const [savedFounder, setSavedFounder] = useState({ name: '', title: '', bio: '', photo: '', linkedin: '' });
   const [savingFounder, setSavingFounder] = useState(false);
+  const [liveStatsMode, setLiveStatsMode] = useState('auto');
+  const [liveStats, setLiveStats] = useState(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const founderPhotoRef = useRef(null);
   const [loading, setLoading] = useState(true);
@@ -52,6 +54,8 @@ export const SiteContentTab = ({ getAuthHeaders }) => {
         const fl = res.data?.founder_linkedin_url || '';
         setFounderName(fn); setFounderTitle(ft); setFounderBio(fb);
         setFounderPhotoUrl(fp); setFounderLinkedin(fl);
+        setLiveStatsMode(res.data?.show_live_stats || 'auto');
+        axios.get(`${API_URL}/public/platform-stats`).then(r => setLiveStats(r.data)).catch(() => {});
         setSavedFounder({ name: fn, title: ft, bio: fb, photo: fp, linkedin: fl });
       } catch { /* ignore */ }
       setLoading(false);
@@ -222,6 +226,39 @@ export const SiteContentTab = ({ getAuthHeaders }) => {
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             Save Videos
           </button>
+        </CardContent>
+      </Card>
+
+      {/* Live platform numbers */}
+      <Card className="border-[var(--b)] bg-[var(--s)]">
+        <CardContent className="p-5 space-y-4">
+          <div className="flex items-center gap-2">
+            <Activity className="w-4 h-4 text-[var(--gold)]" />
+            <h3 className="text-base font-bold text-[var(--t)]">Live Platform Numbers (homepage)</h3>
+          </div>
+          <p className="text-sm text-[var(--t4)]">
+            Real counts from the database, shown in the homepage trust block. <strong className="text-[var(--t)]">Auto</strong> shows them once 25+ families exist; <strong className="text-[var(--t)]">On</strong> forces them visible now; <strong className="text-[var(--t)]">Off</strong> hides them.
+          </p>
+          {liveStats && (
+            <p className="text-xs text-[var(--t4)]" data-testid="live-stats-preview">
+              Right now: {liveStats.families} families &middot; {liveStats.documents} documents &middot; {liveStats.messages} messages &middot; {liveStats.checklist_items} checklist steps &middot; {liveStats.people_invited} people invited &mdash; currently <span className={liveStats.visible ? 'text-green-400' : 'text-[var(--t4)]'}>{liveStats.visible ? 'VISIBLE' : 'hidden'}</span>
+            </p>
+          )}
+          <div className="flex gap-2">
+            {['auto', 'on', 'off'].map(mode => (
+              <button key={mode} onClick={async () => {
+                try {
+                  await axios.put(`${API_URL}/admin/platform-settings`, { show_live_stats: mode }, getAuthHeaders());
+                  setLiveStatsMode(mode);
+                  const r = await axios.get(`${API_URL}/public/platform-stats`); setLiveStats(r.data);
+                  toast.success(`Live numbers: ${mode}`);
+                } catch { toast.error('Failed to save'); }
+              }}
+                className="px-4 py-2 rounded-lg text-sm font-bold capitalize transition-all"
+                style={liveStatsMode === mode ? { background: 'var(--gold)', color: '#0F1629' } : { background: 'var(--b)', color: 'var(--t4)', border: '1px solid var(--b2)' }}
+                data-testid={`live-stats-mode-${mode}`}>{mode}</button>
+            ))}
+          </div>
         </CardContent>
       </Card>
 

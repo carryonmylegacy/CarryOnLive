@@ -8,6 +8,7 @@ import {
   CreditCard, ArrowRight, Heart
 } from 'lucide-react';
 import { API_URL } from '../config';
+import { TrustBadges } from '../components/landing/TrustBadges';
 
 const CYCLE_LABELS = { monthly: 'Monthly', quarterly: 'Quarterly', annual: 'Annual' };
 const CYCLE_SAVINGS = { monthly: null, quarterly: '10% off', annual: '20% off' };
@@ -260,7 +261,8 @@ const StartPage = () => {
             <h2 className="text-2xl sm:text-3xl font-bold text-[var(--t)] mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
               Simple, transparent pricing
             </h2>
-            <p className="text-sm text-[var(--t4)]">Cancel anytime. Your data is yours alone.</p>
+            <p className="text-sm text-[var(--t4)] mb-3">Cancel anytime. Your data is yours alone.</p>
+            <TrustBadges tone="app" testIdSuffix="-start" />
           </div>
 
           {/* Billing cycle toggle */}

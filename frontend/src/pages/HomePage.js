@@ -30,6 +30,7 @@ const HomePage = () => {
   const [footerInfo, setFooterInfo] = useState({ line1: '1550 Wilson Boulevard 7th Floor', line2: 'Arlington, VA 22209 U.S.A.', phone: '(703) 884-1527' });
   const [landscapeVideoId, setLandscapeVideoId] = useState('EhU-jojs1jk');
   const [verticalVideoId, setVerticalVideoId] = useState('');
+  const [founderLinkedin, setFounderLinkedin] = useState('');
 
   const isMobileView = useIsMobileViewport();
 
@@ -38,6 +39,7 @@ const HomePage = () => {
       setFooterInfo({ line1: r.data.footer_address_line1, line2: r.data.footer_address_line2, phone: r.data.footer_phone });
       if (r.data.homepage_video_id) setLandscapeVideoId(r.data.homepage_video_id);
       if (r.data.homepage_video_id_vertical) setVerticalVideoId(r.data.homepage_video_id_vertical);
+      if (r.data.founder_linkedin_url) setFounderLinkedin(r.data.founder_linkedin_url);
     }).catch(() => {});
   }, []);
 
@@ -136,6 +138,13 @@ const HomePage = () => {
             "contactType": "customer service"
           },
           "foundingDate": "2024",
+          "founder": {
+            "@type": "Person",
+            "name": "Barnet Harris",
+            "jobTitle": "Founder & CEO",
+            "url": "https://carryon.us/about",
+            ...(founderLinkedin ? { "sameAs": [founderLinkedin] } : {})
+          },
           "areaServed": "US"
         }
       ]) }} />

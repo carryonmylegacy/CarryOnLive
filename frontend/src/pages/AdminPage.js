@@ -48,6 +48,7 @@ import { EstateHealthTab } from '../components/admin/EstateHealthTab';
 import { IntegrationsTab } from '../components/admin/IntegrationsTab';
 import { FunnelAnalyticsTab } from '../components/admin/FunnelAnalyticsTab';
 import { QuizAnalyticsTab } from '../components/admin/QuizAnalyticsTab';
+import { TestimonialsTab } from '../components/admin/TestimonialsTab';
 import { BetaTestingTab } from '../components/admin/BetaTestingTab';
 import { FounderEmailsTab } from '../components/admin/FounderEmailsTab';
 import { FounderInvitesTab } from '../components/admin/FounderInvitesTab';
@@ -105,6 +106,7 @@ const FOUNDER_SECTIONS = [
     tabs: [
       { key: 'funnel', label: 'Funnel', icon: TrendingUp, path: '/admin/funnel' },
       { key: 'quiz', label: 'Readiness Quiz', icon: CheckSquare, path: '/admin/quiz' },
+      { key: 'testimonials', label: 'Testimonials', icon: MessageSquare, path: '/admin/testimonials' },
       { key: 'beta-testing', label: 'Beta Testing', icon: Zap, path: '/admin/beta-testing' },
       { key: 'site-content', label: 'Site Content', icon: Film, path: '/admin/site-content' },
       { key: 'founder-emails', label: 'Emails', icon: Mail, path: '/admin/founder-emails' },
@@ -201,6 +203,7 @@ const PATH_TO_TAB = {
   '/admin/integrations': 'integrations',
   '/admin/funnel': 'funnel',
   '/admin/quiz': 'quiz',
+  '/admin/testimonials': 'testimonials',
   '/admin/beta-testing': 'beta-testing',
   '/admin/founder-emails': 'founder-emails',
   '/admin/founder-invites': 'founder-invites',
@@ -540,6 +543,7 @@ const AdminPage = ({ operatorMode = false }) => {
         {effectiveTab === 'integrations' && <IntegrationsTab getAuthHeaders={getAuthHeaders} />}
         {effectiveTab === 'funnel' && <FunnelAnalyticsTab getAuthHeaders={getAuthHeaders} />}
         {effectiveTab === 'quiz' && <QuizAnalyticsTab getAuthHeaders={getAuthHeaders} />}
+        {effectiveTab === 'testimonials' && <TestimonialsTab getAuthHeaders={getAuthHeaders} />}
         {effectiveTab === 'beta-testing' && <BetaTestingTab getAuthHeaders={getAuthHeaders} />}
         {effectiveTab === 'founder-emails' && <FounderEmailsTab getAuthHeaders={getAuthHeaders} />}
         {effectiveTab === 'founder-invites' && <FounderInvitesTab onPendingChange={setPendingAccessReqs} />}

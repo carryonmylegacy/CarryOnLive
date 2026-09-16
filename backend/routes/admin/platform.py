@@ -31,6 +31,7 @@ async def get_public_site_content():
         "founder_bio": settings.get("founder_bio", ""),
         "founder_photo_url": resolve_photo_url(raw_photo) if raw_photo else "",
         "founder_linkedin_url": settings.get("founder_linkedin_url", ""),
+        "show_live_stats": settings.get("show_live_stats", "auto"),
     }
 
 
@@ -58,6 +59,7 @@ async def update_platform_settings(data: dict, current_user: dict = Depends(requ
         "founder_bio",
         "founder_photo_url",
         "founder_linkedin_url",
+        "show_live_stats",
     }
 
     # Handle inline founder photo upload (base64)

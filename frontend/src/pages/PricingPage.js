@@ -7,6 +7,7 @@ import {
   Shield, Check, Users, ChevronRight, CreditCard, Heart,
 } from 'lucide-react';
 import { API_URL } from '../config';
+import { TrustBadges } from '../components/landing/TrustBadges';
 
 const CYCLE_LABELS = { monthly: 'Monthly', quarterly: 'Quarterly', annual: 'Annual' };
 const CYCLE_SAVINGS = { monthly: null, quarterly: 'Save 10%', annual: 'Save 20%' };
@@ -151,9 +152,10 @@ const PricingPage = () => {
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-[var(--t)] mb-3" style={{ fontFamily: 'Outfit, sans-serif' }}>
             Simple, transparent pricing
           </h1>
-          <p className="text-base sm:text-lg text-[var(--t4)] max-w-lg mx-auto mb-6">
-            Cancel anytime. Your data is yours alone.
+          <p className="text-base sm:text-lg text-[var(--t4)] max-w-lg mx-auto mb-4">
+            Explore first with no card. Cancel anytime. Your data is yours alone.
           </p>
+          <TrustBadges tone="app" testIdSuffix="-pricing" className="mb-6" />
           {/* Value anchor (D4.3) */}
           <div className="max-w-2xl mx-auto rounded-xl p-4" style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.15)' }}>
             <p className="text-sm text-[var(--t3)] leading-relaxed">
