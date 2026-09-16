@@ -317,9 +317,9 @@ const StartPage = () => {
                         {f}
                       </li>
                     ))}
-                    <li className="flex items-start gap-2 text-xs text-[var(--t3)]">
+                    <li className="flex items-start gap-2 text-xs text-[var(--t3)]" data-testid={`start-invited-${plan.id}`}>
                       <Users className="w-3.5 h-3.5 text-[#3b82f6] flex-shrink-0 mt-0.5" />
-                      Add beneficiaries for ${plan.ben_price}/mo each
+                      <span>People you invite: <strong className="text-[var(--t)]">free</strong> while you&apos;re alive</span>
                     </li>
                   </ul>
                   <button
@@ -370,9 +370,9 @@ const StartPage = () => {
           {/* Family pricing callout */}
           <div className="rounded-2xl p-5 sm:p-6 mb-8 text-center" style={{ background: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.15)' }}>
             <Users className="w-8 h-8 mx-auto mb-2 text-[#3b82f6]" />
-            <h3 className="text-lg font-bold text-[var(--t)] mb-1">Family Plans Available</h3>
+            <h3 className="text-lg font-bold text-[var(--t)] mb-1">One plan. Nobody you invite pays.</h3>
             <p className="text-sm text-[var(--t4)] max-w-md mx-auto">
-              Add family members as beneficiaries at reduced rates. Quarterly and annual billing saves you even more.
+              Your spouse, kids, and attorney see what you share at no charge while you&apos;re alive. Quarterly and annual billing saves you even more.
               {familyDiscount > 0 && ` Family plan members save an additional ${familyDiscount}%.`}
             </p>
           </div>
