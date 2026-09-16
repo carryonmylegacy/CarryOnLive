@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Shield, Users, ChevronRight, ChevronDown, Lock as LockIcon, Sparkles, FileCheck, UserCheck, Trash2, ClipboardCheck, MessageSquare, Key, Layers, Smartphone, MapPin, ShieldAlert, ArrowUpDown, SlidersHorizontal, Radio, MessageCircle, HelpCircle, Heart, HandHeart, EyeOff, Download, Clock, Medal } from 'lucide-react';
 import { RevealSection } from './RevealSection';
 import { ProductPreview } from './ProductPreview';
+import { ReadinessQuiz } from './ReadinessQuiz';
 
 /* ── data: the eight tools (plain-language title, product name as sub-label) ── */
 const PILLARS = [
@@ -147,6 +148,9 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
         </RevealSection>
       </div>
     </section>
+
+    {/* ═══════════════════ READINESS QUIZ ═══════════════════ */}
+    <ReadinessQuiz navigateWithFade={navigateWithFade} testIdSuffix={testIdSuffix} />
 
     {/* ═══════════════════ WHY FAMILIES DO THIS (D1.3) ═══════════════════ */}
     <section className="relative z-20 -mt-1">

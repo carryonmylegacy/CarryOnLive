@@ -19,6 +19,39 @@ const TABS = [
     caption: 'Step-by-step instructions your family follows in the first days \u2014 written in your words, with the phone numbers already in them.' },
 ];
 
+const Shots = ({ active, prefix, suffix }) => TABS.map(t => (
+  <img key={t.id} src={`/screenshots/${prefix}${t.id}.webp`} alt={t.alt}
+    width={prefix ? 780 : 2160} height={prefix ? 1328 : 1350}
+    loading={t.id === 'dashboard' ? 'eager' : 'lazy'}
+    data-testid={t.id === active ? `preview-panel-${t.id}${suffix}` : undefined}
+    className="absolute inset-0 w-full h-full object-cover object-top transition-opacity duration-300"
+    style={{ opacity: t.id === active ? 1 : 0, pointerEvents: t.id === active ? 'auto' : 'none' }} />
+));
+
+const DesktopFrame = ({ active, url, testIdSuffix }) => (
+  <div className="hidden md:block rounded-2xl overflow-hidden" style={{ ...card, boxShadow: '0 30px 80px rgba(0,0,0,0.5), 0 0 60px rgba(212,175,55,0.06)' }} data-testid={`preview-desktop-frame${testIdSuffix}`}>
+    <div className="flex items-center gap-3 px-4 py-2.5" style={{ background: 'rgba(8,14,26,0.9)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+      <div className="flex gap-1.5">{['#ff5f57', '#febc2e', '#28c840'].map(c => <span key={c} className="w-2.5 h-2.5 rounded-full" style={{ background: c }} />)}</div>
+      <div className="flex-1 flex items-center gap-2 rounded-md px-3 py-1 text-xs text-[#8b97ab]" style={{ background: 'rgba(255,255,255,0.04)' }} data-testid={`preview-url${testIdSuffix}`}>
+        <Lock className="w-3 h-3 text-[#10b981]" /> {url}
+      </div>
+    </div>
+    <div className="relative w-full" style={{ aspectRatio: '16 / 10', background: '#0b1322' }}>
+      <Shots active={active} prefix="" suffix="" />
+    </div>
+  </div>
+);
+
+const PhoneFrame = ({ active, testIdSuffix }) => (
+  <div className="md:hidden mx-auto" style={{ maxWidth: '300px' }} data-testid={`preview-phone-frame${testIdSuffix}`}>
+    <div className="relative rounded-[2.6rem] p-2.5" style={{ background: 'linear-gradient(160deg, #1c2a44, #0b1322)', border: '1px solid rgba(255,255,255,0.14)', boxShadow: '0 30px 80px rgba(0,0,0,0.6), 0 0 50px rgba(212,175,55,0.08), inset 0 1px 0 rgba(255,255,255,0.08)' }}>
+      <div className="relative rounded-[2.1rem] overflow-hidden" style={{ aspectRatio: '390 / 664', background: '#0b1322' }}>
+        <Shots active={active} prefix="m-" suffix="-mobile" />
+      </div>
+    </div>
+  </div>
+);
+
 export const ProductPreview = ({ testIdSuffix = '' }) => {
   const [active, setActive] = useState('dashboard');
   const tab = TABS.find(t => t.id === active);
@@ -37,7 +70,7 @@ export const ProductPreview = ({ testIdSuffix = '' }) => {
             </p>
           </RevealSection>
           <RevealSection delay={0.15} distance={40}>
-            <div className="flex flex-wrap justify-center gap-2 mb-5" role="tablist">
+            <div className="flex flex-wrap justify-center gap-2 mb-6" role="tablist">
               {TABS.map(({ id, label, icon: Icon }) => (
                 <button key={id} role="tab" aria-selected={active === id} onClick={() => setActive(id)} data-testid={`preview-tab-${id}${testIdSuffix}`}
                   className="flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-semibold whitespace-nowrap transition-colors duration-200"
@@ -46,28 +79,13 @@ export const ProductPreview = ({ testIdSuffix = '' }) => {
                 </button>
               ))}
             </div>
-            <div className="rounded-2xl overflow-hidden" style={{ ...card, boxShadow: '0 30px 80px rgba(0,0,0,0.5), 0 0 60px rgba(212,175,55,0.06)' }}>
-              <div className="flex items-center gap-3 px-4 py-2.5" style={{ background: 'rgba(8,14,26,0.9)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                <div className="flex gap-1.5">{['#ff5f57', '#febc2e', '#28c840'].map(c => <span key={c} className="w-2.5 h-2.5 rounded-full" style={{ background: c }} />)}</div>
-                <div className="flex-1 flex items-center gap-2 rounded-md px-3 py-1 text-xs text-[#8b97ab]" style={{ background: 'rgba(255,255,255,0.04)' }} data-testid={`preview-url${testIdSuffix}`}>
-                  <Lock className="w-3 h-3 text-[#10b981]" /> {tab.url}
-                </div>
-              </div>
-              <div className="relative w-full" style={{ aspectRatio: '16 / 10', background: '#0b1322' }}>
-                {TABS.map(t => (
-                  <img key={t.id} src={`/screenshots/${t.id}.webp`} alt={t.alt} width="2160" height="1350"
-                    loading={t.id === 'dashboard' ? 'eager' : 'lazy'}
-                    data-testid={t.id === active ? `preview-panel-${t.id}` : undefined}
-                    className="absolute inset-0 w-full h-full object-cover object-top transition-opacity duration-300"
-                    style={{ opacity: t.id === active ? 1 : 0, pointerEvents: t.id === active ? 'auto' : 'none' }} />
-                ))}
-              </div>
-            </div>
+            <DesktopFrame active={active} url={tab.url} testIdSuffix={testIdSuffix} />
+            <PhoneFrame active={active} testIdSuffix={testIdSuffix} />
             <p className="text-center text-[#a0aec0] text-sm lg:text-base mt-6 max-w-[680px] mx-auto leading-relaxed" data-testid={`preview-caption${testIdSuffix}`}>{tab.caption}</p>
           </RevealSection>
           <RevealSection delay={0.3}>
-            <p className="flex items-center justify-center gap-2 mt-6 text-xs text-[#6b7a90]">
-              <Camera className="w-3.5 h-3.5 text-[#d4af37]" /> Actual screenshots of CarryOn, taken from a live demonstration account. Nothing mocked up.
+            <p className="flex items-center justify-center gap-2 mt-6 text-xs text-[#6b7a90] text-center px-4">
+              <Camera className="w-3.5 h-3.5 text-[#d4af37] flex-shrink-0" /> Actual screenshots of CarryOn, taken from a live demonstration account. Nothing mocked up.
             </p>
           </RevealSection>
         </div>

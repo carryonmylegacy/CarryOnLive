@@ -776,6 +776,7 @@ const LoginPage = () => {
           <div className="hidden md:flex items-center gap-8">
             {[
               { label: 'Features', href: '#features' },
+              { label: 'Readiness Quiz', href: '#quiz' },
               { label: 'Security', href: '#security' },
               { label: 'How It Works', href: '#steps' },
               { label: 'Pricing', href: '/pricing' },

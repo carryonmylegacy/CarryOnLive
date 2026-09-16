@@ -362,7 +362,7 @@ const ChecklistPage = () => {
         }}
         data-testid={`iac-item-${item.id}`}
       >
-        <div className="flex items-start gap-3">
+        <div className="flex items-start gap-3 flex-wrap sm:flex-nowrap">
           <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"
             style={{ background: catInfo.color + '15' }}>
             {item.ai_suggested ? (
@@ -396,7 +396,7 @@ const ChecklistPage = () => {
             )}
           </div>
 
-          <div className="flex items-center gap-1.5 flex-shrink-0">
+          <div className="flex items-center gap-1.5 flex-shrink-0 w-full sm:w-auto justify-end pl-12 sm:pl-0 mt-2 sm:mt-0">
             <span className="text-xs px-2 py-0.5 rounded font-bold capitalize" style={{
               background: priColor + '15', color: priColor, border: `1px solid ${priColor}33`
             }}>
