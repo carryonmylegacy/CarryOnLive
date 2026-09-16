@@ -12,7 +12,7 @@ import { useNavigate } from 'react-router-dom';
 import apiClient from '../utils/apiClient';
 import {
   Briefcase, Plus, Loader2, Send, Copy, Check, LogIn, LogOut, KeyRound,
-  ShieldAlert, FileText, UserPlus, Clock, CheckCircle2, Users, X, Mail, ChevronDown, Search, StickyNote, Download,
+  ShieldAlert, FileText, UserPlus, Clock, CheckCircle2, Users, X, Mail, ChevronDown, Search, StickyNote, Download, FileSpreadsheet,
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -21,8 +21,16 @@ import { PartnerGuidePanel } from '../components/manager/PartnerGuidePanel';
 import { ClientBeneficiariesPanel } from '../components/manager/ClientBeneficiariesPanel';
 import { PartnerDigestSettings } from '../components/manager/PartnerDigestSettings';
 import { ClientNoteEditor } from '../components/manager/ClientNoteEditor';
+import { RosterImportPanel } from '../components/manager/RosterImportPanel';
 import { toast } from '../utils/toast';
 import { API_URL } from '../config';
+
+const ROSTER_API = {
+  analyze: `${API_URL}/manager/roster/analyze`,
+  remap: `${API_URL}/manager/roster/remap`,
+  commit: `${API_URL}/manager/roster/commit`,
+  imports: `${API_URL}/manager/roster/imports`,
+};
 
 const mgrHeaders = () => {
   const t = typeof window !== 'undefined' ? window.localStorage.getItem('carryon_manager_token') : null;
@@ -150,6 +158,7 @@ export default function ManagerPortalPage() {
   const [stats, setStats] = useState(null);
   const [clients, setClients] = useState([]);
   const [showNew, setShowNew] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const [form, setForm] = useState({ first_name: '', last_name: '', email: '' });
   const [saving, setSaving] = useState(false);
   const [busy, setBusy] = useState(null);
@@ -320,9 +329,14 @@ export default function ManagerPortalPage() {
             </h1>
             <p className="text-[var(--t4)] text-sm lg:text-base">Everything you need to prepare and manage client portals — at a glance.</p>
           </div>
-          <Button className="gold-button" onClick={() => setShowNew(v => !v)} data-testid="mgr-new-client-btn">
-            <Plus className="w-4 h-4 mr-1" /> Set Up a New Client
-          </Button>
+          <div className="flex gap-2 flex-wrap">
+            <Button variant="outline" className="border-[var(--b)]" onClick={() => { setShowImport(v => !v); setShowNew(false); }} data-testid="mgr-import-roster-btn">
+              <FileSpreadsheet className="w-4 h-4 mr-1" /> Import Roster
+            </Button>
+            <Button className="gold-button" onClick={() => { setShowNew(v => !v); setShowImport(false); }} data-testid="mgr-new-client-btn">
+              <Plus className="w-4 h-4 mr-1" /> Set Up a New Client
+            </Button>
+          </div>
         </div>
 
         {/* Stat tiles */}
@@ -348,6 +362,10 @@ export default function ManagerPortalPage() {
               but you cannot enter a client portal until CarryOn enables it.
             </span>
           </div>
+        )}
+
+        {showImport && (
+          <RosterImportPanel api={ROSTER_API} headers={mgrHeaders} onImported={fetchAll} />
         )}
 
         {showNew && (

@@ -274,6 +274,11 @@ NO_PII = {
     "ip_whitelist",
     "partner_managers",
     "b2b_partners",
+    # Roster import: `roster_uploads` is a 24h TTL scratch copy of a partner's
+    # spreadsheet (prospects, not users — keyed by partner, auto-expires);
+    # `roster_imports` is the history (counts + filename only, no rows/emails).
+    "roster_uploads",
+    "roster_imports",
     "partner_brief_leads",
     "partner_brief_try_attempts",
     "founder_access_requests",

@@ -30,11 +30,13 @@ dparse==0.6.4
 ecdsa==0.19.2
 email-validator==2.3.0
 emergentintegrations==0.1.2
+et_xmlfile==2.0.0
 fastapi==0.136.1
 fastuuid==0.14.0
 filelock==3.24.3
 fonttools==4.61.1
 fpdf2==2.8.6
+openpyxl==3.1.5
 pypdf==6.16.1
 frozenlist==1.8.0
 google-ai-generativelanguage==0.6.15

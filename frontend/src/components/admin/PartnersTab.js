@@ -18,7 +18,7 @@ import apiClient from '../../utils/apiClient';
 import {
   Briefcase, Plus, Trash2, Copy, Check, Loader2, ExternalLink,
   Upload, Image as ImageIcon, Power, Send, Pencil, Users,
-  DollarSign, UserPlus, KeyRound,
+  DollarSign, UserPlus, KeyRound, FileSpreadsheet,
 } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
@@ -28,6 +28,7 @@ import { Switch } from '../ui/switch';
 import { toast } from '../../utils/toast';
 import { PartnerRevShareModal } from './PartnerRevShareModal';
 import { PartnerManagersModal } from './PartnerManagersModal';
+import { RosterImportModal } from './RosterImportModal';
 import { API_URL } from '../../config';
 
 const LOGO_PLACEHOLDER = (
@@ -127,6 +128,7 @@ export const PartnersTab = ({ getAuthHeaders }) => {
   const [copied, setCopied] = useState(null);
   const [revShareFor, setRevShareFor] = useState(null);
   const [managersFor, setManagersFor] = useState(null);
+  const [rosterFor, setRosterFor] = useState(null);
   const fileInputs = useRef({});
   // Legacy `b2b_codes` rows — the old system that's been retired.
   // We surface them here read-only so admins can audit + delete any
@@ -508,6 +510,7 @@ export const PartnersTab = ({ getAuthHeaders }) => {
                     onSendEmail={sendWelcomeEmail}
                     onOpenRevShare={setRevShareFor}
                     onOpenManagers={setManagersFor}
+                    onOpenRoster={setRosterFor}
                     sending={sending}
                     copied={copied}
                   />
@@ -531,6 +534,15 @@ export const PartnersTab = ({ getAuthHeaders }) => {
           partner={managersFor}
           authHeaders={authHeaders}
           onClose={() => setManagersFor(null)}
+        />
+      )}
+
+      {rosterFor && (
+        <RosterImportModal
+          partner={rosterFor}
+          authHeaders={authHeaders}
+          onClose={() => setRosterFor(null)}
+          onImported={fetchAll}
         />
       )}
 
@@ -583,7 +595,7 @@ export const PartnersTab = ({ getAuthHeaders }) => {
   );
 };
 
-function PartnerRow({ partner, columns, gateField, gateMode, fileInputs, onUpdate, onToggleGate, onUploadLogo, onDelete, onCopy, onCopyEmail, onSendEmail, onOpenRevShare, onOpenManagers, sending, copied }) {
+function PartnerRow({ partner, columns, gateField, gateMode, fileInputs, onUpdate, onToggleGate, onUploadLogo, onDelete, onCopy, onCopyEmail, onSendEmail, onOpenRevShare, onOpenManagers, onOpenRoster, sending, copied }) {
   // Founder UX (Jun 2026): rows are read-only identity views. The
   // pencil opens the full-page editor (/admin/partners/:id/edit) with
   // every parameter in full view — the old cramped inline-edit inputs
@@ -715,6 +727,16 @@ function PartnerRow({ partner, columns, gateField, gateMode, fileInputs, onUpdat
                 data-testid={`partner-managers-${partner.slug}`}
               >
                 <KeyRound className="w-3 h-3" /> Logins
+              </button>
+              <span className="text-[var(--t6)]">·</span>
+              <button
+                onClick={() => onOpenRoster(partner)}
+                className="flex items-center gap-1 font-bold px-2 py-0.5 rounded-full"
+                style={{ color: '#a78bfa', background: 'rgba(167,139,250,0.10)', border: '1px solid rgba(167,139,250,0.4)' }}
+                title="Import this partner's client roster from a spreadsheet (.csv / .xlsx) on their behalf"
+                data-testid={`partner-import-roster-${partner.slug}`}
+              >
+                <FileSpreadsheet className="w-3 h-3" /> Import roster
               </button>
               <span className="text-[var(--t6)]">·</span>
               <a href={url} target="_blank" rel="noopener noreferrer"

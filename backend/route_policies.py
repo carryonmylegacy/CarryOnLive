@@ -372,6 +372,42 @@ ROUTE_POLICIES: dict = {
     "GET /api/manager/me": {"auth": "required", "notes": "Manager-token gated (get_current_manager)"},
     "GET /api/manager/clients": {"auth": "required", "notes": "Manager-token gated; partner-scoped roster"},
     "POST /api/manager/clients": {"auth": "required", "notes": "Manager-token gated; provisions client portal"},
+    "POST /api/manager/roster/analyze": {
+        "auth": "required",
+        "notes": "Manager-token gated; parses a .csv/.xlsx roster, maps columns, returns a reconciliation plan (24h scratch copy)",
+    },
+    "POST /api/manager/roster/remap": {
+        "auth": "required",
+        "notes": "Manager-token gated; re-plans an upload with a corrected column mapping",
+    },
+    "POST /api/manager/roster/commit": {
+        "auth": "required",
+        "notes": "Manager-token gated; provisions 'add' rows via provision_client_portal, renames unclaimed portals, optional paced invites",
+    },
+    "GET /api/manager/roster/imports": {
+        "auth": "required",
+        "notes": "Manager-token gated; partner-scoped import history (counts only, no PII)",
+    },
+    "POST /api/admin/partners/{partner_id}/roster/analyze": {
+        "auth": "required",
+        "roles": ["admin"],
+        "notes": "Founder-only (_ensure_founder); same roster import flow on a partner's behalf",
+    },
+    "POST /api/admin/partners/{partner_id}/roster/remap": {
+        "auth": "required",
+        "roles": ["admin"],
+        "notes": "Founder-only (_ensure_founder); corrected mapping → fresh plan",
+    },
+    "POST /api/admin/partners/{partner_id}/roster/commit": {
+        "auth": "required",
+        "roles": ["admin"],
+        "notes": "Founder-only (_ensure_founder); provisions on the partner's behalf, tagged created_by_admin_id",
+    },
+    "GET /api/admin/partners/{partner_id}/roster/imports": {
+        "auth": "required",
+        "roles": ["admin"],
+        "notes": "Founder-only (_ensure_founder); import history for one partner",
+    },
     "POST /api/manager/clients/{client_id}/send-invite": {
         "auth": "required",
         "notes": "Manager-token gated; partner-scoped",

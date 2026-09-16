@@ -166,6 +166,10 @@ async def ensure_indexes(db, logger):
         # Message direct-download tokens (iOS Safari) — Mongo-backed, TTL 5 min.
         await db.message_download_tokens.create_index("token", unique=True)
         await db.message_download_tokens.create_index("expires_at", expireAfterSeconds=300)
+        # Roster import scratch copies — BSON datetime `expires_at`, TTL 24h (set in routes/roster_import.py).
+        await db.roster_uploads.create_index("expires_at", expireAfterSeconds=0)
+        await db.roster_uploads.create_index([("id", 1), ("partner_id", 1)])
+        await db.roster_imports.create_index([("partner_id", 1), ("created_at", -1)])
         # Per-user offline document pins (audit P2.1) — one pin row per user+doc.
         await db.document_pins.create_index([("user_id", 1), ("document_id", 1)], unique=True)
         await db.document_pins.create_index("estate_id")

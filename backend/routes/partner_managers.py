@@ -641,6 +641,7 @@ async def manager_list_clients(manager: dict = Depends(get_current_manager)):
                 "claim_token_expires_at": 1,
                 "created_by_rep_id": 1,
                 "created_by_manager_id": 1,
+                "created_by_admin_id": 1,
             },
         )
         .sort("created_at", -1)
@@ -709,7 +710,7 @@ async def manager_list_clients(manager: dict = Depends(get_current_manager)):
     clients = []
     for m in members:
         pending = m.get("account_status") == "pending_claim"
-        provisioned = bool(m.get("created_by_rep_id") or m.get("created_by_manager_id"))
+        provisioned = bool(m.get("created_by_rep_id") or m.get("created_by_manager_id") or m.get("created_by_admin_id"))
         estate_id = estates_by_owner.get(m["id"], "")
         clients.append(
             {
