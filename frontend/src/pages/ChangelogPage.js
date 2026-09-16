@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Helmet } from 'react-helmet-async';
 import { ChevronRight, Sparkles } from 'lucide-react';
 import { MarketingNav } from '../components/landing/MarketingNav';
 import { RevealSection } from '../components/landing/RevealSection';
@@ -14,13 +13,13 @@ const ChangelogPage = () => {
 
   return (
     <div className={`min-h-screen transition-opacity duration-400 ${exiting ? 'opacity-0' : 'opacity-100'}`} style={{ background: '#0E1829' }} data-testid="changelog-page">
-      <Helmet>
+      <>
         <title>What's New - CarryOn Product Updates</title>
         <meta name="description" content="Every real CarryOn product update, dated. Founded 2024 in Arlington, Virginia." />
         <link rel="canonical" href="https://carryon.us/changelog" />
         <meta property="og:title" content="What's New - CarryOn" />
         <meta property="og:url" content="https://carryon.us/changelog" />
-      </Helmet>
+      </>
       <MarketingNav navigateWithFade={navigateWithFade} testIdSuffix="-changelog" />
 
       <section className="relative overflow-hidden" style={{ paddingTop: 'calc(8rem + env(safe-area-inset-top, 0px))' }}>

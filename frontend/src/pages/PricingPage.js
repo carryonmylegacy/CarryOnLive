@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Helmet } from 'react-helmet-async';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import {
@@ -15,10 +14,28 @@ const ATTORNEY_HOUR_LOW = 250;
 const SPECIAL_ORDER = ['seniors', 'military', 'veteran', 'new_adult'];
 const money = (n) => `$${Number(n).toFixed(2)}`;
 
+// Comparison-table rows, in plain language. Which tier gets what comes from the
+// Founder Portal feature gates (`tier_features` in /subscriptions/plans) — never hardcoded.
+const FEATURE_ROWS = [
+  { key: 'sdv', label: 'Secure Document Vault' },
+  { key: 'iac', label: 'What-to-do-first checklist' },
+  { key: 'mm', label: 'Milestone Messages' },
+  { key: 'ega', label: 'Estate Guardian\u2122 AI review' },
+  { key: 'dav', label: 'Passwords & accounts vault' },
+  { key: 'ffn', label: 'Who-to-notify list' },
+  { key: 'cfp', label: 'Financial picture' },
+  { key: 'ccp', label: 'Emergency plans (Contingency Protocols)' },
+  { key: 'ect', label: 'Private family messaging' },
+  { key: 'ces', label: 'Trusts, LLCs & entity map' },
+  { key: 'bec', label: 'AI concierge for your beneficiaries' },
+  { key: 'tma', label: 'Trustee access on your behalf' },
+];
+
 const PricingPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [plans, setPlans] = useState([]);
+  const [tierFeatures, setTierFeatures] = useState({});
   const [selectedCycle, setSelectedCycle] = useState('monthly');
   const [loading, setLoading] = useState(true);
   const [familyDiscount, setFamilyDiscount] = useState(0);
@@ -32,11 +49,15 @@ const PricingPage = () => {
     try {
       const res = await axios.get(`${API_URL}/subscriptions/plans`);
       setPlans((res.data.plans || []).filter(p => p.price > 0 && p.id !== 'enterprise'));
+      setTierFeatures(res.data.tier_features || {});
       setFamilyDiscount(res.data.family_benefactor_discount_percent || 0);
       if (res.data.trial_duration_days) setTrialDays(res.data.trial_duration_days);
     } catch { /* silent */ }
     setLoading(false);
   };
+
+  const isEnabled = (tierId, featureKey) =>
+    (tierFeatures[tierId] || []).some(f => f.key === featureKey && f.enabled);
 
   const getPrice = (plan, cycle) => {
     if (cycle === 'quarterly') return plan.quarterly_price || (plan.price * 0.9).toFixed(2);
@@ -124,7 +145,7 @@ const PricingPage = () => {
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg)' }} data-testid="pricing-page">
-      <Helmet>
+      <>
         <title>Pricing - CarryOn | One Plan for You, Invited Family Pays Nothing</title>
         <meta name="description" content={`One plan for you, from $${lowestPrice} to $${highestPrice} per month. The people you invite pay nothing while you're alive. Explore first for ${trialDays} days with no card. Reduced pricing for seniors, military, veterans, and young adults; free for hospice families.`} />
         <link rel="canonical" href="https://carryon.us/pricing" />
@@ -136,7 +157,7 @@ const PricingPage = () => {
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="CarryOn Pricing" />
         <meta name="twitter:description" content={`Plans from $${lowestPrice}/mo. The people you invite pay nothing while you're alive.`} />
-      </Helmet>
+      </>
       {pricingJsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: pricingJsonLd }} />}
 
       {/* Header */}
@@ -193,7 +214,7 @@ const PricingPage = () => {
               data-testid={`pricing-cycle-${cycle}`}>
               {CYCLE_LABELS[cycle]}
               {CYCLE_SAVINGS[cycle] && (
-                <span className="absolute -top-2.5 -right-2 text-[9px] px-1.5 py-0.5 rounded-full font-bold bg-[#10b981] text-white whitespace-nowrap">
+                <span className="absolute -top-2.5 -right-2 text-[11px] px-1.5 py-0.5 rounded-full font-bold bg-[#10b981] text-white whitespace-nowrap">
                   {CYCLE_SAVINGS[cycle]}
                 </span>
               )}
@@ -317,30 +338,18 @@ const PricingPage = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {[
-                    { label: 'Secure Document Vault', tiers: { base: 'Basic', standard: 'Expanded', premium: 'Unlimited' } },
-                    { label: 'What-to-do-first checklist', tiers: { base: true, standard: true, premium: true } },
-                    { label: 'Milestone Messages', tiers: { base: false, standard: true, premium: true } },
-                    { label: 'Estate Guardian\u2122 AI review', tiers: { base: false, standard: true, premium: true } },
-                    { label: 'Emergency plans (Contingency Protocols)', tiers: { base: false, standard: true, premium: true } },
-                    { label: 'Private family messaging', tiers: { base: false, standard: true, premium: true } },
-                    { label: 'Passwords & accounts vault', tiers: { base: true, standard: true, premium: true } },
-                    { label: 'Financial Portal', tiers: { base: true, standard: true, premium: true } },
-                    { label: 'People you can invite', tiers: { base: 'Up to 3', standard: 'Up to 5', premium: 'Unlimited' } },
-                    { label: 'Priority human support', tiers: { base: false, standard: false, premium: true } },
-                  ].map((row, i) => (
-                    <tr key={i} style={{ borderTop: '1px solid var(--b)' }}>
+                  {FEATURE_ROWS
+                    .filter(row => mainTiers.some(p => isEnabled(p.id, row.key)))
+                    .map((row) => (
+                    <tr key={row.key} style={{ borderTop: '1px solid var(--b)' }} data-testid={`pricing-row-${row.key}`}>
                       <td className="p-3 text-[var(--t3)]">{row.label}</td>
-                      {mainTiers.map(p => {
-                        const val = row.tiers[p.id];
-                        return (
-                          <td key={p.id} className="p-3 text-center">
-                            {val === true ? <Check className="w-4 h-4 text-[#10b981] mx-auto" /> :
-                             val === false ? <span className="text-[var(--t5)]">&mdash;</span> :
-                             <span className="text-xs text-[var(--t3)] font-medium">{val}</span>}
-                          </td>
-                        );
-                      })}
+                      {mainTiers.map(p => (
+                        <td key={p.id} className="p-3 text-center">
+                          {isEnabled(p.id, row.key)
+                            ? <Check className="w-4 h-4 text-[#10b981] mx-auto" />
+                            : <span className="text-[var(--t5)]">&mdash;</span>}
+                        </td>
+                      ))}
                     </tr>
                   ))}
                   <tr style={{ borderTop: '1px solid var(--b)', background: 'var(--s)' }}>
@@ -364,8 +373,8 @@ const PricingPage = () => {
               <p className="text-xs text-[var(--t4)] leading-relaxed">
                 <strong>18&ndash;25?</strong> Start at the New Adult rate.{' '}
                 <strong>One household, a few documents?</strong> Base has the essentials.{' '}
-                <strong>Want the AI review and messages for your family?</strong> Standard unlocks the full platform.{' '}
-                <strong>Blended family or more than five people?</strong> Premium: unlimited invites and priority support.
+                <strong>Want the AI review on your paperwork?</strong> Standard adds Estate Guardian&trade; AI.{' '}
+                <strong>Want everything?</strong> Premium unlocks every tool above, including emergency plans and private family messaging.
               </p>
             </div>
           </div>
@@ -419,7 +428,7 @@ const PricingPage = () => {
 
         {/* Trust footer */}
         <div className="flex flex-wrap items-center justify-center gap-6 text-xs text-[var(--t5)] py-8" style={{ borderTop: '1px solid var(--b)' }}>
-          <span><Shield className="w-4 h-4 inline mr-1" />AES-256 Encryption</span>
+          <span><Shield className="w-4 h-4 inline mr-1" />Scrambled before it&rsquo;s stored</span>
           <span><Check className="w-4 h-4 inline mr-1" />Cancel Anytime</span>
           <span>Your Data Is Yours Alone</span>
           <a href="/" className="hover:text-[var(--t4)] inline-flex items-center gap-1">Back to homepage <ChevronRight className="w-3 h-3" /></a>

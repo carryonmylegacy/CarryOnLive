@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Helmet } from 'react-helmet-async';
 import { ChevronRight, ShieldCheck } from 'lucide-react';
 import { MarketingNav } from '../components/landing/MarketingNav';
 import { RevealSection } from '../components/landing/RevealSection';
@@ -19,14 +18,14 @@ const CustomersPage = () => {
 
   return (
     <div className={`min-h-screen transition-opacity duration-400 ${exiting ? 'opacity-0' : 'opacity-100'}`} style={{ background: '#0E1829' }} data-testid="customers-page">
-      <Helmet>
+      <>
         <title>Customer Stories - CarryOn | Real Families, Real Words</title>
         <meta name="description" content="CarryOn publishes only real member stories, reviewed by the founder. Read them here, see the actual product, and share your own." />
         <link rel="canonical" href="https://carryon.us/customers" />
         <meta property="og:title" content="Customer Stories - CarryOn" />
         <meta property="og:description" content="Real families, real words. Nothing invented." />
         <meta property="og:url" content="https://carryon.us/customers" />
-      </Helmet>
+      </>
       <MarketingNav navigateWithFade={navigateWithFade} testIdSuffix="-customers" />
 
       <section className="relative overflow-hidden" style={{ paddingTop: 'calc(8rem + env(safe-area-inset-top, 0px))' }}>

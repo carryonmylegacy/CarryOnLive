@@ -435,7 +435,7 @@ export default function SubscriptionPaywall({ onDismiss }) {
           </Button>
 
           <p className="text-xs text-[var(--t5)] text-center">
-            Documents are reviewed within 24-48 hours. You'll be notified once approved.
+            Documents are reviewed within 24 hours. You'll be notified once approved.
           </p>
         </div>
       </div>
@@ -445,7 +445,8 @@ export default function SubscriptionPaywall({ onDismiss }) {
   return (
     <div className="fixed inset-0 z-[9999] bg-[var(--bg)]/98 overflow-y-auto" data-testid="subscription-paywall">
       <div className="min-h-screen flex flex-col items-center justify-center py-8 px-4">
-        {/* Skip / Continue link */}
+        {/* Skip / Continue — only while the exploration period is active or a subscription exists */}
+        {(subStatus?.has_active_subscription || (trial.trial_active && !trial.trial_expired)) && (
         <div className="w-full max-w-5xl flex justify-end mb-2">
           <button
             onClick={() => { if (onDismiss) onDismiss(); else window.location.href = '/dashboard'; }}
@@ -453,9 +454,10 @@ export default function SubscriptionPaywall({ onDismiss }) {
             style={{ background: 'var(--s)', border: '1px solid var(--b)' }}
             data-testid="paywall-skip"
           >
-            {subStatus?.has_active_subscription ? 'Go to Dashboard' : 'Continue to Dashboard'}
+            {subStatus?.has_active_subscription ? 'Go to Dashboard' : `Continue exploring (${trial.days_remaining} days remaining)`}
           </button>
         </div>
+        )}
 
         {/* Header */}
         <div className="text-center mb-8 max-w-lg animate-fade-in">
@@ -464,7 +466,7 @@ export default function SubscriptionPaywall({ onDismiss }) {
           {trial.trial_expired ? (
             <>
               <h1 className="text-2xl sm:text-3xl font-bold text-[var(--t)] mb-2" style={{ fontFamily: 'var(--sans)' }}>
-                Your Free Trial Has Ended
+                Your Exploration Period Has Ended
               </h1>
               <p className="text-[var(--t4)] text-sm">
                 Choose a plan to continue protecting your family's estate plan with CarryOn.
@@ -478,11 +480,11 @@ export default function SubscriptionPaywall({ onDismiss }) {
               <div className="flex items-center justify-center gap-2 mb-2">
                 <Clock className="w-4 h-4 text-[#d4af37]" />
                 <span className="text-[#d4af37] text-sm font-medium">
-                  {trial.days_remaining} days left in your free trial
+                  {trial.days_remaining} days left in your exploration period
                 </span>
               </div>
               <p className="text-[var(--t4)] text-sm">
-                Select a plan now to ensure uninterrupted access when your trial ends.
+                Select a plan now to ensure uninterrupted access when your exploration period ends.
               </p>
             </>
           ) : (
@@ -1021,7 +1023,7 @@ export default function SubscriptionPaywall({ onDismiss }) {
             className="text-[var(--t5)] text-sm hover:text-white transition-colors mb-4"
             data-testid="paywall-dismiss"
           >
-            Continue with free trial ({trial.days_remaining} days remaining)
+            Continue exploring ({trial.days_remaining} days remaining)
           </button>
         )}
 
@@ -1041,7 +1043,7 @@ export default function SubscriptionPaywall({ onDismiss }) {
         {/* Apple-required subscription disclosure (Guideline 3.1.2) */}
         <div className="text-center mb-4 animate-fade-in max-w-md mx-auto">
           <p className="text-[var(--t5)] text-xs">
-            AES-256 Encrypted · Per-Estate Keys · All plans include full security
+            Every plan includes the same protection: your files are scrambled before they're stored, with a separate lock for every family.
           </p>
           <p className="text-[var(--t5)] text-[11px] mt-2 leading-relaxed">
             Payment will be charged to your {useAppleIAP ? 'Apple ID' : 'payment method'} at confirmation of purchase.

@@ -760,7 +760,7 @@ function Bubble({ role, content, citations, error, modelUsed, isFallback, onCita
             <span
               className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider"
               style={{ background: 'rgba(34,201,147,0.10)', border: '1px solid rgba(34,201,147,0.30)', color: '#6EE7B7' }}
-              title="Answered live by the EGA AI engine inside your AES-256 encrypted vault."
+              title="Answered live by the EGA AI engine, using only the documents released to you."
             >
               via EGA AI engine
             </span>

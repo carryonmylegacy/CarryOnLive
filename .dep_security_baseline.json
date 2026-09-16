@@ -1,6 +1,6 @@
 {
-  "backend_total": 21,
-  "frontend_critical": 4,
-  "frontend_high": 66,
-  "frontend_total": 139
+  "backend_total": 32,
+  "frontend_critical": 0,
+  "frontend_high": 1,
+  "frontend_total": 56
 }

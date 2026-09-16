@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Helmet } from 'react-helmet-async';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import {
@@ -147,7 +146,7 @@ const StartPage = () => {
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg)' }} data-testid="start-page">
-      <Helmet>
+      <>
         <title>Get Started with CarryOn - Family Preparedness Platform</title>
         <meta name="description" content="Choose how to begin protecting your family with CarryOn. Start with a paid subscription or explore the platform free for 30 days. Secure documents, estate plans, and milestone messages." />
         <link rel="canonical" href="https://carryon.us/start" />
@@ -159,7 +158,7 @@ const StartPage = () => {
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="Get Started with CarryOn - Family Preparedness" />
         <meta name="twitter:description" content="Start today with a paid plan or explore free. Secure your family's future in one platform." />
-      </Helmet>
+      </>
       {startPageJsonLd && (
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: startPageJsonLd }} />
       )}
@@ -203,7 +202,7 @@ const StartPage = () => {
               Full access. Your plan is live in minutes. Cancel anytime.
             </p>
             <ul className="space-y-2 mb-6">
-              {['Unlimited secure document storage', 'Estate Guardian AI advisor', 'Milestone Messages for loved ones', 'Financial Portal & Bill Tracker', 'Push notification reminders'].map(feat => (
+              {['Secure document vault', 'Estate Guardian AI review', 'Milestone Messages for loved ones', 'What-to-do-first checklist', 'Reminders on your phone'].map(feat => (
                 <li key={feat} className="flex items-start gap-2 text-sm text-[var(--t3)]">
                   <Check className="w-4 h-4 text-[#10b981] flex-shrink-0 mt-0.5" />
                   {feat}
@@ -277,7 +276,7 @@ const StartPage = () => {
                 data-testid={`cycle-${cycle}`}>
                 {CYCLE_LABELS[cycle]}
                 {CYCLE_SAVINGS[cycle] && (
-                  <span className="absolute -top-2 -right-1 text-[9px] px-1.5 py-0.5 rounded-full font-bold bg-[#10b981] text-white">
+                  <span className="absolute -top-2.5 -right-1 text-[11px] px-1.5 py-0.5 rounded-full font-bold bg-[#10b981] text-white">
                     {CYCLE_SAVINGS[cycle]}
                   </span>
                 )}
@@ -389,7 +388,7 @@ const StartPage = () => {
 
         {/* Trust signals */}
         <div className="flex flex-wrap items-center justify-center gap-6 text-xs text-[var(--t5)] py-8" style={{ borderTop: '1px solid var(--b)' }}>
-          <span><Shield className="w-4 h-4 inline mr-1" />AES-256 Encryption</span>
+          <span><Shield className="w-4 h-4 inline mr-1" />Scrambled before it&rsquo;s stored</span>
           <span><Check className="w-4 h-4 inline mr-1" />Cancel Anytime</span>
           <span>Your Data Is Yours Alone</span>
         </div>

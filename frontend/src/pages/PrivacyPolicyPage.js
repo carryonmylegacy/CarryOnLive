@@ -2,19 +2,11 @@ import React from 'react';
 import SEO from '../components/SEO';
 import PublicFooter from '../components/PublicFooter';
 import { Link } from 'react-router-dom';
-import { Helmet } from 'react-helmet-async';
 import { ArrowLeft, Shield } from 'lucide-react';
 
 const PrivacyPolicyPage = () => {
   return (
     <>
-      <Helmet>
-        <title>Privacy Policy - CarryOn Family Preparedness</title>
-        <meta name="description" content="CarryOn's privacy policy. How we protect your family's data with AES-256 encryption, GDPR compliance, and SOC 2 architecture." />
-        <link rel="canonical" href="https://carryon.us/privacy" />
-        <meta property="og:title" content="Privacy Policy - CarryOn" />
-        <meta property="og:url" content="https://carryon.us/privacy" />
-      </Helmet>
     <div
       className="min-h-screen py-12 px-4"
       style={{ background: 'linear-gradient(145deg, #0F1629, #141C33 40%, #0F1629)' }}
@@ -85,7 +77,7 @@ const PrivacyPolicyPage = () => {
             <section>
               <h2 className="text-lg font-semibold text-[var(--t)] mb-3">5. Data Security</h2>
               <p>
-                We implement industry-standard security measures, including AES-256 encryption with per-estate keys and two-factor authentication. Your sensitive documents are encrypted at rest and in transit. Conversations with our AI features are retained as chat transcripts until you delete them and may quote documents you flag for AI analysis. AI requests are processed by xAI under a zero-data-retention configuration &mdash; xAI does not store your content after the response is returned. Under xAI's published API policy, content sent through the API is also not used to train their models.
+                In plain language: your files are scrambled before they&rsquo;re stored, with a separate lock for every family. Our support team can&rsquo;t open them from their screens, and every time a file is opened, we write down who did it and when. Technically, we implement industry-standard security measures, including AES-256 encryption with per-estate keys and two-factor authentication. Your sensitive documents are encrypted at rest and in transit. Conversations with our AI features are retained as chat transcripts until you delete them and may quote documents you flag for AI analysis. AI requests are processed by xAI under a zero-data-retention configuration &mdash; xAI does not store your content after the response is returned. Under xAI's published API policy, content sent through the API is also not used to train their models.
               </p>
             </section>
 

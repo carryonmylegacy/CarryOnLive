@@ -435,6 +435,41 @@ ROUTE_POLICIES: dict = {
         "roles": ["admin"],
         "notes": "Platform-health scope; read-only provider self-test",
     },
+    # Marketing funnel (ported Sep 2026): readiness quiz + real-testimonial pipeline ──
+    "POST /api/quiz/results": {"auth": "public", "notes": "Anonymous quiz result; rate-limited 60/min/IP; no PII"},
+    "POST /api/quiz/results/{result_id}/email": {
+        "auth": "public",
+        "notes": "Anonymous lead capture; email validated + suppression-checked in services.email",
+    },
+    "GET /api/admin/quiz/analytics": {
+        "auth": "required",
+        "roles": ["admin"],
+        "notes": "Marketing scope via require_admin_scope",
+    },
+    "POST /api/testimonials": {
+        "auth": "public",
+        "notes": "Public submission → status=pending; never published without founder approval",
+    },
+    "GET /api/testimonials": {"auth": "public", "notes": "Approved testimonials only; email never returned"},
+    "GET /api/admin/testimonials": {
+        "auth": "required",
+        "roles": ["admin"],
+        "notes": "Marketing scope via require_admin_scope",
+    },
+    "PATCH /api/admin/testimonials/{testimonial_id}": {
+        "auth": "required",
+        "roles": ["admin"],
+        "notes": "Marketing scope",
+    },
+    "DELETE /api/admin/testimonials/{testimonial_id}": {
+        "auth": "required",
+        "roles": ["admin"],
+        "notes": "Marketing scope",
+    },
+    "GET /api/public/platform-stats": {
+        "auth": "public",
+        "notes": "Aggregate counts only; 10-min cache; gated by show_live_stats",
+    },
 }
 
 

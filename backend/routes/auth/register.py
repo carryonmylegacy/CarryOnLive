@@ -111,6 +111,11 @@ async def register(data: UserCreate):
         "subscription_status": "trialing",
         "created_at": now.isoformat(),
     }
+    # UTM / referral attribution captured by /start (sessionStorage.carryon_utm → signup payload)
+    for utm_key in ("utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content", "ref", "referrer"):
+        val = getattr(data, utm_key, None)
+        if val:
+            user[utm_key] = str(val)[:500]
     await db.users.insert_one(user)
 
     if user["role"] == "benefactor":

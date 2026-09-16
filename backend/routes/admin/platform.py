@@ -52,6 +52,11 @@ async def update_platform_settings(data: dict, current_user: dict = Depends(requ
         "platform_free_mode",
         "ai_burn_guard_enabled",
         "subscriptions_enabled",
+        "founder_name",
+        "founder_title",
+        "founder_bio",
+        "founder_linkedin_url",
+        "show_live_stats",
     }
     update = {k: v for k, v in data.items() if k in allowed_keys}
     if update:

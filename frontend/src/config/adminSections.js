@@ -95,6 +95,8 @@ export const ADMIN_SECTIONS = [
     scopes: ['founder', 'marketing'],
     tabs: [
       { key: 'funnel', label: 'Funnel', icon: TrendingUp, path: '/admin/funnel' },
+      { key: 'quiz', label: 'Readiness Quiz', icon: CheckSquare, path: '/admin/quiz' },
+      { key: 'testimonials', label: 'Testimonials', icon: MessageSquareQuote, path: '/admin/testimonials' },
       { key: 'sales-brief', label: 'Sales Brief', icon: FileText, path: '/admin/sales-brief' },
       { key: 'beta-testing', label: 'Beta Testing', icon: Zap, path: '/admin/beta-testing' },
       { key: 'site-content', label: 'Site Content', icon: Film, path: '/admin/site-content' },

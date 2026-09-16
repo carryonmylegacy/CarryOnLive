@@ -582,7 +582,7 @@ export const SubscriptionManagement = ({
                 <span className="text-sm font-semibold text-[var(--t)]">
                   {isBeta ? 'Beta Access — All features unlocked' :
                    subscriptionStatus.trial?.trial_active
-                      ? `Free Trial · ${subscriptionStatus.trial.days_remaining} days left`
+                      ? `Exploration Period · ${subscriptionStatus.trial.days_remaining} days left`
                       : 'Choose a payment option that best suits you. (Monthly/Quarterly/Annual)'}
                 </span>
                 {isBeta && (

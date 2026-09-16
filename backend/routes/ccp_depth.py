@@ -33,10 +33,10 @@ from uuid import uuid4
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, EmailStr
 
-from config import db, xai_client, logger, XAI_MODEL_LIGHT
+from config import db, xai_client, logger, XAI_MODEL_LIGHT, RESEND_API_KEY, SENDER_EMAIL
 from services.ai_burn_guard import require_ai_burn_budget
 from services.estate_auth import is_estate_member, is_estate_owner
-from utils import RESEND_API_KEY, SENDER_EMAIL, get_current_user
+from utils import get_current_user
 
 import os
 

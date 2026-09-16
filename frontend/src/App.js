@@ -7,6 +7,7 @@ import { SectionLockProvider } from './components/security/SectionLock';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import { CapacitorUpdater } from '@capgo/capacitor-updater';
 import { isNative } from './services/native';
+import { isPWA } from './utils/pwaDetect';
 import SubscriptionPaywall from './components/SubscriptionPaywall';
 import DashboardLayout from './components/layout/DashboardLayout';
 import ShareUploadModal from './components/ShareUploadModal';
@@ -128,6 +129,10 @@ const OurPromisePage = lazy(() => import('./pages/OurPromisePage'));
 const VerifyPage = lazy(() => import('./pages/VerifyPage'));
 
 const HomePage = lazy(() => import('./pages/HomePage'));
+const StartPage = lazy(() => import('./pages/StartPage'));
+const PricingPage = lazy(() => import('./pages/PricingPage'));
+const CustomersPage = lazy(() => import('./pages/CustomersPage'));
+const ChangelogPage = lazy(() => import('./pages/ChangelogPage'));
 const VoicesPage = lazy(() => import('./pages/VoicesPage'));
 const PartnerBriefPage = lazy(() => import('./pages/PartnerBriefPage'));
 const QuickStartTrialPage = lazy(() => import('./pages/QuickStartTrialPage'));
@@ -612,7 +617,9 @@ function RootRoute() {
     }
     return <Navigate to="/dashboard" replace />;
   }
-  return <LoginPage />;
+  // Installed app shells (native / PWA) open straight on sign-in; new web visitors get the marketing homepage.
+  if (isNative || isPWA()) return <LoginPage />;
+  return <HomePage />;
 }
 
 function AppRoutes() {
@@ -650,6 +657,10 @@ function AppRoutes() {
       {/* Short alias — share-friendly URL. Renders the same gate/login. */}
       <Route path="/founder" element={<FounderAboutPage />} />
       <Route path="/home" element={<HomePage />} />
+      <Route path="/start" element={<StartPage />} />
+      <Route path="/pricing" element={<PricingPage />} />
+      <Route path="/customers" element={<CustomersPage />} />
+      <Route path="/changelog" element={<ChangelogPage />} />
       <Route path="/voices" element={<VoicesPage />} />
       {/* B2B white-label partner landing — `/p/:slug`. Public, mirrors
           the LoginPage hero but swaps the CarryOn logo for the

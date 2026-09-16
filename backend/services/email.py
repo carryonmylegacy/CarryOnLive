@@ -1,6 +1,7 @@
 """CarryOn™ — Email service wrapper using Resend."""
 
 import asyncio
+import re
 
 import resend
 
@@ -10,8 +11,41 @@ from config import RESEND_API_KEY, SENDER_EMAIL, logger
 RESERVED_TEST_DOMAINS = frozenset({"example.com", "example.org", "example.net"})
 RESERVED_TEST_TLDS = (".test", ".invalid", ".localhost", ".example")
 
+# Public-form recipients (quiz results, testimonials) must never be throwaway/test inboxes.
+BLOCKED_DOMAINS = RESERVED_TEST_DOMAINS | frozenset(
+    {
+        "test.com",
+        "fake.com",
+        "mailinator.com",
+        "guerrillamail.com",
+        "throwaway.email",
+        "tempmail.com",
+        "yopmail.com",
+        "sharklasers.com",
+        "grr.la",
+        "guerrillamailblock.com",
+        "localhost",
+        "invalid",
+        "test",
+        "resend.dev",
+    }
+)
+
+EMAIL_REGEX = re.compile(r"^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$")
+
 if RESEND_API_KEY:
     resend.api_key = RESEND_API_KEY
+
+
+def is_valid_email(email: str) -> bool:
+    """Syntactically valid and not a blocked/test domain."""
+    if not email or not isinstance(email, str):
+        return False
+    email = email.strip().lower()
+    if not EMAIL_REGEX.match(email):
+        return False
+    domain = email.split("@")[1]
+    return domain not in BLOCKED_DOMAINS and not domain.endswith(RESERVED_TEST_TLDS)
 
 
 async def send_email(to: str, subject: str, html: str):

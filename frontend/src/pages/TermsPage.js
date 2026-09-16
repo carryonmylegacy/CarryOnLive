@@ -2,19 +2,11 @@ import React from 'react';
 import SEO from '../components/SEO';
 import PublicFooter from '../components/PublicFooter';
 import { Link } from 'react-router-dom';
-import { Helmet } from 'react-helmet-async';
 import { ArrowLeft, FileText } from 'lucide-react';
 
 const TermsPage = () => {
   return (
     <>
-      <Helmet>
-        <title>Terms of Service - CarryOn Family Preparedness</title>
-        <meta name="description" content="CarryOn's terms of service. Your agreement for using the family preparedness platform, data ownership rights, and cancellation policy." />
-        <link rel="canonical" href="https://carryon.us/terms" />
-        <meta property="og:title" content="Terms of Service - CarryOn" />
-        <meta property="og:url" content="https://carryon.us/terms" />
-      </Helmet>
     <div
       className="min-h-screen py-12 px-4"
       style={{ background: 'linear-gradient(145deg, #0F1629, #141C33 40%, #0F1629)' }}

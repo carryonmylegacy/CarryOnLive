@@ -1,31 +1,32 @@
 # CarryOn Test Credentials
 
-## Admin/Founder Account
+Login endpoint: `POST /api/auth/login` with JSON `{"email": "...", "password": "..."}` (email-based; username is NOT accepted by the merged Job L auth).
+Token is returned as `access_token`; frontend stores it in `localStorage.carryon_token`.
+
+## Founder / Admin (preview + prod)
+- Email: founder@carryon.us
+- Password: CarryOntheWisdom!
+- Username: foundercarryon
+- Role: admin (founder — sees all six Admin Portal sections at /admin)
+
+## Benefactor (preview) — Pete Mitchell equivalent, NOT admin
 - Email: info@carryon.us
 - Password: Demo1234!
 - Username: admin_62bc79
-- Role: benefactor (founder)
-- Note: Login works with either email or username
+- Role: benefactor (owns estate "Admin Test Estate", subscription: standard / cancelled → paywall visible)
+- Note: if this account ever shows role=admin again, that is stale data — set role back to benefactor.
 
-## Auth System Notes
-- Username is the primary login identifier (unique, not an email)
-- Email is a communication channel (non-unique, shared families supported)
-- Beneficiaries join via invitation link only — no self-signup
-- OTPs are keyed by user_id (not email)
-- Forgot Password uses username, not email
-- Forgot Username sends username list to email
+## Production demo account (carryon.us — marketing screenshots only)
+- Username: petemitchell · Password: Demo1234!!! · benefactor · LIVE prod only (not in preview DB)
 
-## Production Demo Account (carryon.us — used for marketing screenshots)
-- Username: petemitchell
-- Password: Demo1234!!!
-- Role: benefactor (also beneficiary), direct login (no OTP)
-- Note: LIVE production account on https://www.carryon.us (API: carryon-api-kacr.onrender.com). Not present in the preview DB.
+## Environment facts (preview)
+- Preview DB mirrors LIVE config via `python backend/scripts/mirror_live_config.py` (beta_mode=false, family discounts 30%/50%, live prices + feature gates). Run with `--check` for a drift report.
+- OTP: check `platform_settings.otp_disabled`; when OTP is on, codes are logged to `/var/log/supervisor/backend.out.log`.
 
 ## Email testing rule (Resend is LIVE)
-- Quiz result emails (`POST /api/quiz/results/{id}/email`) and any other outbound email tests: send ONLY to info@carryon.us, once per flow.
-- Test domains (@test.com, @example.com, …) are blocked by `services/email.py` and return 400 — useful for negative tests.
+- Outbound email tests: send ONLY to info@carryon.us, once per flow.
+- Test/throwaway domains (@test.com, @example.com, …) are rejected by `services/email.py::is_valid_email` (400) — useful for negative tests.
 
-## Testimonials (trust pipeline) — test hygiene
-- POST /api/testimonials creates PENDING items only; approving via PATCH /api/admin/testimonials/{id} makes them PUBLIC on carryon.us.
-- Any testimonial created during testing MUST be deleted (DELETE /api/admin/testimonials/{id}) before finishing. Never leave test quotes approved.
-- Restore `show_live_stats` to "auto" (PUT /api/admin/platform-settings) if changed during tests.
+## Testimonials — test hygiene
+- POST /api/testimonials creates PENDING items only; approving via PATCH /api/admin/testimonials/{id} makes them PUBLIC.
+- Delete any test testimonial (DELETE /api/admin/testimonials/{id}) before finishing. Restore `show_live_stats` to "auto" if changed.

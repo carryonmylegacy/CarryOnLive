@@ -16,6 +16,7 @@ from fastapi import Depends
 
 from config import db
 from utils import get_current_user
+from routes.admin.trial_policy import get_trial_days
 from routes.subscriptions.plans import (
     router,
     DEFAULT_PLANS,
@@ -43,7 +44,9 @@ async def get_subscription_plans():
             tier_gates = gates.get(f["key"], {})
             feature_list.append(
                 {
+                    "key": f["key"],
                     "label": f["label"],
+                    "route": f.get("route", ""),
                     "enabled": tier_gates.get(tid, True),
                 }
             )
@@ -57,6 +60,7 @@ async def get_subscription_plans():
         "family_benefactor_discount_percent": settings.get("family_benefactor_discount_percent", 0),
         "family_beneficiary_discount_percent": settings.get("family_beneficiary_discount_percent", 0),
         "tier_features": tier_features,
+        "trial_duration_days": await get_trial_days(),
     }
 
 

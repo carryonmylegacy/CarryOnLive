@@ -658,7 +658,7 @@ const LoginPage = () => {
           <div className="mt-5 pt-4 border-t flex flex-col items-center gap-2" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
             <div className="flex items-center gap-2">
               <Shield className="w-3.5 h-3.5 text-[#10b981]" />
-              <span className="text-white/80 text-sm font-bold">AES-256 encryption · Per-estate keys · TLS 1.3</span>
+              <span className="text-white/80 text-sm font-bold">Scrambled before it’s stored · A separate lock for every family · Secure connection</span>
             </div>
             <button onClick={() => navigateWithFade('/get-started')} className="animate-pulse-fast hover:brightness-110 active:scale-[0.97] cursor-pointer" data-testid="new-here-link-mobile"
               style={{
@@ -796,7 +796,7 @@ const LoginPage = () => {
           <div className="mt-3.5 pt-3 border-t" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
             <div className="flex items-center justify-center gap-2">
               <Shield className="w-3 h-3 text-[#10b981]" />
-              <span className="text-white/80 text-xs font-bold">AES-256 encryption &middot; Per-estate keys &middot; TLS 1.3</span>
+              <span className="text-white/80 text-xs font-bold">Scrambled before it&rsquo;s stored &middot; A separate lock for every family &middot; Secure connection</span>
             </div>
             <div className="mt-2 text-center">
               <button onClick={() => navigateWithFade('/get-started')} className="animate-pulse-fast hover:brightness-110 active:scale-[0.97] cursor-pointer" data-testid="new-here-pwa"
@@ -977,7 +977,7 @@ const LoginPage = () => {
                     CarryOn is the continuity system for your family &mdash; keeping everyone ready, connected, and clear through every disruption, from a hospital stay to the final day. Built calmly today; there the moment your family needs it.
                   </p>
                   <div className="flex items-center gap-5 justify-center sm:justify-start mb-5">
-                    {['AES-256 Encrypted', 'Per-Estate Keys', '2FA Protected'].map(badge => (
+                    {['Scrambled before it\u2019s stored', 'A separate lock for every family', 'Two-step sign-in'].map(badge => (
                       <div key={badge} className="flex items-center gap-2">
                         <div className="w-2 h-2 rounded-full bg-[#10b981]" />
                         <span className="text-white/70 text-sm font-medium" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>{badge}</span>
@@ -1099,7 +1099,7 @@ const LoginPage = () => {
                   <div className="mt-6 pt-5 border-t" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
                     <div className="flex items-center justify-center gap-2">
                       <Shield className="w-3.5 h-3.5 text-[#10b981]" />
-                      <span className="text-white/80 text-sm font-bold">AES-256 encryption &middot; Per-estate keys &middot; TLS 1.3</span>
+                      <span className="text-white/80 text-sm font-bold">Scrambled before it&rsquo;s stored &middot; A separate lock for every family &middot; Secure connection</span>
                     </div>
                     <div className="mt-3 text-center">
                       <button onClick={() => navigateWithFade('/get-started')} className="animate-pulse-fast hover:brightness-110 active:scale-[0.97] cursor-pointer" data-testid="new-here-link"
@@ -1132,7 +1132,7 @@ const LoginPage = () => {
                     CarryOn is the continuity system for your family &mdash; ready, connected, and clear through every disruption, from a hospital stay to the final day.
                   </p>
                   <div className="flex items-center gap-4 justify-center mb-4">
-                    {['AES-256 Encrypted', 'Per-Estate Keys', '2FA Protected'].map(badge => (
+                    {['Scrambled before it\u2019s stored', 'A separate lock for every family', 'Two-step sign-in'].map(badge => (
                       <div key={badge} className="flex items-center gap-2">
                         <div className="w-2 h-2 rounded-full bg-[#10b981]" />
                         <span className="text-white/70 text-sm font-medium" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>{badge}</span>

@@ -670,7 +670,7 @@ const SignupPage = () => {
                   </p>
 
                   <div className="flex items-center gap-4">
-                    {['AES-256 Encrypted', 'Per-Estate Keys', '2FA Protected'].map(badge => (
+                    {['Scrambled before it\u2019s stored', 'A separate lock for every family', 'Two-step sign-in'].map(badge => (
                       <div key={badge} className="flex items-center gap-1.5">
                         <div className="w-1.5 h-1.5 rounded-full bg-[#10b981]" />
                         <span className="text-[#525c72] text-xs">{badge}</span>
@@ -1170,7 +1170,7 @@ const SignupPage = () => {
                     {/* Security footer inside card */}
                     <div className="mt-3 flex items-center justify-center gap-2">
                       <Shield className="w-3.5 h-3.5 text-[#10b981]" />
-                      <span className="text-[#3a4a63] text-xs">AES-256 encryption &middot; Per-estate keys &middot; TLS 1.3</span>
+                      <span className="text-[#3a4a63] text-xs">Scrambled before it&rsquo;s stored &middot; A separate lock for every family &middot; Secure connection</span>
                     </div>
                   </div>
                 </div>

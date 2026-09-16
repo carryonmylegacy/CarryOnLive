@@ -16,10 +16,10 @@ const PILLARS = [
     desc: 'Record written, audio, or video messages for graduations, births, first homes \u2014 any moment you want to be part of, even if you can\u2019t be there. Add as many as you like, whenever you like.' },
   { num: '02', icon: LockIcon, title: 'Every important document, in one place', product: 'Secure Document Vault',
     bold: 'Wills, trusts, insurance policies, deeds \u2014 encrypted, organized, and shared only with the people you choose.',
-    desc: 'Upload the paperwork your family would otherwise tear the house apart looking for. Each family\u2019s vault has its own AES-256 encryption key, and nobody at CarryOn can read what\u2019s inside. Your loved ones see exactly what you allow \u2014 nothing more.' },
+    desc: 'Upload the paperwork your family would otherwise tear the house apart looking for. Your files are scrambled before they\u2019re stored, with a separate lock for every family, and our support team can\u2019t open them from their screens. Your loved ones see exactly what you allow \u2014 nothing more.' },
   { num: '03', icon: Sparkles, title: 'A second set of eyes on your paperwork', product: 'Estate Guardian\u2122 AI',
-    bold: 'An AI review, tuned to your state\u2019s laws, that finds what you missed \u2014 without anyone else reading your documents.',
-    desc: 'It looks for contradictions, gaps, outdated provisions, and missing pieces, then pulls out the details your family will need in a hurry: claim phone numbers, executor contacts, filing deadlines. It works entirely inside your encrypted vault.' },
+    bold: 'An AI review, tuned to your state\u2019s laws, that finds what you missed \u2014 and only reads your documents when you ask it to.',
+    desc: 'It looks for contradictions, gaps, outdated provisions, and missing pieces, then pulls out the details your family will need in a hurry: claim phone numbers, executor contacts, filing deadlines. It uses a trusted AI service under contract, and your documents are never used to teach it.' },
   { num: '04', icon: ClipboardCheck, title: 'What to do first', product: 'Immediate Action Checklist',
     bold: 'A step-by-step guide your family can follow on the hardest days of their lives.',
     desc: 'Started for you from your documents and finished by you. When something happens, your family opens one list and knows what to do, who to call, where every document is, and which deadlines matter. No guessing. No searching.' },
@@ -42,10 +42,10 @@ const PLATFORM_FEATURES = [
   { icon: UserCheck, title: 'Your people, your rules', desc: 'Invite the people you trust. Decide exactly what each person can see, access, and manage.' },
   { icon: ArrowUpDown, title: 'A backup for your backup', desc: 'Rank who steps in if your first choice can&rsquo;t. If someone can no longer serve, the next person is promoted automatically.' },
   { icon: Layers, title: 'More than one household', desc: 'Manage a parent&rsquo;s affairs alongside your own &mdash; built for blended, extended, and modern families.' },
-  { icon: Users, title: 'Family plan savings', desc: 'Bundle your household for a discount on every tier. The more family members you prepare, the more you save.' },
+  { icon: Users, title: 'Family plan savings', desc: 'Bundle your household on one plan. Added family members pay a reduced rate set in your plan details.' },
   { icon: ShieldAlert, title: 'Emergency access', desc: 'A verified way for the people you&rsquo;ve chosen to request access if you&rsquo;re incapacitated or unreachable.' },
   { icon: SlidersHorizontal, title: 'Share only what&rsquo;s needed', desc: 'Your spouse sees the accounts. Your attorney sees the will. Your kids see the messages. You decide, per person.' },
-  { icon: Smartphone, title: 'On your phone', desc: 'iOS and Android with face or fingerprint login and push alerts. Your plan goes wherever you go.' },
+  { icon: Smartphone, title: 'On your phone', desc: 'Works on any phone &mdash; add it to your home screen and get alerts. Your plan goes wherever you go.' },
   { icon: MapPin, title: 'Tuned to your state', desc: 'Estate Guardian&trade; AI reviews your documents against the laws of the state you live in &mdash; not generic advice.' },
 ];
 
@@ -60,12 +60,12 @@ const FIVE_STEPS = [
 
 /* ── data: security items ── */
 const SECURITY_ITEMS = [
-  { icon: LockIcon, text: 'AES-256 encryption with a separate key for every family \u2014 nobody at CarryOn can read your documents' },
-  { icon: Sparkles, text: 'Estate Guardian\u2122 AI reviews your documents inside your encrypted vault \u2014 nothing leaves it' },
-  { icon: Shield, text: 'Two-step sign-in on every login, with trusted-device options for your family' },
+  { icon: LockIcon, text: 'Your files are scrambled before they\u2019re stored, with a separate lock for every family \u2014 our support team can\u2019t open them from their screens' },
+  { icon: Sparkles, text: 'Estate Guardian\u2122 AI only reads your documents when you ask it to. It uses a trusted AI service under contract, and your documents are never used to teach it' },
+  { icon: Shield, text: 'Two-step sign-in, on by default, with trusted-device options for your family' },
   { icon: Users, text: 'Real people \u2014 not algorithms \u2014 confirm a death or incapacity before anything unlocks' },
-  { icon: Trash2, text: 'Sensitive records are permanently destroyed after your family\u2019s tasks are complete' },
-  { icon: FileCheck, text: 'A full audit trail of who saw what and when, built on a SOC 2 compliance architecture with GDPR data rights' },
+  { icon: Trash2, text: 'If you ever leave, your records stay downloadable for 90 days, then are permanently deleted' },
+  { icon: FileCheck, text: 'Every time a file is opened, we write down who did it and when \u2014 designed around SOC 2 controls, with the right to export or delete your data' },
 ];
 
 /* ── data: why families do this (emotional + social outcomes) ── */
@@ -77,7 +77,7 @@ const OUTCOMES = [
 
 /* ── data: honest trust signals (no fabricated social proof) ── */
 const TRUST_ITEMS = [
-  { icon: EyeOff, title: 'Nobody here can read your documents', desc: 'Each family\u2019s vault has its own encryption key. Not support, not engineers, not the founder.' },
+  { icon: EyeOff, title: 'Your files stay yours to open', desc: 'Scrambled before they\u2019re stored, with a separate lock for every family. Our support team can\u2019t open them from their screens, and every time a file is opened, we write down who did it and when.' },
   { icon: Download, title: 'Your data is yours. Leave anytime.', desc: 'Export everything whenever you want and cancel from your account. No hoops, no phone calls.' },
   { icon: Clock, title: 'Try it before you pay', desc: 'Every plan starts with an exploration period \u2014 no credit card needed. Set up your vault, invite one person, and see if it fits.' },
   { icon: Medal, title: 'Built in Arlington, Virginia since 2024', desc: 'A registered U.S. company with a real address, a real phone number, and a founder who answers to his name.' },
@@ -86,8 +86,8 @@ const TRUST_ITEMS = [
 /* ── data: FAQ items (D1.4) ── */
 const FAQ_ITEMS = [
   { q: 'Does CarryOn replace my estate attorney?', a: 'No. CarryOn organizes everything your attorney creates — wills, trusts, powers of attorney, insurance policies — and flags gaps or contradictions your attorney should review. Think of it as the place your estate plan lives, not a replacement for legal counsel.' },
-  { q: 'CarryOn is new. How do I know it will be around?', a: 'Fair question. CarryOn was founded in 2024 and is founder-led. Your documents never depend on us: you can export everything at any time, and we maintain a continuity escrow so access continues even if the company doesn\'t. We would rather earn your trust with those guarantees than with numbers we can\'t back up.' },
-  { q: 'What happens to my family\'s documents if CarryOn closes?', a: 'Your data is yours. You can export everything at any time. We also maintain a continuity escrow to ensure document access even in the unlikely event of a business closure. Your family\'s preparedness never depends on a single company.' },
+  { q: 'CarryOn is new. How do I know it will be around?', a: 'Fair question. CarryOn was founded in 2024 and is founder-led. Your documents never depend on us: you can export everything at any time, and our written Wind-Down Promise guarantees at least 90 days\u2019 notice and open export paths if the company ever closes. We would rather earn your trust with those guarantees than with numbers we can\'t back up.', link: { href: '/wind-down-promise', label: 'Read the Wind-Down Promise' } },
+  { q: 'What happens to my family\'s documents if CarryOn closes?', a: 'Your data is yours. You can export everything at any time. Our written Wind-Down Promise commits us to at least 90 days\u2019 advance notice, open export paths the entire time, and files you can read on your own computer forever. Your family\'s preparedness never depends on a single company.', link: { href: '/wind-down-promise', label: 'Read the Wind-Down Promise' } },
   { q: 'Is hospice access really free?', a: 'Yes — full platform access, no exceptions, for all U.S. citizens and resident aliens enrolled in certified hospice care. No credit card, no timer, no reduced features. This is a core part of our mission.' },
   { q: 'How does military and veteran pricing verification work?', a: 'Select the Military or Veteran tier during signup. We verify service status through a simple document upload — a military ID, DD214, or VA Benefits Letter. Verification is typically completed within 24 hours.' },
   { q: 'Can my family access the vault if I\'m overseas or unreachable?', a: 'Yes. CarryOn\'s Emergency Access protocol lets the people you\'ve designated request vault access when you are incapacitated or unreachable. Every request is verified by our Transition Verification Team — real people, not algorithms.' },
@@ -96,14 +96,22 @@ const FAQ_ITEMS = [
 /**
  * FaqItem — expandable FAQ question/answer
  */
-const FaqItem = ({ q, a, isOpen, onToggle, index }) => (
+const FaqItem = ({ q, a, link, isOpen, onToggle, index }) => (
   <div className="border-b border-white/5">
     <button onClick={onToggle} className="w-full flex items-center justify-between py-5 text-left group" data-testid={`faq-question-${index}`} aria-expanded={isOpen}>
       <span className="text-white text-base font-medium pr-4 group-hover:text-[#d4af37] transition-colors">{q}</span>
       <ChevronDown className={`w-5 h-5 text-[#d4af37] flex-shrink-0 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
     </button>
     {isOpen && (
-      <p className="text-[#7b879e] text-sm leading-relaxed pb-5 pr-8" data-testid={`faq-answer-${index}`}>{a}</p>
+      <p className="text-[#7b879e] text-sm leading-relaxed pb-5 pr-8" data-testid={`faq-answer-${index}`}>
+        {a}
+        {link && (
+          <>
+            {' '}
+            <a href={link.href} className="text-[#d4af37] underline hover:text-[#e0bd47]" data-testid={`faq-link-${index}`}>{link.label}</a>
+          </>
+        )}
+      </p>
     )}
   </div>
 );
@@ -431,7 +439,7 @@ const LandingContent = ({ navigateWithFade, footerInfo, testIdSuffix = '', befor
           <RevealSection delay={0.1}>
             <div className="rounded-2xl p-6 lg:p-8" style={{ background: 'rgba(15,26,46,0.6)', border: '1px solid rgba(255,255,255,0.06)' }}>
               {FAQ_ITEMS.map((item, i) => (
-                <FaqItem key={i} q={item.q} a={item.a} isOpen={openFaq === i} onToggle={() => setOpenFaq(openFaq === i ? null : i)} index={i} />
+                <FaqItem key={i} q={item.q} a={item.a} link={item.link} isOpen={openFaq === i} onToggle={() => setOpenFaq(openFaq === i ? null : i)} index={i} />
               ))}
             </div>
           </RevealSection>

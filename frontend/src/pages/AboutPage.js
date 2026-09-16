@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Helmet } from 'react-helmet-async';
 import { ChevronRight, ChevronLeft, Linkedin } from 'lucide-react';
 import axios from 'axios';
 import { API_URL } from '../config';
@@ -51,14 +50,14 @@ const AboutPage = () => {
 
   return (
     <div className="min-h-screen" style={{ background: '#0d1b2a' }}>
-      <Helmet>
+      <>
         <title>About CarryOn - Family Preparedness Mission & Team</title>
         <meta name="description" content="Why CarryOn exists: to make family readiness accessible to every American family, not just the wealthy. Founded by a 24-year military veteran." />
         <link rel="canonical" href="https://carryon.us/about" />
         <meta property="og:title" content="About CarryOn - Family Preparedness Mission & Team" />
         <meta property="og:description" content="Why CarryOn exists: to make family readiness accessible to every American family, not just the wealthy." />
         <meta property="og:url" content="https://carryon.us/about" />
-      </Helmet>
+      </>
       {founder.name && (
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
           "@context": "https://schema.org",
@@ -212,7 +211,7 @@ const AboutPage = () => {
                 },
                 {
                   title: 'Security Without Compromise.',
-                  desc: 'Zero-knowledge encryption. Air-gapped AI. No backdoors. No exceptions.',
+                  desc: 'Your files are scrambled before they\u2019re stored, with a separate lock for every family. Our AI only reads your documents when you ask it to. No backdoors. No exceptions.',
                 },
                 {
                   title: 'Accessible to Every Family.',
@@ -268,7 +267,7 @@ const AboutPage = () => {
             </RevealSection>
             <RevealSection delay={0.15}>
               <p className="text-[#7b879e] text-base leading-relaxed mb-10">
-                Our operational workforce is a nationwide network of remote professionals working through a proprietary task assignment system. They&apos;re trained for empathy, precision, and the kind of care this work demands. Three teams. One mission.
+                The people behind CarryOn are trained for empathy, precision, and the kind of care this work demands. Today that starts with the founder, who personally answers support and reviews every verification.
               </p>
             </RevealSection>
 
@@ -301,7 +300,7 @@ const AboutPage = () => {
               {[
                 {
                   title: 'Customer Service Team (CST)',
-                  desc: '24/7 platform support',
+                  desc: 'Human support from the founder, in-app',
                 },
                 {
                   title: 'Transition Verification Team (TVT)',
@@ -333,7 +332,7 @@ const AboutPage = () => {
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white italic mb-8" style={{ fontFamily: 'Outfit, sans-serif' }}>
               Your Family Deserves to Be Ready.
             </h2>
-            <a href="/signup" className="inline-flex items-center gap-2 px-8 py-3.5 rounded-lg font-semibold text-sm transition-all hover:brightness-110 hover:scale-105 active:scale-95"
+            <a href="/start" className="inline-flex items-center gap-2 px-8 py-3.5 rounded-lg font-semibold text-sm transition-all hover:brightness-110 hover:scale-105 active:scale-95"
               style={{ background: '#d4af37', color: '#0B1221', transition: 'all 0.3s' }}>
               Get Started <ChevronRight className="w-4 h-4" />
             </a>

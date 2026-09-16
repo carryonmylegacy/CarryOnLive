@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Helmet } from 'react-helmet-async';
 import axios from 'axios';
 import { ChevronRight } from 'lucide-react';
 import { API_URL } from '../config';
@@ -68,9 +67,9 @@ const HomePage = () => {
       ...(exiting ? { transform: 'scale(0.98)' } : {}),
       transition: 'opacity 0.45s ease, transform 0.45s ease',
     }}>
-      <Helmet>
+      <>
         <title>CarryOn - Get Your Family&apos;s Affairs in Order, In One Secure Place</title>
-        <meta name="description" content="CarryOn is one secure place for your documents, passwords, who to call first, and what to do next — so your family can handle what comes next. AES-256 encrypted. Built by a 24-year veteran." />
+        <meta name="description" content="CarryOn is one secure place for your documents, passwords, who to call first, and what to do next — so your family can handle what comes next. Scrambled before it's stored, with a separate lock for every family. Built by a 24-year veteran." />
         <link rel="canonical" href="https://carryon.us/" />
         <meta property="og:type" content="website" />
         <meta property="og:title" content="CarryOn - Get your family's affairs in order, in one secure place" />
@@ -80,7 +79,7 @@ const HomePage = () => {
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="CarryOn - Get your family's affairs in order" />
         <meta name="twitter:description" content="One secure place for your documents, passwords, who to call first, and what to do next." />
-      </Helmet>
+      </>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify([
         {
           "@context": "https://schema.org",
@@ -99,7 +98,7 @@ const HomePage = () => {
             "offerCount": 7
           },
           "featureList": [
-            "Encrypted document vault for wills, trusts, policies, and deeds (Secure Document Vault, AES-256)",
+            "Encrypted document vault for wills, trusts, policies, and deeds (Secure Document Vault)",
             "AI review that finds gaps and contradictions in your paperwork, tuned to your state (Estate Guardian AI)",
             "Messages for the moments you'll miss — written, voice, or video (Milestone Messages)",
             "Who to call first, with a ranked backup for every person",

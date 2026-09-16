@@ -49,6 +49,8 @@ import { DownloadDiagnosticsTab } from '../components/admin/DownloadDiagnosticsT
 import { ProductAnalyticsTab } from '../components/admin/ProductAnalyticsTab';
 import { AdminReferralsTab } from '../components/admin/AdminReferralsTab';
 import { FunnelAnalyticsTab } from '../components/admin/FunnelAnalyticsTab';
+import { QuizAnalyticsTab } from '../components/admin/QuizAnalyticsTab';
+import { TestimonialsTab } from '../components/admin/TestimonialsTab';
 import { BetaTestingTab } from '../components/admin/BetaTestingTab';
 import { FounderEmailsTab } from '../components/admin/FounderEmailsTab';
 import { FounderInvitesTab } from '../components/admin/FounderInvitesTab';
@@ -335,6 +337,8 @@ const AdminPage = ({ operatorMode = false }) => {
       case 'product-analytics': return <ProductAnalyticsTab />;
       case 'referrals': return <AdminReferralsTab />;
       case 'funnel': return <FunnelAnalyticsTab getAuthHeaders={getAuthHeaders} />;
+      case 'quiz': return <QuizAnalyticsTab getAuthHeaders={getAuthHeaders} />;
+      case 'testimonials': return <TestimonialsTab getAuthHeaders={getAuthHeaders} />;
       case 'beta-testing': return <BetaTestingTab getAuthHeaders={getAuthHeaders} />;
       case 'founder-emails': return <FounderEmailsTab getAuthHeaders={getAuthHeaders} />;
       case 'founder-invites': return <FounderInvitesTab onPendingChange={setPendingAccessReqs} />;

@@ -93,7 +93,7 @@ check "GET  /api/subscriptions/plans" "200" \
 
 check "POST /api/subscriptions/checkout" "200" \
   -X POST "${API_URL}/api/subscriptions/checkout" -H "${AUTH_HDR}" -H "Content-Type: application/json" \
-  -d '{"plan_id":"premium","billing_cycle":"monthly","origin_url":"https://example.com"}'
+  -d "{\"plan_id\":\"premium\",\"billing_cycle\":\"monthly\",\"origin_url\":\"${API_URL}\"}"
 
 check "POST /api/auth/forgot-password" "200" \
   -X POST "${API_URL}/api/auth/forgot-password" -H "Content-Type: application/json" \

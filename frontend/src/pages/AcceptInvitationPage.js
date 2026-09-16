@@ -243,7 +243,7 @@ const AcceptInvitationPage = () => {
                 </Button>
 
                 <p className="text-[11px] text-center text-[#525c72] leading-relaxed">
-                  Your privacy is our priority. All data is AES-256 encrypted with keys unique to each estate. 
+                  Your privacy is our priority. Files are scrambled before they&rsquo;re stored, with a separate lock for every family. 
                   We will never share your information.
                 </p>
               </div>
@@ -265,11 +265,10 @@ const AcceptInvitationPage = () => {
               </h2>
               <p className="text-[#94a3b8] leading-relaxed mb-8">
                 Your password is hashed with bcrypt and never stored in plain text. 
-                A one-time email code at sign-in, on by default for every account (SMS where enabled), with an option to skip it for the rest of the day on a trusted connection; passkeys supported. Your documents are encrypted with AES-256 — 
-                the same standard used by banks and governments.
+                A one-time email code at sign-in, on by default for every account (SMS where enabled), with an option to skip it for the rest of the day on a trusted connection; passkeys supported. Your documents are scrambled before they&rsquo;re stored, with a separate lock for every family, and every time a file is opened we write down who did it and when.
               </p>
               <div className="space-y-3">
-                {['AES-256 encryption', 'Per-estate keys', 'Preparing for SOC 2 Type II', 'One-time email code at sign-in, on by default'].map((t, i) => (
+                {['Scrambled before it\u2019s stored', 'A separate lock for every family', 'Preparing for SOC 2 Type II', 'One-time email code at sign-in, on by default'].map((t, i) => (
                   <div key={i} className="flex items-center gap-3">
                     <CheckCircle className="w-4 h-4 text-[#10b981]" />
                     <span className="text-sm text-[#94a3b8]">{t}</span>
@@ -450,7 +449,7 @@ const AcceptInvitationPage = () => {
 
                 <div className="flex items-center gap-2 justify-center mt-4">
                   <Shield className="w-3 h-3 text-[#10b981]" />
-                  <p className="text-[11px] text-[#525c72]">AES-256 encrypted | Per-estate keys | 2FA Protected</p>
+                  <p className="text-[11px] text-[#525c72]">Scrambled before it&rsquo;s stored | A separate lock for every family | Two-step sign-in</p>
                 </div>
               </div>
             </div>
