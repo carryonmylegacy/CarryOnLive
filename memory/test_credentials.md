@@ -20,3 +20,7 @@
 - Password: Demo1234!!!
 - Role: benefactor (also beneficiary), direct login (no OTP)
 - Note: LIVE production account on https://www.carryon.us (API: carryon-api-kacr.onrender.com). Not present in the preview DB.
+
+## Email testing rule (Resend is LIVE)
+- Quiz result emails (`POST /api/quiz/results/{id}/email`) and any other outbound email tests: send ONLY to info@carryon.us, once per flow.
+- Test domains (@test.com, @example.com, …) are blocked by `services/email.py` and return 400 — useful for negative tests.
