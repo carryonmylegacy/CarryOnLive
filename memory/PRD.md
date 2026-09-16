@@ -11,7 +11,14 @@ Build and maintain a comprehensive family preparedness platform that helps users
 
 ## What's Been Implemented
 
+### Completed (Sep 16, 2026 — Mobile Screenshots + Readiness Quiz)
+- **Phone screenshots**: `ProductPreview` now renders a phone frame (< md) with real iPhone-14-viewport screenshots `/screenshots/m-{dashboard,vault,contacts,checklist}.webp` (780×1328) and the desktop browser frame (≥ md) with the 1440px shots. Capture script supports `SHOT_MODE=mobile`; hides `onboarding-wizard`, `push-notification-prompt`, `lock-banner-*` by test ID and injects the checklist mobile CSS fix so shots match the shipped UI
+- **Readiness Quiz** (`components/landing/ReadinessQuiz.js`, section `#quiz`, placed after the problem section on `/` and `/login`): 8 questions × (Yes 2 / Partly 1 / No 0) → 0–100 score ring, 3 tiers (≥75 / ≥40 / <40), top-3 "Fix these first" from weakest answers, CTA → `/start?utm_source=readiness_quiz&utm_medium=homepage&utm_content=score_NN` (+ sessionStorage `carryon_quiz_score`), Retake. "Readiness Quiz" nav link added to both pages
+- **App fix**: Immediate Action Checklist item cards wrap badge/actions under the title on phones (`ChecklistPage.renderItemCard`) — was squeezing titles into a 1-word column
+- Tested: iteration_62 all PASS; housekeeping 65/65 PASS
+
 ### Completed (Sep 16, 2026 — heycatch.ai Positioning Audit Fixes, 16/25 → target 22+)
+
 - **D1.1**: New hero H1 "Get your family's affairs in order — in one secure place." with "Every American Family. Ready." demoted to a gold eyebrow (shared via `components/landing/heroCopy.js`, used by HomePage + LoginPage desktop/mobile heroes)
 - **D1.1**: Root `/` now renders marketing HomePage for new web visitors (`RootRoute` in App.js); native/PWA/returning users (localStorage `carryon_token`) still go to `/login`. `/login` unchanged functionally; canonical moved to `/login`
 - **D1.5**: "See inside CarryOn" product preview (`components/landing/ProductPreview.js`, `#preview`) now shows REAL screenshots captured from the live production account `petemitchell` (demo estate) — `/public/screenshots/{dashboard,vault,contacts,checklist}.webp` (2160×1350). Recapture anytime: `SHOT_USER=petemitchell SHOT_PASS=... /opt/plugins-venv/bin/python /app/scripts/capture_product_screenshots.py` (hides per-account nudges like "Section Unlocked"/notification popup before shooting). "See How It Works" CTA scrolls to it
