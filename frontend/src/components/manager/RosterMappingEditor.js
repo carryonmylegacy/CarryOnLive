@@ -54,7 +54,7 @@ export const RosterMappingEditor = ({ plan, busy, onRemap }) => {
           {plan.row_count} data row{plan.row_count === 1 ? '' : 's'} in <span className="text-[var(--t3)]">{plan.filename}</span>{plan.sheet_name ? <> (sheet “{plan.sheet_name}”)</> : null}.
           Use First + Last name, or a single Full name column.
         </p>
-        <Button size="sm" className="gold-button text-xs" disabled={!dirty || !complete || busy === 'remap'} onClick={() => onRemap(draft)} data-testid="roster-remap-btn">
+        <Button type="button" size="sm" className="gold-button text-xs" disabled={!dirty || !complete || busy === 'remap'} onClick={() => onRemap(draft)} data-testid="roster-remap-btn">
           {busy === 'remap' ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Apply columns'}
         </Button>
       </div>

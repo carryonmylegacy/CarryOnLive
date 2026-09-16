@@ -38,7 +38,7 @@ export const RosterImportProgress = ({ job, onReset }) => {
       <div className="rounded-xl p-4 mb-4" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.35)' }} data-testid="roster-import-failed">
         <div className="flex items-center gap-2 text-sm font-bold text-[#f87171] mb-1"><AlertTriangle className="w-4 h-4" /> The import stopped early</div>
         <p className="text-sm text-[var(--t3)]">{job.error || 'Something went wrong.'} Anything already added is safe — upload the same file again and we&apos;ll skip everyone who is already a client.</p>
-        <Button size="sm" variant="outline" className="text-xs border-[var(--b)] mt-3" onClick={onReset} data-testid="roster-import-another">
+        <Button type="button" size="sm" variant="outline" className="text-xs border-[var(--b)] mt-3" onClick={onReset} data-testid="roster-import-another">
           <RotateCcw className="w-3 h-3 mr-1" /> Try again
         </Button>
       </div>
@@ -70,7 +70,7 @@ export const RosterImportProgress = ({ job, onReset }) => {
         )}
         {job.invites_status === 'done' && <span>{p.invites_total || 0} invitation{p.invites_total === 1 ? '' : 's'} sent. Each client will pick their own username and password from the link.</span>}
       </div>
-      <Button size="sm" variant="outline" className="text-xs border-[var(--b)] mt-3" onClick={onReset} data-testid="roster-import-another">
+      <Button type="button" size="sm" variant="outline" className="text-xs border-[var(--b)] mt-3" onClick={onReset} data-testid="roster-import-another">
         <RotateCcw className="w-3 h-3 mr-1" /> Import another file
       </Button>
     </div>

@@ -23,6 +23,11 @@ Token is returned as `access_token`; frontend stores it in `localStorage.carryon
 - Preview DB mirrors LIVE config via `python backend/scripts/mirror_live_config.py` (beta_mode=false, family discounts 30%/50%, live prices + feature gates). Run with `--check` for a drift report.
 - OTP: check `platform_settings.otp_disabled`; when OTP is on, codes are logged to `/var/log/supervisor/backend.out.log`.
 
+## B2B test partner fixture (preview only)
+- Partner: Harbor Wealth Advisors · id 4cdb22b9-b4c0-477d-9cc7-cf48c6a98fcb · slug harbor-test · code HARBOR-TEST · max_uses 6
+- Partner manager login (Partner Portal at /partner → POST /api/manager/login {username,password}): harbor_mgr / HarborTest!2026b
+- Roster import endpoints: /api/manager/roster/{analyze,remap,commit,imports,imports/{id}} and /api/admin/partners/{id}/roster/… — always use send_invites:false and @harbor-qa.org emails; purge test clients afterwards (see /app/memory/scratch/purge_test_roster.py).
+
 ## Email testing rule (Resend is LIVE)
 - Outbound email tests: send ONLY to info@carryon.us, once per flow.
 - Test/throwaway domains (@test.com, @example.com, …) are rejected by `services/email.py::is_valid_email` (400) — useful for negative tests.

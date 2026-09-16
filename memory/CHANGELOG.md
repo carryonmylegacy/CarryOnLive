@@ -1,6 +1,19 @@
 # CarryOn — Changelog
 
 
+## Sep 16, 2026 (later) — Partner roster import (spreadsheet → plan → background job) + partner-login root cause (iteration_201/202) — VERIFIED, NOT PUSHED
+
+**Root cause of "partner can't log in / accounts deactivated"**: the frontend published on app.carryon.us is the marketing-branch build, which has no `/partner` route — the catch-all sends `/partner` to `/login`, so partner-manager credentials hit the family login and fail. Backend (Render) still has `/api/manager/login`; nothing deactivates partners and there is no signup minimum. Fixed by publishing the reconciled build (restores `/partner`).
+
+**New: Import roster** (Partner Portal → "Import Roster"; Admin → Finance → Partners → "Import roster" per partner):
+- `services/roster_import.py` — parse .csv/.xlsx (openpyxl; skips title/banner rows; picks the busiest sheet; 2,000 rows / 5 MB), column mapping = remembered layout (order-independent header fingerprint on `b2b_partners.roster_layouts`) → deterministic header/value detection (email ratio ≥ 60 %, spouse/alt de-prioritised, "Last, First" split) → xAI light-model suggestion on **masked** samples (validated against the data) → manual dropdowns. Reconciliation by lowercased **email**: `add` / `update_name` (unclaimed portals only) / skip with reasons (`already_client`, `existing_account`, `duplicate_in_file`, `needs_email`, `invalid_email`, `needs_name`, `no_seat`) + `not_in_upload` (never touched).
+- `routes/roster_import.py` — `POST …/roster/analyze` (multipart), `/remap`, `/commit` (atomic upload consumption → 409 on double click; returns a **background job**), `GET …/roster/imports` (history, counts only), `GET …/roster/imports/{id}` (live progress). Adds go through `provision_client_portal` (same seats, trustee grant, audit); invites "send now" are paced 0.6 s (Resend-safe) with their own progress; "hold" leaves clients Awaiting claim. 300 rows ≈ 60 s, analyze 1.3 s.
+- Frontend: `hooks/useRosterImport.js` (poll 1.2 s, stall notice at 90 s, **resumes** a running job after remount/refresh via localStorage), `components/manager/RosterImportPanel.js`, `RosterMappingEditor.js`, `RosterPreviewTable.js`, `RosterImportProgress.js`; `components/admin/RosterImportModal.js`; Partner Portal gains a **"Not yet invited (N)"** roster filter for the post-import workflow (enter portal → upload docs → Send Invite).
+- Housekeeping: `roster_uploads` (24 h TTL, `db_indexes.py`) + `roster_imports` registered in the erasure manifest (NO_PII — history keeps no emails); route policies added; `openpyxl`/`et_xmlfile` pinned. Test fixture partner **Harbor Wealth Advisors** (`harbor-test`, manager `harbor_mgr`) kept in the preview DB; all test clients purged.
+- Tests: iteration_201 (sync commit) 22/22; iteration_202 (async job) backend 16/16 + full Partner-Portal UI flow; the one reported admin-modal glitch could not be reproduced (progress + result render; verified twice) and is additionally covered by the resume logic. check.sh ALL CLEAR.
+
+
+
 ## Sep 16, 2026 — RECONCILIATION COMPLETE: Job L (live) base + Job F marketing merged, plain-English claims, live-config mirror (iteration_200) — VERIFIED, NOT PUSHED
 
 Branch `reconcile` (merge commit 70bc0420 + follow-ups). Backend/frontend deps reinstalled; housekeeping `--strict` 0 WARN / 0 FAIL; `scripts/check.sh` green; testing agent iteration_200 backend 19/19, frontend all public pages + admin + benefactor smoke pass.

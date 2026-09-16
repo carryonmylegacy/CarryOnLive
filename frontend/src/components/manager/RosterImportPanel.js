@@ -57,7 +57,7 @@ export const RosterImportPanel = ({ api, headers, onImported, title = 'Import yo
         <h3 className="text-sm font-bold text-[var(--t)] flex items-center gap-2">
           <FileSpreadsheet className="w-4 h-4 text-[var(--gold)]" /> {title}
         </h3>
-        <button onClick={downloadTemplate} className="inline-flex items-center gap-1 text-[11px] font-bold text-[var(--gold)] hover:text-[var(--t)]" data-testid="roster-template-btn">
+        <button type="button" onClick={downloadTemplate} className="inline-flex items-center gap-1 text-[11px] font-bold text-[var(--gold)] hover:text-[var(--t)]" data-testid="roster-template-btn">
           <Download className="w-3 h-3" /> Blank template (.csv)
         </button>
       </div>
@@ -105,7 +105,7 @@ export const RosterImportPanel = ({ api, headers, onImported, title = 'Import yo
                     { v: false, icon: Clock, label: 'Hold — I’ll send them myself', sub: 'Portals are created now; use Send Invite on each client when their documents are ready.' },
                     { v: true, icon: Send, label: 'Send now', sub: 'Each new client gets the branded claim email right away.' },
                   ].map(o => (
-                    <button key={String(o.v)} onClick={() => s.setSendInvites(o.v)}
+                    <button type="button" key={String(o.v)} onClick={() => s.setSendInvites(o.v)}
                       className="flex-1 text-left rounded-lg p-3 transition-colors"
                       style={s.sendInvites === o.v
                         ? { border: '1px solid var(--gold)', background: 'rgba(var(--gold-rgb),0.10)' }
@@ -121,12 +121,12 @@ export const RosterImportPanel = ({ api, headers, onImported, title = 'Import yo
             </>
           )}
           <div className="flex items-center gap-2 flex-wrap">
-            <Button className="gold-button" disabled={!canCommit || s.busy === 'commit'} onClick={s.commit} data-testid="roster-commit-btn">
+            <Button type="button" className="gold-button" disabled={!canCommit || s.busy === 'commit'} onClick={s.commit} data-testid="roster-commit-btn">
               {s.busy === 'commit' ? <Loader2 className="w-4 h-4 animate-spin" /> : (
                 <>Add {s.plan.summary?.add || 0} client{s.plan.summary?.add === 1 ? '' : 's'}{s.plan.summary?.update_name ? ` · rename ${s.plan.summary.update_name}` : ''}</>
               )}
             </Button>
-            <Button variant="outline" className="border-[var(--b)]" onClick={s.reset} data-testid="roster-cancel-btn">Choose a different file</Button>
+            <Button type="button" variant="outline" className="border-[var(--b)]" onClick={s.reset} data-testid="roster-cancel-btn">Choose a different file</Button>
           </div>
         </>
       )}

@@ -10,6 +10,7 @@ import { toast } from '../utils/toast';
 
 const POLL_MS = 1200;
 const STALL_MS = 90_000;
+const RESUME_WINDOW_MS = 15 * 60_000;
 
 export const useRosterImport = ({ api, headers, onImported }) => {
   const [plan, setPlan] = useState(null);
@@ -19,6 +20,8 @@ export const useRosterImport = ({ api, headers, onImported }) => {
   const [sendInvites, setSendInvites] = useState(false);
   const pollRef = useRef(null);
   const importedRef = useRef(false);
+  // Survives a remount / page refresh mid-import so the outcome is never lost.
+  const storageKey = `carryon_roster_job:${api.imports}`;
 
   const loadHistory = useCallback(async () => {
     try {
@@ -63,10 +66,16 @@ export const useRosterImport = ({ api, headers, onImported }) => {
   const poll = useCallback(async (importId) => {
     try {
       const { data } = await apiClient.get(`${api.imports}/${importId}`, { headers: headers() });
-      const stalled = data.status === 'running' && Date.now() - new Date(data.updated_at).getTime() > STALL_MS;
+      const ageMs = Date.now() - new Date(data.updated_at).getTime();
+      if (data.status !== 'running' && ageMs > RESUME_WINDOW_MS) {
+        localStorage.removeItem(storageKey);
+        return;
+      }
+      const stalled = data.status === 'running' && ageMs > STALL_MS;
       setJob({ ...data, stalled });
-      if (data.status === 'done' && !importedRef.current) {
+      if (data.status === 'done' && !importedRef.current && localStorage.getItem(`${storageKey}:announced`) !== importId) {
         importedRef.current = true;
+        localStorage.setItem(`${storageKey}:announced`, importId);
         toast.success(`${data.summary.added} client${data.summary.added === 1 ? '' : 's'} added${data.summary.renamed ? `, ${data.summary.renamed} renamed` : ''}`);
         loadHistory();
         onImported?.(data);
@@ -74,13 +83,20 @@ export const useRosterImport = ({ api, headers, onImported }) => {
       const invitesPending = data.status === 'done' && data.invites_status === 'sending';
       if (data.status === 'running' || invitesPending) {
         pollRef.current = setTimeout(() => poll(importId), POLL_MS);
-      } else if (data.status === 'failed') {
+      } else if (data.status === 'failed' && localStorage.getItem(`${storageKey}:announced`) !== importId) {
+        localStorage.setItem(`${storageKey}:announced`, importId);
         toast.error(data.error || 'Import failed');
       }
-    } catch {
+    } catch (err) {
+      if (err.response?.status === 404) { localStorage.removeItem(storageKey); setJob(null); return; }
       pollRef.current = setTimeout(() => poll(importId), POLL_MS * 2);
     }
   }, [api.imports, loadHistory, onImported]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    const resumeId = localStorage.getItem(storageKey);
+    if (resumeId) poll(resumeId);
+  }, [storageKey, poll]);
 
   const commit = async () => {
     if (!plan) return;
@@ -89,6 +105,7 @@ export const useRosterImport = ({ api, headers, onImported }) => {
     try {
       const { data } = await apiClient.post(api.commit, { upload_id: plan.upload_id, send_invites: sendInvites }, { headers: { ...headers(), 'Content-Type': 'application/json' } });
       setPlan(null);
+      localStorage.setItem(storageKey, data.import_id);
       setJob({ id: data.import_id, status: 'running', progress: { total: data.total, done: 0, added: 0, renamed: 0, failed: 0 }, updated_at: new Date().toISOString() });
       poll(data.import_id);
     } catch (err) {
@@ -98,7 +115,13 @@ export const useRosterImport = ({ api, headers, onImported }) => {
     }
   };
 
-  const reset = () => { clearTimeout(pollRef.current); setPlan(null); setJob(null); };
+  const reset = () => {
+    clearTimeout(pollRef.current);
+    localStorage.removeItem(storageKey);
+    localStorage.removeItem(`${storageKey}:announced`);
+    setPlan(null);
+    setJob(null);
+  };
 
   return { plan, job, history, busy, sendInvites, setSendInvites, analyze, remap, commit, reset };
 };
