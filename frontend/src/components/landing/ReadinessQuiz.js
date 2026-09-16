@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
-import { ChevronRight, ChevronLeft, RotateCcw, Timer, Wrench } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { ChevronRight, ChevronLeft, RotateCcw, Timer, Wrench, Mail, Loader2, CheckCircle2 } from 'lucide-react';
+import { API_URL } from '../../config';
 import { RevealSection } from './RevealSection';
 
 const QUESTIONS = [
@@ -83,7 +85,50 @@ const Question = ({ index, answer, onAnswer, onBack }) => (
   </div>
 );
 
-const Result = ({ answers, onRetake, onStart }) => {
+const EmailCapture = ({ resultId }) => {
+  const [email, setEmail] = useState('');
+  const [status, setStatus] = useState('idle');
+  const [error, setError] = useState('');
+  const submit = async (e) => {
+    e.preventDefault();
+    if (!resultId) { setError('Please wait a moment and try again.'); return; }
+    setStatus('sending'); setError('');
+    try {
+      await axios.post(`${API_URL}/quiz/results/${resultId}/email`, { email });
+      setStatus('sent');
+    } catch (err) {
+      setStatus('idle');
+      setError(err.response?.data?.detail || 'Something went wrong. Please try again.');
+    }
+  };
+  if (status === 'sent') {
+    return (
+      <p className="flex items-center justify-center gap-2 text-[#10b981] text-sm font-medium" data-testid="quiz-email-sent">
+        <CheckCircle2 className="w-4 h-4" /> Sent to {email}. Check your inbox.
+      </p>
+    );
+  }
+  return (
+    <form onSubmit={submit} className="text-left" data-testid="quiz-email-form">
+      <p className="text-white text-sm font-semibold mb-1 flex items-center gap-2"><Mail className="w-4 h-4 text-[#d4af37]" /> Want this in your inbox?</p>
+      <p className="text-[#8b97ab] text-xs mb-3">We&apos;ll email your score and the fixes above so you can come back to them.</p>
+      <div className="flex flex-col sm:flex-row gap-2">
+        <input type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" data-testid="quiz-email-input"
+          className="flex-1 h-11 px-4 rounded-lg text-base text-white placeholder:text-[#4a5568] focus:outline-none focus:border-[#d4af37]"
+          style={{ background: 'rgba(11,19,34,0.8)', border: '1px solid rgba(255,255,255,0.12)' }} />
+        <button type="submit" disabled={status === 'sending'} data-testid="quiz-email-submit"
+          className="h-11 px-5 rounded-lg text-sm font-bold inline-flex items-center justify-center gap-2 transition-transform active:scale-95 disabled:opacity-60"
+          style={{ background: 'rgba(212,175,55,0.16)', border: '1px solid rgba(212,175,55,0.5)', color: '#fcd34d' }}>
+          {status === 'sending' ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Send it'}
+        </button>
+      </div>
+      {error && <p className="text-[#f87171] text-xs mt-2" data-testid="quiz-email-error">{error}</p>}
+      <p className="text-[#6b7a90] text-[11px] mt-2">One email with your results, plus occasional CarryOn updates. Unsubscribe anytime.</p>
+    </form>
+  );
+};
+
+const Result = ({ answers, resultId, onRetake, onStart }) => {
   const score = Math.round((answers.reduce((a, b) => a + b, 0) / (QUESTIONS.length * 2)) * 100);
   const tier = tierFor(score);
   const fixes = answers.map((v, i) => ({ v, i })).filter(x => x.v < 2).sort((a, b) => a.v - b.v).slice(0, 3).map(x => QUESTIONS[x.i].fix);
@@ -105,6 +150,9 @@ const Result = ({ answers, onRetake, onStart }) => {
           </ol>
         </div>
       )}
+      <div className="rounded-xl p-5 mb-8" style={{ background: 'rgba(11,19,34,0.5)', border: '1px solid rgba(255,255,255,0.08)' }}>
+        <EmailCapture resultId={resultId} />
+      </div>
       <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
         <button onClick={() => onStart(score)} className="inline-flex items-center gap-2 px-8 py-3.5 rounded-lg font-bold text-base transition-transform duration-150 active:scale-95" style={{ background: '#d4af37', color: '#0B1221' }} data-testid="quiz-start-carryon-btn">
           {fixes.length > 0 ? 'Fix these now' : 'Put it all in one place'} <ChevronRight className="w-4 h-4" />
@@ -120,12 +168,21 @@ export const ReadinessQuiz = ({ navigateWithFade, testIdSuffix = '' }) => {
   const [stage, setStage] = useState('intro');
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState([]);
+  const [resultId, setResultId] = useState(null);
+
+  useEffect(() => {
+    if (stage !== 'result') return;
+    const utm = JSON.parse(sessionStorage.getItem('carryon_utm') || '{}');
+    axios.post(`${API_URL}/quiz/results`, { answers, utm, page: window.location.pathname })
+      .then(r => setResultId(r.data.id))
+      .catch(() => {});
+  }, [stage]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const answer = (value) => {
     const next = [...answers]; next[index] = value; setAnswers(next);
     setTimeout(() => (index + 1 < QUESTIONS.length ? setIndex(index + 1) : setStage('result')), 220);
   };
-  const retake = () => { setAnswers([]); setIndex(0); setStage('intro'); };
+  const retake = () => { setAnswers([]); setIndex(0); setResultId(null); setStage('intro'); };
   const start = (score) => {
     sessionStorage.setItem('carryon_quiz_score', String(score));
     navigateWithFade(`/start?utm_source=readiness_quiz&utm_medium=homepage&utm_content=score_${score}`);
@@ -146,7 +203,7 @@ export const ReadinessQuiz = ({ navigateWithFade, testIdSuffix = '' }) => {
             <div className="rounded-2xl p-6 sm:p-8 lg:p-10" style={{ background: 'linear-gradient(160deg, #1a2d4d 0%, #16284a 50%, #142240 100%)', border: '1px solid rgba(212,175,55,0.25)', boxShadow: '0 20px 60px rgba(0,0,0,0.4)' }}>
               {stage === 'intro' && <Intro onStart={() => setStage('quiz')} />}
               {stage === 'quiz' && <Question index={index} answer={answers[index]} onAnswer={answer} onBack={() => setIndex(index - 1)} />}
-              {stage === 'result' && <Result answers={answers} onRetake={retake} onStart={start} />}
+              {stage === 'result' && <Result answers={answers} resultId={resultId} onRetake={retake} onStart={start} />}
             </div>
           </RevealSection>
         </div>
