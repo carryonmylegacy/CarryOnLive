@@ -45,6 +45,14 @@ const PUBLIC_ROUTES = [
   '/partner-brief',
   '/quickstart/try',
   '/partner',
+  '/start',
+  '/pricing',
+  '/customers',
+  '/changelog',
+  '/vs',
+  '/vs/trustworthy',
+  '/vs/everplans',
+  '/vs/resolve-legacy',
 ];
 
 const MIME = {

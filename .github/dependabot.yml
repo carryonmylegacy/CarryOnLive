@@ -18,6 +18,15 @@ updates:
         applies-to: security-updates
         patterns:
           - "*"
+      # Routine minor/patch bumps arrive as ONE weekly PR instead of one per package.
+      # Majors stay separate so they get their own review.
+      minor-and-patch:
+        applies-to: version-updates
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
 
   - package-ecosystem: "npm"
     directory: "/frontend"
@@ -42,6 +51,16 @@ updates:
       radix-ui:
         patterns:
           - "@radix-ui/*"
+      # Everything else minor/patch in one weekly PR; majors separate.
+      minor-and-patch:
+        applies-to: version-updates
+        patterns:
+          - "*"
+        exclude-patterns:
+          - "@radix-ui/*"
+        update-types:
+          - "minor"
+          - "patch"
 
   - package-ecosystem: "github-actions"
     directory: "/"
@@ -50,3 +69,7 @@ updates:
     labels:
       - "dependencies"
       - "ci"
+    groups:
+      actions:
+        patterns:
+          - "*"

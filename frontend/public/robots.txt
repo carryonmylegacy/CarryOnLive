@@ -1,5 +1,5 @@
 # CarryOn — robots.txt
-# Updated Apr 29, 2026
+# Updated Sep 16, 2026
 
 User-agent: *
 Allow: /
@@ -8,6 +8,8 @@ Disallow: /admin/
 Disallow: /ops
 Disallow: /ops/
 Disallow: /api/
+Disallow: /partner/portal
+Disallow: /manager
 Disallow: /beneficiary
 Disallow: /beneficiary/
 Disallow: /onboarding

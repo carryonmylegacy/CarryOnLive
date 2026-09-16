@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { SEO } from '../components/SEO';
 import { ChevronRight, ChevronLeft, Linkedin } from 'lucide-react';
 import axios from 'axios';
 import { API_URL } from '../config';
@@ -50,14 +51,7 @@ const AboutPage = () => {
 
   return (
     <div className="min-h-screen" style={{ background: '#0d1b2a' }}>
-      <>
-        <title>About CarryOn - Family Preparedness Mission & Team</title>
-        <meta name="description" content="Why CarryOn exists: to make family readiness accessible to every American family, not just the wealthy. Founded by a 24-year military veteran." />
-        <link rel="canonical" href="https://carryon.us/about" />
-        <meta property="og:title" content="About CarryOn - Family Preparedness Mission & Team" />
-        <meta property="og:description" content="Why CarryOn exists: to make family readiness accessible to every American family, not just the wealthy." />
-        <meta property="og:url" content="https://carryon.us/about" />
-      </>
+      <SEO title="About CarryOn - Family Preparedness Mission & Team" description="Why CarryOn exists: to make family readiness accessible to every American family, not just the wealthy. Founded by a 24-year military veteran." path="/about" />
       {founder.name && (
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
           "@context": "https://schema.org",

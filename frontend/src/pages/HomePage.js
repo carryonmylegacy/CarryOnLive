@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { SEO } from '../components/SEO';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { ChevronRight } from 'lucide-react';
@@ -67,19 +68,7 @@ const HomePage = () => {
       ...(exiting ? { transform: 'scale(0.98)' } : {}),
       transition: 'opacity 0.45s ease, transform 0.45s ease',
     }}>
-      <>
-        <title>CarryOn - Get Your Family&apos;s Affairs in Order, In One Secure Place</title>
-        <meta name="description" content="CarryOn is one secure place for your documents, passwords, who to call first, and what to do next — so your family can handle what comes next. Scrambled before it's stored, with a separate lock for every family. Built by a 24-year veteran." />
-        <link rel="canonical" href="https://carryon.us/" />
-        <meta property="og:type" content="website" />
-        <meta property="og:title" content="CarryOn - Get your family's affairs in order, in one secure place" />
-        <meta property="og:description" content="So your family knows where everything lives, who to call first, and what to do next — if something happens to you." />
-        <meta property="og:url" content="https://carryon.us" />
-        <meta property="og:site_name" content="CarryOn" />
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="CarryOn - Get your family's affairs in order" />
-        <meta name="twitter:description" content="One secure place for your documents, passwords, who to call first, and what to do next." />
-      </>
+      <SEO title="CarryOn - Get Your Family’s Affairs in Order, In One Secure Place" description="One secure place for your documents, passwords, who to call first, and what to do next — so your family can handle what comes next. Scrambled before it’s stored, with a separate lock for every family. Built by a 24-year veteran." path="/" />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify([
         {
           "@context": "https://schema.org",
@@ -152,7 +141,7 @@ const HomePage = () => {
       <nav className="fixed top-0 w-full z-[100]" style={{ borderBottom: '1px solid rgba(14,165,233,0.06)', background: 'rgba(11,18,33,0.97)', paddingTop: 'env(safe-area-inset-top, 0px)' }}>
         <div className="max-w-[1400px] mx-auto px-6 lg:px-10 h-16 flex items-center justify-between">
           <img src="/carryon-logo.png" alt="CarryOn" className="h-12 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} data-testid="home-logo" />
-          <div className="hidden md:flex items-center gap-8">
+          <div className="hidden lg:flex items-center gap-7">
             {MARKETING_LINKS.map(item => (
               <a key={item.label} href={item.href} className="text-[#6b7a90] text-sm font-medium hover:text-[#d4af37] transition-colors duration-300">{item.label}</a>
             ))}

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { SEO } from '../components/SEO';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
@@ -146,19 +147,7 @@ const StartPage = () => {
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg)' }} data-testid="start-page">
-      <>
-        <title>Get Started with CarryOn - Family Preparedness Platform</title>
-        <meta name="description" content="Choose how to begin protecting your family with CarryOn. Start with a paid subscription or explore the platform free for 30 days. Secure documents, estate plans, and milestone messages." />
-        <link rel="canonical" href="https://carryon.us/start" />
-        <meta property="og:type" content="website" />
-        <meta property="og:title" content="Get Started with CarryOn - Protect What Matters Most" />
-        <meta property="og:description" content="Choose your plan or explore free. CarryOn helps families organize estate plans, secure documents, and prepare for life's transitions." />
-        <meta property="og:url" content="https://carryon.us/start" />
-        <meta property="og:site_name" content="CarryOn" />
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Get Started with CarryOn - Family Preparedness" />
-        <meta name="twitter:description" content="Start today with a paid plan or explore free. Secure your family's future in one platform." />
-      </>
+      <SEO title="Get Started with CarryOn - Family Preparedness Platform" description={`Choose how to begin: pick a plan, or explore CarryOn first for ${trialDays} days with no card. One secure place for documents, passwords, who to call first and what to do next.`} path="/start" />
       {startPageJsonLd && (
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: startPageJsonLd }} />
       )}

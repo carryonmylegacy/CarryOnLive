@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { SEO } from '../components/SEO';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
@@ -145,19 +146,7 @@ const PricingPage = () => {
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg)' }} data-testid="pricing-page">
-      <>
-        <title>Pricing - CarryOn | One Plan for You, Invited Family Pays Nothing</title>
-        <meta name="description" content={`One plan for you, from $${lowestPrice} to $${highestPrice} per month. The people you invite pay nothing while you're alive. Explore first for ${trialDays} days with no card. Reduced pricing for seniors, military, veterans, and young adults; free for hospice families.`} />
-        <link rel="canonical" href="https://carryon.us/pricing" />
-        <meta property="og:type" content="website" />
-        <meta property="og:title" content="CarryOn Pricing - One plan for you. Invited family pays nothing." />
-        <meta property="og:description" content="Base, Standard, or Premium. Explore first with no card. Reduced pricing if you qualify. Cancel anytime." />
-        <meta property="og:url" content="https://carryon.us/pricing" />
-        <meta property="og:site_name" content="CarryOn" />
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="CarryOn Pricing" />
-        <meta name="twitter:description" content={`Plans from $${lowestPrice}/mo. The people you invite pay nothing while you're alive.`} />
-      </>
+      <SEO title="Pricing - CarryOn | One Plan for You, Invited Family Pays Nothing" description={`One plan for you, from $${lowestPrice} to $${highestPrice} per month. The people you invite pay nothing while you're alive. Explore first for ${trialDays} days with no card. Reduced pricing for seniors, military, veterans and young adults; free for hospice families.`} path="/pricing" />
       {pricingJsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: pricingJsonLd }} />}
 
       {/* Header */}

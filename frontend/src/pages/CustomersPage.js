@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { SEO } from '../components/SEO';
 import { useNavigate } from 'react-router-dom';
 import { ChevronRight, ShieldCheck } from 'lucide-react';
 import { MarketingNav } from '../components/landing/MarketingNav';
@@ -18,14 +19,7 @@ const CustomersPage = () => {
 
   return (
     <div className={`min-h-screen transition-opacity duration-400 ${exiting ? 'opacity-0' : 'opacity-100'}`} style={{ background: '#0E1829' }} data-testid="customers-page">
-      <>
-        <title>Customer Stories - CarryOn | Real Families, Real Words</title>
-        <meta name="description" content="CarryOn publishes only real member stories, reviewed by the founder. Read them here, see the actual product, and share your own." />
-        <link rel="canonical" href="https://carryon.us/customers" />
-        <meta property="og:title" content="Customer Stories - CarryOn" />
-        <meta property="og:description" content="Real families, real words. Nothing invented." />
-        <meta property="og:url" content="https://carryon.us/customers" />
-      </>
+      <SEO title="Customer Stories - CarryOn | Real Families, Real Words" description="CarryOn publishes only real member stories, reviewed by the founder. Read them here, see the actual product, and share your own." path="/customers" />
       <MarketingNav navigateWithFade={navigateWithFade} testIdSuffix="-customers" />
 
       <section className="relative overflow-hidden" style={{ paddingTop: 'calc(8rem + env(safe-area-inset-top, 0px))' }}>
@@ -108,7 +102,7 @@ const CustomersPage = () => {
       </section>
 
       <footer className="py-8 text-center text-[#334155] text-xs" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
-        <a href="/" className="hover:text-[#7b879e] mr-5">Home</a><a href="/pricing" className="hover:text-[#7b879e] mr-5">Pricing</a><a href="/about" className="hover:text-[#7b879e] mr-5">About</a><a href="/changelog" className="hover:text-[#7b879e]">What&apos;s new</a>
+        <a href="/" className="hover:text-[#7b879e] mr-5">Home</a><a href="/pricing" className="hover:text-[#7b879e] mr-5">Pricing</a><a href="/vs" className="hover:text-[#7b879e] mr-5">Compare</a><a href="/about" className="hover:text-[#7b879e] mr-5">About</a><a href="/changelog" className="hover:text-[#7b879e]">What&apos;s new</a>
         <p className="mt-3">&copy; {new Date().getFullYear()} CarryOn Technologies LLC</p>
       </footer>
     </div>

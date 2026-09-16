@@ -132,6 +132,7 @@ const HomePage = lazy(() => import('./pages/HomePage'));
 const StartPage = lazy(() => import('./pages/StartPage'));
 const PricingPage = lazy(() => import('./pages/PricingPage'));
 const CustomersPage = lazy(() => import('./pages/CustomersPage'));
+const ComparePage = lazy(() => import('./pages/ComparePage'));
 const ChangelogPage = lazy(() => import('./pages/ChangelogPage'));
 const VoicesPage = lazy(() => import('./pages/VoicesPage'));
 const PartnerBriefPage = lazy(() => import('./pages/PartnerBriefPage'));
@@ -660,6 +661,8 @@ function AppRoutes() {
       <Route path="/start" element={<StartPage />} />
       <Route path="/pricing" element={<PricingPage />} />
       <Route path="/customers" element={<CustomersPage />} />
+      <Route path="/vs" element={<ComparePage />} />
+      <Route path="/vs/:slug" element={<ComparePage />} />
       <Route path="/changelog" element={<ChangelogPage />} />
       <Route path="/voices" element={<VoicesPage />} />
       {/* B2B white-label partner landing — `/p/:slug`. Public, mirrors

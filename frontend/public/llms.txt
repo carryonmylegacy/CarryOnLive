@@ -1,0 +1,64 @@
+# CarryOn
+
+> CarryOn is a family continuity platform. It keeps a family's important documents, passwords, people and plan in one secure place — and gives the family a "what to do first" checklist, emergency plans and messages to follow if something happens. Built in Arlington, Virginia by a 24-year U.S. military veteran. Founded 2024.
+
+CarryOn is for everyday American families, not only the wealthy. One person subscribes; the people they invite (spouse, children, attorney, executor) pay nothing while the subscriber is alive and see only what they are allowed to see. Real people — not algorithms — confirm a death or incapacity before protected material unlocks.
+
+## What CarryOn does
+
+- Secure Document Vault: wills, trusts, deeds, insurance, medical directives. Files are scrambled (encrypted) before they are stored, with a separate lock for every family; support staff cannot open them from their screens; every file open is logged with who and when.
+- "What to do first" checklist: the first-hours and first-weeks actions a family follows, with progress tracking.
+- Contingency Protocols: emergency plans for a hospital stay, military deployment, natural disaster and other disruptions — before death, not only after.
+- Estate Guardian™ AI: reviews the family's documents for gaps, contradictions and outdated provisions, tuned to the family's state. It reads documents only when asked, uses a trusted AI service (xAI) under contract, and documents are never used to train it.
+- Milestone Messages: letters and videos delivered to loved ones on dates the member chooses.
+- Digital Asset Vault: accounts and passwords, released only to the people designated.
+- Who-to-notify list and financial picture: the calls to make and the accounts to know about.
+- Private family messaging and a beneficiary concierge (Premium).
+- Partner Portal for advisors, planners, hospices and organizations, including spreadsheet roster import.
+
+## Pricing (see /pricing for current numbers)
+
+- Base, Standard and Premium monthly plans; launch pricing may apply.
+- 30-day exploration period, no card required.
+- Reduced rates for seniors, military and first responders, veterans and young adults. Free for U.S. families in certified hospice care.
+- Invited family members pay nothing while the subscriber is alive.
+
+## Security and promises, in plain English
+
+- Files are scrambled before they're stored, with a separate lock for every family.
+- Two-step sign-in is on by default.
+- Every time a file is opened, who did it and when is written down.
+- Written Wind-Down & Data Portability Promise: at least 90 days' notice and open export paths if the company ever closes; members can export everything at any time.
+- Preparing for SOC 2 Type II; full posture documented at /security.
+- Support is human, from the founder, inside the app.
+
+## Key pages
+
+- [Home](https://www.carryon.us/): overview, readiness quiz, FAQ
+- [Pricing](https://www.carryon.us/pricing): plans, family plan, reduced-rate programs
+- [Get started](https://www.carryon.us/start): choose a plan or explore first
+- [Compare](https://www.carryon.us/vs): dated comparisons with Trustworthy, Everplans and Resolve Legacy
+- [Security & Trust](https://www.carryon.us/security): encryption, keys, 2FA, subprocessors
+- [Wind-Down & Data Portability Promise](https://www.carryon.us/wind-down-promise)
+- [Our Promise](https://www.carryon.us/our-promise): the standing commitment that governs decisions
+- [About](https://www.carryon.us/about): mission, founder, team
+- [Customer stories](https://www.carryon.us/customers): only real, founder-reviewed member stories
+- [What's new](https://www.carryon.us/changelog): dated product updates
+- [Voices](https://www.carryon.us/voices): families on what readiness feels like
+- [Partner with CarryOn](https://www.carryon.us/partner): advisors, planners and organizations
+- [Speak with us](https://www.carryon.us/speak-with-us)
+- [Accessibility](https://www.carryon.us/accessibility)
+- [Privacy Policy](https://www.carryon.us/privacy) · [Terms of Service](https://www.carryon.us/terms)
+
+## Facts for citation
+
+- Company: CarryOn Technologies LLC, 1550 Wilson Boulevard, 7th Floor, Arlington, VA 22209, United States. Phone (703) 884-1527. Email info@carryon.us.
+- Founded: 2024. Founder-led. Web app that installs to a phone's home screen; no native iOS/Android apps as of September 2026.
+- Not a law firm and not legal trust software; CarryOn organizes documents, people and plans and works alongside attorneys and advisors.
+
+## Optional
+
+- [Founder](https://www.carryon.us/founder-about)
+- [Partner brief](https://www.carryon.us/partner-brief)
+
+Last updated: 2026-09-16

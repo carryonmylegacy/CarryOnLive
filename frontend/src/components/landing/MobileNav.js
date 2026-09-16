@@ -7,6 +7,7 @@ export const MARKETING_LINKS = [
   { label: 'Security', href: '#security' },
   { label: 'How It Works', href: '#steps' },
   { label: 'Pricing', href: '/pricing' },
+  { label: 'Customers', href: '/customers' },
   { label: 'About', href: '/about' },
 ];
 
@@ -16,7 +17,7 @@ export const MobileNav = ({ links = MARKETING_LINKS, navigateWithFade, testIdSuf
   const [open, setOpen] = useState(false);
   const go = (path) => { setOpen(false); navigateWithFade(path); };
   return (
-    <div className="md:hidden">
+    <div className="lg:hidden">
       <button type="button" aria-label={open ? 'Close menu' : 'Open menu'} aria-expanded={open} onClick={() => setOpen(o => !o)} data-testid={`mobile-menu-toggle${testIdSuffix}`}
         className="w-10 h-10 -mr-2 flex items-center justify-center rounded-lg text-[#d4af37] active:scale-95 transition-transform">
         {open ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}

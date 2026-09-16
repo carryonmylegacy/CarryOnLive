@@ -547,6 +547,9 @@ const LandingContent = ({ navigateWithFade, footerInfo = DEFAULT_FOOTER, testIdS
           <div className="flex items-center justify-center gap-x-6 gap-y-2 flex-wrap">
             <a href="/pricing" className="text-[#334155] text-xs hover:text-[#7b879e] transition-colors" data-testid={`landing-footer-pricing-link${testIdSuffix}`}>Pricing</a>
             <a href="/customers" className="text-[#334155] text-xs hover:text-[#7b879e] transition-colors" data-testid={`landing-footer-customers-link${testIdSuffix}`}>Customer Stories</a>
+            <a href="/vs" className="text-[#334155] text-xs hover:text-[#7b879e] transition-colors" data-testid={`landing-footer-compare-link${testIdSuffix}`}>Compare</a>
+            <a href="/security" className="text-[#334155] text-xs hover:text-[#7b879e] transition-colors" data-testid={`landing-footer-security-link${testIdSuffix}`}>Security</a>
+            <a href="/wind-down-promise" className="text-[#334155] text-xs hover:text-[#7b879e] transition-colors" data-testid={`landing-footer-winddown-link${testIdSuffix}`}>Wind-Down Promise</a>
             <a href="/changelog" className="text-[#334155] text-xs hover:text-[#7b879e] transition-colors" data-testid={`landing-footer-changelog-link${testIdSuffix}`}>What&apos;s New</a>
             <a href="/about" className="text-[#334155] text-xs hover:text-[#7b879e] transition-colors" data-testid={`landing-footer-about-link${testIdSuffix}`}>About</a>
             <a href="/privacy" className="text-[#334155] text-xs hover:text-[#7b879e] transition-colors" data-testid={`landing-footer-privacy-link${testIdSuffix}`}>Privacy Policy</a>

@@ -1,0 +1,173 @@
+/**
+ * Comparison-page facts. Competitor rows are taken from each company's PUBLIC
+ * website on the date in `checked` — quote them, don't guess. Anything we could
+ * not confirm is "Not listed" (never "No"). CarryOn rows must describe shipped
+ * features only. Corrections: info@carryon.us.
+ */
+
+export const CHECKED = 'September 16, 2026';
+
+// Row value helpers: true = included, false = not offered, 'partial' = with caveat, string = free text
+export const CARRYON = {
+  name: 'CarryOn',
+  positioning: 'Family continuity platform — documents plus the plan your family follows: what to do first, who to call, and what happens before, during and after a disruption.',
+  rows: {
+    price: 'Plans from the Base tier up; launch pricing shown on /pricing. Reduced rates for seniors, military, veterans and young adults; free for hospice families.',
+    free: '30-day exploration period, no card required.',
+    family: 'The people you invite pay nothing while you\u2019re alive.',
+    vault: true,
+    checklist: 'Yes — a “what to do first” checklist your family actually follows, with progress tracking.',
+    emergency: 'Yes — Contingency Protocols for a hospital stay, deployment, disaster and more (Premium).',
+    ai: 'Yes — Estate Guardian\u2122 AI reviews your documents for gaps and contradictions, only when you ask.',
+    messages: 'Yes — Milestone Messages delivered on the dates you choose.',
+    passwords: 'Yes — Digital Asset Vault for accounts and passwords (see pricing for tiers).',
+    verify: 'Real people confirm a death or incapacity before anything unlocks.',
+    security: 'Files are scrambled before they\u2019re stored, with a separate lock for every family. Two-step sign-in on by default. Every file open is logged.',
+    compliance: 'Preparing for SOC 2 Type II; controls documented on /security.',
+    export: 'Export everything any time; written Wind-Down Promise (90 days\u2019 notice, open export paths).',
+    apps: 'Web app — add to your phone\u2019s home screen for alerts. No native iOS/Android apps yet.',
+    support: 'Human support from the founder, in-app.',
+    partners: 'Partner portal for advisors, planners and organizations, with client roster import.',
+  },
+};
+
+export const COMPETITORS = [
+  {
+    slug: 'trustworthy',
+    name: 'Trustworthy',
+    tagline: 'The Family Operating System\u00ae',
+    site: 'https://www.trustworthy.com',
+    pricingUrl: 'https://www.trustworthy.com/pricing',
+    founded: 'Est. 2020, San Francisco',
+    positioning: 'Automatically organizes household information into answers, guidance and action — an AI-assisted family vault with reminders and secure sharing.',
+    summary: [
+      'Trustworthy is a polished, well-established household organizer with native apps, a large content library and a SOC 2 Type II report.',
+      'CarryOn is built around what your family does when something happens — the first-hours checklist, emergency plans and human-verified unlock — not only where the files live.',
+      'If you mainly want a beautifully organized vault with AI answers, Trustworthy is a strong choice. If you want a plan your family can follow in a crisis, that is what CarryOn is for.',
+    ],
+    rows: {
+      price: 'Free; Silver $10/mo, Gold $20/mo, Platinum $40/mo — each billed annually.',
+      free: 'Free plan (2 GB, 1 family member, 10 AI answers/month).',
+      family: 'Family members per plan: 1 (Free), 5 (Silver), 10 (Gold), unlimited (Platinum).',
+      vault: true,
+      checklist: 'Not listed as a guided “what to do first” checklist; offers reminders and AI answers.',
+      emergency: 'Not listed.',
+      ai: 'Yes — “Household AI” answers about your information (10 or 25/month on lower tiers; unlimited on Gold+).',
+      messages: 'Not listed.',
+      passwords: true,
+      verify: 'Legacy access / granular permissions; verification process not described on the pricing page.',
+      security: 'AES-256 encryption and multi-factor authentication on all plans (per their site).',
+      compliance: 'SOC 2 Type II and SOC 3 (per their site).',
+      export: '“Download your information” included on all plans.',
+      apps: 'iOS and Android apps with offline mode.',
+      support: 'AI agent (Free), email (Silver), chat (Gold), dedicated concierge (Platinum).',
+      partners: 'Advisor program, Certified Experts and a marketplace.',
+    },
+    theyHave: ['Native iOS and Android apps', 'SOC 2 Type II / SOC 3 reports', 'A large blog and article library', 'Six years of operating history'],
+    weHave: ['A first-hours checklist your family follows, not just files', 'Emergency plans for a hospital stay, deployment or disaster', 'Real people confirm a death or incapacity before anything unlocks', 'A written Wind-Down Promise', 'Invited family pays nothing while you\u2019re alive'],
+    faq: [
+      { q: 'Is CarryOn cheaper than Trustworthy?', a: 'It depends on the tier. Trustworthy\u2019s paid plans run $10–$40 per month billed annually; CarryOn\u2019s plans are listed on our pricing page with launch pricing, and the people you invite pay nothing while you\u2019re alive. Compare the current numbers on both pricing pages before you decide.' },
+      { q: 'Does CarryOn have an app like Trustworthy?', a: 'Not a native one yet. CarryOn is a web app you add to your phone\u2019s home screen; it sends alerts and works on any phone. Trustworthy offers iOS and Android apps.' },
+      { q: 'Can I move from Trustworthy to CarryOn?', a: 'Yes. Trustworthy lets you download your information; CarryOn lets you upload documents one at a time or in bulk, and our checklist tells you what to add first.' },
+    ],
+  },
+  {
+    slug: 'everplans',
+    name: 'Everplans',
+    tagline: 'Organize and securely store your vital documents',
+    site: 'https://www.everplans.com',
+    pricingUrl: 'https://www.everplans.com/pricing',
+    founded: 'New York',
+    positioning: 'A secure place to organize and store vital documents and information, guided by content and checklists, and shared with the people who need access (“deputies”).',
+    summary: [
+      'Everplans is one of the original digital estate organizers, with a deep content library and a simple $99.99-a-year Premium plan.',
+      'CarryOn covers the same storage need and adds the operating layer: a first-hours checklist, emergency plans, AI review of your documents and human-verified unlock.',
+      'If you want a guided library and a place to keep documents at a low yearly price, Everplans does that well. If you want your family to have a plan to follow — not only a folder to open — choose CarryOn.',
+    ],
+    rows: {
+      price: 'Premium $99.99 per year.',
+      free: 'Free plan (store up to 3 items, iOS app, content library).',
+      family: 'Deputies get read-only access to the sections you designate and don\u2019t need a subscription (per their help center).',
+      vault: true,
+      checklist: 'Guidance and specialized checklists in the content library; a guided first-hours action list is not described on the pricing page.',
+      emergency: 'Not listed.',
+      ai: 'Not listed on the pricing page.',
+      messages: 'Not listed on the pricing page.',
+      passwords: 'Digital accounts can be recorded as items (per their site).',
+      verify: 'Deputy access is set by you in advance; a verification process is not described on the pricing page.',
+      security: 'Secure storage and secure sharing (per their site).',
+      compliance: 'Not listed.',
+      export: 'Not listed on the pricing page.',
+      apps: 'iOS app.',
+      support: 'Help center.',
+      partners: 'Enterprise / partnership program.',
+    },
+    theyHave: ['A large, long-running content library', 'A low flat yearly price', 'An iOS app', 'A long operating history'],
+    weHave: ['A first-hours checklist with progress tracking', 'Emergency plans for a hospital stay, deployment or disaster', 'Estate Guardian\u2122 AI review of your documents', 'Milestone Messages delivered on dates you choose', 'Real people confirm a death or incapacity before anything unlocks', 'A written Wind-Down Promise'],
+    faq: [
+      { q: 'Everplans is $99.99 a year. What does CarryOn cost?', a: 'CarryOn is billed monthly with launch pricing on our pricing page, and the people you invite pay nothing while you\u2019re alive. Seniors, military, veterans and young adults pay less; hospice families pay nothing.' },
+      { q: 'Does CarryOn have deputies like Everplans?', a: 'Yes — you invite the people you choose and decide, per person, exactly what each one sees. Access to protected material unlocks only after real people confirm a death or incapacity.' },
+      { q: 'Can I try CarryOn first?', a: 'Yes. Explore for 30 days with no card required.' },
+    ],
+  },
+  {
+    slug: 'resolve-legacy',
+    name: 'Resolve Legacy',
+    tagline: 'Family legacy planning app',
+    site: 'https://www.resolvelegacy.com',
+    pricingUrl: 'https://www.resolvelegacy.com/contact',
+    founded: 'Early access',
+    positioning: 'A Family Readiness Plan that organizes wishes, documents, contacts and next steps, with AI that helps organize and find gaps and permissions that can differ before and after a loss.',
+    summary: [
+      'Resolve Legacy and CarryOn share a philosophy: a plan your family can follow, not just a vault. Resolve Legacy is in early access, so pricing isn\u2019t published yet.',
+      'CarryOn is live today with published pricing, a 30-day exploration period, human-verified unlock, Milestone Messages and a written Wind-Down Promise.',
+      'If you\u2019re comparing the two, look at what you can use this week: CarryOn\u2019s checklist, emergency plans and AI review are shipping now.',
+    ],
+    rows: {
+      price: 'Not published — “Get Early Access” as of the date checked.',
+      free: 'Not listed.',
+      family: 'Family members and roles with scoped permissions (per their site).',
+      vault: true,
+      checklist: 'Yes — five-step plan and “first-response actions” (per their site).',
+      emergency: 'Not listed as separate scenario plans.',
+      ai: 'Yes — AI helps organize documents, find gaps and translate; you approve suggestions (per their site).',
+      messages: 'Not listed.',
+      passwords: 'Digital accounts captured in the inventory step (per their site).',
+      verify: 'Permission windows before and after a loss; a human verification process is not described.',
+      security: 'AWS hosting, TLS in transit, encryption at rest, MFA (per their site).',
+      compliance: 'Not listed.',
+      export: 'Share and export with trusted access (per their site).',
+      apps: 'Web app.',
+      support: 'Not listed.',
+      partners: 'Not listed.',
+    },
+    theyHave: ['AI-assisted translation for multilingual families', 'A conflict-aware, culturally sensitive planning approach'],
+    weHave: ['Published pricing and a 30-day exploration period today', 'Real people confirm a death or incapacity before anything unlocks', 'Milestone Messages on dates you choose', 'A written Wind-Down Promise', 'Partner portal for advisors and organizations'],
+    faq: [
+      { q: 'Is Resolve Legacy available now?', a: 'As of the date we checked, Resolve Legacy\u2019s site offered early access and did not publish pricing. CarryOn is available today with published pricing.' },
+      { q: 'Both use AI — what\u2019s the difference?', a: 'Both use AI to organize and find gaps. CarryOn\u2019s Estate Guardian\u2122 AI reads your documents only when you ask it to, uses a trusted AI service under contract, and your documents are never used to teach it.' },
+      { q: 'Which is better for a family with an advisor?', a: 'CarryOn includes a partner portal so an advisor or organization can set up client portals, import a roster and hand each family their plan.' },
+    ],
+  },
+];
+
+export const ROWS = [
+  { key: 'price', label: 'Price' },
+  { key: 'free', label: 'Free to start?' },
+  { key: 'family', label: 'Family members / sharing' },
+  { key: 'vault', label: 'Secure document vault' },
+  { key: 'checklist', label: '“What to do first” checklist' },
+  { key: 'emergency', label: 'Emergency plans (hospital stay, deployment, disaster)' },
+  { key: 'ai', label: 'AI review of your documents' },
+  { key: 'messages', label: 'Messages to loved ones' },
+  { key: 'passwords', label: 'Passwords & accounts' },
+  { key: 'verify', label: 'Who confirms a death or incapacity' },
+  { key: 'security', label: 'Security, in plain English' },
+  { key: 'compliance', label: 'Compliance reports' },
+  { key: 'export', label: 'Take your data with you' },
+  { key: 'apps', label: 'Apps' },
+  { key: 'support', label: 'Support' },
+  { key: 'partners', label: 'For advisors & organizations' },
+];
+
+export const getCompetitor = (slug) => COMPETITORS.find(c => c.slug === slug);

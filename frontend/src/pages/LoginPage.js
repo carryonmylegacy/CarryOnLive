@@ -18,6 +18,7 @@ import { API_URL } from '../config';
 import { RevealSection } from '../components/landing/RevealSection';
 import { FreeModeBanner } from '../components/FreeModeBanner';
 import LandingContent from '../components/landing/LandingContent';
+import { MARKETING_LINKS } from '../components/landing/MobileNav';
 import ForgotPasswordModal from '../components/auth/ForgotPasswordModal';
 import { isPWA as isStandalonePWA } from '../utils/isPWA';
 import {
@@ -880,13 +881,8 @@ const LoginPage = () => {
       <nav className="fixed top-0 w-full z-[100]" style={{ borderBottom: '1px solid rgba(14,165,233,0.06)', background: 'rgba(11,18,33,0.97)', paddingTop: 'env(safe-area-inset-top, 0px)' }}>
         <div className="max-w-[1400px] mx-auto px-6 lg:px-10 h-16 flex items-center justify-between">
           <img src="/carryon-logo.png" alt="CarryOn" className="h-12 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} data-testid="login-logo" />
-          <div className="hidden md:flex items-center gap-8">
-            {[
-              { label: 'Features', href: '#features' },
-              { label: 'Security', href: '#security' },
-              { label: 'How It Works', href: '#steps' },
-              { label: 'About', href: '/about' },
-            ].map(item => (
+          <div className="hidden lg:flex items-center gap-7">
+            {MARKETING_LINKS.map(item => (
               <a key={item.label} href={item.href} className="text-[#6b7a90] text-sm font-medium hover:text-[#d4af37] transition-colors duration-300">{item.label}</a>
             ))}
           </div>
@@ -897,7 +893,7 @@ const LoginPage = () => {
                 It Works / About from phone visitors. */}
             <button
               onClick={() => setMobileNavOpen(v => !v)}
-              className="md:hidden flex items-center justify-center w-9 h-9 rounded-lg text-[#9aa5b4] hover:text-[#d4af37] transition-colors"
+              className="lg:hidden flex items-center justify-center w-9 h-9 rounded-lg text-[#9aa5b4] hover:text-[#d4af37] transition-colors"
               aria-label={mobileNavOpen ? 'Close menu' : 'Open menu'}
               aria-expanded={mobileNavOpen}
               data-testid="nav-mobile-toggle"
@@ -914,16 +910,12 @@ const LoginPage = () => {
             scroll/navigate naturally. */}
         {mobileNavOpen && (
           <div
-            className="md:hidden"
+            className="lg:hidden"
             style={{ background: 'rgba(11,18,33,0.98)', borderTop: '1px solid rgba(14,165,233,0.06)' }}
             data-testid="nav-mobile-dropdown"
           >
             <div className="max-w-[1400px] mx-auto px-6 py-3 flex flex-col gap-1">
-              {[
-                { label: 'Features', href: '#features' },
-                { label: 'Security', href: '#security' },
-                { label: 'How It Works', href: '#steps' },
-              ].map(item => (
+              {MARKETING_LINKS.filter(item => item.href.startsWith('#')).map(item => (
                 <a
                   key={item.label}
                   href={item.href}
@@ -934,13 +926,16 @@ const LoginPage = () => {
                   {item.label}
                 </a>
               ))}
-              <button
-                onClick={() => { setMobileNavOpen(false); navigateWithFade('/about'); }}
-                className="text-left py-3 text-[#cbd5e1] text-base font-medium hover:text-[#d4af37] transition-colors"
-                data-testid="nav-mobile-about"
-              >
-                About
-              </button>
+              {MARKETING_LINKS.filter(item => !item.href.startsWith('#')).map(item => (
+                <button
+                  key={item.label}
+                  onClick={() => { setMobileNavOpen(false); navigateWithFade(item.href); }}
+                  className="text-left py-3 text-[#cbd5e1] text-base font-medium hover:text-[#d4af37] transition-colors"
+                  data-testid={`nav-mobile-${item.label.replace(/\s+/g, '-').toLowerCase()}`}
+                >
+                  {item.label}
+                </button>
+              ))}
             </div>
           </div>
         )}

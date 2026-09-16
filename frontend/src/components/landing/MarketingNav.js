@@ -10,7 +10,7 @@ export const MarketingNav = ({ navigateWithFade, current, testIdSuffix = '' }) =
     <nav className="fixed top-0 w-full z-[100]" style={{ borderBottom: '1px solid rgba(14,165,233,0.06)', background: 'rgba(11,18,33,0.97)', paddingTop: 'env(safe-area-inset-top, 0px)' }} data-testid={`marketing-nav${testIdSuffix}`}>
       <div className="max-w-[1400px] mx-auto px-6 lg:px-10 h-16 flex items-center justify-between">
         <a href="/" className="flex items-center" data-testid={`marketing-nav-logo${testIdSuffix}`}><img src="/carryon-logo.png" alt="CarryOn" className="h-12" /></a>
-        <div className="hidden md:flex items-center gap-8">
+        <div className="hidden lg:flex items-center gap-7">
           {links.map(item => (
             <a key={item.label} href={item.href} className={`text-sm font-medium transition-colors duration-300 ${current === item.href ? 'text-[#d4af37]' : 'text-[#6b7a90] hover:text-[#d4af37]'}`}>{item.label}</a>
           ))}
