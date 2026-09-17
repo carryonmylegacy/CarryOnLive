@@ -134,8 +134,9 @@ export const SiteContentTab = ({ getAuthHeaders }) => {
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
-    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-      toast.error('Please choose a JPG, PNG, or WebP image');
+    const isHeic = /\.hei[cf]$/i.test(file.name || '');
+    if (!['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'].includes(file.type) && !isHeic) {
+      toast.error('Please choose a JPG, PNG, WebP, or HEIC image');
       return;
     }
     if (file.size > 8 * 1024 * 1024) {
@@ -358,7 +359,7 @@ export const SiteContentTab = ({ getAuthHeaders }) => {
                 {headshotExists ? 'Replace Photo' : 'Upload Photo'}
                 <input
                   type="file"
-                  accept="image/jpeg,image/png,image/webp"
+                  accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif"
                   onChange={handleHeadshotUpload}
                   className="hidden"
                   disabled={headshotBusy}

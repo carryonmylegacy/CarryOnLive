@@ -7,10 +7,14 @@ from datetime import datetime, timezone
 from bson import Binary
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from PIL import Image, ImageOps
+from pillow_heif import register_heif_opener
 from pydantic import BaseModel
 
 from config import db, logger
 from guards import require_admin
+from services.audit import get_client_ip, log_audit_event
+
+register_heif_opener()  # iPhone HEIC/HEIF headshots decode through Pillow
 
 router = APIRouter()
 
@@ -120,7 +124,6 @@ async def get_signup_alerts(current_user: dict = Depends(require_admin)):
 async def update_signup_alerts(
     data: SignupAlertModeUpdate, request: Request, current_user: dict = Depends(require_admin)
 ):
-    from services.audit import get_client_ip, log_audit_event
     from services.signup_alerts import MODES, get_settings, set_mode
 
     if data.mode not in MODES:
@@ -144,12 +147,20 @@ async def update_signup_alerts(
 # ===================== FOUNDER HEADSHOT (About page) =====================
 
 
+HEADSHOT_TYPES = {"image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"}
+
+
 @router.post("/admin/site-content/founder-headshot")
-async def upload_founder_headshot(file: UploadFile = File(...), current_user: dict = Depends(require_admin)):
+async def upload_founder_headshot(
+    request: Request, file: UploadFile = File(...), current_user: dict = Depends(require_admin)
+):
     """Upload/replace the founder headshot shown on the public About page.
-    Image is center-cropped square, resized to 512px, stored as JPEG in Mongo."""
-    if file.content_type not in {"image/jpeg", "image/png", "image/webp"}:
-        raise HTTPException(status_code=400, detail="Please upload a JPG, PNG, or WebP image.")
+    Image is center-cropped square, resized to 512px, stored as JPEG in Mongo.
+    Accepts iPhone HEIC/HEIF (decoded via pillow-heif) as well as JPG/PNG/WebP."""
+    name = (file.filename or "").lower()
+    heic_by_name = name.endswith((".heic", ".heif"))
+    if file.content_type not in HEADSHOT_TYPES and not heic_by_name:
+        raise HTTPException(status_code=400, detail="Please upload a JPG, PNG, WebP, or HEIC image.")
     raw = await file.read()
     if len(raw) > 8 * 1024 * 1024:
         raise HTTPException(status_code=400, detail="Image is too large (max 8 MB).")
@@ -180,14 +191,37 @@ async def upload_founder_headshot(file: UploadFile = File(...), current_user: di
         upsert=True,
     )
     logger.info(f"Founder headshot uploaded by {current_user.get('email')} ({len(data)} bytes)")
+    await log_audit_event(
+        actor_id=current_user["id"],
+        actor_email=current_user.get("email", ""),
+        actor_role=current_user.get("role", "admin"),
+        action="founder_headshot_upload",
+        category="platform",
+        resource_type="site_asset",
+        resource_id="founder_headshot",
+        details={"size_bytes": len(data), "source_type": file.content_type, "source_name": file.filename or ""},
+        ip_address=get_client_ip(request),
+    )
     return {"ok": True, "updated_at": updated_at, "size_bytes": len(data)}
 
 
 @router.delete("/admin/site-content/founder-headshot")
-async def delete_founder_headshot(current_user: dict = Depends(require_admin)):
+async def delete_founder_headshot(request: Request, current_user: dict = Depends(require_admin)):
     """Remove the founder headshot — the About page falls back to its placeholder."""
     result = await db.site_assets.delete_one({"_id": "founder_headshot"})
     logger.info(f"Founder headshot removed by {current_user.get('email')}")
+    await log_audit_event(
+        actor_id=current_user["id"],
+        actor_email=current_user.get("email", ""),
+        actor_role=current_user.get("role", "admin"),
+        action="founder_headshot_remove",
+        category="platform",
+        resource_type="site_asset",
+        resource_id="founder_headshot",
+        details={"removed": result.deleted_count == 1},
+        ip_address=get_client_ip(request),
+        severity="warning",
+    )
     return {"ok": True, "removed": result.deleted_count == 1}
 
 

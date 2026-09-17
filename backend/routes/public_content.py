@@ -38,9 +38,12 @@ async def get_founder_headshot():
 async def get_public_site_content(request: Request):
     """Public — non-sensitive site content settings (video IDs, footer, public flags)."""
     settings = await db.platform_settings.find_one({"_id": "global"}, {"_id": 0}) or {}
-    has_headshot = await db.site_assets.count_documents({"_id": "founder_headshot"}, limit=1) > 0
+    headshot = await db.site_assets.find_one({"_id": "founder_headshot"}, {"_id": 1, "updated_at": 1})
     proto = request.headers.get("x-forwarded-proto", request.url.scheme)
-    api_base = f"{proto}://{request.url.netloc}"
+    # Prefer the proxy-visible host so the URL is reachable from the browser
+    # (behind an ingress `request.url.netloc` can be an internal cluster name).
+    host = (request.headers.get("x-forwarded-host") or request.url.netloc).split(",")[0].strip()
+    api_base = f"{proto}://{host}"
     return {
         "homepage_video_id": settings.get("homepage_video_id", "KlZ8egF_Nyw"),
         "homepage_video_id_vertical": settings.get("homepage_video_id_vertical", "5fDJ9e7bEUo"),
@@ -52,7 +55,8 @@ async def get_public_site_content(request: Request):
         "founder_name": settings.get("founder_name", ""),
         "founder_title": settings.get("founder_title", ""),
         "founder_bio": settings.get("founder_bio", ""),
-        "founder_photo_url": f"{api_base}/api/public/founder-headshot" if has_headshot else "",
+        "founder_photo_url": f"{api_base}/api/public/founder-headshot" if headshot else "",
+        "founder_photo_updated_at": (headshot or {}).get("updated_at", ""),
         "founder_linkedin_url": settings.get("founder_linkedin_url", ""),
         "show_live_stats": settings.get("show_live_stats", "auto"),
         # Public, non-sensitive feature flags (mirrors prior admin/platform behavior).
