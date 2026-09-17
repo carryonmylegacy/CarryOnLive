@@ -19,6 +19,7 @@ import { RevealSection } from '../components/landing/RevealSection';
 import { FreeModeBanner } from '../components/FreeModeBanner';
 import LandingContent from '../components/landing/LandingContent';
 import { MARKETING_LINKS } from '../components/landing/MobileNav';
+import { useCopy, renderCopy } from '../copy/CopyContext';
 import ForgotPasswordModal from '../components/auth/ForgotPasswordModal';
 import { isPWA as isStandalonePWA } from '../utils/isPWA';
 import {
@@ -239,6 +240,7 @@ const LoginPage = () => {
   const [homepageVideoId, setHomepageVideoId] = useState('KlZ8egF_Nyw');
   const [verticalVideoId, setVerticalVideoId] = useState('5fDJ9e7bEUo');
   const [footerInfo, setFooterInfo] = useState({ line1: '1550 Wilson Boulevard 7th Floor', line2: 'Arlington, VA 22209 U.S.A.', phone: '(703) 884-1527' });
+  const { t } = useCopy();
   const isMobileView = useIsMobileViewport();
   useEffect(() => {
     apiClient.get(`${API_URL}/public/site-content`).then(r => {
@@ -875,7 +877,7 @@ const LoginPage = () => {
       ...(exiting ? { transform: 'scale(0.98)' } : {}),
       transition: 'opacity 0.45s ease, transform 0.45s ease',
     }}>
-      <SEO title="CarryOn™ — The Family Continuity Platform" description="If something happens tomorrow, your family knows exactly what to do. The complete continuity system for every disruption — hospital stay, deployment, disaster, or the final day." path="/" noindex={isLoginPath} />
+      <SEO title={t('login.seo.title')} description={t('login.seo.description')} path="/" noindex={isLoginPath} />
 
       {/* NAV BAR */}
       <nav className="fixed top-0 w-full z-[100]" style={{ borderBottom: '1px solid rgba(14,165,233,0.06)', background: 'rgba(11,18,33,0.97)', paddingTop: 'env(safe-area-inset-top, 0px)' }}>
@@ -883,7 +885,7 @@ const LoginPage = () => {
           <img src="/carryon-logo.png" alt="CarryOn" className="h-12 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} data-testid="login-logo" />
           <div className="hidden lg:flex items-center gap-7">
             {MARKETING_LINKS.map(item => (
-              <a key={item.label} href={item.href} className="text-[#6b7a90] text-sm font-medium hover:text-[#d4af37] transition-colors duration-300">{item.label}</a>
+              <a key={item.label} href={item.href} className="text-[#6b7a90] text-sm font-medium hover:text-[#d4af37] transition-colors duration-300">{t(`nav.${item.k}`)}</a>
             ))}
           </div>
           <div className="flex items-center gap-3 sm:gap-4">
@@ -901,7 +903,7 @@ const LoginPage = () => {
               {mobileNavOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
             <button onClick={() => navigateWithFade('/signup')} className="text-[#d4af37] text-sm font-semibold hover:text-[#fcd34d] transition-colors flex items-center gap-1">
-              Start your family&apos;s plan <ChevronRight className="w-3.5 h-3.5" />
+              {t('nav.start_plan')} <ChevronRight className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
@@ -923,7 +925,7 @@ const LoginPage = () => {
                   className="block py-3 text-[#cbd5e1] text-base font-medium hover:text-[#d4af37] transition-colors"
                   data-testid={`nav-mobile-${item.label.replace(/\s+/g, '-').toLowerCase()}`}
                 >
-                  {item.label}
+                  {t(`nav.${item.k}`)}
                 </a>
               ))}
               {MARKETING_LINKS.filter(item => !item.href.startsWith('#')).map(item => (
@@ -933,7 +935,7 @@ const LoginPage = () => {
                   className="text-left py-3 text-[#cbd5e1] text-base font-medium hover:text-[#d4af37] transition-colors"
                   data-testid={`nav-mobile-${item.label.replace(/\s+/g, '-').toLowerCase()}`}
                 >
-                  {item.label}
+                  {t(`nav.${item.k}`)}
                 </button>
               ))}
             </div>
@@ -965,16 +967,16 @@ const LoginPage = () => {
                   <img src="/carryon-logo.png" alt="CarryOn" className="w-[200px] xl:w-[260px] h-auto" />
                 </div>
                 <div className="text-center sm:text-left flex-1 sm:pt-2">
-                  <p className="text-[#d4af37] text-sm font-semibold uppercase tracking-[0.18em] mb-3" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>The Family Continuity Platform</p>
+                  <p className="text-[#d4af37] text-sm font-semibold uppercase tracking-[0.18em] mb-3" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>{t('login.hero.eyebrow')}</p>
                   <h1 className="text-3xl sm:text-4xl xl:text-5xl font-semibold text-white leading-[1.08] mb-3 tracking-tight" style={{ fontFamily: 'var(--serif)', textShadow: '0 2px 12px rgba(0,0,0,0.7), 0 1px 4px rgba(0,0,0,0.5)' }}>
-                    If something happens tomorrow, your family knows
-                    <span className="block text-[#d4af37] mt-1 italic" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.7), 0 1px 4px rgba(0,0,0,0.5)' }}>exactly what to do.</span>
+                    {t('login.hero.h1a')}
+                    <span className="block text-[#d4af37] mt-1 italic" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.7), 0 1px 4px rgba(0,0,0,0.5)' }}>{t('login.hero.h1b')}</span>
                   </h1>
                   <p className="text-white/80 text-sm xl:text-base max-w-lg leading-relaxed mb-5" style={{ textShadow: '0 1px 8px rgba(0,0,0,0.6)' }}>
-                    CarryOn is the continuity system for your family &mdash; keeping everyone ready, connected, and clear through every disruption, from a hospital stay to the final day. Built calmly today; there the moment your family needs it.
+                    {renderCopy(t('login.hero.sub'))}
                   </p>
                   <div className="flex items-center gap-5 justify-center sm:justify-start mb-5">
-                    {['Scrambled before it\u2019s stored', 'A separate lock for every family', 'Two-step sign-in'].map(badge => (
+                    {[1, 2, 3].map(n => t(`home.hero.badge${n}`)).filter(Boolean).map(badge => (
                       <div key={badge} className="flex items-center gap-2">
                         <div className="w-2 h-2 rounded-full bg-[#10b981]" />
                         <span className="text-white/70 text-sm font-medium" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>{badge}</span>
@@ -1120,16 +1122,16 @@ const LoginPage = () => {
               <RevealSection delay={0.5}>
                 <div className="flex flex-col items-center text-center mt-2">
                   <img src="/carryon-logo.png" alt="CarryOn" className="w-[240px] h-auto mb-5" />
-                  <p className="text-[#d4af37] text-sm font-semibold uppercase tracking-[0.18em] mb-3" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>The Family Continuity Platform</p>
+                  <p className="text-[#d4af37] text-sm font-semibold uppercase tracking-[0.18em] mb-3" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>{t('login.hero.eyebrow')}</p>
                   <h2 className="text-3xl sm:text-4xl font-semibold text-white leading-[1.08] mb-3 tracking-tight" style={{ fontFamily: 'var(--serif)', textShadow: '0 2px 12px rgba(0,0,0,0.7), 0 1px 4px rgba(0,0,0,0.5)' }}>
-                    If something happens tomorrow, your family knows
-                    <span className="block text-[#d4af37] mt-1 italic" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.7), 0 1px 4px rgba(0,0,0,0.5)' }}>exactly what to do.</span>
+                    {t('login.hero.h1a')}
+                    <span className="block text-[#d4af37] mt-1 italic" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.7), 0 1px 4px rgba(0,0,0,0.5)' }}>{t('login.hero.h1b')}</span>
                   </h2>
                   <p className="text-white/80 text-base max-w-sm leading-relaxed mb-5" style={{ textShadow: '0 1px 8px rgba(0,0,0,0.6)' }}>
-                    CarryOn is the continuity system for your family &mdash; ready, connected, and clear through every disruption, from a hospital stay to the final day.
+                    {renderCopy(t('login.hero.sub_mobile'))}
                   </p>
                   <div className="flex items-center gap-4 justify-center mb-4">
-                    {['Scrambled before it\u2019s stored', 'A separate lock for every family', 'Two-step sign-in'].map(badge => (
+                    {[1, 2, 3].map(n => t(`home.hero.badge${n}`)).filter(Boolean).map(badge => (
                       <div key={badge} className="flex items-center gap-2">
                         <div className="w-2 h-2 rounded-full bg-[#10b981]" />
                         <span className="text-white/70 text-sm font-medium" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>{badge}</span>
@@ -1165,10 +1167,10 @@ const LoginPage = () => {
               <div className="absolute inset-0 z-[1]" style={{ background: 'radial-gradient(ellipse 80% 60% at 50% 50%, rgba(var(--gold-rgb), 0.04) 0%, transparent 70%)' }} />
               <RevealSection className="max-w-[900px] mx-auto px-6 text-center relative z-10">
                 <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-3 leading-tight" style={{ fontFamily: 'var(--sans)' }}>
-                  See CarryOn in Action
+                  {t('home.video.title')}
                 </h2>
                 <p className="text-white/60 text-sm lg:text-base mb-8">
-                  Learn how CarryOn&#8482; keeps your family ready for anything.
+                  {t('home.video.sub')}
                 </p>
                 {showVertical ? (
                   <div className="relative rounded-2xl overflow-hidden mx-auto" style={{ border: '1px solid rgba(var(--gold-rgb), 0.15)', boxShadow: '0 8px 60px rgba(0,0,0,0.4), 0 0 40px rgba(var(--gold-rgb), 0.05)', maxWidth: '360px' }}>

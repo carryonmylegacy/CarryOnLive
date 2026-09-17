@@ -515,6 +515,16 @@ ROUTE_POLICIES: dict = {
         "auth": "public",
         "notes": "Aggregate counts only; 10-min cache; gated by show_live_stats",
     },
+    # ── Site copy (founder-editable public-site text) ──────────────────────
+    "GET /api/public/site-copy": {
+        "auth": "public",
+        "notes": "Marketing text overrides only — no PII; defaults live in frontend/src/copy/siteCopy.js",
+    },
+    "PUT /api/admin/site-copy": {
+        "auth": "required",
+        "roles": ["admin"],
+        "notes": "Marketing scope (require_scope('marketing')); audited as site_copy_update",
+    },
 }
 
 

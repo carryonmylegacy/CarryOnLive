@@ -253,6 +253,7 @@ NO_PII = {
     "notification_metrics",
     "queue_alerts",
     "site_assets",
+    "site_copy",
     "partner_brief_content",
     "idempotency_keys",
     "rate_limits",

@@ -5,6 +5,7 @@ import axios from 'axios';
 import { API_URL } from '../config';
 import { MobileNav } from '../components/landing/MobileNav';
 import { founderPhotoUrl } from '../components/landing/FounderCard';
+import { useCopy, renderCopy } from '../copy/CopyContext';
 
 /* ─── scroll-reveal hook ─── */
 const useReveal = (threshold = 0.15) => {
@@ -34,7 +35,18 @@ const RevealSection = ({ children, className = '', delay = 0, direction = 'up', 
   );
 };
 
+const ABOUT_NAV = [
+  { k: 'features', label: 'Features', href: '/#features' },
+  { k: 'quiz', label: 'Readiness Quiz', href: '/#quiz' },
+  { k: 'security', label: 'Security', href: '/#security' },
+  { k: 'steps', label: 'How It Works', href: '/#steps' },
+  { k: 'pricing', label: 'Pricing', href: '/pricing' },
+  { k: 'customers', label: 'Customer Stories', href: '/customers' },
+  { k: 'founder', label: 'Founder', href: '/founder-about' },
+];
+
 const AboutPage = () => {
+  const { t } = useCopy();
   const [founder, setFounder] = useState({ name: '', title: '', bio: '', photo_url: '', linkedin_url: '' });
 
   useEffect(() => {
@@ -50,9 +62,20 @@ const AboutPage = () => {
     }).catch(() => {});
   }, []);
 
+  const values = [1, 2, 3, 4, 5].map(n => ({ title: t(`about.values.${n}.title`), desc: t(`about.values.${n}.desc`) }));
+  const teams = [1, 2, 3].map(n => ({ title: t(`about.team.${n}.title`), desc: t(`about.team.${n}.desc`) }));
+  const valueCard = (v, i, delay, direction) => (
+    <RevealSection key={i} delay={delay} direction={direction}>
+      <div className="rounded-xl p-6 h-full transition-all duration-500 hover:-translate-y-1 hover:border-[#d4af37]/20 hover:shadow-[0_8px_40px_rgba(212,175,55,0.04)]" style={{ background: 'rgba(15,26,46,0.65)', border: '1px solid rgba(14,165,233,0.06)' }}>
+        <h4 className="text-white text-base font-bold mb-3">{v.title}</h4>
+        <p className="text-[#7b879e] text-sm leading-relaxed">{renderCopy(v.desc)}</p>
+      </div>
+    </RevealSection>
+  );
+
   return (
     <div className="min-h-screen" style={{ background: '#0d1b2a' }}>
-      <SEO title="About CarryOn - Family Preparedness Mission & Team" description="Why CarryOn exists: to make family readiness accessible to every American family, not just the wealthy. Founded by a 24-year military veteran." path="/about" />
+      <SEO title={t('about.seo.title')} description={t('about.seo.description')} path="/about" />
       {founder.name && (
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
           "@context": "https://schema.org",
@@ -74,17 +97,17 @@ const AboutPage = () => {
             <img src="/carryon-logo.png" alt="CarryOn" className="h-12 cursor-pointer" />
           </a>
           <div className="hidden md:flex items-center gap-8">
-            <a href="/#features" className="text-[#6b7a90] text-sm font-medium hover:text-[#d4af37] transition-colors">Features</a>
-            <a href="/#security" className="text-[#6b7a90] text-sm font-medium hover:text-[#d4af37] transition-colors">Security</a>
-            <a href="/#steps" className="text-[#6b7a90] text-sm font-medium hover:text-[#d4af37] transition-colors">How It Works</a>
-            <span className="text-[#d4af37] text-sm font-medium">About</span>
-            <a href="/founder-about" className="text-[#6b7a90] text-sm font-medium hover:text-[#d4af37] transition-colors">Founder</a>
+            <a href="/#features" className="text-[#6b7a90] text-sm font-medium hover:text-[#d4af37] transition-colors">{t('nav.features')}</a>
+            <a href="/#security" className="text-[#6b7a90] text-sm font-medium hover:text-[#d4af37] transition-colors">{t('nav.security')}</a>
+            <a href="/#steps" className="text-[#6b7a90] text-sm font-medium hover:text-[#d4af37] transition-colors">{t('nav.steps')}</a>
+            <span className="text-[#d4af37] text-sm font-medium">{t('nav.about')}</span>
+            <a href="/founder-about" className="text-[#6b7a90] text-sm font-medium hover:text-[#d4af37] transition-colors">{t('nav.founder')}</a>
           </div>
           <div className="flex items-center gap-3">
             <a href="/login" className="text-[#d4af37] text-sm font-semibold hover:text-[#fcd34d] transition-colors flex items-center gap-1">
-              <ChevronLeft className="w-3.5 h-3.5" /> Sign In
+              <ChevronLeft className="w-3.5 h-3.5" /> {t('nav.signin')}
             </a>
-            <MobileNav links={[{ label: 'Features', href: '/#features' }, { label: 'Readiness Quiz', href: '/#quiz' }, { label: 'Security', href: '/#security' }, { label: 'How It Works', href: '/#steps' }, { label: 'Pricing', href: '/pricing' }, { label: 'Customer Stories', href: '/customers' }, { label: 'Founder', href: '/founder-about' }]} navigateWithFade={(p) => { window.location.href = p; }} testIdSuffix="-about" />
+            <MobileNav links={ABOUT_NAV} navigateWithFade={(p) => { window.location.href = p; }} testIdSuffix="-about" />
           </div>
         </div>
       </nav>
@@ -99,12 +122,12 @@ const AboutPage = () => {
         <div className="absolute inset-0 z-[2]" style={{ background: 'radial-gradient(ellipse 80% 60% at 10% 50%, rgba(255,255,255,0.08) 0%, transparent 50%)' }} />
         <div className="absolute inset-0 z-[2]" style={{ background: 'radial-gradient(ellipse 80% 70% at 85% 85%, rgba(255,255,255,0.14) 0%, transparent 55%)' }} />
         <RevealSection className="max-w-[800px] mx-auto px-6 text-center relative z-10">
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-tight mb-6" style={{ fontFamily: 'Outfit, sans-serif' }}>
-            We Believe Readiness Is the Greatest Gift a Family Can Give Itself.
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-tight mb-6" style={{ fontFamily: 'Outfit, sans-serif' }} data-testid="about-hero-title">
+            {t('about.hero.title')}
           </h1>
           <div className="w-16 h-1 mx-auto rounded-full mb-6" style={{ background: '#d4af37' }} />
           <p className="text-[#7b879e] text-base lg:text-lg leading-relaxed">
-            CarryOn&#8482; was built because every family deserves to be organized, informed, and prepared &mdash; regardless of income, background, or circumstance.
+            {renderCopy(t('about.hero.sub'))}
           </p>
         </RevealSection>
       </section>
@@ -117,33 +140,33 @@ const AboutPage = () => {
           <div className="max-w-[800px] mx-auto px-6 relative z-10">
             <RevealSection>
               <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white text-center mb-8" style={{ fontFamily: 'Outfit, sans-serif' }}>
-                Built for Every Family. Period.
+                {t('about.every.title')}
               </h2>
             </RevealSection>
             <RevealSection delay={0.1}>
               <p className="text-[#7b879e] text-base leading-relaxed mb-6">
-                You know the scenario. Someone you love is gone &mdash; and suddenly you&apos;re standing in their kitchen, opening drawers, looking for a will that might not exist, calling numbers you&apos;re not sure are right, trying to figure out what they wanted while barely holding yourself together.
+                {renderCopy(t('about.every.p1'))}
               </p>
             </RevealSection>
             <RevealSection delay={0.15}>
               <p className="text-[#7b879e] text-base leading-relaxed mb-10">
-                76% of American families will face exactly this. Not because they didn&apos;t care &mdash; but because no one gave them a simple, secure, affordable way to get ready.
+                {renderCopy(t('about.every.p2'))}
               </p>
             </RevealSection>
 
             <RevealSection delay={0.2}>
               <h3 className="text-xl sm:text-2xl font-bold text-white text-center mb-6" style={{ fontFamily: 'Outfit, sans-serif' }}>
-                That&apos;s why CarryOn exists.
+                {t('about.every.why')}
               </h3>
             </RevealSection>
             <RevealSection delay={0.25}>
               <p className="text-[#7b879e] text-base leading-relaxed mb-6">
-                Not only for the wealthy families who already have estate attorneys on retainer. Not only for the tech-savvy early adopters who track everything in spreadsheets. For <em className="text-white">every</em> family &mdash; the single parent working two jobs who needs a checklist their kids can follow, the young couple who just bought their first home and realized they have no plan, the grandparent who wants their voice heard at a graduation they might not make, the blended family navigating who gets what and who needs to know.
+                {renderCopy(t('about.every.p3'), 'text-white font-normal italic')}
               </p>
             </RevealSection>
             <RevealSection delay={0.3}>
               <p className="text-[#7b879e] text-base leading-relaxed mb-10">
-                CarryOn is the platform that meets all of them where they are &mdash; with security they can trust, simplicity they can use, and a price they can afford.
+                {renderCopy(t('about.every.p4'))}
               </p>
             </RevealSection>
 
@@ -151,7 +174,7 @@ const AboutPage = () => {
             <RevealSection delay={0.35}>
               <div className="rounded-xl p-6 lg:p-8 transition-all duration-700 hover:border-l-[#d4af37]" style={{ borderLeft: '3px solid #d4af37', background: 'rgba(212,175,55,0.04)' }}>
                 <p className="text-white text-base lg:text-lg italic leading-relaxed">
-                  We&apos;re not just an app. We build infrastructure for family preparedness &mdash; so that when the hardest day comes, your family isn&apos;t searching. They&apos;re ready.
+                  {renderCopy(t('about.every.quote'))}
                 </p>
               </div>
             </RevealSection>
@@ -168,17 +191,17 @@ const AboutPage = () => {
             <div className="grid md:grid-cols-2 gap-6">
               <RevealSection delay={0} direction="left">
                 <div className="rounded-xl p-6 lg:p-8 h-full transition-all duration-500 hover:-translate-y-1 hover:border-[#d4af37]/20" style={{ background: 'rgba(15,26,46,0.65)', border: '1px solid rgba(14,165,233,0.06)' }}>
-                  <h3 className="text-[#d4af37] text-lg font-bold mb-4" style={{ fontFamily: 'Outfit, sans-serif' }}>Our Mission</h3>
+                  <h3 className="text-[#d4af37] text-lg font-bold mb-4" style={{ fontFamily: 'Outfit, sans-serif' }}>{t('about.mission.title')}</h3>
                   <p className="text-[#7b879e] text-sm leading-relaxed">
-                    Ensure every American family has the clarity, organization, and readiness they need for life&apos;s most critical transitions &mdash; reducing overwhelm through secure estate infrastructure and intelligent document analysis.
+                    {renderCopy(t('about.mission.text'))}
                   </p>
                 </div>
               </RevealSection>
               <RevealSection delay={0.12} direction="right">
                 <div className="rounded-xl p-6 lg:p-8 h-full transition-all duration-500 hover:-translate-y-1 hover:border-[#d4af37]/20" style={{ background: 'rgba(15,26,46,0.65)', border: '1px solid rgba(14,165,233,0.06)' }}>
-                  <h3 className="text-[#d4af37] text-lg font-bold mb-4" style={{ fontFamily: 'Outfit, sans-serif' }}>Our Vision</h3>
+                  <h3 className="text-[#d4af37] text-lg font-bold mb-4" style={{ fontFamily: 'Outfit, sans-serif' }}>{t('about.vision.title')}</h3>
                   <p className="text-[#7b879e] text-sm leading-relaxed">
-                    Define the family readiness category and become the standard for families and institutions that refuse to leave their affairs to chance.
+                    {renderCopy(t('about.vision.text'))}
                   </p>
                 </div>
               </RevealSection>
@@ -195,50 +218,14 @@ const AboutPage = () => {
           <div className="max-w-[1000px] mx-auto px-6 relative z-10">
             <RevealSection>
               <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white text-center mb-12" style={{ fontFamily: 'Outfit, sans-serif' }}>
-                Our Values
+                {t('about.values.title')}
               </h2>
             </RevealSection>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-5">
-              {[
-                {
-                  title: 'Readiness Over Reaction.',
-                  desc: 'We don\'t wait for crisis. We prepare for it.',
-                },
-                {
-                  title: 'Security Without Compromise.',
-                  desc: 'Your files are scrambled before they\u2019re stored, with a separate lock for every family. Our AI only reads your documents when you ask it to. No backdoors. No exceptions.',
-                },
-                {
-                  title: 'Accessible to Every Family.',
-                  desc: 'Not just the wealthy. Not just the tech-savvy. Not just the married, the traditional, or the conventional. Every family \u2014 however you define yours.',
-                },
-              ].map(({ title, desc }, i) => (
-                <RevealSection key={title} delay={i * 0.1}>
-                  <div className="rounded-xl p-6 h-full transition-all duration-500 hover:-translate-y-1 hover:border-[#d4af37]/20 hover:shadow-[0_8px_40px_rgba(212,175,55,0.04)]" style={{ background: 'rgba(15,26,46,0.65)', border: '1px solid rgba(14,165,233,0.06)' }}>
-                    <h4 className="text-white text-base font-bold mb-3">{title}</h4>
-                    <p className="text-[#7b879e] text-sm leading-relaxed">{desc}</p>
-                  </div>
-                </RevealSection>
-              ))}
+              {values.slice(0, 3).map((v, i) => valueCard(v, i, i * 0.1, 'up'))}
             </div>
             <div className="grid sm:grid-cols-2 gap-5 max-w-[670px] mx-auto">
-              {[
-                {
-                  title: 'Lean by Design.',
-                  desc: 'Every dollar earns its keep. Every feature ships because families need it \u2014 not because investors want it.',
-                },
-                {
-                  title: 'People First. Always.',
-                  desc: 'Behind every document in our vault is a person someone loves. Behind every checklist item is a task someone will face on the worst day of their life. We never forget that. Our platform is secure and automated, but our operational teams are real people \u2014 trained, empathetic, and personally invested in getting this right for your family.',
-                },
-              ].map(({ title, desc }, i) => (
-                <RevealSection key={title} delay={0.3 + i * 0.12} direction={i === 0 ? 'left' : 'right'}>
-                  <div className="rounded-xl p-6 h-full transition-all duration-500 hover:-translate-y-1 hover:border-[#d4af37]/20 hover:shadow-[0_8px_40px_rgba(212,175,55,0.04)]" style={{ background: 'rgba(15,26,46,0.65)', border: '1px solid rgba(14,165,233,0.06)' }}>
-                    <h4 className="text-white text-base font-bold mb-3">{title}</h4>
-                    <p className="text-[#7b879e] text-sm leading-relaxed">{desc}</p>
-                  </div>
-                </RevealSection>
-              ))}
+              {values.slice(3).map((v, i) => valueCard(v, i + 3, 0.3 + i * 0.12, i === 0 ? 'left' : 'right'))}
             </div>
           </div>
         </div>
@@ -252,17 +239,17 @@ const AboutPage = () => {
           <div className="max-w-[800px] mx-auto px-6 relative z-10">
             <RevealSection>
               <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white text-center mb-8" style={{ fontFamily: 'Outfit, sans-serif' }}>
-                Who We Are
+                {t('about.who.title')}
               </h2>
             </RevealSection>
             <RevealSection delay={0.1}>
               <p className="text-[#7b879e] text-base leading-relaxed mb-6">
-                CarryOn is led by a small, focused team that believes this work matters. Our leadership brings deep experience across operations, legal, finance, and technology &mdash; but what unites us isn&apos;t our r&eacute;sum&eacute;s. It&apos;s the shared conviction that 76% is an unacceptable number, and that every family &mdash; regardless of who they are, where they live, or what they look like &mdash; deserves to be ready.
+                {renderCopy(t('about.who.p1'))}
               </p>
             </RevealSection>
             <RevealSection delay={0.15}>
               <p className="text-[#7b879e] text-base leading-relaxed mb-10">
-                The people behind CarryOn are trained for empathy, precision, and the kind of care this work demands. Today that starts with the founder, who personally answers support and reviews every verification.
+                {renderCopy(t('about.who.p2'))}
               </p>
             </RevealSection>
 
@@ -283,7 +270,7 @@ const AboutPage = () => {
                   {founder.linkedin_url && (
                     <a href={founder.linkedin_url} target="_blank" rel="noopener noreferrer"
                       className="inline-flex items-center gap-1.5 mt-3 text-xs font-semibold text-[#0A66C2] hover:text-[#004182] transition-colors" data-testid="founder-linkedin-link">
-                      <Linkedin className="w-4 h-4" /> LinkedIn Profile
+                      <Linkedin className="w-4 h-4" /> {t('about.who.linkedin')}
                     </a>
                   )}
                 </div>
@@ -292,21 +279,8 @@ const AboutPage = () => {
 
             {/* Team Cards */}
             <div className="grid sm:grid-cols-3 gap-5">
-              {[
-                {
-                  title: 'Customer Service Team (CST)',
-                  desc: 'Human support from the founder, in-app',
-                },
-                {
-                  title: 'Transition Verification Team (TVT)',
-                  desc: 'Death certificate verification and beneficiary activation',
-                },
-                {
-                  title: 'Trustee Services Team (TST)',
-                  desc: 'Confidential execution of Designated Trustee Services (DTS) tasks',
-                },
-              ].map(({ title, desc }, i) => (
-                <RevealSection key={title} delay={0.2 + i * 0.1}>
+              {teams.map(({ title, desc }, i) => (
+                <RevealSection key={i} delay={0.2 + i * 0.1}>
                   <div className="rounded-xl p-6 text-center h-full transition-all duration-500 hover:-translate-y-1 hover:border-[#d4af37]/20" style={{ background: 'rgba(15,26,46,0.65)', border: '1px solid rgba(14,165,233,0.06)' }}>
                     <h4 className="text-[#d4af37] text-sm font-bold mb-2 leading-snug">{title}</h4>
                     <p className="text-[#7b879e] text-xs leading-relaxed">{desc}</p>
@@ -325,11 +299,11 @@ const AboutPage = () => {
           <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 50% 50% at 50% 60%, rgba(212,175,55,0.05) 0%, transparent 70%)' }} />
           <RevealSection className="max-w-[600px] mx-auto px-6 text-center relative z-10">
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white italic mb-8" style={{ fontFamily: 'Outfit, sans-serif' }}>
-              Your Family Deserves to Be Ready.
+              {t('about.cta.title')}
             </h2>
             <a href="/start" className="inline-flex items-center gap-2 px-8 py-3.5 rounded-lg font-semibold text-sm transition-all hover:brightness-110 hover:scale-105 active:scale-95"
               style={{ background: '#d4af37', color: '#0B1221', transition: 'all 0.3s' }}>
-              Get Started <ChevronRight className="w-4 h-4" />
+              {t('about.cta.button')} <ChevronRight className="w-4 h-4" />
             </a>
           </RevealSection>
         </div>
@@ -341,9 +315,9 @@ const AboutPage = () => {
           <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
             <a href="/login"><img src="/carryon-logo.png" alt="CarryOn" className="h-8 opacity-60" /></a>
             <div className="flex items-center gap-6">
-              <a href="/privacy" className="text-[#3a4a63] text-xs hover:text-[#7b879e] transition-colors">Privacy Policy</a>
-              <a href="/terms" className="text-[#3a4a63] text-xs hover:text-[#7b879e] transition-colors">Terms of Service</a>
-              <span className="text-[#3a4a63] text-xs">Accessibility</span>
+              <a href="/privacy" className="text-[#3a4a63] text-xs hover:text-[#7b879e] transition-colors">{t('footer.privacy')}</a>
+              <a href="/terms" className="text-[#3a4a63] text-xs hover:text-[#7b879e] transition-colors">{t('footer.terms')}</a>
+              <span className="text-[#3a4a63] text-xs">{t('footer.accessibility')}</span>
             </div>
             <div className="text-right text-[#3a4a63] text-xs leading-relaxed">
               <p>1550 Wilson Boulevard 7th Floor</p>
@@ -351,7 +325,7 @@ const AboutPage = () => {
               <p>(703) 884-1527</p>
             </div>
           </div>
-          <p className="text-center text-[#2d3d55] text-xs mt-6">&copy; {new Date().getFullYear()} CarryOn Technologies LLC. All rights reserved.</p>
+          <p className="text-center text-[#2d3d55] text-xs mt-6">&copy; {new Date().getFullYear()} {t('footer.copyright')}</p>
         </div>
       </footer>
     </div>

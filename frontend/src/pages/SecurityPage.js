@@ -16,6 +16,7 @@ import {
   Shield, Lock, KeyRound, FileCheck, Server, AlertTriangle,
   Eye, Mail, ArrowLeft, CheckCircle2, Clock,
 } from 'lucide-react';
+import { useCopy, renderCopy } from '../copy/CopyContext';
 
 const Section = ({ icon: Icon, title, children, testid }) => (
   <section
@@ -50,12 +51,22 @@ const Bullet = ({ children }) => (
   </li>
 );
 
+/* Bullets for one section: copy keys security.<section>.1 … security.<section>.N */
+const CopyBullets = ({ section, count, t }) => (
+  <ul className="space-y-2">
+    {Array.from({ length: count }, (_, i) => (
+      <Bullet key={i}>{renderCopy(t(`security.${section}.${i + 1}`))}</Bullet>
+    ))}
+  </ul>
+);
+
 const SecurityPage = () => {
   // Land at the top regardless of where the previous page's scroll was.
   useEffect(() => { window.scrollTo(0, 0); }, []);
+  const { t } = useCopy();
   return (
   <div className="min-h-screen" style={{ background: 'var(--bg)', color: 'var(--t)' }} data-testid="security-page">
-    <SEO title="Security & Trust — CarryOn" description="AES-256-GCM encryption, per-estate keys, 2FA, subprocessors, and our full security posture — documented honestly and updated before practice changes." path="/security" />
+    <SEO title={t('security.seo.title')} description={t('security.seo.description')} path="/security" />
     <div className="max-w-3xl mx-auto px-5 sm:px-8 pt-12 pb-24" style={{ paddingTop: 'calc(48px + env(safe-area-inset-top, 0px))' }}>
       {/* Back link */}
       <Link
@@ -73,116 +84,76 @@ const SecurityPage = () => {
           className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs mb-5"
           style={{ background: 'rgba(var(--gold-rgb), 0.08)', border: '1px solid rgba(var(--gold-rgb), 0.2)', color: 'var(--gold)' }}
         >
-          <Shield className="w-3 h-3" /> Trust & Security
+          <Shield className="w-3 h-3" /> {t('security.hero.pill')}
         </div>
         <h1
           className="text-4xl sm:text-5xl font-semibold leading-[1.1] mb-5"
           style={{ fontFamily: 'var(--serif)' }}
         >
-          Your family's most private moments deserve <span className="italic" style={{ color: 'var(--gold)' }}>military-grade</span> protection.
+          {t('security.hero.h1a')} <span className="italic" style={{ color: 'var(--gold)' }}>{t('security.hero.h1b')}</span> {t('security.hero.h1c')}
         </h1>
         <p className="text-base leading-relaxed" style={{ color: 'var(--t3)' }}>
-          We built CarryOn for families like ours. The same encryption, key handling,
-          and operational controls we'd want guarding our own wills, our own messages,
-          our own kids' inheritance. This page documents — honestly — exactly what
-          those controls are today.
+          {renderCopy(t('security.hero.intro'))}
         </p>
       </div>
 
       {/* Encryption */}
-      <Section icon={Lock} title="Encryption — at rest and in transit" testid="security-encryption">
-        <ul className="space-y-2">
-          <Bullet><strong>AES-256-GCM</strong> for every encrypted document, message, and vault item.</Bullet>
-          <Bullet><strong>Per-estate encryption salt</strong> generated at estate creation. No two families share a key.</Bullet>
-          <Bullet><strong>PBKDF2-HMAC-SHA256, 600,000 iterations</strong> for password-derived keys (NIST recommends ≥600k).</Bullet>
-          <Bullet><strong>TLS 1.3</strong> with HSTS preload (max-age 1 year, includeSubDomains, preload).</Bullet>
-          <Bullet><strong>Encrypted with per-estate keys; access controlled and audited.</strong> Documents are stored AES-256-GCM encrypted with keys derived per estate from key material CarryOn operates. Because we hold that key material, this is not a zero-knowledge system: CarryOn staff access to stored content is restricted to administrator roles, limited to defined support and verification tasks, and every document download and vault view is written to an append-only audit trail &mdash; access is controlled and audited, not impossible. AI chat transcripts, which can quote documents you flagged for AI analysis, are encrypted at rest with the same per-estate keys and are deleted with the estate or account they belong to.</Bullet>
-        </ul>
+      <Section icon={Lock} title={t('security.s.encryption')} testid="security-encryption">
+        <CopyBullets section="encryption" count={5} t={t} />
       </Section>
 
       {/* Authentication */}
-      <Section icon={KeyRound} title="Authentication & Session Security" testid="security-auth">
-        <ul className="space-y-2">
-          <Bullet>HMAC-SHA256 signed JWTs with token blacklist + auto-expiring TTL index in MongoDB.</Bullet>
-          <Bullet>Single-session enforcement for non-admin accounts — old sessions are invalidated when you log in elsewhere.</Bullet>
-          <Bullet>Account lockout after 5 failed attempts within 15 minutes.</Bullet>
-          <Bullet>A one-time email code at sign-in, on by default for every account, with an option to skip it for the rest of the day on a trusted connection; passkeys supported. SMS codes coming soon.</Bullet>
-          <Bullet>WebAuthn / Passkey support for benefactor and beneficiary accounts.</Bullet>
-        </ul>
+      <Section icon={KeyRound} title={t('security.s.auth')} testid="security-auth">
+        <CopyBullets section="auth" count={5} t={t} />
       </Section>
 
       {/* Key rotation */}
-      <Section icon={Clock} title="Key & Secret Rotation" testid="security-rotation">
-        <ul className="space-y-2">
-          <Bullet>JWT signing secrets rotated at least annually and on any incident.</Bullet>
-          <Bullet>Stripe API keys rotated when staff change roles or leave.</Bullet>
-          <Bullet>VAPID push keys persisted to environment, not disk — survives pod restarts cleanly.</Bullet>
-          <Bullet>Per-estate AES salts are immutable for the life of the estate; we never re-key without explicit user consent because it would invalidate all encrypted data.</Bullet>
-        </ul>
+      <Section icon={Clock} title={t('security.s.rotation')} testid="security-rotation">
+        <CopyBullets section="rotation" count={4} t={t} />
       </Section>
 
       {/* Infra */}
-      <Section icon={Server} title="Infrastructure" testid="security-infra">
-        <ul className="space-y-2">
-          <Bullet>Backend hosted on Render (Virginia, US East); web app served by Vercel (global edge). MongoDB Atlas (encrypted-at-rest, automatic backups, point-in-time recovery).</Bullet>
-          <Bullet>Distributed scheduler locks (MongoDB-backed) prevent duplicate background jobs in multi-pod deployments.</Bullet>
-          <Bullet>MongoDB-backed sliding-window rate limiter on every authentication and high-value endpoint.</Bullet>
-          <Bullet>Sentry error monitoring on both backend (FastAPI + Starlette) and frontend, gated behind env-based DSN so dev environments never report.</Bullet>
-          <Bullet>K8s-style liveness + readiness probes (<code>/api/health/live</code>, <code>/api/health/ready</code>) for graceful rolling deploys.</Bullet>
-        </ul>
+      <Section icon={Server} title={t('security.s.infra')} testid="security-infra">
+        <CopyBullets section="infra" count={5} t={t} />
       </Section>
 
       {/* Headers */}
-      <Section icon={FileCheck} title="Browser-Side Hardening" testid="security-headers">
-        <ul className="space-y-2">
-          <Bullet>Content Security Policy (default-src 'self', tight allow-list for Stripe and fonts).</Bullet>
-          <Bullet>HSTS with preload + includeSubDomains.</Bullet>
-          <Bullet>X-Frame-Options: DENY (no clickjacking).</Bullet>
-          <Bullet>X-Content-Type-Options: nosniff.</Bullet>
-          <Bullet>Referrer-Policy: strict-origin-when-cross-origin.</Bullet>
-          <Bullet>Permissions-Policy locks down camera, mic, geolocation, payment to first-party only.</Bullet>
-          <Bullet>Cross-Origin-Opener-Policy / Cross-Origin-Resource-Policy: same-origin.</Bullet>
-        </ul>
+      <Section icon={FileCheck} title={t('security.s.headers')} testid="security-headers">
+        <CopyBullets section="headers" count={7} t={t} />
       </Section>
 
       {/* Data protection */}
-      <Section icon={Eye} title="Privacy & Data Protection" testid="security-privacy">
+      <Section icon={Eye} title={t('security.s.privacy')} testid="security-privacy">
         <ul className="space-y-2">
-          <Bullet>You own your data. Full export tooling described on our <Link to="/wind-down-promise" className="underline" style={{ color: 'var(--gold)' }}>Wind-Down & Data-Portability Promise</Link>.</Bullet>
-          <Bullet>Beneficiaries see <em>nothing</em> until you choose. Pre-transition, the only surface they have is their own profile.</Bullet>
-          <Bullet>"Public Device Mode" wipes the local cache (IndexedDB + JWT) on tab close or inactivity for shared devices (libraries, FEMA shelters).</Bullet>
-          <Bullet>We never sell, trade, or market your family data to third parties. Ever.</Bullet>
-          <Bullet><strong>AI processing — zero data retention.</strong> Estate Guardian, the Beneficiary Concierge, and our other AI features are powered by xAI (Grok). Our xAI account is configured for zero data retention: the content of each request is processed only to generate the response and is not stored by xAI afterward. Separately, xAI's published API policy excludes API content from model training. The conversation transcripts you see in the app are stored by CarryOn under the controls described above &mdash; not by xAI.</Bullet>
+          <Bullet>{renderCopy(t('security.privacy.1'))} <Link to="/wind-down-promise" className="underline" style={{ color: 'var(--gold)' }}>{t('security.privacy.1link')}</Link>.</Bullet>
+          {[2, 3, 4, 5].map(n => <Bullet key={n}>{renderCopy(t(`security.privacy.${n}`))}</Bullet>)}
         </ul>
       </Section>
 
       {/* Compliance */}
-      <Section icon={Shield} title="Compliance & Audits" testid="security-compliance">
+      <Section icon={Shield} title={t('security.s.compliance')} testid="security-compliance">
         <ul className="space-y-2">
-          <Bullet><strong>Preparing for SOC 2 Type II.</strong> We are preparing for a SOC 2 Type II audit. We do not claim SOC 2 attestation today. When the audit is complete, the report and the audit firm's name will be published on this page.</Bullet>
-          <Bullet>GDPR & CCPA data-subject rights (access, deletion, portability) supported via in-app export and a written request to <a href="mailto:privacy@carryon.us" className="underline" style={{ color: 'var(--gold)' }}>privacy@carryon.us</a>.</Bullet>
-          <Bullet>HIPAA-style controls applied to medical directives stored in the Secure Document Vault, though we are not a covered entity.</Bullet>
+          <Bullet>{renderCopy(t('security.compliance.1'))}</Bullet>
+          <Bullet>{renderCopy(t('security.compliance.2'))} <a href="mailto:privacy@carryon.us" className="underline" style={{ color: 'var(--gold)' }}>privacy@carryon.us</a>.</Bullet>
+          <Bullet>{renderCopy(t('security.compliance.3'))}</Bullet>
         </ul>
       </Section>
 
       {/* Reporting */}
-      <Section icon={AlertTriangle} title="Reporting a Vulnerability" testid="security-reporting">
+      <Section icon={AlertTriangle} title={t('security.s.reporting')} testid="security-reporting">
         <p>
-          If you've found a security issue, please tell us before you tell the
-          internet. We don't have a paid bug bounty yet, but we will publicly
-          credit you on this page (with your permission) and respond within 72
-          hours.
+          {renderCopy(t('security.reporting.intro'))}
         </p>
         <ul className="space-y-2">
           <Bullet>
-            <strong>Email:</strong>{' '}
+            <strong>{t('security.reporting.email_label')}</strong>{' '}
             <a href="mailto:security@carryon.us" className="underline" style={{ color: 'var(--gold)' }}>security@carryon.us</a>
           </Bullet>
           <Bullet>
-            <strong>RFC 9116 security.txt:</strong>{' '}
+            <strong>{t('security.reporting.txt_label')}</strong>{' '}
             <a href="/.well-known/security.txt" className="underline" style={{ color: 'var(--gold)' }}>www.carryon.us/.well-known/security.txt</a>
           </Bullet>
-          <Bullet>Please don't run brute-force, denial-of-service, or social-engineering tests against live accounts.</Bullet>
+          <Bullet>{renderCopy(t('security.reporting.rules'))}</Bullet>
         </ul>
       </Section>
 
@@ -194,17 +165,16 @@ const SecurityPage = () => {
       >
         <Mail className="w-6 h-6 flex-shrink-0" style={{ color: 'var(--gold)' }} />
         <div className="text-sm" style={{ color: 'var(--t3)' }}>
-          Questions about how we protect your family's information? Write to{' '}
+          {t('security.contact.before')}{' '}
           <a href="mailto:security@carryon.us" className="underline font-semibold" style={{ color: 'var(--gold)' }}>
             security@carryon.us
           </a>
-          . We answer every legitimate inquiry, often within the same day.
+          {t('security.contact.after')}
         </div>
       </div>
 
       <p className="text-xs mt-10 text-center" style={{ color: 'var(--t5)' }}>
-        Last updated: September 7, 2026. This page is the source of truth for
-        CarryOn's security posture. We change it before we change practice.
+        {renderCopy(t('security.updated'))}
       </p>
     </div>
     <PublicFooter />

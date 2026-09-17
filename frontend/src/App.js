@@ -3,6 +3,7 @@ import React, { useEffect, useState, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { CopyProvider } from './copy/CopyContext';
 import { SectionLockProvider } from './components/security/SectionLock';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import { CapacitorUpdater } from '@capgo/capacitor-updater';
@@ -959,6 +960,7 @@ function App() {
   return (
     <ForceUpdateGate>
     <ThemeProvider>
+      <CopyProvider>
       <AuthProvider>
         <PartnerHeadBranding />
         <SectionLockProvider>
@@ -1000,6 +1002,7 @@ function App() {
         <SpeedInsights />
         </SectionLockProvider>
       </AuthProvider>
+      </CopyProvider>
     </ThemeProvider>
     </ForceUpdateGate>
   );

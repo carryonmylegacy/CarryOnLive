@@ -55,6 +55,7 @@ import { BetaTestingTab } from '../components/admin/BetaTestingTab';
 import { FounderEmailsTab } from '../components/admin/FounderEmailsTab';
 import { FounderInvitesTab } from '../components/admin/FounderInvitesTab';
 import { SiteContentTab } from '../components/admin/SiteContentTab';
+import { SiteCopyTab } from '../components/admin/siteCopy/SiteCopyTab';
 import { GracePeriodsTab } from '../components/admin/GracePeriodsTab';
 import { IPWhitelistTab } from '../components/admin/IPWhitelistTab';
 import { ScopedAdminsTab } from '../components/admin/ScopedAdminsTab';
@@ -343,6 +344,7 @@ const AdminPage = ({ operatorMode = false }) => {
       case 'founder-emails': return <FounderEmailsTab getAuthHeaders={getAuthHeaders} />;
       case 'founder-invites': return <FounderInvitesTab onPendingChange={setPendingAccessReqs} />;
       case 'site-content': return <SiteContentTab getAuthHeaders={getAuthHeaders} />;
+      case 'site-copy': return <SiteCopyTab getAuthHeaders={getAuthHeaders} />;
       case 'grace-periods': return <GracePeriodsTab getAuthHeaders={getAuthHeaders} />;
       case 'trials': return <TrialUsersTab getAuthHeaders={getAuthHeaders} />;
       case 'scoped-admins': return <ScopedAdminsTab getAuthHeaders={getAuthHeaders} />;

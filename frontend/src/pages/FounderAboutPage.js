@@ -4,8 +4,10 @@ import SEO from '../components/SEO';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { Loader2, ShieldX, Lock, Eye, EyeOff, Send, ArrowLeft } from 'lucide-react';
 import { API_URL } from '../config';
+import { useCopy, renderCopy } from '../copy/CopyContext';
 
 const FounderAboutPage = () => {
+  const { t } = useCopy();
   const { token } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -103,7 +105,7 @@ const FounderAboutPage = () => {
   if (status === 'verifying') {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center" style={{ background: '#0d1b2a', paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }} data-testid="founder-page-loading">
-        <SEO title="Founder — CarryOn" description="About the founder of CarryOn." path="/founder-about" noindex />
+        <SEO title={t('founder.seo.title')} description={t('founder.seo.description')} path="/founder-about" noindex />
         <Loader2 className="w-10 h-10 text-[#d4af37] animate-spin mb-4" />
         <p className="text-[#9aa5b4] text-sm">Verifying your invitation...</p>
       </div>
@@ -199,7 +201,7 @@ const FounderAboutPage = () => {
   // Gate page — request access or sign in
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-5 relative" style={{ background: '#0d1b2a', paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }} data-testid="founder-page-gate">
-      <SEO title="Founder — CarryOn" description="About the founder of CarryOn." path="/founder-about" noindex />
+      <SEO title={t('founder.seo.title')} description={t('founder.seo.description')} path="/founder-about" noindex />
       <div className="absolute inset-0 z-0">
         <FlagBackdrop style={{ filter: 'brightness(0.35) contrast(1.05) saturate(0.8)' }} />
       </div>
@@ -212,7 +214,7 @@ const FounderAboutPage = () => {
         </button>
 
         <p className="text-[#9aa5b4] text-xs sm:text-sm leading-relaxed mb-4" data-testid="founder-gate-intro">
-          This page holds the personal story of CarryOn&#8217;s founder, Barnet Harris, a retired 24-year military veteran &mdash; shared on request rather than published publicly.
+          {renderCopy(t('founder.gate.intro'))}
         </p>
 
         <div className="rounded-2xl p-6 sm:p-8" style={{ background: 'rgba(13,27,42,0.8)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', border: '1px solid rgba(var(--gold-rgb), 0.12)', boxShadow: '0 24px 80px rgba(0,0,0,0.5)' }}>
@@ -221,9 +223,9 @@ const FounderAboutPage = () => {
           {gateMode === 'request' && !reqStatus && (
             <>
               <div className="text-center mb-5">
-                <h1 className="text-lg sm:text-xl font-bold text-white" style={{ fontFamily: 'var(--sans)' }}>Meet the Founder</h1>
+                <h1 className="text-lg sm:text-xl font-bold text-white" style={{ fontFamily: 'var(--sans)' }}>{t('founder.gate.title')}</h1>
                 <p className="text-[#9aa5b4] text-xs sm:text-sm mt-2 leading-relaxed">
-                  Interested in learning more about the founder of CarryOn&#8482; and what inspired him to build it? Request access below, and you&#8217;ll be notified when your request is approved.
+                  {renderCopy(t('founder.gate.text'))}
                 </p>
               </div>
               <form onSubmit={handleRequest} className="space-y-3" autoComplete="off" data-form-type="other">
@@ -236,12 +238,12 @@ const FounderAboutPage = () => {
                 <button type="submit" disabled={reqLoading}
                   className="gold-keep-dark w-full py-3 rounded-lg font-semibold text-sm transition-all hover:brightness-110 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
                   style={{ background: '#d4af37', color: '#0d1b2a' }} data-testid="founder-req-submit">
-                  {reqLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Send className="w-4 h-4" /> Request Access</>}
+                  {reqLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Send className="w-4 h-4" /> {t('founder.gate.button')}</>}
                 </button>
               </form>
               <div className="mt-4 pt-3 text-center" style={{ borderTop: '1px solid rgba(14,165,233,0.06)' }}>
                 <button onClick={() => setGateMode('login')} className="text-[#6b7a90] text-xs hover:text-[#d4af37] transition-colors py-1" data-testid="founder-switch-login">
-                  Already have access? Sign in here &rarr;
+                  {t('founder.gate.switch_login')}
                 </button>
               </div>
             </>
@@ -255,8 +257,8 @@ const FounderAboutPage = () => {
                   <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.2)' }}>
                     <Send className="w-6 h-6 text-[#22c55e]" />
                   </div>
-                  <h3 className="text-base sm:text-lg font-bold text-white mb-2">Request Submitted</h3>
-                  <p className="text-[#9aa5b4] text-xs sm:text-sm leading-relaxed">The founder will review your request. You&#8217;ll receive your access credentials once approved.</p>
+                  <h3 className="text-base sm:text-lg font-bold text-white mb-2">{t('founder.gate.submitted_title')}</h3>
+                  <p className="text-[#9aa5b4] text-xs sm:text-sm leading-relaxed">{renderCopy(t('founder.gate.submitted_text'))}</p>
                 </>
               )}
               {reqStatus === 'already_pending' && (
@@ -264,8 +266,8 @@ const FounderAboutPage = () => {
                   <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: 'rgba(var(--gold-rgb), 0.1)', border: '1px solid rgba(var(--gold-rgb), 0.2)' }}>
                     <Send className="w-6 h-6 text-[#d4af37]" />
                   </div>
-                  <h3 className="text-base sm:text-lg font-bold text-white mb-2">Request Already Pending</h3>
-                  <p className="text-[#9aa5b4] text-xs sm:text-sm leading-relaxed">You already have a pending request. The founder will review it shortly.</p>
+                  <h3 className="text-base sm:text-lg font-bold text-white mb-2">{t('founder.gate.pending_title')}</h3>
+                  <p className="text-[#9aa5b4] text-xs sm:text-sm leading-relaxed">{renderCopy(t('founder.gate.pending_text'))}</p>
                 </>
               )}
               {reqStatus === 'error' && (
@@ -288,8 +290,8 @@ const FounderAboutPage = () => {
             <>
               <div className="text-center mb-5">
                 <Lock className="w-7 h-7 sm:w-8 sm:h-8 text-[#d4af37] mx-auto mb-3" />
-                <h1 className="text-lg sm:text-xl font-bold text-white" style={{ fontFamily: 'var(--sans)' }}>About the Founder</h1>
-                <p className="text-[#9aa5b4] text-xs sm:text-sm mt-1">Enter your credentials to view</p>
+                <h1 className="text-lg sm:text-xl font-bold text-white" style={{ fontFamily: 'var(--sans)' }}>{t('founder.login.title')}</h1>
+                <p className="text-[#9aa5b4] text-xs sm:text-sm mt-1">{t('founder.login.sub')}</p>
               </div>
               <form onSubmit={handleLogin} className="space-y-3" autoComplete="off" data-form-type="other">
                 <div>
@@ -311,12 +313,12 @@ const FounderAboutPage = () => {
                 <button type="submit" disabled={loginLoading}
                   className="gold-keep-dark w-full py-3 rounded-lg font-semibold text-sm transition-all hover:brightness-110 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
                   style={{ background: '#d4af37', color: '#0d1b2a' }} data-testid="founder-login-submit">
-                  {loginLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'View Founder Page'}
+                  {loginLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : t('founder.login.button')}
                 </button>
               </form>
               <div className="mt-4 pt-3 text-center" style={{ borderTop: '1px solid rgba(14,165,233,0.06)' }}>
                 <button onClick={() => setGateMode('request')} className="text-[#6b7a90] text-xs hover:text-[#d4af37] transition-colors py-1" data-testid="founder-switch-request">
-                  &larr; Don&#8217;t have access? Request it here
+                  {t('founder.login.switch_request')}
                 </button>
               </div>
             </>

@@ -6,7 +6,7 @@ import { ChevronRight } from 'lucide-react';
 import { API_URL } from '../config';
 import { RevealSection } from '../components/landing/RevealSection';
 import LandingContent from '../components/landing/LandingContent';
-import { HERO } from '../components/landing/heroCopy';
+import { useCopy, renderCopy } from '../copy/CopyContext';
 import { MobileNav, MARKETING_LINKS } from '../components/landing/MobileNav';
 import { HeroCtas } from '../components/landing/HeroCtas';
 import { HeroShot } from '../components/landing/HeroShot';
@@ -31,6 +31,7 @@ const HomePage = () => {
   const [landscapeVideoId, setLandscapeVideoId] = useState('EhU-jojs1jk');
   const [verticalVideoId, setVerticalVideoId] = useState('');
   const [founderLinkedin, setFounderLinkedin] = useState('');
+  const { t } = useCopy();
 
   const isMobileView = useIsMobileViewport();
 
@@ -68,7 +69,7 @@ const HomePage = () => {
       ...(exiting ? { transform: 'scale(0.98)' } : {}),
       transition: 'opacity 0.45s ease, transform 0.45s ease',
     }}>
-      <SEO title="CarryOn - Get Your Family’s Affairs in Order, In One Secure Place" description="One secure place for your documents, passwords, who to call first, and what to do next — so your family can handle what comes next. Scrambled before it’s stored, with a separate lock for every family. Built by a 24-year veteran." path="/" />
+      <SEO title={t('home.seo.title')} description={t('home.seo.description')} path="/" />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify([
         {
           "@context": "https://schema.org",
@@ -143,15 +144,15 @@ const HomePage = () => {
           <img src="/carryon-logo.png" alt="CarryOn" className="h-12 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} data-testid="home-logo" />
           <div className="hidden lg:flex items-center gap-7">
             {MARKETING_LINKS.map(item => (
-              <a key={item.label} href={item.href} className="text-[#6b7a90] text-sm font-medium hover:text-[#d4af37] transition-colors duration-300">{item.label}</a>
+              <a key={item.label} href={item.href} className="text-[#6b7a90] text-sm font-medium hover:text-[#d4af37] transition-colors duration-300">{t(`nav.${item.k}`)}</a>
             ))}
           </div>
           <div className="flex items-center gap-4">
             <button onClick={() => navigateWithFade('/start')} className="hidden sm:inline-flex items-center gap-1 px-5 py-2 rounded-lg text-sm font-bold transition-all active:scale-95" style={{ background: '#d4af37', color: '#0B1221' }} data-testid="home-nav-get-started">
-              Start Now
+              {t('nav.start')}
             </button>
             <button onClick={() => navigateWithFade('/login')} className="text-[#d4af37] text-sm font-semibold hover:text-[#fcd34d] transition-colors flex items-center gap-1" data-testid="home-sign-in-nav">
-              Sign In <ChevronRight className="w-3.5 h-3.5" />
+              {t('nav.signin')} <ChevronRight className="w-3.5 h-3.5" />
             </button>
             <MobileNav navigateWithFade={navigateWithFade} testIdSuffix="-home" />
           </div>
@@ -172,17 +173,17 @@ const HomePage = () => {
         <div className="max-w-[1100px] mx-auto px-6 w-full relative z-10 text-center">
           <RevealSection delay={0.1}>
             <img src="/carryon-logo.png" alt="CarryOn" className="w-[200px] lg:w-[260px] h-auto mx-auto mb-6" />
-            <p className="text-[#d4af37] text-xs sm:text-sm font-bold uppercase tracking-[0.22em] mb-4" style={{ textShadow: '0 1px 6px rgba(0,0,0,0.6)' }} data-testid="hero-eyebrow-home">{HERO.eyebrow}</p>
+            <p className="text-[#d4af37] text-xs sm:text-sm font-bold uppercase tracking-[0.22em] mb-4" style={{ textShadow: '0 1px 6px rgba(0,0,0,0.6)' }} data-testid="hero-eyebrow-home">{t('home.hero.eyebrow')}</p>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-[1.08] mb-4" style={{ fontFamily: 'Outfit, sans-serif', textWrap: 'balance', textShadow: '0 2px 12px rgba(0,0,0,0.7), 0 1px 4px rgba(0,0,0,0.5)' }} data-testid="hero-h1-home">
-              {HERO.h1a}
-              <span className="block text-[#d4af37] mt-1" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.7), 0 1px 4px rgba(0,0,0,0.5)' }}>{HERO.h1b}</span>
+              {t('home.hero.h1a')}
+              <span className="block text-[#d4af37] mt-1" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.7), 0 1px 4px rgba(0,0,0,0.5)' }}>{t('home.hero.h1b')}</span>
             </h1>
             <p className="text-white/80 text-base lg:text-lg max-w-lg mx-auto leading-relaxed mb-8" style={{ textShadow: '0 1px 8px rgba(0,0,0,0.6)' }}>
-              {HERO.sub}
+              {renderCopy(t('home.hero.sub'))}
             </p>
             <HeroCtas navigateWithFade={navigateWithFade} testIdSuffix="-home" />
             <div className="flex items-center gap-5 justify-center flex-wrap mt-8">
-              {HERO.badges.map(badge => (
+              {[1, 2, 3].map(n => t(`home.hero.badge${n}`)).filter(Boolean).map(badge => (
                 <div key={badge} className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-[#10b981]" />
                   <span className="text-white/70 text-sm font-medium" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>{badge}</span>
@@ -210,10 +211,10 @@ const HomePage = () => {
               <div className="absolute inset-0 z-[1]" style={{ background: 'radial-gradient(ellipse 80% 60% at 50% 50%, rgba(212,175,55,0.04) 0%, transparent 70%)' }} />
               <RevealSection className="max-w-[900px] mx-auto px-6 text-center relative z-10">
                 <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-3 leading-tight" style={{ fontFamily: 'Outfit, sans-serif' }}>
-                  See CarryOn in Action
+                  {t('home.video.title')}
                 </h2>
                 <p className="text-white/60 text-sm lg:text-base mb-8">
-                  Learn how CarryOn&#8482; keeps your family ready for anything.
+                  {t('home.video.sub')}
                 </p>
                 {showVertical ? (
                   /* Vertical (portrait) video for mobile PWA */

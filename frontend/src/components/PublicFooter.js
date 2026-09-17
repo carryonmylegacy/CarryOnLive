@@ -3,18 +3,20 @@ import { Link } from 'react-router-dom';
 import apiClient from '../utils/apiClient';
 import { API_URL } from '../config';
 import { COMPANY, copyrightLine } from '../config/company';
+import { useCopy } from '../copy/CopyContext';
 
 let cachedInfo = null;
 
 const LINKS = [
-  { to: '/privacy', label: 'Privacy Policy' },
-  { to: '/terms', label: 'Terms of Service' },
-  { to: '/security', label: 'Security' },
-  { to: '/wind-down-promise', label: 'Wind-Down Promise' },
-  { to: '/accessibility', label: 'Accessibility' },
+  { to: '/privacy', k: 'privacy' },
+  { to: '/terms', k: 'terms' },
+  { to: '/security', k: 'security' },
+  { to: '/wind-down-promise', k: 'winddown' },
+  { to: '/accessibility', k: 'accessibility' },
 ];
 
 export const PublicFooter = () => {
+  const { t } = useCopy();
   const [info, setInfo] = useState(
     cachedInfo || { line1: COMPANY.addressLine1, line2: COMPANY.addressLine2, phone: COMPANY.phone }
   );
@@ -46,7 +48,7 @@ export const PublicFooter = () => {
                 className="text-[#94a3b8] text-xs hover:text-[#cbd5e1] transition-colors"
                 data-testid={`footer-link${l.to.replace(/\//g, '-')}`}
               >
-                {l.label}
+                {t(`footer.${l.k}`)}
               </Link>
             ))}
           </nav>

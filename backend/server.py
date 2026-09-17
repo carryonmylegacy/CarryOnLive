@@ -23,6 +23,7 @@ from routes.admin import router as admin_router
 from routes.admin_digest import router as admin_digest_router
 from routes.partner_digest import router as partner_digest_router
 from routes.public_content import router as public_content_router
+from routes.site_copy import router as site_copy_router
 from routes.public_status import router as public_status_router
 from routes.our_promise import router as our_promise_router
 from routes.verification import router as verification_router
@@ -385,6 +386,7 @@ api_router.include_router(partner_brief_router)
 api_router.include_router(beneficiary_concierge_router)
 api_router.include_router(admin_router)
 api_router.include_router(public_content_router)
+api_router.include_router(site_copy_router)
 api_router.include_router(auth_router)
 api_router.include_router(beneficiaries_router)
 api_router.include_router(checklist_router)

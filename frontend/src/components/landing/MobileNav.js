@@ -1,20 +1,23 @@
 import React, { useState } from 'react';
 import { Menu, X, ChevronRight } from 'lucide-react';
+import { useCopy } from '../../copy/CopyContext';
 
+// `k` is the copy key (nav.<k>) — labels are founder-editable; `label` stays the stable default used for test ids.
 export const MARKETING_LINKS = [
-  { label: 'Features', href: '#features' },
-  { label: 'Readiness Quiz', href: '#quiz' },
-  { label: 'Security', href: '#security' },
-  { label: 'How It Works', href: '#steps' },
-  { label: 'Pricing', href: '/pricing' },
-  { label: 'Customers', href: '/customers' },
-  { label: 'About', href: '/about' },
+  { k: 'features', label: 'Features', href: '#features' },
+  { k: 'quiz', label: 'Readiness Quiz', href: '#quiz' },
+  { k: 'security', label: 'Security', href: '#security' },
+  { k: 'steps', label: 'How It Works', href: '#steps' },
+  { k: 'pricing', label: 'Pricing', href: '/pricing' },
+  { k: 'customers', label: 'Customers', href: '/customers' },
+  { k: 'about', label: 'About', href: '/about' },
 ];
 
 const slug = (s) => s.toLowerCase().replace(/[^a-z]+/g, '-');
 
 export const MobileNav = ({ links = MARKETING_LINKS, navigateWithFade, testIdSuffix = '' }) => {
   const [open, setOpen] = useState(false);
+  const { t } = useCopy();
   const go = (path) => { setOpen(false); navigateWithFade(path); };
   return (
     <div className="lg:hidden">
@@ -29,13 +32,13 @@ export const MobileNav = ({ links = MARKETING_LINKS, navigateWithFade, testIdSuf
             {links.map(l => (
               <a key={l.label} href={l.href} onClick={() => setOpen(false)} data-testid={`mobile-menu-link-${slug(l.label)}${testIdSuffix}`}
                 className="flex items-center justify-between py-3.5 text-base font-medium text-[#e2e8f0] border-b border-white/5 hover:text-[#d4af37] transition-colors">
-                {l.label} <ChevronRight className="w-4 h-4 text-[#4a5568]" />
+                {l.k ? t(`nav.${l.k}`) : l.label} <ChevronRight className="w-4 h-4 text-[#4a5568]" />
               </a>
             ))}
           </nav>
           <div className="flex gap-3 mt-5">
-            <button onClick={() => go('/start')} className="flex-1 py-3 rounded-lg font-bold text-sm active:scale-95 transition-transform" style={{ background: '#d4af37', color: '#0B1221' }} data-testid={`mobile-menu-start${testIdSuffix}`}>Start Now</button>
-            <button onClick={() => go('/login')} className="flex-1 py-3 rounded-lg font-semibold text-sm active:scale-95 transition-transform" style={{ background: 'rgba(255,255,255,0.06)', color: '#e2e8f0', border: '1px solid rgba(255,255,255,0.14)' }} data-testid={`mobile-menu-sign-in${testIdSuffix}`}>Sign In</button>
+            <button onClick={() => go('/start')} className="flex-1 py-3 rounded-lg font-bold text-sm active:scale-95 transition-transform" style={{ background: '#d4af37', color: '#0B1221' }} data-testid={`mobile-menu-start${testIdSuffix}`}>{t('nav.start')}</button>
+            <button onClick={() => go('/login')} className="flex-1 py-3 rounded-lg font-semibold text-sm active:scale-95 transition-transform" style={{ background: 'rgba(255,255,255,0.06)', color: '#e2e8f0', border: '1px solid rgba(255,255,255,0.14)' }} data-testid={`mobile-menu-sign-in${testIdSuffix}`}>{t('nav.signin')}</button>
           </div>
         </div>
       )}

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { CreditCard, XCircle, ShieldCheck, Download, Clock, Lock } from 'lucide-react';
+import { useCopy, renderCopy } from '../../copy/CopyContext';
 
 const BADGES = [
   { icon: CreditCard, text: 'No card needed to explore' },
@@ -21,13 +22,16 @@ export const TrustBadges = ({ tone = 'dark', testIdSuffix = '', className = '' }
 };
 
 // One-line payment-provider note rendered directly under every plan CTA.
-export const StripeNote = ({ tone = 'app', testId, className = '' }) => (
-  <p className={`inline-flex items-center justify-center gap-1.5 text-[13px] leading-snug ${className}`}
-    style={{ color: tone === 'dark' ? '#8b97ab' : 'var(--t5)' }} data-testid={testId}>
-    <Lock className="w-3.5 h-3.5 flex-shrink-0 text-[#10b981]" />
-    <span>Secure checkout by <strong style={{ color: tone === 'dark' ? '#e2e8f0' : 'var(--t3)' }}>Stripe</strong> &middot; your card never touches our servers</span>
-  </p>
-);
+export const StripeNote = ({ tone = 'app', testId, className = '' }) => {
+  const { t } = useCopy();
+  return (
+    <p className={`inline-flex items-center justify-center gap-1.5 text-[13px] leading-snug ${className}`}
+      style={{ color: tone === 'dark' ? '#8b97ab' : 'var(--t5)' }} data-testid={testId}>
+      <Lock className="w-3.5 h-3.5 flex-shrink-0 text-[#10b981]" />
+      <span style={{ '--strong': tone === 'dark' ? '#e2e8f0' : 'var(--t3)' }}>{renderCopy(t('pricing.stripe_note'), 'text-[color:var(--strong)]')}</span>
+    </p>
+  );
+};
 
 export const useChangelog = () => {
   const [entries, setEntries] = useState([]);

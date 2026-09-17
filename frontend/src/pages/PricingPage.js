@@ -10,6 +10,7 @@ import { API_URL } from '../config';
 import { TrustBadges, StripeNote } from '../components/landing/TrustBadges';
 import { startPlanCheckout } from '../utils/stripeRedirect';
 import { toast } from 'sonner';
+import { useCopy, renderCopy } from '../copy/CopyContext';
 
 const CYCLE_LABELS = { monthly: 'Monthly', quarterly: 'Quarterly', annual: 'Annual' };
 const CYCLE_SAVINGS = { monthly: null, quarterly: 'Save 10%', annual: 'Save 20%' };
@@ -37,6 +38,7 @@ const FEATURE_ROWS = [
 const PricingPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { t } = useCopy();
   const [plans, setPlans] = useState([]);
   const [tierFeatures, setTierFeatures] = useState({});
   const [selectedCycle, setSelectedCycle] = useState('monthly');
@@ -148,7 +150,7 @@ const PricingPage = () => {
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg)' }} data-testid="pricing-page">
-      <SEO title="Pricing - CarryOn | One Plan for You, Invited Family Pays Nothing" description={`One plan for you, from $${lowestPrice} to $${highestPrice} per month. The people you invite pay nothing while you're alive. Explore first for ${trialDays} days with no card. Reduced pricing for seniors, military, veterans and young adults; free for hospice families.`} path="/pricing" />
+      <SEO title={t('pricing.seo.title')} description={`One plan for you, from $${lowestPrice} to $${highestPrice} per month. The people you invite pay nothing while you're alive. Explore first for ${trialDays} days with no card. Reduced pricing for seniors, military, veterans and young adults; free for hospice families.`} path="/pricing" />
       {pricingJsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: pricingJsonLd }} />}
 
       {/* Header */}
@@ -158,8 +160,8 @@ const PricingPage = () => {
           <span className="text-lg font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>CarryOn</span>
         </div>
         <div className="flex items-center gap-4">
-          <button onClick={() => navigate('/start')} className="text-sm text-[#d4af37] font-medium hover:underline" data-testid="pricing-nav-start">Start Now</button>
-          <button onClick={() => navigate('/login')} className="text-sm text-[var(--t4)] hover:text-[var(--t)]">Sign In</button>
+          <button onClick={() => navigate('/start')} className="text-sm text-[#d4af37] font-medium hover:underline" data-testid="pricing-nav-start">{t('nav.start')}</button>
+          <button onClick={() => navigate('/login')} className="text-sm text-[var(--t4)] hover:text-[var(--t)]">{t('nav.signin')}</button>
         </div>
       </header>
 
@@ -167,7 +169,7 @@ const PricingPage = () => {
         {/* Hero */}
         <div className="text-center mb-10">
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-[var(--t)] mb-3" style={{ fontFamily: 'Outfit, sans-serif' }} data-testid="pricing-h1">
-            One plan for you. <span className="text-[#d4af37]">Nobody you invite pays.</span>
+            {t('pricing.hero.h1a')} <span className="text-[#d4af37]">{t('pricing.hero.h1b')}</span>
           </h1>
           <p className="text-base sm:text-lg text-[var(--t4)] max-w-xl mx-auto mb-4" data-testid="pricing-subhead">
             Explore first for {trialDays} days with no card. Your spouse, kids, and attorney pay nothing while you&apos;re alive. Cancel anytime.
@@ -178,9 +180,9 @@ const PricingPage = () => {
         {/* How pricing works */}
         <div className="grid sm:grid-cols-3 gap-4 mb-12" data-testid="pricing-how-it-works">
           {[
-            { icon: CreditCard, step: '1', title: 'You pick one plan', desc: `Base, Standard, or Premium. Monthly by default; quarterly saves 10%, annual saves 20%. Your first ${trialDays} days are free to explore, no card.` },
-            { icon: UserPlus, step: '2', title: 'You invite your people — free', desc: 'Spouse, kids, siblings, your attorney. They see what you share and pay nothing while you\u2019re here. There is no per-person fee on your bill.' },
-            { icon: Clock, step: '3', title: 'After you pass, they choose', desc: benRange ? `Each person can keep their own access for ${money(benRange[0])}\u2013${money(benRange[1])}/mo (30-day grace period first), or export everything and leave.` : 'Each person can keep their own access for a small monthly rate, or export everything and leave.' },
+            { icon: CreditCard, step: '1', title: t('pricing.steps.1.title'), desc: `Base, Standard, or Premium. Monthly by default; quarterly saves 10%, annual saves 20%. Your first ${trialDays} days are free to explore, no card.` },
+            { icon: UserPlus, step: '2', title: t('pricing.steps.2.title'), desc: 'Spouse, kids, siblings, your attorney. They see what you share and pay nothing while you\u2019re here. There is no per-person fee on your bill.' },
+            { icon: Clock, step: '3', title: t('pricing.steps.3.title'), desc: benRange ? `Each person can keep their own access for ${money(benRange[0])}\u2013${money(benRange[1])}/mo (30-day grace period first), or export everything and leave.` : 'Each person can keep their own access for a small monthly rate, or export everything and leave.' },
           ].map(({ icon: Icon, step, title, desc }) => (
             <div key={step} className="rounded-xl p-5" style={card}>
               <div className="flex items-center gap-2 mb-2">
@@ -227,7 +229,7 @@ const PricingPage = () => {
                 data-testid={`pricing-plan-${plan.id}`}>
                 {plan.id === 'premium' && (
                   <div className="absolute top-0 right-0 px-3 py-1 rounded-bl-xl text-xs font-bold" style={{ background: '#d4af37', color: '#080e1a' }}>
-                    Most Popular
+                    {t('pricing.popular')}
                   </div>
                 )}
                 <h3 className="text-xl font-bold text-[var(--t)] mb-2">{plan.name}</h3>
@@ -267,13 +269,13 @@ const PricingPage = () => {
         {/* How paying works — the visible checkout path */}
         <div className="rounded-2xl p-5 sm:p-6 mb-6" style={card} data-testid="pricing-how-paying-works">
           <p className="text-sm font-bold text-[var(--t)] mb-4 flex items-center gap-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
-            <Lock className="w-4 h-4 text-[#10b981]" /> How paying works
+            <Lock className="w-4 h-4 text-[#10b981]" /> {t('pricing.paying.title')}
           </p>
           <ol className="grid sm:grid-cols-3 gap-4">
             {[
-              { icon: ListChecks, title: 'Pick your plan', desc: 'Right here. Change it or cancel from your account any time.' },
-              { icon: UserPlus, title: 'Create your account', desc: 'Name, email, password. About a minute. No card yet.' },
-              { icon: CreditCard, title: 'Pay securely with Stripe', desc: 'You finish on Stripe\u2019s checkout page. Your card number never touches our servers; we never see or store it.' },
+              { icon: ListChecks, title: t('pricing.paying.1.title'), desc: t('pricing.paying.1.desc') },
+              { icon: UserPlus, title: t('pricing.paying.2.title'), desc: t('pricing.paying.2.desc') },
+              { icon: CreditCard, title: t('pricing.paying.3.title'), desc: t('pricing.paying.3.desc') },
             ].map(({ icon: Icon, title, desc }, i) => (
               <li key={title} className="flex items-start gap-3" data-testid={`pricing-paying-step-${i + 1}`}>
                 <span className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0" style={{ background: 'rgba(16,185,129,0.12)', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)' }}>{i + 1}</span>
@@ -290,7 +292,7 @@ const PricingPage = () => {
         <div className="rounded-xl p-4 mb-12 text-center" style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.15)' }} data-testid="pricing-value-anchor">
           <p className="text-sm text-[var(--t3)] leading-relaxed">
             For comparison: one hour with an estate attorney typically runs $250&ndash;$500. On annual billing, <strong className="text-[var(--t)]">a full year of any plan above costs less than {attorneyHours === 1 ? 'one hour' : `${attorneyHours} hours`}</strong> &mdash; and your family stays ready every month, not just once.
-            <span className="block text-xs text-[var(--t5)] mt-1">Settling an estate without organized records takes an average of 570 hours.</span>
+            <span className="block text-xs text-[var(--t5)] mt-1">{t('pricing.anchor')}</span>
           </p>
         </div>
 
@@ -300,7 +302,7 @@ const PricingPage = () => {
             <button onClick={() => setShowSpecial(s => !s)} aria-expanded={showSpecial} data-testid="pricing-special-toggle"
               className="w-full rounded-xl p-5 flex items-center justify-between gap-4 text-left transition-colors hover:border-[#d4af37]/40" style={card}>
               <div>
-                <p className="text-base font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>Do you qualify for reduced pricing?</p>
+                <p className="text-base font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>{t('pricing.reduced.q')}</p>
                 <p className="text-xs text-[var(--t4)] mt-1">
                   {specialTiers.map(p => p.name).join(' \u00b7 ')} &middot; Hospice families: free. Same full platform, verified once.
                 </p>
@@ -340,7 +342,7 @@ const PricingPage = () => {
         {mainTiers.length > 0 && (
           <div className="mb-12">
             <h2 className="text-xl font-bold text-[var(--t)] mb-6 text-center" style={{ fontFamily: 'Outfit, sans-serif' }}>
-              Compare Plans
+              {t('pricing.compare.title')}
             </h2>
             <div className="overflow-x-auto rounded-xl" style={{ border: '1px solid var(--b)' }}>
               <table className="w-full text-sm" data-testid="pricing-comparison-table">
@@ -384,7 +386,7 @@ const PricingPage = () => {
             </div>
             {/* Decision helper */}
             <div className="mt-6 rounded-xl p-5 text-center" style={card}>
-              <p className="text-sm font-bold text-[var(--t)] mb-2">Which plan is right for you?</p>
+              <p className="text-sm font-bold text-[var(--t)] mb-2">{t('pricing.which.title')}</p>
               <p className="text-xs text-[var(--t4)] leading-relaxed">
                 <strong>18&ndash;25?</strong> Start at the New Adult rate.{' '}
                 <strong>One household, a few documents?</strong> Base has the essentials.{' '}
@@ -398,20 +400,20 @@ const PricingPage = () => {
         {/* Why this model (D4.4) + effective-price example */}
         <div className="grid lg:grid-cols-[1fr_360px] gap-5 mb-12">
           <div className="rounded-2xl p-6" style={card} data-testid="pricing-why">
-            <h2 className="text-lg font-bold text-[var(--t)] mb-3 flex items-center gap-2" style={{ fontFamily: 'Outfit, sans-serif' }}><HelpCircle className="w-5 h-5 text-[#d4af37]" /> Why monthly, and why more than three prices?</h2>
+            <h2 className="text-lg font-bold text-[var(--t)] mb-3 flex items-center gap-2" style={{ fontFamily: 'Outfit, sans-serif' }}><HelpCircle className="w-5 h-5 text-[#d4af37]" /> {t('pricing.why.title')}</h2>
             <div className="space-y-3 text-sm text-[var(--t4)] leading-relaxed">
-              <p>Most tools in this category charge $49&ndash;$150 a year up front, usually with a free tier that caps how much you can store. We chose a different model on purpose:</p>
+              <p>{renderCopy(t('pricing.why.p1'))}</p>
               <ul className="space-y-2">
                 <li className="flex gap-2"><Check className="w-4 h-4 text-[#10b981] flex-shrink-0 mt-0.5" /><span><strong className="text-[var(--t)]">Monthly by default.</strong> You never pay for a year of something you&apos;re still exploring. Switch to annual whenever you like and save 20%.</span></li>
                 <li className="flex gap-2"><Check className="w-4 h-4 text-[#10b981] flex-shrink-0 mt-0.5" /><span><strong className="text-[var(--t)]">Priced by circumstance.</strong> Seniors, military and first responders, veterans, and young adults pay less. Families in hospice pay nothing. Readiness shouldn&apos;t depend on income.</span></li>
                 <li className="flex gap-2"><Check className="w-4 h-4 text-[#10b981] flex-shrink-0 mt-0.5" /><span><strong className="text-[var(--t)]">No per-person fees while you&apos;re alive.</strong> Invite everyone who should know. Your bill doesn&apos;t change.</span></li>
               </ul>
-              <p>The trade-off is more prices on this page than a three-tier freemium grid. We think that&apos;s the fairer deal, and we&apos;d rather explain it than hide it.</p>
+              <p>{renderCopy(t('pricing.why.p2'))}</p>
             </div>
           </div>
           {standard && (
             <div className="rounded-2xl p-6" style={{ background: 'rgba(59,130,246,0.05)', border: '1px solid rgba(59,130,246,0.15)' }} data-testid="pricing-example">
-              <p className="text-xs font-bold uppercase tracking-wider text-[#3b82f6] mb-3">Real example</p>
+              <p className="text-xs font-bold uppercase tracking-wider text-[#3b82f6] mb-3">{t('pricing.example.label')}</p>
               <p className="text-sm text-[var(--t)] font-semibold mb-2">{standard.name} plan, annual billing, spouse + two kids + your attorney invited</p>
               <div className="space-y-1.5 text-sm text-[var(--t4)]">
                 <div className="flex justify-between"><span>Your plan ({money(getPrice(standard, 'annual'))}/mo &times; 12)</span><span className="text-[var(--t)] font-medium">{money(perYear(standard, 'annual'))}</span></div>
@@ -426,7 +428,7 @@ const PricingPage = () => {
         {/* Family plan callout */}
         <div className="rounded-2xl p-6 text-center mb-8" style={{ background: 'rgba(59,130,246,0.05)', border: '1px solid rgba(59,130,246,0.12)' }}>
           <Users className="w-8 h-8 mx-auto mb-2 text-[#3b82f6]" />
-          <h3 className="text-lg font-bold text-[var(--t)] mb-1">More than one household?</h3>
+          <h3 className="text-lg font-bold text-[var(--t)] mb-1">{t('pricing.household.title')}</h3>
           <p className="text-sm text-[var(--t4)] max-w-md mx-auto">
             Family Plans let a parent, an adult child, and a sibling each run their own estate under one roof. Set it up from Settings after you subscribe.
             {familyDiscount > 0 && ` Additional account owners save ${familyDiscount}%.`}
@@ -443,9 +445,9 @@ const PricingPage = () => {
 
         {/* Trust footer */}
         <div className="flex flex-wrap items-center justify-center gap-6 text-xs text-[var(--t5)] py-8" style={{ borderTop: '1px solid var(--b)' }}>
-          <span><Shield className="w-4 h-4 inline mr-1" />Scrambled before it&rsquo;s stored</span>
-          <span><Check className="w-4 h-4 inline mr-1" />Cancel Anytime</span>
-          <span>Your Data Is Yours Alone</span>
+          <span><Shield className="w-4 h-4 inline mr-1" />{t('pricing.badge1')}</span>
+          <span><Check className="w-4 h-4 inline mr-1" />{t('pricing.badge2')}</span>
+          <span>{t('pricing.badge3')}</span>
           <a href="/" className="hover:text-[var(--t4)] inline-flex items-center gap-1">Back to homepage <ChevronRight className="w-3 h-3" /></a>
         </div>
       </div>

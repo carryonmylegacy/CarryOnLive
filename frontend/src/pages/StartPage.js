@@ -11,6 +11,7 @@ import { API_URL } from '../config';
 import { TrustBadges, StripeNote } from '../components/landing/TrustBadges';
 import { startPlanCheckout } from '../utils/stripeRedirect';
 import { toast } from 'sonner';
+import { useCopy, renderCopy } from '../copy/CopyContext';
 
 const CYCLE_LABELS = { monthly: 'Monthly', quarterly: 'Quarterly', annual: 'Annual' };
 const CYCLE_SAVINGS = { monthly: null, quarterly: '10% off', annual: '20% off' };
@@ -24,6 +25,7 @@ const readIntent = () => {
 const StartPage = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
+  const { t } = useCopy();
   const [searchParams] = useSearchParams();
   const [plans, setPlans] = useState([]);
   const [trialDays, setTrialDays] = useState(30);
@@ -187,7 +189,7 @@ const StartPage = () => {
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg)' }} data-testid="start-page">
-      <SEO title="Get Started with CarryOn - Family Preparedness Platform" description={`Choose how to begin: pick a plan, or explore CarryOn first for ${trialDays} days with no card. One secure place for documents, passwords, who to call first and what to do next.`} path="/start" />
+      <SEO title={t('start.seo.title')} description={`Choose how to begin: pick a plan, or explore CarryOn first for ${trialDays} days with no card. One secure place for documents, passwords, who to call first and what to do next.`} path="/start" />
       {startPageJsonLd && (
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: startPageJsonLd }} />
       )}
@@ -198,7 +200,7 @@ const StartPage = () => {
           <span className="text-lg font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>CarryOn</span>
         </div>
         <button onClick={() => navigate('/login')} className="text-sm text-[var(--t4)] hover:text-[var(--t)]">
-          Sign In
+          {t('nav.signin')}
         </button>
       </header>
 
@@ -206,10 +208,10 @@ const StartPage = () => {
         {/* Hero */}
         <div className="text-center mb-10 sm:mb-16">
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-[var(--t)] mb-4" style={{ fontFamily: 'Outfit, sans-serif' }}>
-            Protect what matters most
+            {t('start.hero.title')}
           </h1>
           <p className="text-base sm:text-lg text-[var(--t4)] max-w-2xl mx-auto">
-            Choose how you'd like to get started with CarryOn
+            {t('start.hero.sub')}
           </p>
         </div>
 
@@ -222,13 +224,13 @@ const StartPage = () => {
           }} data-testid="door-paid">
             <div className="flex items-center gap-2 mb-4">
               <Zap className="w-5 h-5 text-[#d4af37]" />
-              <span className="text-xs font-bold uppercase tracking-wider text-[#d4af37]">Recommended</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-[#d4af37]">{t('start.paid.badge')}</span>
             </div>
             <h2 className="text-2xl font-bold text-[var(--t)] mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
-              Start today
+              {t('start.paid.title')}
             </h2>
             <p className="text-sm text-[var(--t4)] mb-6">
-              Full access. Your plan is live in minutes. Cancel anytime.
+              {renderCopy(t('start.paid.text'))}
             </p>
             <ul className="space-y-2 mb-6">
               {['Secure document vault', 'Estate Guardian AI review', 'Milestone Messages for loved ones', 'What-to-do-first checklist', 'Reminders on your phone'].map(feat => (
@@ -243,7 +245,7 @@ const StartPage = () => {
               className="w-full py-3.5 rounded-xl text-base font-bold transition-all active:scale-[0.97]"
               style={{ background: 'linear-gradient(135deg, #d4af37, #F0C95C)', color: '#080e1a' }}
               data-testid="door-paid-cta">
-              Choose a Plan <ArrowRight className="w-5 h-5 inline ml-1" />
+              {t('start.paid.cta')} <ArrowRight className="w-5 h-5 inline ml-1" />
             </button>
           </div>
 
@@ -254,13 +256,13 @@ const StartPage = () => {
           }} data-testid="door-explore">
             <div className="flex items-center gap-2 mb-4">
               <Clock className="w-5 h-5 text-[var(--t4)]" />
-              <span className="text-xs font-bold uppercase tracking-wider text-[var(--t4)]">No card needed</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-[var(--t4)]">{t('start.trial.badge')}</span>
             </div>
             <h2 className="text-2xl font-bold text-[var(--t)] mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
-              Explore first
+              {t('start.trial.title')}
             </h2>
             <p className="text-sm text-[var(--t4)] mb-6">
-              Not ready to pay? Build your family's plan first. No card needed. You'll be asked to subscribe when your {trialDays}-day exploration period ends.
+              {renderCopy(t('start.trial.text', { days: trialDays }))}
             </p>
             <ul className="space-y-2 mb-6">
               {['Full platform access during exploration', 'Add beneficiaries & upload documents', 'See your Estate Readiness Score build', 'Your data is yours alone'].map(feat => (
@@ -278,7 +280,7 @@ const StartPage = () => {
               className="w-full py-3.5 rounded-xl text-base font-bold transition-all active:scale-[0.97]"
               style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid var(--b)', color: 'var(--t)' }}
               data-testid="door-explore-cta">
-              Create Account <ChevronRight className="w-5 h-5 inline ml-1" />
+              {t('start.trial.cta')} <ChevronRight className="w-5 h-5 inline ml-1" />
             </button>
           </div>
         </div>
@@ -287,9 +289,9 @@ const StartPage = () => {
         <div id="pricing-section" style={{ scrollMarginTop: 'calc(2rem + env(safe-area-inset-top, 0px))' }}>
           <div className="text-center mb-8">
             <h2 className="text-2xl sm:text-3xl font-bold text-[var(--t)] mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
-              Simple, transparent pricing
+              {t('start.plans.title')}
             </h2>
-            <p className="text-sm text-[var(--t4)] mb-3">Cancel anytime. Your data is yours alone.</p>
+            <p className="text-sm text-[var(--t4)] mb-3">{t('start.plans.sub')}</p>
             <TrustBadges tone="app" testIdSuffix="-start" />
           </div>
 
@@ -372,7 +374,7 @@ const StartPage = () => {
           {/* Special tiers */}
           {specialTiers.length > 0 && (
             <div className="mb-8">
-              <h3 className="text-lg font-bold text-[var(--t)] mb-4 text-center">Special Pricing</h3>
+              <h3 className="text-lg font-bold text-[var(--t)] mb-4 text-center">{t('start.plans.special')}</h3>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {specialTiers.map(plan => {
                   const price = getPrice(plan, selectedCycle);
@@ -401,9 +403,9 @@ const StartPage = () => {
           {/* Family pricing callout */}
           <div className="rounded-2xl p-5 sm:p-6 mb-8 text-center" style={{ background: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.15)' }}>
             <Users className="w-8 h-8 mx-auto mb-2 text-[#3b82f6]" />
-            <h3 className="text-lg font-bold text-[var(--t)] mb-1">One plan. Nobody you invite pays.</h3>
+            <h3 className="text-lg font-bold text-[var(--t)] mb-1">{t('start.family.title')}</h3>
             <p className="text-sm text-[var(--t4)] max-w-md mx-auto">
-              Your spouse, kids, and attorney see what you share at no charge while you&apos;re alive. Quarterly and annual billing saves you even more.
+              {renderCopy(t('start.family.text'))}
               {familyDiscount > 0 && ` Family plan members save an additional ${familyDiscount}%.`}
             </p>
           </div>
@@ -413,16 +415,16 @@ const StartPage = () => {
             <button onClick={() => navigate('/get-started?plan=hospice')} className="text-sm text-[var(--t5)] hover:text-[var(--t4)] transition-colors underline"
               data-testid="hospice-link">
               <Heart className="w-3.5 h-3.5 inline mr-1" />
-              Enrolled in certified hospice care? Full access at no cost.
+              {t('start.hospice')}
             </button>
           </div>
         </div>
 
         {/* Trust signals */}
         <div className="flex flex-wrap items-center justify-center gap-6 text-xs text-[var(--t5)] py-8" style={{ borderTop: '1px solid var(--b)' }}>
-          <span><Shield className="w-4 h-4 inline mr-1" />Scrambled before it&rsquo;s stored</span>
-          <span><Check className="w-4 h-4 inline mr-1" />Cancel Anytime</span>
-          <span>Your Data Is Yours Alone</span>
+          <span><Shield className="w-4 h-4 inline mr-1" />{t('pricing.badge1')}</span>
+          <span><Check className="w-4 h-4 inline mr-1" />{t('pricing.badge2')}</span>
+          <span>{t('pricing.badge3')}</span>
         </div>
       </div>
     </div>
