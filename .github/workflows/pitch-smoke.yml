@@ -43,7 +43,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Verify required secrets are configured
         env:
@@ -92,7 +92,7 @@ jobs:
 
       - name: Open or update GitHub issue on failure
         if: failure() && env.SKIP != '1'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const fs = require('fs');
@@ -146,7 +146,7 @@ jobs:
 
       - name: Close pitch-smoke-alert on recovery
         if: success() && env.SKIP != '1'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const { data: existing } = await github.rest.issues.listForRepo({
