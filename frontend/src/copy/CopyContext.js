@@ -4,6 +4,13 @@ import { API_URL } from '../config';
 import { COPY_DEFAULTS } from './siteCopy';
 
 const CACHE_KEY = 'carryon_site_copy_v1';
+export const PREVIEW_MSG = 'carryon:copy-preview';
+export const PREVIEW_READY_MSG = 'carryon:copy-preview-ready';
+
+/* Preview mode: the page is framed by the Site Copy editor (same origin) and receives unsaved edits via postMessage. */
+const isPreviewFrame = () => {
+  try { return window.self !== window.top && new URLSearchParams(window.location.search).has('copyPreview'); } catch { return false; }
+};
 
 const readCache = () => {
   try { return JSON.parse(localStorage.getItem(CACHE_KEY) || 'null') || {}; } catch { return {}; }
@@ -23,29 +30,42 @@ const CopyContext = createContext({
 
 /** Founder-editable site copy: overrides fetched lazily (first useCopy call), defaults render instantly. */
 export const CopyProvider = ({ children }) => {
-  const [overrides, setOverrides] = useState(readCache);
+  const preview = useRef(isPreviewFrame()).current;
+  const [overrides, setOverrides] = useState(() => (preview ? {} : readCache()));
   const [loaded, setLoaded] = useState(false);
   const started = useRef(false);
 
   const ensureLoaded = useCallback(() => {
-    if (started.current) return;
+    if (started.current || preview) return;
     started.current = true;
     apiClient.get(`${API_URL}/public/site-copy`).then(r => {
       const next = r.data?.overrides || {};
       setOverrides(next);
       writeCache(next);
     }).catch(() => {}).finally(() => setLoaded(true));
-  }, []);
+  }, [preview]);
 
-  const applyOverrides = useCallback((next) => { setOverrides(next); writeCache(next); }, []);
+  useEffect(() => {
+    if (!preview) return undefined;
+    const onMessage = (e) => {
+      if (e.origin !== window.location.origin || e.data?.type !== PREVIEW_MSG) return;
+      setOverrides(e.data.overrides || {});
+      setLoaded(true);
+    };
+    window.addEventListener('message', onMessage);
+    window.parent.postMessage({ type: PREVIEW_READY_MSG }, window.location.origin);
+    return () => window.removeEventListener('message', onMessage);
+  }, [preview]);
+
+  const applyOverrides = useCallback((next) => { setOverrides(next); if (!preview) writeCache(next); }, [preview]);
 
   const value = useMemo(() => ({
-    overrides, loaded, ensureLoaded, applyOverrides,
+    overrides, loaded, ensureLoaded, applyOverrides, preview,
     t: (key, vars) => {
       const raw = overrides[key];
       return fillVars(raw !== undefined && raw !== '' ? raw : (COPY_DEFAULTS[key] ?? ''), vars);
     },
-  }), [overrides, loaded, ensureLoaded, applyOverrides]);
+  }), [overrides, loaded, ensureLoaded, applyOverrides, preview]);
 
   return <CopyContext.Provider value={value}>{children}</CopyContext.Provider>;
 };
@@ -56,21 +76,60 @@ export const useCopy = () => {
   return ctx;
 };
 
+const EMAIL_RE = /([\w.+-]+@[\w-]+\.[\w.-]+\w)/g;
+const EMAIL_TEST = /^[\w.+-]+@[\w-]+\.[\w.-]+\w$/;
+
+/* One line → inline nodes: **bold** and (when linkClass is given) e-mail addresses as mailto links. */
+const renderInline = (line, li, strongClass, linkClass) => (
+  line.split(/(\*\*[^*]+\*\*)/g).filter(Boolean).flatMap((part, pi) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={`${li}-${pi}`} className={strongClass}>{part.slice(2, -2)}</strong>;
+    }
+    if (!linkClass) return part;
+    return part.split(EMAIL_RE).filter(Boolean).map((seg, si) => (
+      EMAIL_TEST.test(seg)
+        ? <a key={`${li}-${pi}-${si}`} href={`mailto:${seg}`} className={linkClass}>{seg}</a>
+        : seg
+    ));
+  })
+);
+
 /** Plain text → React nodes. Line breaks become <br/>; **word** becomes <strong>. Never HTML. */
-export const renderCopy = (text, strongClass) => {
+export const renderCopy = (text, strongClass, linkClass) => {
   const lines = String(text ?? '').split('\n');
   return lines.flatMap((line, li) => {
-    const parts = line.split(/(\*\*[^*]+\*\*)/g).filter(Boolean).map((part, pi) => (
-      part.startsWith('**') && part.endsWith('**')
-        ? <strong key={`${li}-${pi}`} className={strongClass}>{part.slice(2, -2)}</strong>
-        : part
-    ));
+    const parts = renderInline(line, li, strongClass, linkClass);
     return li < lines.length - 1 ? [...parts, <br key={`br-${li}`} />] : parts;
   });
 };
 
+/** "One item per line" field → array of trimmed, non-empty lines (leading "- " allowed). */
+export const copyList = (text) => String(text ?? '').split('\n').map(l => l.replace(/^-\s+/, '').trim()).filter(Boolean);
+
+/** Body text → paragraphs; consecutive lines starting with "- " become one bulleted list. */
+export const renderBlocks = (text, { pClass = '', ulClass = '', liClass = '', strongClass, linkClass } = {}) => {
+  const blocks = [];
+  let list = null;
+  String(text ?? '').split('\n').forEach((raw) => {
+    const line = raw.trim();
+    if (!line) { list = null; return; }
+    if (/^-\s+/.test(line)) {
+      if (!list) { list = []; blocks.push({ type: 'ul', items: list }); }
+      list.push(line.replace(/^-\s+/, ''));
+    } else {
+      list = null;
+      blocks.push({ type: 'p', text: line });
+    }
+  });
+  return blocks.map((b, i) => (
+    b.type === 'ul'
+      ? <ul key={i} className={ulClass}>{b.items.map((item, j) => <li key={j} className={liClass}>{renderInline(item, `${i}-${j}`, strongClass, linkClass)}</li>)}</ul>
+      : <p key={i} className={pClass}>{renderInline(b.text, i, strongClass, linkClass)}</p>
+  ));
+};
+
 /** <CopyText k="home.hero.sub" /> — renders one registry field with line breaks + **bold**. */
-export const CopyText = ({ k, vars, strongClass }) => {
+export const CopyText = ({ k, vars, strongClass, linkClass }) => {
   const { t } = useCopy();
-  return <>{renderCopy(t(k, vars), strongClass)}</>;
+  return <>{renderCopy(t(k, vars), strongClass, linkClass)}</>;
 };

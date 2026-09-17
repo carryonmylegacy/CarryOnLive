@@ -199,6 +199,7 @@ RETAIN = {
     "phi_access_log": {"period_days": 3 * 365, "basis": "GDPR Art. 17(3)(e)/6(1)(f); CCPA §1798.105(d)(2),(3)"},
     "trustee_audit_events": {"period_days": 3 * 365, "basis": "GDPR Art. 17(3)(e)/6(1)(f); CCPA §1798.105(d)(2)"},
     "admin_audit_log": {"period_days": 3 * 365, "basis": "GDPR Art. 17(3)(e)/6(1)(f); staff accountability"},
+    "site_copy_history": {"period_days": 3 * 365, "basis": "GDPR Art. 6(1)(f); staff accountability — public-site text changes, actor = staff email"},
     "security_incidents": {"period_days": 7 * 365, "basis": "GDPR Art. 33(5) breach documentation; 17(3)(e)"},
     "consent_audit_log": {
         "period_days": 3 * 365,

@@ -525,6 +525,11 @@ ROUTE_POLICIES: dict = {
         "roles": ["admin"],
         "notes": "Marketing scope (require_scope('marketing')); audited as site_copy_update",
     },
+    "GET /api/admin/site-copy/history": {
+        "auth": "required",
+        "roles": ["admin"],
+        "notes": "Marketing scope; change log of public-site text (actor email = staff)",
+    },
 }
 
 

@@ -7,6 +7,8 @@
  * /api/admin/site-copy. Plain text + line breaks; `**bold**` is the only inline mark.
  * `locked` fields are platform law (official tool / pillar names) and render read-only.
  */
+import { PAGES_PHASE2 } from './siteCopyPhase2';
+
 const f = (k, label, d, extra = {}) => ({ k, label, d, ...extra });
 const L = (k, label, d) => f(k, label, d, { locked: true });
 
@@ -75,7 +77,7 @@ const FAQ = [
   ['Can my family access the vault if I\'m overseas or unreachable?', 'Yes. CarryOn\'s Emergency Access protocol lets the people you\'ve designated request vault access when you are incapacitated or unreachable. Every request is verified by our Transition Verification Team — real people, not algorithms.'],
 ];
 
-export const PAGES = [
+const PAGES_PHASE1 = [
   {
     key: 'home', label: 'Homepage', path: '/',
     sections: [
@@ -494,6 +496,8 @@ export const PAGES = [
     ],
   },
 ];
+
+export const PAGES = [...PAGES_PHASE1, ...PAGES_PHASE2];
 
 export const COPY_DEFAULTS = Object.fromEntries(PAGES.flatMap(p => p.sections.flatMap(s => s.fields.map(x => [x.k, x.d]))));
 export const COPY_FIELD_COUNT = Object.keys(COPY_DEFAULTS).length;

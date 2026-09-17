@@ -123,3 +123,30 @@ def test_non_admin_cannot_write():
         f"{BASE_URL}/api/admin/site-copy", json={"changes": {PROBE_KEY: "nope"}}, headers=_login(BENEFACTOR), timeout=20
     )
     assert r.status_code == 403
+
+
+def test_history_records_before_after_and_actor(founder_headers):
+    requests.put(f"{BASE_URL}/api/admin/site-copy", json={"changes": {PROBE_KEY: "version one"}}, headers=founder_headers, timeout=20)
+    requests.put(f"{BASE_URL}/api/admin/site-copy", json={"changes": {PROBE_KEY: "version two"}}, headers=founder_headers, timeout=20)
+    # unchanged value must not create a history row
+    requests.put(f"{BASE_URL}/api/admin/site-copy", json={"changes": {PROBE_KEY: "version two"}}, headers=founder_headers, timeout=20)
+    requests.put(f"{BASE_URL}/api/admin/site-copy", json={"changes": {PROBE_KEY: None}}, headers=founder_headers, timeout=20)
+
+    r = requests.get(f"{BASE_URL}/api/admin/site-copy/history", params={"key": PROBE_KEY, "limit": 10}, headers=founder_headers, timeout=20)
+    assert r.status_code == 200, r.text
+    items = r.json()["items"]
+    pairs = [(i["previous"], i["next"]) for i in items[:3]]
+    assert pairs == [("version two", ""), ("version one", "version two"), ("", "version one")]
+    assert all(i["actor_email"] == FOUNDER["email"] and i["at"] and i["id"] for i in items[:3])
+
+    # restore = PUT the previous text back
+    r = requests.put(f"{BASE_URL}/api/admin/site-copy", json={"changes": {PROBE_KEY: items[1]["previous"]}}, headers=founder_headers, timeout=20)
+    assert r.json()["overrides"][PROBE_KEY] == "version one"
+
+
+def test_history_is_admin_only_and_validates_key(founder_headers):
+    assert requests.get(f"{BASE_URL}/api/admin/site-copy/history", timeout=20).status_code in (401, 403)
+    assert requests.get(f"{BASE_URL}/api/admin/site-copy/history", headers=_login(BENEFACTOR), timeout=20).status_code == 403
+    assert requests.get(f"{BASE_URL}/api/admin/site-copy/history", params={"key": "$ne"}, headers=founder_headers, timeout=20).status_code == 400
+    r = requests.get(f"{BASE_URL}/api/admin/site-copy/history", params={"limit": 5}, headers=founder_headers, timeout=20)
+    assert r.status_code == 200 and len(r.json()["items"]) <= 5

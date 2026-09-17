@@ -3,7 +3,7 @@ import { ChevronDown } from 'lucide-react';
 import { SiteCopyField } from './SiteCopyField';
 
 /** Collapsible group of fields (one page section). Always open while searching. */
-export const SiteCopySection = ({ section, fields, open, onToggle, forceOpen, valueOf, savedOf, onChange }) => {
+export const SiteCopySection = ({ section, fields, open, onToggle, forceOpen, valueOf, savedOf, onChange, historyOf, onRestore, restoring }) => {
   const editedCount = fields.filter(f => !f.locked && savedOf(f.k)).length;
   const dirtyCount = fields.filter(f => !f.locked && valueOf(f.k) !== (savedOf(f.k) || f.d)).length;
   const isOpen = forceOpen || open;
@@ -23,7 +23,8 @@ export const SiteCopySection = ({ section, fields, open, onToggle, forceOpen, va
       {isOpen && (
         <div className="px-4 pb-3" style={{ borderTop: '1px solid var(--b)' }}>
           {fields.map(f => (
-            <SiteCopyField key={f.k} field={f} value={valueOf(f.k)} savedValue={savedOf(f.k)} onChange={v => onChange(f.k, v)} />
+            <SiteCopyField key={f.k} field={f} value={valueOf(f.k)} savedValue={savedOf(f.k)} onChange={v => onChange(f.k, v)}
+              history={historyOf(f.k)} onRestore={onRestore} restoring={restoring} />
           ))}
         </div>
       )}

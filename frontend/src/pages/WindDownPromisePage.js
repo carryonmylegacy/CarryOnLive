@@ -16,6 +16,7 @@ import { Link } from 'react-router-dom';
 import {
   HeartHandshake, Download, Calendar, Archive, Code2, ArrowLeft, CheckCircle2,
 } from 'lucide-react';
+import { useCopy, renderCopy, copyList } from '../copy/CopyContext';
 
 const Card = ({ icon: Icon, title, children, testid }) => (
   <section
@@ -50,11 +51,19 @@ const Bullet = ({ children }) => (
   </li>
 );
 
+const LINK = 'underline text-[color:var(--gold)]';
+
 const WindDownPromisePage = () => {
   useEffect(() => { window.scrollTo(0, 0); }, []);
+  const { t } = useCopy();
+  const bullets = (k) => (
+    <ul className="space-y-2">
+      {copyList(t(k)).map((item, i) => <Bullet key={i}>{renderCopy(item, undefined, LINK)}</Bullet>)}
+    </ul>
+  );
   return (
   <div className="min-h-screen" style={{ background: 'var(--bg)', color: 'var(--t)' }} data-testid="wind-down-page">
-    <SEO title="Wind-Down & Data Portability Promise — CarryOn" description="Our binding written commitment in three states: what you can export today, what happens if a wind-down is ever announced (90 days minimum notice), and what stays yours after — in formats that never need our servers." path="/wind-down-promise" />
+    <SEO title={t('winddown.seo.title')} description={t('winddown.seo.description')} path="/wind-down-promise" />
     <div className="max-w-3xl mx-auto px-5 sm:px-8 pt-12 pb-24" style={{ paddingTop: 'calc(48px + env(safe-area-inset-top, 0px))' }}>
       <Link
         to="/"
@@ -62,7 +71,7 @@ const WindDownPromisePage = () => {
         style={{ color: 'var(--t4)' }}
         data-testid="winddown-back-home"
       >
-        <ArrowLeft className="w-4 h-4" /> Home
+        <ArrowLeft className="w-4 h-4" /> {t('winddown.back')}
       </Link>
 
       <div className="mb-10">
@@ -70,81 +79,38 @@ const WindDownPromisePage = () => {
           className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs mb-5"
           style={{ background: 'rgba(var(--gold-rgb), 0.08)', border: '1px solid rgba(var(--gold-rgb), 0.2)', color: 'var(--gold)' }}
         >
-          <HeartHandshake className="w-3 h-3" /> Wind-down & Portability Promise
+          <HeartHandshake className="w-3 h-3" /> {t('winddown.pill')}
         </div>
         <h1
           className="text-4xl sm:text-5xl font-semibold leading-[1.1] mb-5"
           style={{ fontFamily: 'var(--serif)' }}
         >
-          If we ever shut down, your family's data <span className="italic" style={{ color: 'var(--gold)' }}>comes home with you</span>.
+          {t('winddown.h1a')} <span className="italic" style={{ color: 'var(--gold)' }}>{t('winddown.h1b')}</span>.
         </h1>
         <p className="text-base leading-relaxed" style={{ color: 'var(--t3)' }}>
-          CarryOn's founder, a retired 24-year military veteran, "boot-strapped" CarryOn
-          from inception to what it is today because he believes this work matters. We
-          also know nothing in tech lasts forever. So we want you to know exactly what
-          would happen — long before anything ever needs to.
+          {renderCopy(t('winddown.intro'))}
         </p>
         <p className="text-base leading-relaxed mt-3" style={{ color: 'var(--t3)' }}>
-          This is a binding written promise. We commit to every line below.
+          {renderCopy(t('winddown.intro2'))}
         </p>
       </div>
 
-      <Card icon={Download} title="State 1 — Today, while CarryOn is healthy" testid="winddown-state1">
-        <p>You can take your data home right now, without asking us:</p>
-        <ul className="space-y-2">
-          <Bullet>
-            A complete data export from Settings &rarr; Privacy (protected by step-up
-            verification) &mdash; your profile, estates, milestone message text, Digital
-            Access Vault entries including their secret values, your full financial
-            picture (bills, debts, accounts, property), entities &amp; structures,
-            Friends &amp; Family contacts, contingency protocols, Immediate Action
-            Checklist, and your plan&apos;s change history &mdash; one readable JSON file.
-          </Bullet>
-          <Bullet>Every uploaded document, downloadable individually in its original file format (PDF, JPG, MP4, WAV&hellip;).</Bullet>
-          <Bullet>Milestone message audio and video in original format.</Bullet>
-          <Bullet>
-            Formatted PDFs from your Estate Binder &mdash; Immediate Action Checklist,
-            Contingency Protocols, Financial Picture hand-off package, Estate Guardian
-            plan and transcript, Emergency Card, Family Readiness Report &mdash; for the
-            sections you have generated in the Estate Binder.
-          </Bullet>
-          <Bullet>Or write to <a href="mailto:privacy@carryon.us" className="underline" style={{ color: 'var(--gold)' }}>privacy@carryon.us</a> and we assemble it with you.</Bullet>
-        </ul>
+      <Card icon={Download} title={t('winddown.state1.title')} testid="winddown-state1">
+        <p>{renderCopy(t('winddown.state1.intro'))}</p>
+        {bullets('winddown.state1.bullets')}
       </Card>
 
-      <Card icon={Calendar} title="State 2 — If a wind-down is ever announced" testid="winddown-state2">
-        <p>No silent shutdown. Ever. If CarryOn is ever sunsetting &mdash; voluntarily, due to acquisition, or for any other reason:</p>
-        <ul className="space-y-2">
-          <Bullet>Every active account receives at least <strong>90 calendar days of advance written notice</strong> (email + in-app banner) before any service degradation.</Bullet>
-          <Bullet>Every feature stays fully functional for the whole window. Nothing removed early "to save costs."</Bullet>
-          <Bullet>Every export path in State 1 stays open all 90 days, and we will remind you to use them by email.</Bullet>
-          <Bullet>There is no automated wind-down mode in the software today; these are commitments we carry out.</Bullet>
-          <Bullet>
-            <strong>What happens at day 90:</strong> the software deletes the <strong>file content</strong> of
-            your uploaded documents (the stored PDFs, images, audio and video). Document metadata
-            (names, categories, dates) and everything in the JSON export &mdash; including Digital
-            Access Vault entries and milestone message text &mdash; survive. Download your files
-            before day 90; after it they cannot be recovered.
-          </Bullet>
-          <Bullet>Founders Circle Lifetime members get <strong>concierge migration support</strong> &mdash; a real person walks you through your export and confirms you have everything.</Bullet>
-          <Bullet>If we are acquired, the acquirer must honor this entire promise as a condition of the deal. If the founder is ever unable to operate the company, his own estate plan includes hand-off instructions to a successor with these same commitments.</Bullet>
-        </ul>
+      <Card icon={Calendar} title={t('winddown.state2.title')} testid="winddown-state2">
+        <p>{renderCopy(t('winddown.state2.intro'))}</p>
+        {bullets('winddown.state2.bullets')}
       </Card>
 
-      <Card icon={Archive} title="State 3 — After the last day" testid="winddown-state3">
-        <p>
-          Everything you downloaded stays readable forever on your own computer &mdash;
-          original file formats and plain JSON. No proprietary formats, no CarryOn
-          servers, no accounts, no internet connection required.
-        </p>
+      <Card icon={Archive} title={t('winddown.state3.title')} testid="winddown-state3">
+        <p>{renderCopy(t('winddown.state3.text'))}</p>
       </Card>
 
-      <Card icon={Code2} title="No proprietary formats — ever" testid="winddown-decrypt">
-        <p>
-          Nothing we give you ever needs our servers to read. If we ever offer
-          encrypted archive downloads, we commit to publishing an open-source
-          decryption tool on GitHub at the same time, under a permissive license.
-        </p>
+      <Card icon={Code2} title={t('winddown.formats.title')} testid="winddown-decrypt">
+        <p>{renderCopy(t('winddown.formats.text'))}</p>
       </Card>
 
       <div
@@ -152,17 +118,15 @@ const WindDownPromisePage = () => {
         style={{ background: 'rgba(var(--gold-rgb), 0.06)', border: '1px solid rgba(var(--gold-rgb), 0.2)' }}
       >
         <p className="text-base italic" style={{ fontFamily: 'var(--serif)', color: 'var(--gold)' }}>
-          "Your family deserves a plan, not a panic. So does the platform that holds it."
+          &ldquo;{t('winddown.quote')}&rdquo;
         </p>
         <p className="text-xs mt-3" style={{ color: 'var(--t5)' }}>
-          — Barnet Harris, Founder
+          {t('winddown.attribution')}
         </p>
       </div>
 
       <p className="text-xs mt-10 text-center" style={{ color: 'var(--t5)' }}>
-        First published: April 29, 2026. Last revised: September 7, 2026 (export scope,
-        day-90 file deletion, no automated wind-down mode). Any change to this page must be accompanied by an updated
-        changelog entry and 30 days' notice to active members.
+        {renderCopy(t('winddown.revision'))}
       </p>
     </div>
     <PublicFooter />

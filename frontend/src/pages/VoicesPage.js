@@ -7,6 +7,7 @@ import { Crown, Sparkles, Quote, ArrowRight } from 'lucide-react';
 import { API_URL } from '../config';
 import { getOfflineMode } from '../offline/featureFlag';
 import { getLocalVoices, upsertLocalVoices } from '../offline/repos/voicesRepo';
+import { useCopy, renderCopy } from '../copy/CopyContext';
 
 /**
  * Public "Voices" page — feeds from GET /api/share-cards/voices/public,
@@ -22,6 +23,7 @@ export default function VoicesPage() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [scrolled, setScrolled] = useState(false);
+  const { t } = useCopy();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
@@ -78,7 +80,7 @@ export default function VoicesPage() {
       style={{ background: 'var(--bg)', color: 'var(--t)' }}
       data-testid="public-voices-page"
     >
-      <SEO title="Voices — CarryOn" description="Real families on what readiness feels like — stories from the people CarryOn was built for." path="/voices" />
+      <SEO title={t('voices.seo.title')} description={t('voices.seo.description')} path="/voices" />
       {/* Top nav — mirrors LandingPage.js */}
       <header
         className="fixed top-0 inset-x-0 z-40 transition-all duration-200"
@@ -96,10 +98,10 @@ export default function VoicesPage() {
             <span className="text-white font-semibold tracking-tight" style={{ fontFamily: 'var(--sans)' }}>CarryOn</span>
           </Link>
           <nav className="hidden md:flex items-center gap-7 text-[22px]" style={{ color: 'var(--t3)' }}>
-            <a href="/#features" className="hover:text-white transition-colors">Features</a>
-            <a href="/#pricing" className="hover:text-white transition-colors">Pricing</a>
-            <Link to="/voices" className="hover:text-white transition-colors" style={{ color: 'var(--gold)' }}>Voices</Link>
-            <a href="/#faq" className="hover:text-white transition-colors">FAQ</a>
+            <a href="/#features" className="hover:text-white transition-colors">{t('nav.features')}</a>
+            <a href="/#pricing" className="hover:text-white transition-colors">{t('nav.pricing')}</a>
+            <Link to="/voices" className="hover:text-white transition-colors" style={{ color: 'var(--gold)' }}>{t('voices.nav_voices')}</Link>
+            <a href="/#faq" className="hover:text-white transition-colors">{t('nav.faq')}</a>
           </nav>
           <div className="flex items-center gap-2">
             <Link
@@ -108,14 +110,14 @@ export default function VoicesPage() {
               style={{ color: 'var(--t3)' }}
               data-testid="voices-signin-link"
             >
-              Sign in
+              {t('voices.signin')}
             </Link>
             <Link
               to="/signup"
               className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 text-base sm:text-[22px] font-semibold rounded-lg btn-gold-cta whitespace-nowrap"
               data-testid="voices-cta-header"
             >
-              Start your family&apos;s plan <ArrowRight className="w-4 h-4" />
+              {t('nav.start_plan')} <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
         </div>
@@ -129,19 +131,17 @@ export default function VoicesPage() {
             className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-7 text-[22px] font-semibold uppercase tracking-[0.18em]"
             style={{ background: 'rgba(var(--gold-rgb), 0.10)', border: '1px solid rgba(var(--gold-rgb), 0.32)', color: 'var(--gold)' }}
           >
-            <Quote className="w-4 h-4" /> Voices
+            <Quote className="w-4 h-4" /> {t('voices.pill')}
           </div>
           <h1
             className="text-4xl sm:text-5xl lg:text-6xl font-semibold leading-[1.05] tracking-tight mb-6 text-white"
             style={{ fontFamily: 'var(--serif)' }}
           >
-            The words our members{' '}
-            <span className="italic" style={{ color: 'var(--gold)' }}>chose for themselves</span>.
+            {t('voices.h1a')}{' '}
+            <span className="italic" style={{ color: 'var(--gold)' }}>{t('voices.h1b')}</span>.
           </h1>
           <p className="text-[22px] sm:text-2xl leading-relaxed max-w-2xl mx-auto" style={{ color: 'var(--t4)' }}>
-            Real quotes from CarryOn members who opted to share publicly why they prepared.
-            Not marketing copy. Not a testimonial request. Just their answer to a single question:{' '}
-            <em style={{ color: 'var(--t2)' }}>what does CarryOn mean to you?</em>
+            {renderCopy(t('voices.intro'), 'italic font-normal text-[color:var(--t2)]')}
           </p>
         </div>
       </section>
@@ -155,7 +155,7 @@ export default function VoicesPage() {
               style={{ color: 'var(--t5)' }}
               data-testid="voices-loading"
             >
-              Loading voices…
+              {t('voices.loading')}
             </div>
           ) : items.length === 0 ? (
             <div
@@ -165,10 +165,10 @@ export default function VoicesPage() {
             >
               <Quote className="w-12 h-12 mx-auto mb-4" style={{ color: 'rgba(var(--gold-rgb), 0.6)' }} />
               <p className="text-2xl italic mb-2" style={{ fontFamily: 'var(--serif)', color: 'var(--t)' }}>
-                The first voice will land here soon.
+                {t('voices.empty.title')}
               </p>
               <p className="text-[22px]" style={{ color: 'var(--t5)' }}>
-                Members get the option to share publicly as they personalize their CarryOn share card.
+                {renderCopy(t('voices.empty.text'))}
               </p>
             </div>
           ) : (
@@ -198,7 +198,7 @@ export default function VoicesPage() {
                         }}
                       >
                         {isFC ? <Crown className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
-                        {isFC ? 'Founding Member' : 'Member'}
+                        {isFC ? t('voices.badge_founding') : t('voices.badge_member')}
                       </div>
                       <span className="text-[22px] flex-shrink-0" style={{ color: 'var(--t5)' }}>
                         {formatDate(it.created_at)}
@@ -231,14 +231,14 @@ export default function VoicesPage() {
             className="text-3xl sm:text-4xl italic mb-6"
             style={{ fontFamily: 'var(--serif)', color: 'var(--gold)' }}
           >
-            Your family deserves a plan, not a panic.
+            {t('voices.closing.quote')}
           </p>
           <Link
             to="/signup"
             className="inline-flex items-center gap-2 px-8 py-4 text-[22px] font-semibold rounded-xl btn-gold-cta"
             data-testid="voices-footer-cta"
           >
-            Start your family&apos;s plan <ArrowRight className="w-5 h-5" />
+            {t('voices.closing.cta')} <ArrowRight className="w-5 h-5" />
           </Link>
         </div>
       </section>

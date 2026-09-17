@@ -8,13 +8,16 @@ no override exists. Plain text only (line breaks allowed) — never rendered as 
 
 GET  /api/public/site-copy       — {overrides: {key: text}, updated_at}
 PUT  /api/admin/site-copy        — {changes: {key: text | null}} (null/"" resets to default); founder or marketing scope
+GET  /api/admin/site-copy/history — who changed which line, when (before → after); ?key= filters one field
 """
 
 import re
 import unicodedata
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+import uuid
+
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 
 from config import db, logger
@@ -26,6 +29,7 @@ router = APIRouter()
 KEY_RE = re.compile(r"^[a-z0-9]+(?:\.[a-z0-9_-]+)+$")
 MAX_LEN = 5000
 MAX_CHANGES = 400
+HISTORY_LIMIT = 500
 
 
 class SiteCopyChanges(BaseModel):
@@ -67,23 +71,37 @@ async def put_site_copy(
         raise HTTPException(status_code=400, detail=f"Too many changes in one save (max {MAX_CHANGES}).")
     now = datetime.now(timezone.utc).isoformat()
     actor = current_user.get("email", "")
-    set_keys, reset_keys = [], []
+    cleaned: dict[str, str] = {}
     for raw_key, raw_value in payload.changes.items():
         key = validate_key(raw_key)
         value = clean_copy_value(raw_value) if isinstance(raw_value, str) else ""
+        if len(value) > MAX_LEN:
+            raise HTTPException(status_code=400, detail=f"{key}: text is too long (max {MAX_LEN} characters).")
+        cleaned[key] = value
+    existing: dict[str, str] = {}
+    async for doc in db.site_copy.find({"_id": {"$in": list(cleaned)}}, {"_id": 1, "value": 1}):
+        existing[doc["_id"]] = doc.get("value", "")
+    set_keys, reset_keys, history = [], [], []
+    for key, value in cleaned.items():
+        previous = existing.get(key, "")
         if not value:
             res = await db.site_copy.delete_one({"_id": key})
             if res.deleted_count:
                 reset_keys.append(key)
-            continue
-        if len(value) > MAX_LEN:
-            raise HTTPException(status_code=400, detail=f"{key}: text is too long (max {MAX_LEN} characters).")
-        await db.site_copy.replace_one(
-            {"_id": key},
-            {"_id": key, "value": value, "updated_at": now, "updated_by": actor},
-            upsert=True,
-        )
-        set_keys.append(key)
+        else:
+            await db.site_copy.replace_one(
+                {"_id": key},
+                {"_id": key, "value": value, "updated_at": now, "updated_by": actor},
+                upsert=True,
+            )
+            set_keys.append(key)
+        if value != previous:
+            history.append({
+                "_id": str(uuid.uuid4()), "key": key, "previous": previous, "next": value,
+                "actor_id": current_user["id"], "actor_email": actor, "at": now,
+            })
+    if history:
+        await db.site_copy_history.insert_many(history)
     if set_keys or reset_keys:
         logger.info(f"Site copy updated by {actor}: {len(set_keys)} set, {len(reset_keys)} reset")
         await log_audit_event(
@@ -98,3 +116,20 @@ async def put_site_copy(
             ip_address=get_client_ip(request),
         )
     return await load_overrides()
+
+
+@router.get("/admin/site-copy/history")
+async def get_site_copy_history(
+    key: str | None = Query(default=None),
+    limit: int = Query(default=200, ge=1, le=HISTORY_LIMIT),
+    current_user: dict = Depends(require_scope("marketing")),
+):
+    """Change log for the public-site text: who changed which line, when, before → after."""
+    query = {"key": validate_key(key)} if key else {}
+    items = []
+    async for doc in db.site_copy_history.find(query).sort("at", -1).limit(limit):
+        items.append({
+            "id": doc["_id"], "key": doc["key"], "previous": doc.get("previous", ""), "next": doc.get("next", ""),
+            "actor_email": doc.get("actor_email", ""), "at": doc.get("at", ""),
+        })
+    return {"items": items}

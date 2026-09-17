@@ -3,136 +3,60 @@ import SEO from '../components/SEO';
 import PublicFooter from '../components/PublicFooter';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Shield } from 'lucide-react';
+import { useCopy, renderBlocks } from '../copy/CopyContext';
+
+const LINK = 'text-[#7AABFD] hover:text-[#A5C6FE] transition-colors';
+const BLOCKS = { pClass: 'mb-3 last:mb-0', ulClass: 'list-disc list-inside space-y-1 ml-2', linkClass: LINK };
+const SECTIONS = 10;
 
 const PrivacyPolicyPage = () => {
+  const { t } = useCopy();
   return (
     <>
     <div
       className="min-h-screen pb-12 px-4"
       style={{ background: 'linear-gradient(145deg, #0F1629, #141C33 40%, #0F1629)', paddingTop: 'calc(3rem + env(safe-area-inset-top, 0px))' }}
     >
-      <SEO title="Privacy Policy — CarryOn" description="How CarryOn collects, uses, protects, shares, and returns your family's data." path="/privacy" />
+      <SEO title={t('privacy.seo.title')} description={t('privacy.seo.description')} path="/privacy" />
       <div className="max-w-3xl mx-auto relative z-10">
         <Link to="/login" className="inline-flex items-center gap-2 text-[#A0AABF] hover:text-white mb-8 transition-colors" data-testid="privacy-back-link">
           <ArrowLeft className="w-4 h-4" />
-          Back
+          {t('legal.back')}
         </Link>
 
         <div className="glass-card p-8 md:p-12">
           <div className="flex items-center gap-3 mb-6">
             <Shield className="w-7 h-7 text-[#d4af37]" />
             <h1 className="text-3xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }} data-testid="privacy-page-title">
-              Privacy Policy
+              {t('privacy.title')}
             </h1>
           </div>
-          <p className="text-[#7B879E] text-sm mb-8">Last updated: September 7, 2026</p>
+          <p className="text-[#7B879E] text-sm mb-8">{t('privacy.updated')}</p>
 
           <div className="space-y-8 text-[#C0C8D8] text-sm leading-relaxed">
-            <section>
-              <h2 className="text-lg font-semibold text-[var(--t)] mb-3">1. Introduction</h2>
+            {Array.from({ length: SECTIONS - 1 }, (_, i) => i + 1).map(n => (
+              <section key={n} data-testid={`privacy-section-${n}`}>
+                <h2 className="text-lg font-semibold text-[var(--t)] mb-3">{t(`privacy.s${n}.title`)}</h2>
+                {renderBlocks(t(`privacy.s${n}.body`), BLOCKS)}
+              </section>
+            ))}
+
+            <section data-testid={`privacy-section-${SECTIONS}`}>
+              <h2 className="text-lg font-semibold text-[var(--t)] mb-3">{t('privacy.s10.title')}</h2>
               <p>
-                CarryOn&trade; (&quot;we,&quot; &quot;us,&quot; or &quot;our&quot;) is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our estate planning platform, including our website and related services (collectively, the &quot;Service&quot;).
-              </p>
-            </section>
-
-            <section>
-              <h2 className="text-lg font-semibold text-[var(--t)] mb-3">2. Information We Collect</h2>
-              <p className="mb-3">We collect information you provide directly to us, including:</p>
-              <ul className="list-disc list-inside space-y-1 ml-2">
-                <li>Personal identification information (name, email address, phone number)</li>
-                <li>Date of birth &mdash; used to confirm you are 18 or older and to determine eligibility for age-based plans (New Adult 18&ndash;25, Seniors 65+)</li>
-                <li>Gender (optional) &mdash; used only to word family relationships correctly in your family tree (for example &quot;mother&quot; or &quot;father&quot;); it is never used for marketing or profiling</li>
-                <li>Account credentials (encrypted passwords)</li>
-                <li>Estate planning data (beneficiary information, documents, checklists)</li>
-                <li>Payment information (processed securely through Stripe)</li>
-                <li>Communications (support messages, feedback)</li>
-              </ul>
-            </section>
-
-            <section>
-              <h2 className="text-lg font-semibold text-[var(--t)] mb-3">3. How We Use Your Information</h2>
-              <ul className="list-disc list-inside space-y-1 ml-2">
-                <li>Provide, maintain, and improve the Service</li>
-                <li>Process transactions and send related information</li>
-                <li>Send verification codes via email or SMS for two-factor authentication</li>
-                <li>Respond to customer service requests and support needs</li>
-                <li>Protect against fraud and unauthorized access</li>
-                <li>Comply with legal obligations</li>
-              </ul>
-            </section>
-
-            <section>
-              <h2 className="text-lg font-semibold text-[var(--t)] mb-3">4. SMS/Text Messaging</h2>
-              <p className="mb-3">
-                When you opt in to receive SMS messages from CarryOn&trade;, you consent to receive text messages related to account verification and security (e.g., one-time passcodes for two-factor authentication). Message frequency varies based on your account activity. Message and data rates may apply.
-              </p>
-              <p className="mb-3">
-                You can opt out of SMS messages at any time by replying STOP to any message or by updating your preferences in your account settings. For help, reply HELP or contact us at the information provided below.
-              </p>
-              <p>
-                We do not sell, rent, or share your phone number or SMS opt-in data with third parties for marketing purposes. Your information is shared only with service providers who assist in delivering messages (e.g., Twilio).
-              </p>
-            </section>
-
-            <section>
-              <h2 className="text-lg font-semibold text-[var(--t)] mb-3">5. Data Security</h2>
-              <p>
-                In plain language: your files are scrambled before they&rsquo;re stored, with a separate lock for every family. Our support team can&rsquo;t open them from their screens, and every time a file is opened, we write down who did it and when. Technically, we implement industry-standard security measures, including AES-256 encryption with per-estate keys and two-factor authentication. Your sensitive documents are encrypted at rest and in transit. Conversations with our AI features are retained as chat transcripts until you delete them and may quote documents you flag for AI analysis. AI requests are processed by xAI under a zero-data-retention configuration &mdash; xAI does not store your content after the response is returned. Under xAI's published API policy, content sent through the API is also not used to train their models.
-              </p>
-            </section>
-
-            <section>
-              <h2 className="text-lg font-semibold text-[var(--t)] mb-3">6. Data Sharing and Disclosure</h2>
-              <p className="mb-3">We may share your information only in the following circumstances:</p>
-              <ul className="list-disc list-inside space-y-1 ml-2">
-                <li>With your designated beneficiaries, as configured by you</li>
-                <li>With service providers who perform services on our behalf (e.g., payment processing, email delivery, SMS messaging)</li>
-                <li>To comply with applicable laws, regulations, or legal processes</li>
-                <li>To protect the rights, property, and safety of CarryOn&trade;, our users, or others</li>
-              </ul>
-            </section>
-
-            <section>
-              <h2 className="text-lg font-semibold text-[var(--t)] mb-3">7. Data Retention</h2>
-              <p>
-                We retain your personal information for as long as your account is active or as needed to provide you with our services. You may request deletion of your account and associated data by contacting us.
-              </p>
-            </section>
-
-            <section>
-              <h2 className="text-lg font-semibold text-[var(--t)] mb-3">8. Your Rights</h2>
-              <p className="mb-3">Depending on your jurisdiction, you may have the right to:</p>
-              <ul className="list-disc list-inside space-y-1 ml-2">
-                <li>Access, correct, or delete your personal data</li>
-                <li>Object to or restrict processing of your data</li>
-                <li>Data portability</li>
-                <li>Withdraw consent at any time</li>
-              </ul>
-            </section>
-
-            <section>
-              <h2 className="text-lg font-semibold text-[var(--t)] mb-3">9. Changes to This Policy</h2>
-              <p>
-                We may update this Privacy Policy from time to time. We will notify you of any changes by posting the new policy on this page and updating the &quot;Last updated&quot; date.
-              </p>
-            </section>
-
-            <section>
-              <h2 className="text-lg font-semibold text-[var(--t)] mb-3">10. Contact Us</h2>
-              <p>
-                For data access, correction, deletion, or portability requests, contact: <a href="mailto:privacy@carryon.us" className="text-[#7AABFD] hover:text-[#A5C6FE] transition-colors" data-testid="privacy-dsr-email">privacy@carryon.us</a>
+                {t('privacy.s10.dsr')} <a href="mailto:privacy@carryon.us" className={LINK} data-testid="privacy-dsr-email">privacy@carryon.us</a>
               </p>
               <p className="mt-2">
-                For general questions about this Privacy Policy or our data practices, contact: <a href="mailto:support@carryon.us" className="text-[#7AABFD] hover:text-[#A5C6FE] transition-colors" data-testid="privacy-general-email">support@carryon.us</a>
+                {t('privacy.s10.general')} <a href="mailto:support@carryon.us" className={LINK} data-testid="privacy-general-email">support@carryon.us</a>
               </p>
             </section>
           </div>
         </div>
 
         <div className="mt-6 text-center space-x-4">
-          <Link to="/terms" className="text-[#7AABFD] text-sm hover:text-[#A5C6FE] transition-colors" data-testid="privacy-to-terms-link">Terms of Service</Link>
+          <Link to="/terms" className="text-[#7AABFD] text-sm hover:text-[#A5C6FE] transition-colors" data-testid="privacy-to-terms-link">{t('footer.terms')}</Link>
           <span className="text-[#525C72]">&middot;</span>
-          <Link to="/login" className="text-[#7AABFD] text-sm hover:text-[#A5C6FE] transition-colors">Sign In</Link>
+          <Link to="/login" className="text-[#7AABFD] text-sm hover:text-[#A5C6FE] transition-colors">{t('nav.signin')}</Link>
         </div>
       </div>
       <PublicFooter />
