@@ -31,6 +31,8 @@
  * future tiles) without per-caller wiring.
  */
 import { suspendAutoLogout } from './autoLogoutSuspend';
+import apiClient from './apiClient';
+import { API_URL } from '../config';
 
 export function openStripeCheckout(url) {
   if (!url) return false;
@@ -59,4 +61,32 @@ export function isStandalonePWA() {
     if (window.matchMedia('(display-mode: minimal-ui)').matches) return true;
   }
   return false;
+}
+
+/**
+ * startPlanCheckout — shared by /start and /pricing. Creates the Stripe
+ * Checkout session via POST /api/subscriptions/checkout (the same route the
+ * in-app paywall uses), persists the pending-session breadcrumb that
+ * LoginPage / SubscriptionPage reconcile on return, and hands off to Stripe.
+ * Resolves `{ free: true }` when the platform is in beta / free mode (no
+ * Stripe hop), `{ url }` after redirecting, or throws on API failure.
+ */
+export async function startPlanCheckout({ planId, cycle, planName }) {
+  const token = localStorage.getItem('carryon_token');
+  const res = await apiClient.post(`${API_URL}/subscriptions/checkout`, {
+    plan_id: planId,
+    billing_cycle: cycle,
+    origin_url: window.location.origin,
+  }, { headers: { Authorization: `Bearer ${token}` } });
+  if (res.data.free) return { free: true, message: res.data.message };
+  if (!res.data.url) throw new Error('Checkout did not return a payment link');
+  if (res.data.session_id) {
+    try {
+      localStorage.setItem('carryon_pending_stripe_session', JSON.stringify({
+        session_id: res.data.session_id, plan_id: planId, plan_name: planName, billing_cycle: cycle, created_at: Date.now(),
+      }));
+    } catch { /* private mode */ }
+  }
+  openStripeCheckout(res.data.url);
+  return { url: res.data.url };
 }

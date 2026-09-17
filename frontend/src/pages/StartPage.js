@@ -9,6 +9,8 @@ import {
 } from 'lucide-react';
 import { API_URL } from '../config';
 import { TrustBadges, StripeNote } from '../components/landing/TrustBadges';
+import { startPlanCheckout } from '../utils/stripeRedirect';
+import { toast } from 'sonner';
 
 const CYCLE_LABELS = { monthly: 'Monthly', quarterly: 'Quarterly', annual: 'Annual' };
 const CYCLE_SAVINGS = { monthly: null, quarterly: '10% off', annual: '20% off' };
@@ -21,7 +23,7 @@ const readIntent = () => {
 
 const StartPage = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [searchParams] = useSearchParams();
   const [plans, setPlans] = useState([]);
   const [trialDays, setTrialDays] = useState(30);
@@ -78,7 +80,8 @@ const StartPage = () => {
 
   // Post-signup hand-off: the account now exists, finish the plan the visitor picked.
   useEffect(() => {
-    if (!resuming || !user || resumedRef.current) return;
+    if (!resuming || resumedRef.current) return;
+    if (!user) { if (!authLoading) setResuming(false); return; }
     resumedRef.current = true;
     const intent = readIntent();
     sessionStorage.removeItem(INTENT_KEY);
@@ -87,7 +90,7 @@ const StartPage = () => {
     setSelectedPlan(intent.planId);
     setSelectedCycle(cycle);
     handleCheckout(intent.planId, cycle).then((ok) => { if (!ok) setResuming(false); });
-  }, [resuming, user]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [resuming, user, authLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const getPrice = (plan, cycle) => {
     if (cycle === 'quarterly') return plan.quarterly_price || (plan.price * 0.9).toFixed(2);
@@ -114,15 +117,13 @@ const StartPage = () => {
     setCheckoutLoading(true);
     let ok = false;
     try {
-      const token = localStorage.getItem('carryon_token');
-      const res = await axios.post(`${API_URL}/subscriptions/create-checkout`, {
-        plan_id: planId,
-        billing_cycle: cycle,
-        origin_url: window.location.origin,
-      }, { headers: { Authorization: `Bearer ${token}` } });
-      if (res.data.url) { ok = true; window.location.href = res.data.url; }
+      const plan = plans.find(p => p.id === planId);
+      const result = await startPlanCheckout({ planId, cycle, planName: plan?.name });
+      ok = true;
+      if (result.free) navigate('/dashboard');
     } catch (err) {
       console.error('Checkout error:', err);
+      toast.error(err.response?.data?.detail || 'We couldn\u2019t start checkout. Please try again.');
     }
     setCheckoutLoading(false);
     return ok;

@@ -8,6 +8,8 @@ import {
 } from 'lucide-react';
 import { API_URL } from '../config';
 import { TrustBadges, StripeNote } from '../components/landing/TrustBadges';
+import { startPlanCheckout } from '../utils/stripeRedirect';
+import { toast } from 'sonner';
 
 const CYCLE_LABELS = { monthly: 'Monthly', quarterly: 'Quarterly', annual: 'Annual' };
 const CYCLE_SAVINGS = { monthly: null, quarterly: 'Save 10%', annual: 'Save 20%' };
@@ -80,12 +82,12 @@ const PricingPage = () => {
     if (!user) { navigate(`/start?plan=${planId}&cycle=${selectedCycle}`); return; }
     setCheckoutLoading(planId);
     try {
-      const token = localStorage.getItem('carryon_token');
-      const res = await axios.post(`${API_URL}/subscriptions/create-checkout`, {
-        plan_id: planId, billing_cycle: selectedCycle, origin_url: window.location.origin,
-      }, { headers: { Authorization: `Bearer ${token}` } });
-      if (res.data.url) window.location.href = res.data.url;
-    } catch { /* silent */ }
+      const plan = plans.find(p => p.id === planId);
+      const result = await startPlanCheckout({ planId, cycle: selectedCycle, planName: plan?.name });
+      if (result.free) navigate('/dashboard');
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'We couldn\u2019t start checkout. Please try again.');
+    }
     setCheckoutLoading(null);
   };
 

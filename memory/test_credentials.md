@@ -35,3 +35,8 @@ Token is returned as `access_token`; frontend stores it in `localStorage.carryon
 ## Testimonials — test hygiene
 - POST /api/testimonials creates PENDING items only; approving via PATCH /api/admin/testimonials/{id} makes them PUBLIC.
 - Delete any test testimonial (DELETE /api/admin/testimonials/{id}) before finishing. Restore `show_live_stats` to "auto" if changed.
+
+## Login API notes (added Sep 17, 2026)
+- Single-session enforcement: if a session is already active, `POST /api/auth/login` returns `{active_session_exists:true}` without a token. Pass `"force_login": true` in the JSON body to take over the session (used by Playwright checks).
+- QA accounts created during testing MUST be purged: `cd /app/backend && python3 /app/memory/scratch/purge_qa_user.py <user_id>` (runs `services.erasure.erase_user`, writes an erasure receipt).
+- Stripe is LIVE in preview (`beta_mode=false`): `/api/subscriptions/checkout` returns real `cs_live_…` sessions. Assert the redirect only — never enter card details.
