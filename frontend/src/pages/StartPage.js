@@ -192,7 +192,7 @@ const StartPage = () => {
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: startPageJsonLd }} />
       )}
       {/* Header */}
-      <header className="flex items-center justify-between px-4 sm:px-8 py-4" style={{ borderBottom: '1px solid var(--b)' }}>
+      <header className="flex items-center justify-between px-4 sm:px-8 pb-4" style={{ borderBottom: '1px solid var(--b)', paddingTop: 'calc(1rem + env(safe-area-inset-top, 0px))' }}>
         <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
           <Shield className="w-6 h-6 text-[#d4af37]" />
           <span className="text-lg font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>CarryOn</span>

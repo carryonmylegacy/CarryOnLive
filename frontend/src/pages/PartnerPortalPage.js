@@ -171,9 +171,9 @@ const PartnerPortalPage = () => {
         </button>
       </div>
 
-      {/* HERO */}
+      {/* HERO — top padding reserves the "Create Account" row (+ iOS status bar in PWA) so the centred logo never slides under it on phones */}
       <section className="min-h-screen flex flex-col items-center justify-center relative">
-        <div className="max-w-[1400px] mx-auto px-6 lg:px-10 w-full relative z-10 py-12">
+        <div className="max-w-[1400px] mx-auto px-6 lg:px-10 w-full relative z-10 pb-12" style={{ paddingTop: 'calc(4rem + env(safe-area-inset-top, 0px))' }}>
           <div className="grid lg:grid-cols-[1fr_420px] gap-10 lg:gap-14 items-center">
 
             {/* LEFT: Partner logo + tagline */}

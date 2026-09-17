@@ -8,8 +8,8 @@ const TermsPage = () => {
   return (
     <>
     <div
-      className="min-h-screen py-12 px-4"
-      style={{ background: 'linear-gradient(145deg, #0F1629, #141C33 40%, #0F1629)' }}
+      className="min-h-screen pb-12 px-4"
+      style={{ background: 'linear-gradient(145deg, #0F1629, #141C33 40%, #0F1629)', paddingTop: 'calc(3rem + env(safe-area-inset-top, 0px))' }}
     >
       <SEO title="Terms of Service — CarryOn" description="The terms governing your use of the CarryOn family continuity platform." path="/terms" />
       <div className="max-w-3xl mx-auto relative z-10">

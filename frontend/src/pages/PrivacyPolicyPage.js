@@ -8,8 +8,8 @@ const PrivacyPolicyPage = () => {
   return (
     <>
     <div
-      className="min-h-screen py-12 px-4"
-      style={{ background: 'linear-gradient(145deg, #0F1629, #141C33 40%, #0F1629)' }}
+      className="min-h-screen pb-12 px-4"
+      style={{ background: 'linear-gradient(145deg, #0F1629, #141C33 40%, #0F1629)', paddingTop: 'calc(3rem + env(safe-area-inset-top, 0px))' }}
     >
       <SEO title="Privacy Policy — CarryOn" description="How CarryOn collects, uses, protects, shares, and returns your family's data." path="/privacy" />
       <div className="max-w-3xl mx-auto relative z-10">
