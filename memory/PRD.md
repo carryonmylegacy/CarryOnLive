@@ -353,7 +353,7 @@ defined in `/app/frontend/src/config/adminSections.js`:
 |---|---|---|---|
 | **Operations** | gold `#d4af37` | founder, ops_manager, ops_team | Users, Invites, TVT, DTS, Support, Verify, Milestones, Escalations, Ops Dashboard, Templates, Team Chat, Members |
 | **Finance** | emerald `#22C993` | founder, finance | Subs, Partners, Rules, Revenue, Launch, Grace Periods, Trials, Members |
-| **Marketing** | violet `#B794F6` | founder, marketing | Funnel, Sales Brief, Beta Testing, Site Content, Emails, Announcements, Members |
+| **Marketing** | violet `#B794F6` | founder, marketing | Funnel, Readiness Quiz, Testimonials, Sales Brief, Beta Testing, Site Content, Site Copy, Emails, Announcements, Members |
 | **Compliance** | blue `#3B82F6` | founder, compliance | Audit Trail, SOC2 Readiness, Estate Health, Activity Log, Members |
 | **Platform** | amber `#F59E0B` | founder, platform_health | War Room, System Health, Operators, Integrations, Downloads, Product, Referrals, P1 Contact, Knowledge Base, Performance, Schedules, Training, Members |
 | **Admin** | red `#ef4444` | founder | Scoped Admins, IP Whitelist, Session Policy, Maintenance, Dev Switcher, Notification Categories, Voices, Prototypes |
@@ -361,6 +361,24 @@ defined in `/app/frontend/src/config/adminSections.js`:
 Founder Dashboard (`/admin` root) shows only revenue tiles + Code
 Health — every other surface lives inside the six section pages above.
 Operations runs separately at `/ops/*` (`OperationsPage`).
+
+### Public copy is founder-editable (Site Copy, Sep 2026)
+
+Every string on the Phase-1 marketing surfaces (`/`, `/home`, `/about`,
+`/founder-about`, `/security`, `/pricing`, `/start`, nav + footer, FAQ, page
+titles/meta descriptions) lives in the registry
+`frontend/src/copy/siteCopy.js` (page → section → field, with the live text
+as the built-in default) and is read through `useCopy().t(key)` from
+`frontend/src/copy/CopyContext.js`. Founder overrides are stored in Mongo
+`site_copy` (`backend/routes/site_copy.py`: `GET /api/public/site-copy`,
+`PUT /api/admin/site-copy`, marketing scope, audited) and edited in
+**Admin → Marketing → Site Copy**. Rules: plain text + line breaks only,
+`**word**` is the single inline mark (bold), never HTML; the 12 official
+tool names and the 4 pillar names are `locked` in the registry and render
+read-only. **When changing marketing text in code, change the default `d`
+in the registry — not the JSX.** Adding a new editable string = add a field
+to the registry and call `t()`; nothing else to wire. Phase 2 (Customers,
+Compare, Changelog, Voices, legal pages, in-app text) is not started.
 
 ### Critical pathways (housekeeping FAIL if broken)
 
@@ -538,6 +556,8 @@ bug — fix it in the preview DB immediately (snippet in
 - Hardcoded `rgba(212,175,55,…)` → `var(--gold-rgb)` sweep.
 
 ### Last verified end-to-end working item
+**Sep 17 2026 (latest) — Site Copy mini-CMS Phase 1 (NOT PUSHED).** 360 marketing strings (Home incl. `/` hero, About, Founder gate, Security, Pricing, Start, nav/footer, FAQ, SEO titles/descriptions) now read from `copy/siteCopy.js` defaults with founder overrides from `site_copy` via `GET /api/public/site-copy`; editor at Admin → Marketing → Site Copy (`PUT /api/admin/site-copy`, marketing scope, audited). 12 tool names + 4 pillar names locked. iteration_206: backend 19/19, frontend 100%; `tests/regression/test_site_copy.py`. check.sh ALL CLEAR (pip-audit baseline ratcheted 32→33 for litellm advisory drift). **Founder next**: push → Vercel/Render → on prod open Site Copy, change one line, Save, reload the public page. Phase 2 (other public pages / in-app text) awaits founder go-ahead.
+
 **Sep 17 2026 (evening) — Founder headshot ROOT CAUSE fixed (NOT PUSHED).** Not the upload: prod API returned `Cross-Origin-Resource-Policy: same-origin` on the image, so browsers on carryon.us refused to render the cross-origin `<img>` (preview is same-origin, never reproduced). Middleware now `setdefault`, headshot route sends `cross-origin`; admin card no longer lies with the empty state. iteration_205 7/7 incl. cross-origin embed simulation. **Founder next**: push → Render redeploy → reload /about; the photo already stored on prod will appear.
 
 **Sep 17 2026 (late) — PWA safe-area sweep + partner-page phone layout (NOT PUSHED).** 69 routes swept at iPhone width with emulated 59px status bar (`memory/scratch/pwa_sweep.py`); fixed TrialLockdownBanner (now a fixed, inset-aware top slot via `hooks/useTopBannerSlot.js`), PartnerBrief + QuickStart trial sticky bars, SpeakWithUs hero, Voices header CTA, `/start` scroll target; partner `/p/:slug` logo/chips re-flowed so Sign In is above the fold. Re-sweep: 0 collisions. check.sh ALL CLEAR. **Founder next**: push → verify on the installed PWA (`/start`, partner page, dashboard while trial-locked).

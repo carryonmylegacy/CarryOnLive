@@ -44,3 +44,8 @@ Token is returned as `access_token`; frontend stores it in `localStorage.carryon
 ## PWA safe-area sweep tool (added Sep 17, 2026)
 - `cd /app/backend && BASE=$(grep REACT_APP_BACKEND_URL /app/frontend/.env | cut -d= -f2) python3 /app/memory/scratch/pwa_sweep.py --shots` → `/tmp/sweep/report.json` (+ PNG clips). `ONLY="benefactor:/guardian,/ffn"` limits the run. `shot_pwa.py <BASE> <public|benefactor|beneficiary> <paths…>` renders full screenshots with the 59px status bar drawn as a red band.
 - Beneficiary pages use a minted dev-session token for ben@test.com (id 5a4939be-…) — read-only layout checks only.
+
+## Site Copy (added Sep 17, 2026)
+- `GET /api/public/site-copy` (public) · `PUT /api/admin/site-copy {"changes": {"<key>": "text" | null}}` (founder or marketing-scope admin; benefactor → 403).
+- Editor: `/admin/site-copy` (Admin → Marketing → Site Copy). Keys/defaults: `frontend/src/copy/siteCopy.js`.
+- Test hygiene: use probe keys like `qa.site_copy.probe` or a real key, and ALWAYS reset (`null`) afterwards so `GET /api/public/site-copy` returns `{"overrides": {}}` — preview mirrors live config.
