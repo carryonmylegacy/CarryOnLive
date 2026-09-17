@@ -197,7 +197,11 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "form-action 'self'"
         )
         response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
-        response.headers["Cross-Origin-Resource-Policy"] = "same-origin"
+        # Default CORP is same-origin. Handlers that serve public media meant to be
+        # embedded by the marketing site on another origin (e.g. the founder
+        # headshot: carryon.us <img> → the API host) set "cross-origin" themselves;
+        # without that, browsers silently refuse to render the image.
+        response.headers.setdefault("Cross-Origin-Resource-Policy", "same-origin")
         path = request.url.path
         if path.startswith("/api/") and path not in ("/api/health",):
             # Preserve route-level caching decisions: if a handler explicitly

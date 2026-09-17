@@ -18,8 +18,19 @@ export const SiteContentTab = ({ getAuthHeaders }) => {
   const [referralEnabled, setReferralEnabled] = useState(false);
   const [referralBusy, setReferralBusy] = useState(false);
   const [headshotExists, setHeadshotExists] = useState(true);
+  const [headshotBlocked, setHeadshotBlocked] = useState(false);
   const [headshotVersion, setHeadshotVersion] = useState(() => Date.now());
   const [headshotBusy, setHeadshotBusy] = useState(false);
+
+  // <img> failed: tell "nothing uploaded" apart from "saved, but the browser refused to render it"
+  // (e.g. a Cross-Origin-Resource-Policy header on the API host) instead of lying with the empty state.
+  const handleHeadshotImgError = async () => {
+    try {
+      const r = await fetch(`${API_URL}/public/founder-headshot`, { cache: 'no-store' });
+      if (r.ok) { setHeadshotBlocked(true); return; }
+    } catch { /* fall through */ }
+    setHeadshotExists(false);
+  };
   const [founder, setFounder] = useState({ name: '', title: '', bio: '', linkedin: '' });
   const [savedFounder, setSavedFounder] = useState({ name: '', title: '', bio: '', linkedin: '' });
   const [savingFounder, setSavingFounder] = useState(false);
@@ -150,6 +161,7 @@ export const SiteContentTab = ({ getAuthHeaders }) => {
       await apiClient.post(`${API_URL}/admin/site-content/founder-headshot`, form, getAuthHeaders());
       setHeadshotVersion(Date.now());
       setHeadshotExists(true);
+      setHeadshotBlocked(false);
       toast.success('Founder headshot updated — live on the About page');
     } catch (err) {
       toast.error(err?.response?.data?.detail || 'Failed to upload headshot');
@@ -195,6 +207,7 @@ export const SiteContentTab = ({ getAuthHeaders }) => {
     try {
       await apiClient.delete(`${API_URL}/admin/site-content/founder-headshot`, getAuthHeaders());
       setHeadshotExists(false);
+      setHeadshotBlocked(false);
       setHeadshotVersion(Date.now());
       toast.success('Founder headshot removed');
     } catch {
@@ -331,13 +344,22 @@ export const SiteContentTab = ({ getAuthHeaders }) => {
             works best. Until one is uploaded, the page shows a &ldquo;coming soon&rdquo; placeholder.
           </p>
           <div className="flex flex-col sm:flex-row items-center gap-5 p-4 rounded-xl" style={{ background: 'var(--b)', border: '1px solid var(--b2)' }}>
-            {headshotExists ? (
+            {headshotExists && headshotBlocked ? (
+              <div
+                className="w-28 h-28 rounded-full flex-shrink-0 flex items-center justify-center text-center text-[11px] leading-tight px-2"
+                style={{ background: 'rgba(245,158,11,0.10)', border: '1px dashed rgba(245,158,11,0.6)', color: '#f59e0b' }}
+                title="The photo is saved on the server, but this browser refused to display it (API response headers). Ask support to redeploy the API."
+                data-testid="founder-headshot-blocked"
+              >
+                Saved, but the browser blocked the preview
+              </div>
+            ) : headshotExists ? (
               <img
                 src={`${API_URL}/public/founder-headshot?v=${headshotVersion}`}
                 alt="Current founder headshot"
                 className="w-28 h-28 rounded-full object-cover flex-shrink-0"
                 style={{ border: '2px solid rgba(212,175,55,0.4)' }}
-                onError={() => setHeadshotExists(false)}
+                onError={handleHeadshotImgError}
                 data-testid="founder-headshot-preview"
               />
             ) : (

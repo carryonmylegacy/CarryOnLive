@@ -30,6 +30,9 @@ async def get_founder_headshot():
         headers={
             "Cache-Control": "public, max-age=300",
             "ETag": f'"{asset.get("updated_at", "")}"',
+            # Embedded by <img> on carryon.us while the API lives on another host —
+            # the middleware default (same-origin) would make browsers drop the image.
+            "Cross-Origin-Resource-Policy": "cross-origin",
         },
     )
 
