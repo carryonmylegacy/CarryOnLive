@@ -63,6 +63,10 @@ const _beneficiaryRelations = ['Spouse', 'Son', 'Daughter', 'Son-in-law', 'Daugh
 const inputClass = "h-14 px-4 bg-[#0b1322] border border-[#1a2a42] text-white text-base placeholder:text-[#2d3d55] focus:border-[#d4af37] focus:ring-1 focus:ring-inset focus:ring-[#d4af37]/30 focus:outline-none rounded-xl w-full";
 const selectClass = "h-14 bg-[#0b1322] border-[#1a2a42] text-white text-base rounded-xl [&>span]:text-white";
 
+// A plan picked on /start or /pricing before signup is stored as a checkout
+// intent; StartPage consumes it and sends the new account straight to Stripe.
+const postSignupPath = () => (sessionStorage.getItem('carryon_checkout_intent') ? '/start?resume=checkout' : '/dashboard');
+
 const SignupPage = () => {
   const navigate = useNavigate();
   const { verifyOtp, resendOtp } = useAuth();
@@ -480,8 +484,9 @@ const SignupPage = () => {
           goTo(idx);
           return;
         }
-        // Direct signup — straight to the dashboard.
-        navigate('/dashboard');
+        // Direct signup — straight to the dashboard, unless they picked a
+        // plan on /start or /pricing first: hand back to finish checkout.
+        navigate(postSignupPath());
         window.location.reload();
         return;
       }
@@ -529,7 +534,7 @@ const SignupPage = () => {
         goTo(idx);
         return;
       }
-      navigate('/dashboard');
+      navigate(postSignupPath());
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Invalid OTP');
     } finally {

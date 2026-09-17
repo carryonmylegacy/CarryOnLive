@@ -4,10 +4,10 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import {
-  Shield, Check, Users, ChevronRight, ChevronDown, CreditCard, Heart, UserPlus, Clock, HelpCircle,
+  Shield, Check, Users, ChevronRight, ChevronDown, CreditCard, Heart, UserPlus, Clock, HelpCircle, Lock, ListChecks,
 } from 'lucide-react';
 import { API_URL } from '../config';
-import { TrustBadges } from '../components/landing/TrustBadges';
+import { TrustBadges, StripeNote } from '../components/landing/TrustBadges';
 
 const CYCLE_LABELS = { monthly: 'Monthly', quarterly: 'Quarterly', annual: 'Annual' };
 const CYCLE_SAVINGS = { monthly: null, quarterly: 'Save 10%', annual: 'Save 20%' };
@@ -77,7 +77,7 @@ const PricingPage = () => {
   const perYear = (plan, cycle) => parseFloat(getPrice(plan, cycle)) * 12;
 
   const handleSelect = async (planId) => {
-    if (!user) { navigate(`/start`); return; }
+    if (!user) { navigate(`/start?plan=${planId}&cycle=${selectedCycle}`); return; }
     setCheckoutLoading(planId);
     try {
       const token = localStorage.getItem('carryon_token');
@@ -256,9 +256,32 @@ const PricingPage = () => {
                   <CreditCard className="w-4 h-4 inline mr-1.5" />
                   {checkoutLoading === plan.id ? 'Loading...' : user ? 'Choose Plan' : 'Start Now'}
                 </button>
+                <StripeNote className="w-full mt-3" testId={`pricing-stripe-note-${plan.id}`} />
               </div>
             );
           })}
+        </div>
+
+        {/* How paying works — the visible checkout path */}
+        <div className="rounded-2xl p-5 sm:p-6 mb-6" style={card} data-testid="pricing-how-paying-works">
+          <p className="text-sm font-bold text-[var(--t)] mb-4 flex items-center gap-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
+            <Lock className="w-4 h-4 text-[#10b981]" /> How paying works
+          </p>
+          <ol className="grid sm:grid-cols-3 gap-4">
+            {[
+              { icon: ListChecks, title: 'Pick your plan', desc: 'Right here. Change it or cancel from your account any time.' },
+              { icon: UserPlus, title: 'Create your account', desc: 'Name, email, password. About a minute. No card yet.' },
+              { icon: CreditCard, title: 'Pay securely with Stripe', desc: 'You finish on Stripe\u2019s checkout page. Your card number never touches our servers; we never see or store it.' },
+            ].map(({ icon: Icon, title, desc }, i) => (
+              <li key={title} className="flex items-start gap-3" data-testid={`pricing-paying-step-${i + 1}`}>
+                <span className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0" style={{ background: 'rgba(16,185,129,0.12)', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)' }}>{i + 1}</span>
+                <div>
+                  <p className="text-sm font-bold text-[var(--t)] flex items-center gap-1.5"><Icon className="w-3.5 h-3.5 text-[#d4af37]" /> {title}</p>
+                  <p className="text-[13px] text-[var(--t4)] leading-relaxed">{desc}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
         </div>
 
         {/* Value anchor integrated with the price grid (D4.3) */}
@@ -302,6 +325,7 @@ const PricingPage = () => {
                         data-testid={`pricing-select-${plan.id}`}>
                         {user ? 'Select Plan' : 'Start Now'}
                       </button>
+                      <StripeNote className="w-full mt-2.5" testId={`pricing-stripe-note-${plan.id}`} />
                     </div>
                   );
                 })}

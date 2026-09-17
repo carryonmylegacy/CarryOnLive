@@ -9,9 +9,10 @@
  * here immediately. No more hardcoded marketing prices that drift from the
  * source of truth.
  *
- * Public visitors can't checkout (Stripe needs an account), so every CTA
- * routes to /signup. Once signed in, the in-app SubscriptionPaywall takes
- * over with the same data + Stripe / Apple-IAP rails.
+ * Public visitors can't checkout without an account, so every CTA routes to
+ * /start with the plan + billing cadence preselected (Pick plan → account →
+ * Stripe). Once signed in, the in-app SubscriptionPaywall takes over with the
+ * same data + Stripe / Apple-IAP rails.
  */
 import React, { useState, useEffect, useRef } from 'react';
 import { isDiscountTier, hasAgeWindow, ageLabel, discountTiersBlurb } from '../../utils/planRules';
@@ -21,6 +22,7 @@ import { Check, Loader2, Crown, Star, Shield, Award, Heart, Sparkles, Sun, Chevr
 import { API_URL } from '../../config';
 import { recordFunnelEvent } from '../../utils/funnelTelemetry';
 import useTrialDays from '../../hooks/useTrialDays';
+import { StripeNote } from './TrustBadges';
 
 const TIER_ICON = {
   premium: Crown,
@@ -205,7 +207,7 @@ export default function LandingPricing() {
           ))}
         </ul>
         <Link
-          to="/signup"
+          to={`/start?plan=${p.id}&cycle=${billing}`}
           onClick={() => recordFunnelEvent({ event: 'landing_cta_click', meta: { source: `${source}-${p.id}`, billing } })}
           className={
             highlighted
@@ -217,6 +219,7 @@ export default function LandingPricing() {
         >
           {trialDays ? `Start ${trialDays}-day free trial` : 'Start free trial'}
         </Link>
+        <StripeNote tone="dark" className="w-full mt-3" testId={`landing-tier-${p.id}-stripe-note`} />
       </div>
     );
   };

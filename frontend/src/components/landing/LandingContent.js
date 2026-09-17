@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Shield, Users, ChevronRight, ChevronDown, Lock as LockIcon, Sparkles, FileCheck, UserCheck, Trash2, ClipboardCheck, MessageSquare, Key, Layers, Smartphone, MapPin, ShieldAlert, ArrowUpDown, SlidersHorizontal, Radio, MessageCircle, HelpCircle, Heart, HandHeart, EyeOff, Download, Clock, Medal } from 'lucide-react';
+import { Shield, Users, ChevronRight, ChevronDown, Lock as LockIcon, Sparkles, FileCheck, UserCheck, Trash2, ClipboardCheck, MessageSquare, Key, Layers, Smartphone, MapPin, ShieldAlert, ArrowUpDown, SlidersHorizontal, Radio, MessageCircle, HelpCircle, Heart, HandHeart, EyeOff, Download, Clock, Medal, UserCog, Landmark, Network, MessageSquareText } from 'lucide-react';
 import { RevealSection } from './RevealSection';
 import { ProductPreview } from './ProductPreview';
 import { ReadinessQuiz } from './ReadinessQuiz';
@@ -9,33 +9,72 @@ import { LiveStats } from './LiveStats';
 import { TestimonialsBlock } from './TestimonialsBlock';
 import { TrustBadges, LastUpdated } from './TrustBadges';
 
-/* ── data: the eight tools (plain-language title, product name as sub-label) ── */
-const PILLARS = [
-  { num: '01', icon: MessageSquare, title: 'Messages for the moments you\u2019ll miss', product: 'Milestone Messages',
-    bold: 'Your words at their wedding. Your voice on their birthday. Delivered exactly when it matters.',
-    desc: 'Record written, audio, or video messages for graduations, births, first homes \u2014 any moment you want to be part of, even if you can\u2019t be there. Add as many as you like, whenever you like.' },
-  { num: '02', icon: LockIcon, title: 'Every important document, in one place', product: 'Secure Document Vault',
-    bold: 'Wills, trusts, insurance policies, deeds \u2014 encrypted, organized, and shared only with the people you choose.',
-    desc: 'Upload the paperwork your family would otherwise tear the house apart looking for. Your files are scrambled before they\u2019re stored, with a separate lock for every family, and our support team can\u2019t open them from their screens. Your loved ones see exactly what you allow \u2014 nothing more.' },
-  { num: '03', icon: Sparkles, title: 'A second set of eyes on your paperwork', product: 'Estate Guardian\u2122 AI',
-    bold: 'An AI review, tuned to your state\u2019s laws, that finds what you missed \u2014 and only reads your documents when you ask it to.',
-    desc: 'It looks for contradictions, gaps, outdated provisions, and missing pieces, then pulls out the details your family will need in a hurry: claim phone numbers, executor contacts, filing deadlines. It uses a trusted AI service under contract, and your documents are never used to teach it.' },
-  { num: '04', icon: ClipboardCheck, title: 'What to do first', product: 'Immediate Action Checklist',
-    bold: 'A step-by-step guide your family can follow on the hardest days of their lives.',
-    desc: 'Started for you from your documents and finished by you. When something happens, your family opens one list and knows what to do, who to call, where every document is, and which deadlines matter. No guessing. No searching.' },
-  { num: '05', icon: Radio, title: 'Emergency plans', product: 'Contingency Protocols',
-    bold: 'Plans your family builds now for the situations they might face \u2014 ready the moment they\u2019re needed.',
-    desc: 'A medical emergency. A natural disaster. A job loss. The passing of a family member. Each plan connects the right people, documents, checklists, and conversations so your family can act together instead of scrambling.' },
-  { num: '06', icon: MessageCircle, title: 'Private family messaging', product: 'Estate Communications Tool',
-    bold: 'A secure place for the conversations that shouldn\u2019t happen over group text.',
-    desc: 'Encrypted, access-controlled messaging between you and the people you\u2019ve chosen, built for sensitive family coordination. When an emergency plan kicks in, this is how everyone stays on the same page \u2014 privately.' },
-  { num: '07', icon: Key, title: 'Passwords & accounts', product: 'Digital Access Vault',
-    bold: 'Logins, subscriptions, crypto keys, and account numbers \u2014 saved, encrypted, and assigned to the right person.',
-    desc: 'The average family has dozens of accounts nobody else can get into. Store them here, decide who gets what, and nothing gets locked away forever or forgotten.' },
-  { num: '08', icon: Users, title: 'Who to notify', product: 'Family & Friends Notification',
-    bold: 'The people who matter most should never hear important news through the grapevine.',
-    desc: 'Keep a list of family, friends, colleagues, and anyone else your loved ones should reach out to. Names, numbers, relationships, and notes \u2014 organized so your family can make the calls without hunting through your phone.' },
+/* ── data: the twelve tools, grouped by pillar (People → Access → Money → Action).
+   Order + names are platform law: config/benefactorSections.js and
+   backend feature_gates.py::PLATFORM_FEATURES. Plain-language title, product name as sub-label. ── */
+const PILLAR_GROUPS = [
+  { key: 'people', num: '01', label: 'People', color: '#3B82F6', icon: Heart,
+    tagline: 'Who matters, what each of them sees, and who can act for you.',
+    tools: [
+      { icon: UserCheck, title: 'The people who matter, and what each one sees', product: 'Beneficiaries',
+        bold: 'Name your spouse, kids, siblings, attorney \u2014 and decide exactly what each person can see, and when.',
+        desc: 'Everything in CarryOn is built around the people you name. Each person gets their own access: your spouse sees the accounts, your attorney sees the will, your kids get the messages. Change it any time. Nothing unlocks until you say so, or until real people confirm something has happened.' },
+      { icon: MessageSquare, title: 'Messages for the moments you\u2019ll miss', product: 'Milestone Messages',
+        bold: 'Your words at their wedding. Your voice on their birthday. Delivered exactly when it matters.',
+        desc: 'Record written, audio, or video messages for graduations, births, first homes \u2014 any moment you want to be part of, even if you can\u2019t be there. Add as many as you like, whenever you like.' },
+      { icon: Users, title: 'Who to notify', product: 'Family & Friends Notification',
+        bold: 'The people who matter most should never hear important news through the grapevine.',
+        desc: 'Keep a list of family, friends, colleagues, and anyone else your loved ones should reach out to. Names, numbers, relationships, and notes \u2014 organized so your family can make the calls without hunting through your phone.' },
+      { icon: UserCog, title: 'Someone you trust can act for you', product: 'Designated Trustee Services',
+        bold: 'Let an attorney, advisor, or family member step in and manage things on your behalf \u2014 with every action written down.',
+        desc: 'Name a trustee and choose what they can do. They work inside your plan under their own login, and you can see every change they make and when they made it. Helpful when a parent needs a hand today, not just someday.' },
+    ] },
+  { key: 'access', num: '02', label: 'Access', color: '#d4af37', icon: LockIcon,
+    tagline: 'Documents, passwords, and a second set of eyes on all of it.',
+    tools: [
+      { icon: LockIcon, title: 'Every important document, in one place', product: 'Secure Document Vault',
+        bold: 'Wills, trusts, insurance policies, deeds \u2014 encrypted, organized, and shared only with the people you choose.',
+        desc: 'Upload the paperwork your family would otherwise tear the house apart looking for. Your files are scrambled before they\u2019re stored, with a separate lock for every family, and our support team can\u2019t open them from their screens. Your loved ones see exactly what you allow \u2014 nothing more.' },
+      { icon: Key, title: 'Passwords & accounts', product: 'Digital Access Vault',
+        bold: 'Logins, subscriptions, crypto keys, and account numbers \u2014 saved, encrypted, and assigned to the right person.',
+        desc: 'The average family has dozens of accounts nobody else can get into. Store them here, decide who gets what, and nothing gets locked away forever or forgotten.' },
+      { icon: Sparkles, title: 'A second set of eyes on your paperwork', product: 'Estate Guardian\u2122 AI',
+        bold: 'An AI review, tuned to your state\u2019s laws, that finds what you missed \u2014 and only reads your documents when you ask it to.',
+        desc: 'It looks for contradictions, gaps, outdated provisions, and missing pieces, then pulls out the details your family will need in a hurry: claim phone numbers, executor contacts, filing deadlines. It uses a trusted AI service under contract, and your documents are never used to teach it.' },
+    ] },
+  { key: 'money', num: '03', label: 'Money', color: '#22C993', icon: Landmark,
+    tagline: 'The full picture, and how the pieces fit together.',
+    tools: [
+      { icon: Landmark, title: 'The full money picture', product: 'CarryOn Financial Picture',
+        bold: 'Accounts, investments, policies, bills, debts, and property \u2014 the whole picture in one encrypted view.',
+        desc: 'Not a budgeting app. A clear map of what you have, what you owe, and where it all lives, so the person settling your affairs isn\u2019t piecing it together from mail and bank statements. Share the parts each person needs.' },
+      { icon: Network, title: 'How it all fits together', product: 'CarryOn Entities & Structures',
+        bold: 'Every trust, LLC, partnership, and charitable entity \u2014 and the people connected to each \u2014 on one visual chart.',
+        desc: 'If you own a business, hold property in a trust, or have more than one entity, your family will need to see how the pieces connect. Pan, zoom, and follow the lines from each entity to its documents and its people.' },
+    ] },
+  { key: 'action', num: '04', label: 'Action', color: '#B794F6', icon: ClipboardCheck,
+    tagline: 'What your family does first, and how they stay on the same page.',
+    tools: [
+      { icon: ClipboardCheck, title: 'What to do first', product: 'Immediate Action Checklist',
+        bold: 'A step-by-step guide your family can follow on the hardest days of their lives.',
+        desc: 'Started for you from your documents and finished by you. When something happens, your family opens one list and knows what to do, who to call, where every document is, and which deadlines matter. No guessing. No searching.' },
+      { icon: Radio, title: 'Emergency plans', product: 'Contingency Protocols',
+        bold: 'Plans your family builds now for the situations they might face \u2014 ready the moment they\u2019re needed.',
+        desc: 'A medical emergency. A natural disaster. A job loss. The passing of a family member. Each plan connects the right people, documents, checklists, and conversations so your family can act together instead of scrambling.' },
+      { icon: MessageCircle, title: 'Private family messaging', product: 'Estate Communications Tool',
+        bold: 'A secure place for the conversations that shouldn\u2019t happen over group text.',
+        desc: 'Encrypted, access-controlled messaging between you and the people you\u2019ve chosen, built for sensitive family coordination. When an emergency plan kicks in, this is how everyone stays on the same page \u2014 privately.' },
+    ] },
 ];
+
+/* ── data: beneficiary-side capability (not a pillar — what your family gets, after) ── */
+const AFTER_TOOL = {
+  icon: MessageSquareText, title: 'Answers for your family, when you can\u2019t give them', product: 'Beneficiary Estate Concierge',
+  bold: 'After the transition, your family can ask plain-English questions \u2014 \u201cwhat did Dad want done with the house?\u201d \u2014 and get answers drawn only from what you released to them, with the source shown.',
+  desc: 'It reads only the documents each person was given access to, never anything else, and points to the exact page it\u2019s quoting. It doesn\u2019t give legal advice and it doesn\u2019t guess. It helps your family find what you already decided.',
+};
+
+const toolNum = (gi, i) => String(PILLAR_GROUPS.slice(0, gi).reduce((n, g) => n + g.tools.length, 0) + i + 1).padStart(2, '0');
 
 /* ── data: platform features ── */
 const PLATFORM_FEATURES = [
@@ -113,6 +152,37 @@ const FaqItem = ({ q, a, link, isOpen, onToggle, index }) => (
         )}
       </p>
     )}
+  </div>
+);
+
+/**
+ * ToolCard — one function card (shared by the four pillar groups and the after-transition tool)
+ */
+const ToolCard = ({ num, icon: Icon, title, product, bold, desc, accent = '#d4af37', testId }) => (
+  <div className="rounded-2xl p-6 h-full relative overflow-hidden"
+    data-testid={testId}
+    style={{
+      background: 'linear-gradient(160deg, #1a2d4d 0%, #16284a 50%, #142240 100%)',
+      border: '1.5px solid rgba(212,175,55,0.45)',
+      boxShadow: '0 2px 16px rgba(0,0,0,0.15)',
+    }}>
+    <div className="flex items-start gap-4">
+      <div className="flex flex-col items-center gap-2 flex-shrink-0 pt-0.5">
+        <div className="w-11 h-11 rounded-full flex items-center justify-center font-bold text-sm"
+          style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.12), rgba(212,175,55,0.06))', border: '1.5px solid rgba(212,175,55,0.25)', color: '#d4af37' }}>
+          {num}
+        </div>
+        <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: 'rgba(212,175,55,0.06)' }}>
+          <Icon className="w-4 h-4" style={{ color: accent, opacity: 0.85 }} />
+        </div>
+      </div>
+      <div className="flex-1 min-w-0">
+        <h4 className="text-white text-lg font-bold leading-tight mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>{title}</h4>
+        <span className="text-[#8b97ab] text-xs font-semibold tracking-wide block mb-2.5">{product}</span>
+        <p className="text-sm font-medium mb-2 leading-relaxed" style={{ color: '#e8c972' }}>{bold}</p>
+        <p className="text-[#8b97ab] text-sm leading-relaxed">{desc}</p>
+      </div>
+    </div>
   </div>
 );
 
@@ -218,7 +288,7 @@ const LandingContent = ({ navigateWithFade, footerInfo = DEFAULT_FOOTER, testIdS
       </div>
     </section>
 
-    {/* ═══════════════════ THE EIGHT TOOLS ═══════════════════ */}
+    {/* ═══════════════════ THE FOUR PILLARS · TWELVE TOOLS ═══════════════════ */}
     <section id="features" className="relative z-30 -mt-1">
       <div className="rounded-t-[2rem] py-24 lg:py-32 relative overflow-hidden" style={{ background: 'linear-gradient(180deg, #0f1d30 0%, #132240 50%, #0f1d30 100%)', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
         <div className="absolute top-0 left-0 right-0 h-[280px] sm:hidden opacity-[0.55]" style={{ backgroundImage: 'url(/texture-pillars.jpg)', backgroundSize: 'cover', backgroundPosition: 'center top' }} />
@@ -230,47 +300,67 @@ const LandingContent = ({ navigateWithFade, footerInfo = DEFAULT_FOOTER, testIdS
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white text-center mb-4" style={{ fontFamily: 'Outfit, sans-serif' }} data-testid={`features-heading${testIdSuffix}`}>
               Everything your family will need. In one place.
             </h2>
-            <p className="text-[#a0aec0] text-base text-center max-w-[650px] mx-auto mb-16 leading-relaxed">
-              Each piece builds on the last &mdash; so you can start with what matters most and add the rest over time.
+            <p className="text-[#a0aec0] text-base text-center max-w-[650px] mx-auto mb-16 leading-relaxed" data-testid={`features-subheading${testIdSuffix}`}>
+              Four pillars. Twelve tools &mdash; plus one that works for your family after you&apos;re gone. Each piece builds on the last, so you can start with what matters most and add the rest over time.
             </p>
           </RevealSection>
 
           <div data-testid={`pillars-flow${testIdSuffix}`}>
-            <div className="grid md:grid-cols-2 gap-5">
-                {PILLARS.map(({ num, icon: Icon, title, product, bold, desc }, i) => (
-                  <RevealSection key={num} delay={(i % 2) * 0.08} distance={30} duration={0.7}>
-                    <div className="rounded-2xl p-6 h-full relative overflow-hidden"
-                      data-testid={`pillar-card-${num}${testIdSuffix}`}
-                      style={{
-                        background: 'linear-gradient(160deg, #1a2d4d 0%, #16284a 50%, #142240 100%)',
-                        border: '1.5px solid rgba(212,175,55,0.45)',
-                        boxShadow: '0 2px 16px rgba(0,0,0,0.15)',
-                      }}>
-                      <div className="flex items-start gap-4">
-                        <div className="flex flex-col items-center gap-2 flex-shrink-0 pt-0.5">
-                          <div className="w-11 h-11 rounded-full flex items-center justify-center font-bold text-sm"
-                            style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.12), rgba(212,175,55,0.06))', border: '1.5px solid rgba(212,175,55,0.25)', color: '#d4af37' }}>
-                            {num}
-                          </div>
-                          <div className="w-8 h-8 rounded-full flex items-center justify-center"
-                            style={{ background: 'rgba(212,175,55,0.06)' }}>
-                            <Icon className="w-4 h-4 text-[#d4af37]/70" />
-                          </div>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h4 className="text-white text-lg font-bold leading-tight mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>{title}</h4>
-                          <span className="text-[#8b97ab] text-xs font-semibold tracking-wide block mb-2.5">{product}</span>
-                          <p className="text-sm font-medium mb-2 leading-relaxed" style={{ color: '#e8c972' }}>{bold}</p>
-                          <p className="text-[#8b97ab] text-sm leading-relaxed">{desc}</p>
-                        </div>
+            {PILLAR_GROUPS.map((group, gi) => {
+              const GroupIcon = group.icon;
+              return (
+                <div key={group.key} className="mb-14" data-testid={`pillar-group-${group.key}${testIdSuffix}`}>
+                  <RevealSection>
+                    <div className="flex items-center gap-4 mb-6">
+                      <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                        style={{ background: `${group.color}1f`, border: `1.5px solid ${group.color}66` }}>
+                        <GroupIcon className="w-5 h-5" style={{ color: group.color }} />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold uppercase tracking-[0.18em] mb-0.5" style={{ color: group.color }}>Pillar {group.num}</p>
+                        <h3 className="text-white text-xl sm:text-2xl font-bold leading-tight" style={{ fontFamily: 'Outfit, sans-serif' }} data-testid={`pillar-group-${group.key}-label${testIdSuffix}`}>
+                          {group.label} <span className="text-[#8b97ab] font-medium text-base sm:text-lg">&mdash; {group.tagline}</span>
+                        </h3>
                       </div>
                     </div>
                   </RevealSection>
-                ))}
+                  <div className="grid md:grid-cols-2 gap-5">
+                    {group.tools.map((tool, i) => {
+                      const num = toolNum(gi, i);
+                      return (
+                        <RevealSection key={num} delay={(i % 2) * 0.08} distance={30} duration={0.7}>
+                          <ToolCard {...tool} num={num} accent={group.color} testId={`pillar-card-${num}${testIdSuffix}`} />
+                        </RevealSection>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Beneficiary-side capability — what your family gets, after */}
+            <div className="mb-14" data-testid={`after-tool${testIdSuffix}`}>
+              <RevealSection>
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                    style={{ background: 'rgba(255,255,255,0.06)', border: '1.5px solid rgba(255,255,255,0.18)' }}>
+                    <HandHeart className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold uppercase tracking-[0.18em] mb-0.5 text-[#a0aec0]">For your family, after</p>
+                    <h3 className="text-white text-xl sm:text-2xl font-bold leading-tight" style={{ fontFamily: 'Outfit, sans-serif' }}>
+                      Not a pillar <span className="text-[#8b97ab] font-medium text-base sm:text-lg">&mdash; the one tool built for the people you leave behind.</span>
+                    </h3>
+                  </div>
+                </div>
+              </RevealSection>
+              <RevealSection distance={30} duration={0.7}>
+                <ToolCard {...AFTER_TOOL} num="+" accent="#ffffff" testId={`pillar-card-bec${testIdSuffix}`} />
+              </RevealSection>
             </div>
 
             {/* End-state tile */}
-            <div className="pt-12">
+            <div className="pt-2">
               <RevealSection delay={0.5}>
                 <div className="relative z-20 mx-auto max-w-[640px] rounded-[1.75rem] p-8 lg:p-10 text-center"
                   data-testid={`complete-preparedness-tile${testIdSuffix}`}
@@ -287,7 +377,7 @@ const LandingContent = ({ navigateWithFade, footerInfo = DEFAULT_FOOTER, testIdS
                     It&apos;s handled.
                   </h3>
                   <p className="text-[#a0aec0] text-sm lg:text-base leading-relaxed mb-4">
-                    Eight tools. One family. A living plan that grows with you &mdash; so that whatever life brings, your family is never left searching, wondering, or scrambling. And you get to stop carrying it all in your head.
+                    Four pillars. Twelve tools. One family. A living plan that grows with you &mdash; so that whatever life brings, your family is never left searching, wondering, or scrambling. And you get to stop carrying it all in your head.
                   </p>
                   <p className="text-white text-2xl font-semibold italic">
                     They&apos;re ready. Because you prepared.

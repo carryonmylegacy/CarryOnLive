@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { SEO } from '../components/SEO';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
@@ -8,10 +8,16 @@ import {
   CreditCard, ArrowRight, Heart
 } from 'lucide-react';
 import { API_URL } from '../config';
-import { TrustBadges } from '../components/landing/TrustBadges';
+import { TrustBadges, StripeNote } from '../components/landing/TrustBadges';
 
 const CYCLE_LABELS = { monthly: 'Monthly', quarterly: 'Quarterly', annual: 'Annual' };
 const CYCLE_SAVINGS = { monthly: null, quarterly: '10% off', annual: '20% off' };
+const CYCLES = Object.keys(CYCLE_LABELS);
+const INTENT_KEY = 'carryon_checkout_intent';
+
+const readIntent = () => {
+  try { return JSON.parse(sessionStorage.getItem(INTENT_KEY) || 'null'); } catch { return null; }
+};
 
 const StartPage = () => {
   const navigate = useNavigate();
@@ -20,10 +26,15 @@ const StartPage = () => {
   const [plans, setPlans] = useState([]);
   const [trialDays, setTrialDays] = useState(30);
   const [selectedPlan, setSelectedPlan] = useState(null);
-  const [selectedCycle, setSelectedCycle] = useState('monthly');
+  const requestedPlan = searchParams.get('plan');
+  const requestedCycle = searchParams.get('cycle');
+  const [selectedCycle, setSelectedCycle] = useState(CYCLES.includes(requestedCycle) ? requestedCycle : 'monthly');
   const [loading, setLoading] = useState(true);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [familyDiscount, setFamilyDiscount] = useState(0);
+  // Signup hands back here with ?resume=checkout once the account exists.
+  const [resuming, setResuming] = useState(searchParams.get('resume') === 'checkout' && !!readIntent());
+  const resumedRef = useRef(false);
 
   useEffect(() => {
     // Track funnel event + capture UTM and partner params
@@ -51,11 +62,32 @@ const StartPage = () => {
       setPlans(mainPlans);
       setTrialDays(data.trial_duration_days || 30);
       setFamilyDiscount(data.family_benefactor_discount_percent || 0);
-      const defaultPlan = mainPlans.find(p => p.is_default) || mainPlans.find(p => p.id === 'standard') || mainPlans[0];
+      const defaultPlan = mainPlans.find(p => p.id === requestedPlan)
+        || mainPlans.find(p => p.is_default) || mainPlans.find(p => p.id === 'standard') || mainPlans[0];
       if (defaultPlan) setSelectedPlan(defaultPlan.id);
     } catch { /* silent */ }
     setLoading(false);
   };
+
+  // /pricing → /start?plan=… : land the visitor on the preselected plan card.
+  useEffect(() => {
+    if (loading || !requestedPlan || resuming) return;
+    const t = setTimeout(() => document.getElementById('pricing-section')?.scrollIntoView({ behavior: 'smooth' }), 150);
+    return () => clearTimeout(t);
+  }, [loading, requestedPlan, resuming]);
+
+  // Post-signup hand-off: the account now exists, finish the plan the visitor picked.
+  useEffect(() => {
+    if (!resuming || !user || resumedRef.current) return;
+    resumedRef.current = true;
+    const intent = readIntent();
+    sessionStorage.removeItem(INTENT_KEY);
+    if (!intent?.planId) { setResuming(false); return; }
+    const cycle = CYCLES.includes(intent.cycle) ? intent.cycle : 'monthly';
+    setSelectedPlan(intent.planId);
+    setSelectedCycle(cycle);
+    handleCheckout(intent.planId, cycle).then((ok) => { if (!ok) setResuming(false); });
+  }, [resuming, user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const getPrice = (plan, cycle) => {
     if (cycle === 'quarterly') return plan.quarterly_price || (plan.price * 0.9).toFixed(2);
@@ -70,38 +102,45 @@ const StartPage = () => {
     return monthly.toFixed(2);
   };
 
-  const handleCheckout = async (planId) => {
+  const handleCheckout = async (planId, cycle = selectedCycle) => {
     if (!user) {
-      // Store intent and redirect to signup
-      sessionStorage.setItem('carryon_checkout_intent', JSON.stringify({ planId, cycle: selectedCycle }));
+      // Store intent and redirect to signup; SignupPage returns to /start?resume=checkout.
+      sessionStorage.setItem(INTENT_KEY, JSON.stringify({ planId, cycle }));
       const partnerCode = sessionStorage.getItem('carryon_partner_code');
       const signupUrl = partnerCode ? `/signup?redirect=start&code=${partnerCode}` : '/signup?redirect=start';
       navigate(signupUrl);
-      return;
+      return false;
     }
     setCheckoutLoading(true);
+    let ok = false;
     try {
       const token = localStorage.getItem('carryon_token');
       const res = await axios.post(`${API_URL}/subscriptions/create-checkout`, {
         plan_id: planId,
-        billing_cycle: selectedCycle,
+        billing_cycle: cycle,
         origin_url: window.location.origin,
       }, { headers: { Authorization: `Bearer ${token}` } });
-      if (res.data.url) window.location.href = res.data.url;
+      if (res.data.url) { ok = true; window.location.href = res.data.url; }
     } catch (err) {
       console.error('Checkout error:', err);
     }
     setCheckoutLoading(false);
+    return ok;
   };
 
   const specialTiers = plans.filter(p => ['military', 'veteran', 'new_adult'].includes(p.id));
   const mainTiers = plans.filter(p => !['military', 'veteran', 'new_adult'].includes(p.id));
-  const hospicePlan = plans.find(p => p.id === 'hospice');
 
-  if (loading) {
+  if (loading || resuming) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg)' }}>
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4" style={{ background: 'var(--bg)' }} data-testid={resuming ? 'start-resume-checkout' : 'start-loading'}>
         <div className="w-8 h-8 border-2 border-[#d4af37] border-t-transparent rounded-full animate-spin" />
+        {resuming && (
+          <>
+            <p className="text-base font-semibold text-[var(--t)]">Your account is ready. Taking you to secure checkout&hellip;</p>
+            <StripeNote testId="start-resume-stripe-note" />
+          </>
+        )}
       </div>
     );
   }
@@ -321,8 +360,9 @@ const StartPage = () => {
                     }}
                     data-testid={`checkout-${plan.id}`}>
                     <CreditCard className="w-4 h-4 inline mr-1" />
-                    {checkoutLoading ? 'Loading...' : 'Subscribe'}
+                    {checkoutLoading ? 'Loading...' : (user ? 'Continue to secure checkout' : 'Subscribe')}
                   </button>
+                  <StripeNote className="w-full mt-2.5" testId={`start-stripe-note-${plan.id}`} />
                 </div>
               );
             })}
@@ -345,13 +385,15 @@ const StartPage = () => {
                       </div>
                       <button onClick={() => { setSelectedPlan(plan.id); handleCheckout(plan.id); }}
                         className="px-4 py-2 rounded-lg text-xs font-bold"
-                        style={{ background: 'rgba(212,175,55,0.12)', color: '#d4af37', border: '1px solid rgba(212,175,55,0.3)' }}>
+                        style={{ background: 'rgba(212,175,55,0.12)', color: '#d4af37', border: '1px solid rgba(212,175,55,0.3)' }}
+                        data-testid={`checkout-${plan.id}`}>
                         Select
                       </button>
                     </div>
                   );
                 })}
               </div>
+              <StripeNote className="w-full mt-3" testId="start-stripe-note-special" />
             </div>
           )}
 

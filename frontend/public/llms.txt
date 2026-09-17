@@ -6,15 +6,32 @@ CarryOn is for everyday American families, not only the wealthy. One person subs
 
 ## What CarryOn does
 
+Twelve tools in four pillars — People, Access, Money, Action — plus one built for the family after a death.
+
+People
+- Beneficiaries: the member names who matters (spouse, children, attorney, executor) and decides exactly what each person can see and when.
+- Milestone Messages: letters, audio and videos delivered to loved ones on dates the member chooses.
+- Friends & Family Notification: the who-to-notify list — names, numbers, relationships — so the family can make the calls.
+- Designated Trustee Services: an attorney, advisor or family member can act inside the plan on the member's behalf, under their own login, with every change recorded.
+
+Access
 - Secure Document Vault: wills, trusts, deeds, insurance, medical directives. Files are scrambled (encrypted) before they are stored, with a separate lock for every family; support staff cannot open them from their screens; every file open is logged with who and when.
-- "What to do first" checklist: the first-hours and first-weeks actions a family follows, with progress tracking.
-- Contingency Protocols: emergency plans for a hospital stay, military deployment, natural disaster and other disruptions — before death, not only after.
+- Digital Access Vault: accounts, passwords and keys, released only to the people designated.
 - Estate Guardian™ AI: reviews the family's documents for gaps, contradictions and outdated provisions, tuned to the family's state. It reads documents only when asked, uses a trusted AI service (xAI) under contract, and documents are never used to train it.
-- Milestone Messages: letters and videos delivered to loved ones on dates the member chooses.
-- Digital Asset Vault: accounts and passwords, released only to the people designated.
-- Who-to-notify list and financial picture: the calls to make and the accounts to know about.
-- Private family messaging and a beneficiary concierge (Premium).
-- Partner Portal for advisors, planners, hospices and organizations, including spreadsheet roster import.
+
+Money
+- CarryOn Financial Picture: accounts, investments, policies, bills, debts and property in one encrypted view — what the family has, what it owes, and where it lives.
+- CarryOn Entities & Structures: a visual chart of every trust, LLC, partnership and charitable entity and the people connected to each.
+
+Action
+- Immediate Action Checklist ("what to do first"): the first-hours and first-weeks actions a family follows, with progress tracking.
+- Contingency Protocols: emergency plans for a hospital stay, military deployment, natural disaster and other disruptions — before death, not only after.
+- Estate Communications Tool: private, access-controlled family messaging.
+
+For the family, after
+- Beneficiary Estate Concierge: after a verified death, beneficiaries ask plain-English questions and get answers drawn only from the documents released to them, with the source shown. No legal advice, no guessing.
+
+Also: a Partner Portal for advisors, planners, hospices and organizations, including spreadsheet roster import.
 
 ## Pricing (see /pricing for current numbers)
 
@@ -22,6 +39,7 @@ CarryOn is for everyday American families, not only the wealthy. One person subs
 - 30-day exploration period, no card required.
 - Reduced rates for seniors, military and first responders, veterans and young adults. Free for U.S. families in certified hospice care.
 - Invited family members pay nothing while the subscriber is alive.
+- Paying: pick a plan on /pricing or /start, create an account, then pay on Stripe's hosted checkout. Card numbers never touch CarryOn's servers. Cancel from the account at any time.
 
 ## Security and promises, in plain English
 
