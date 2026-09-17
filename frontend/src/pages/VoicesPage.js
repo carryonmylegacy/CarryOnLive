@@ -112,7 +112,7 @@ export default function VoicesPage() {
             </Link>
             <Link
               to="/signup"
-              className="inline-flex items-center gap-1.5 px-4 py-2 text-[22px] font-semibold rounded-lg btn-gold-cta"
+              className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 text-base sm:text-[22px] font-semibold rounded-lg btn-gold-cta whitespace-nowrap"
               data-testid="voices-cta-header"
             >
               Start your family&apos;s plan <ArrowRight className="w-4 h-4" />

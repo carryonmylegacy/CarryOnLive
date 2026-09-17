@@ -40,3 +40,7 @@ Token is returned as `access_token`; frontend stores it in `localStorage.carryon
 - Single-session enforcement: if a session is already active, `POST /api/auth/login` returns `{active_session_exists:true}` without a token. Pass `"force_login": true` in the JSON body to take over the session (used by Playwright checks).
 - QA accounts created during testing MUST be purged: `cd /app/backend && python3 /app/memory/scratch/purge_qa_user.py <user_id>` (runs `services.erasure.erase_user`, writes an erasure receipt).
 - Stripe is LIVE in preview (`beta_mode=false`): `/api/subscriptions/checkout` returns real `cs_live_…` sessions. Assert the redirect only — never enter card details.
+
+## PWA safe-area sweep tool (added Sep 17, 2026)
+- `cd /app/backend && BASE=$(grep REACT_APP_BACKEND_URL /app/frontend/.env | cut -d= -f2) python3 /app/memory/scratch/pwa_sweep.py --shots` → `/tmp/sweep/report.json` (+ PNG clips). `ONLY="benefactor:/guardian,/ffn"` limits the run. `shot_pwa.py <BASE> <public|benefactor|beneficiary> <paths…>` renders full screenshots with the 59px status bar drawn as a red band.
+- Beneficiary pages use a minted dev-session token for ben@test.com (id 5a4939be-…) — read-only layout checks only.

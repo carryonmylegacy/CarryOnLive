@@ -284,7 +284,7 @@ const StartPage = () => {
         </div>
 
         {/* Pricing Section */}
-        <div id="pricing-section" className="scroll-mt-8">
+        <div id="pricing-section" style={{ scrollMarginTop: 'calc(2rem + env(safe-area-inset-top, 0px))' }}>
           <div className="text-center mb-8">
             <h2 className="text-2xl sm:text-3xl font-bold text-[var(--t)] mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
               Simple, transparent pricing

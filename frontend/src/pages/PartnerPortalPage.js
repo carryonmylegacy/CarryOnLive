@@ -180,13 +180,13 @@ const PartnerPortalPage = () => {
             <div className="flex flex-col items-center lg:items-start text-center lg:text-left">
               {logoUrl ? (
                 <img key={logoUrl} src={logoUrl} alt={`${partner.company_name} logo`}
-                  className="max-w-[260px] max-h-[160px] w-auto h-auto object-contain mb-6 rounded-xl bg-white/95 p-4"
+                  className="max-w-[200px] max-h-[96px] lg:max-w-[260px] lg:max-h-[160px] w-auto h-auto object-contain mb-4 lg:mb-6 rounded-xl bg-white/95 p-3 lg:p-4"
                   style={{ boxShadow: '0 8px 40px rgba(0,0,0,0.35)' }}
                   data-testid="partner-portal-logo" />
               ) : (
                 <div
                   data-testid="partner-portal-logo-placeholder"
-                  className="w-[260px] h-[160px] rounded-xl mb-6 flex flex-col items-center justify-center"
+                  className="w-[200px] h-[96px] lg:w-[260px] lg:h-[160px] rounded-xl mb-4 lg:mb-6 flex flex-col items-center justify-center"
                   style={{
                     background: 'rgba(255,255,255,0.06)',
                     border: '2px dashed rgba(var(--gold-rgb), 0.45)',
@@ -196,31 +196,22 @@ const PartnerPortalPage = () => {
                   <span className="text-white/60 text-xs mt-1">Goes Here</span>
                 </div>
               )}
-              <h1 className="text-3xl sm:text-4xl xl:text-5xl font-semibold text-white leading-[1.08] mb-4 tracking-tight"
+              <h1 className="text-3xl sm:text-4xl xl:text-5xl font-semibold text-white leading-[1.08] mb-3 lg:mb-4 tracking-tight"
                 style={{ fontFamily: 'var(--serif)', textShadow: '0 2px 12px rgba(0,0,0,0.7), 0 1px 4px rgba(0,0,0,0.5)' }}
                 data-testid="partner-portal-headline">
                 Welcome,
                 <span className="block text-[#d4af37] mt-1 italic">{partner.company_name} family.</span>
               </h1>
-              <p className="text-white/85 text-base xl:text-lg max-w-xl leading-relaxed mb-5"
+              <p className="text-white/85 text-sm sm:text-base xl:text-lg max-w-xl leading-relaxed mb-4 lg:mb-5"
                 style={{ textShadow: '0 1px 8px rgba(0,0,0,0.6)' }}
                 data-testid="partner-portal-tagline">
                 {heroSubtitle}
               </p>
-              {!!partner.enabled_pillars?.length && (
-                <div className="flex flex-wrap gap-2 justify-center lg:justify-start" data-testid="partner-portal-pillars">
-                  {partner.enabled_pillars.map(p => (
-                    <span key={p.key} className="px-3 py-1 rounded-full text-xs font-semibold"
-                      style={{ background: 'rgba(var(--gold-rgb), 0.14)', border: '1px solid rgba(var(--gold-rgb), 0.32)', color: '#fcd34d' }}>
-                      {p.label}
-                    </span>
-                  ))}
-                </div>
-              )}
+              <PillarChips pillars={partner.enabled_pillars} className="hidden lg:flex justify-start" testId="partner-portal-pillars" />
             </div>
 
-            {/* RIGHT: Login card (mirrors LoginPage desktop card) */}
-            <div className="flex justify-center lg:justify-end">
+            {/* RIGHT: Login card (mirrors LoginPage desktop card) — first thing under the welcome line on phones */}
+            <div className="flex flex-col items-center lg:items-end gap-6">
               <div className="w-full max-w-md rounded-2xl p-7 relative" style={{
                 background: 'linear-gradient(160deg, rgba(17,27,48,0.97), rgba(13,22,40,0.99))',
                 border: '1px solid rgba(var(--gold-rgb), 0.12)',
@@ -275,6 +266,7 @@ const PartnerPortalPage = () => {
                   <span className="text-white/80 text-xs font-bold">Scrambled before it&rsquo;s stored &middot; A separate lock for every family &middot; Secure connection</span>
                 </div>
               </div>
+              <PillarChips pillars={partner.enabled_pillars} className="lg:hidden justify-center" testId="partner-portal-pillars-mobile" />
             </div>
 
           </div>
@@ -297,6 +289,20 @@ const PartnerPortalPage = () => {
     </div>
   );
 };
+
+function PillarChips({ pillars, className = '', testId }) {
+  if (!pillars?.length) return null;
+  return (
+    <div className={`flex flex-wrap gap-2 ${className}`} data-testid={testId}>
+      {pillars.map(p => (
+        <span key={p.key} className="px-3 py-1 rounded-full text-xs font-semibold"
+          style={{ background: 'rgba(var(--gold-rgb), 0.14)', border: '1px solid rgba(var(--gold-rgb), 0.32)', color: '#fcd34d' }}>
+          {p.label}
+        </span>
+      ))}
+    </div>
+  );
+}
 
 function PartnerNotFoundTile({ slug, reason }) {
   const navigate = useNavigate();

@@ -326,6 +326,7 @@ function TrialTopBar() {
   return (
     <div style={{
       position: 'sticky', top: 0, zIndex: 50,
+      paddingTop: 'env(safe-area-inset-top, 0px)',
       background: 'rgba(15,22,41,0.92)',
       backdropFilter: 'blur(12px)',
       borderBottom: '1px solid rgba(var(--gold-rgb), 0.18)',

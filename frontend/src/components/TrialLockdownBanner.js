@@ -2,6 +2,7 @@ import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { FolderLock } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import useTopBannerSlot from '../hooks/useTopBannerSlot';
 
 /**
  * TrialLockdownBanner — persistent bar shown when the benefactor's
@@ -23,6 +24,9 @@ const TrialLockdownBanner = () => {
     && !path.startsWith('/manager')
     && !path.startsWith('/p/')
     && !path.startsWith('/print');
+  // Fixed top slot: absorbs the iOS status-bar inset in PWA mode and pushes
+  // the mobile header / sidebar / content down by its height (like TrusteeBanner).
+  const slot = useTopBannerSlot(show);
   if (!show) return null;
 
   const trustee = !!user?.trustee_mode;
@@ -38,9 +42,13 @@ const TrialLockdownBanner = () => {
 
   return (
     <div
-      className="w-full px-4 py-2.5 flex items-center justify-center gap-3 flex-wrap"
+      ref={slot.ref}
+      className="w-full px-4 pb-2.5 flex items-center justify-center gap-3 flex-wrap"
       style={{
+        position: 'fixed', top: slot.top, left: 0, right: 0, zIndex: 230,
+        paddingTop: `calc(0.625rem + ${slot.paddingTop})`,
         background: 'linear-gradient(90deg, rgba(212,175,55,0.18), rgba(184,120,30,0.24), rgba(212,175,55,0.18))',
+        backgroundColor: 'var(--bg)',
         borderBottom: '1px solid rgba(212,175,55,0.45)',
       }}
       data-testid="trial-lockdown-banner"
