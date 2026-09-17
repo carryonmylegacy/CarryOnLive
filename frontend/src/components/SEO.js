@@ -18,9 +18,11 @@ export const SEO = ({ title, description, path = '/', noindex = false }) => {
   // data-seo marks these tags so index.js can drop the copies baked into the
   // prerendered static HTML before React mounts (otherwise every public page
   // carries two <title>/<canonical>/og: sets after hydration).
+  // createElement (not JSX) so the dev-only visual-edits babel plugin cannot
+  // wrap {title} in a <span> — React 19 drops non-string <title> children.
   return (
     <>
-      <title data-seo="">{title}</title>
+      {React.createElement('title', { 'data-seo': '' }, title)}
       <meta name="description" content={description} data-seo="" />
       <link rel="canonical" href={url} data-seo="" />
       {noindex && <meta name="robots" content="noindex" data-seo="" />}
