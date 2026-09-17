@@ -96,10 +96,17 @@ async def put_site_copy(
             )
             set_keys.append(key)
         if value != previous:
-            history.append({
-                "_id": str(uuid.uuid4()), "key": key, "previous": previous, "next": value,
-                "actor_id": current_user["id"], "actor_email": actor, "at": now,
-            })
+            history.append(
+                {
+                    "_id": str(uuid.uuid4()),
+                    "key": key,
+                    "previous": previous,
+                    "next": value,
+                    "actor_id": current_user["id"],
+                    "actor_email": actor,
+                    "at": now,
+                }
+            )
     if history:
         await db.site_copy_history.insert_many(history)
     if set_keys or reset_keys:
@@ -128,8 +135,14 @@ async def get_site_copy_history(
     query = {"key": validate_key(key)} if key else {}
     items = []
     async for doc in db.site_copy_history.find(query).sort("at", -1).limit(limit):
-        items.append({
-            "id": doc["_id"], "key": doc["key"], "previous": doc.get("previous", ""), "next": doc.get("next", ""),
-            "actor_email": doc.get("actor_email", ""), "at": doc.get("at", ""),
-        })
+        items.append(
+            {
+                "id": doc["_id"],
+                "key": doc["key"],
+                "previous": doc.get("previous", ""),
+                "next": doc.get("next", ""),
+                "actor_email": doc.get("actor_email", ""),
+                "at": doc.get("at", ""),
+            }
+        )
     return {"items": items}

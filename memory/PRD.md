@@ -378,7 +378,12 @@ tool names and the 4 pillar names are `locked` in the registry and render
 read-only. **When changing marketing text in code, change the default `d`
 in the registry — not the JSX.** Adding a new editable string = add a field
 to the registry and call `t()`; nothing else to wire. Phase 2 (Customers,
-Compare, Changelog, Voices, legal pages, in-app text) is not started.
+Compare, What's New, Voices, Wind-Down, Privacy, Terms, Accessibility) lives in
+`copy/siteCopyPhase2.js` — list fields are one-item-per-line (`copyList`),
+legal bodies are line-per-paragraph with `- ` bullets (`renderBlocks`). Every
+save is journaled in `site_copy_history` (restore from the editor); the editor's
+Preview drawer frames the live page with `?copyPreview=1` and pushes unsaved
+edits via postMessage. In-app (logged-in) text is still hardcoded.
 
 ### Critical pathways (housekeeping FAIL if broken)
 
@@ -556,7 +561,9 @@ bug — fix it in the preview DB immediately (snippet in
 - Hardcoded `rgba(212,175,55,…)` → `var(--gold-rgb)` sweep.
 
 ### Last verified end-to-end working item
-**Sep 17 2026 (latest) — Site Copy mini-CMS Phase 1 (NOT PUSHED).** 360 marketing strings (Home incl. `/` hero, About, Founder gate, Security, Pricing, Start, nav/footer, FAQ, SEO titles/descriptions) now read from `copy/siteCopy.js` defaults with founder overrides from `site_copy` via `GET /api/public/site-copy`; editor at Admin → Marketing → Site Copy (`PUT /api/admin/site-copy`, marketing scope, audited). 12 tool names + 4 pillar names locked. iteration_206: backend 19/19, frontend 100%; `tests/regression/test_site_copy.py`. check.sh ALL CLEAR (pip-audit baseline ratcheted 32→33 for litellm advisory drift). **Founder next**: push → Vercel/Render → on prod open Site Copy, change one line, Save, reload the public page. Phase 2 (other public pages / in-app text) awaits founder go-ahead.
+**Sep 17 2026 (latest) — Site Copy Phase 2 + change history + live preview (NOT PUSHED).** All public pages are now in the CMS (629 fields: + Customers, Compare incl. competitor facts, What's New, Voices, Wind-Down, Privacy, Terms, Accessibility). Every save logs who/when/before→after (`site_copy_history`, `GET /api/admin/site-copy/history`) with one-click Restore per field and a "Recent changes" panel; **Preview** drawer shows the live page with unsaved edits pushed in as you type (same-origin iframe + postMessage, `?copyPreview=1`). iteration_207: backend 27/27, frontend 100%. `frontend/yarn.lock` was rewritten by check.sh's yarn-audit stage and restored — see CHANGELOG. **Founder next**: push → on prod open Site Copy, Preview a change, Save, check History.
+
+**Sep 17 2026 — Site Copy mini-CMS Phase 1 (NOT PUSHED).** 360 marketing strings (Home incl. `/` hero, About, Founder gate, Security, Pricing, Start, nav/footer, FAQ, SEO titles/descriptions) now read from `copy/siteCopy.js` defaults with founder overrides from `site_copy` via `GET /api/public/site-copy`; editor at Admin → Marketing → Site Copy (`PUT /api/admin/site-copy`, marketing scope, audited). 12 tool names + 4 pillar names locked. iteration_206: backend 19/19, frontend 100%; `tests/regression/test_site_copy.py`. check.sh ALL CLEAR (pip-audit baseline ratcheted 32→33 for litellm advisory drift). **Founder next**: push → Vercel/Render → on prod open Site Copy, change one line, Save, reload the public page. Phase 2 (other public pages / in-app text) awaits founder go-ahead.
 
 **Sep 17 2026 (evening) — Founder headshot ROOT CAUSE fixed (NOT PUSHED).** Not the upload: prod API returned `Cross-Origin-Resource-Policy: same-origin` on the image, so browsers on carryon.us refused to render the cross-origin `<img>` (preview is same-origin, never reproduced). Middleware now `setdefault`, headshot route sends `cross-origin`; admin card no longer lies with the empty state. iteration_205 7/7 incl. cross-origin embed simulation. **Founder next**: push → Render redeploy → reload /about; the photo already stored on prod will appear.
 

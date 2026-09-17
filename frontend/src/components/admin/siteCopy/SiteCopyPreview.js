@@ -50,7 +50,7 @@ export const SiteCopyPreview = ({ page, overrides, onClose }) => {
           <button type="button" onClick={onClose} className="p-1.5 rounded-md text-[var(--t4)] hover:text-[var(--t)]" title="Close preview" data-testid="site-copy-preview-close"><X className="w-5 h-5" /></button>
         </div>
       </div>
-      <div className="flex-1 min-h-0 flex justify-center" style={{ background: '#05080f' }}>
+      <div className="flex-1 min-h-0 flex justify-center" style={{ background: 'var(--bg3)' }}>
         <iframe ref={frame} key={`${path}-${nonce}`} src={src} title={`Preview of ${path}`} className="h-full border-0 bg-white"
           style={{ width: device === 'phone' ? PHONE_WIDTH : '100%', maxWidth: '100%' }} data-testid="site-copy-preview-frame" />
       </div>

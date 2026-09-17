@@ -49,3 +49,4 @@ Token is returned as `access_token`; frontend stores it in `localStorage.carryon
 - `GET /api/public/site-copy` (public) · `PUT /api/admin/site-copy {"changes": {"<key>": "text" | null}}` (founder or marketing-scope admin; benefactor → 403).
 - Editor: `/admin/site-copy` (Admin → Marketing → Site Copy). Keys/defaults: `frontend/src/copy/siteCopy.js`.
 - Test hygiene: use probe keys like `qa.site_copy.probe` or a real key, and ALWAYS reset (`null`) afterwards so `GET /api/public/site-copy` returns `{"overrides": {}}` — preview mirrors live config.
+- History: `GET /api/admin/site-copy/history?key=<key>&limit=<1..500>` (marketing scope). Preview frame: any public path + `?copyPreview=1` inside the editor drawer (`/admin/site-copy` → Preview).
