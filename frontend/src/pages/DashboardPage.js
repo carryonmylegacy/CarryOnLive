@@ -1799,6 +1799,14 @@ const DashboardPage = () => {
           </div>
         );
 
+        // One line under each pillar tile: the tool scores that make up
+        // its percent, plus "Why?" → the matching section of /readiness-score.
+        const EXPLAIN_LABELS = { beneficiaries: 'Beneficiaries', mm: 'Messages', ffn: 'Family & Friends', sdv: 'Documents', dav: 'Digital Access', cfp: 'Financials', ces: 'Entities', iac: 'Checklist', ccp: 'Contingency' };
+        const EXPLAIN_ANCHOR = { estate: 'people', vault: 'access', financial: 'money', preparedness: 'action' };
+        const explainerFor = (sec) => SECTION_FEATURES[sec]
+          .filter((f) => isFeatureKeyEnabled(f, enabledFeatures))
+          .map((f) => `${EXPLAIN_LABELS[f]} ${FEATURE_PERCENTS[f]}%`)
+          .join(' · ');
         const TilesGrid = ({ chiclet = false }) => (
           <div
             className={
@@ -1809,7 +1817,13 @@ const DashboardPage = () => {
             data-testid="dashboard-stat-grid"
           >
             {ENTRIES.map((e) => (
-              <React.Fragment key={e.key}>{e.tile}</React.Fragment>
+              <div key={e.key} className="flex flex-col">
+                <div className="flex-1">{e.tile}</div>
+                <p className="mt-1.5 px-1 text-center leading-snug" style={{ fontSize: 12 }} data-testid={`tile-explainer-${e.key}`}>
+                  <span className="text-[var(--t4)] font-bold">{explainerFor(e.key)}</span>{' '}
+                  <a href={`/readiness-score#${EXPLAIN_ANCHOR[e.key]}`} target="_blank" rel="noopener noreferrer" className="font-bold whitespace-nowrap hover:underline" style={{ color: e.chipColor }} data-testid={`tile-explainer-link-${e.key}`}>Why?</a>
+                </p>
+              </div>
             ))}
           </div>
         );

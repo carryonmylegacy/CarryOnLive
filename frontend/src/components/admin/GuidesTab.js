@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { BookOpen, Rocket, EyeOff, ExternalLink, Type, Loader2, CheckCircle2, Eye } from 'lucide-react';
+import { BookOpen, Rocket, EyeOff, ExternalLink, Type, Loader2, CheckCircle2, Eye, SpellCheck } from 'lucide-react';
 import apiClient from '../../utils/apiClient';
 import { API_URL } from '../../config';
 import { toast } from '../../utils/toast';
@@ -77,7 +77,10 @@ export const GuidesTab = ({ getAuthHeaders }) => {
               {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <EyeOff className="w-4 h-4" />} Hide the section again
             </button>
           )}
-          <a href="/admin/site-copy" className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-bold text-[var(--t4)] hover:text-[var(--gold)] ml-auto" data-testid="guides-edit-copy">
+          <a href="/admin/site-copy?page=guides&review=legal" className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-bold ml-auto" style={{ border: '1px solid rgba(212,175,55,0.5)', color: 'var(--gold)' }} title="Opens Site Copy on the Guides page and checks every sentence for typos and legal-advice wording" data-testid="guides-review">
+            <SpellCheck className="w-4 h-4" /> Review the five guides
+          </a>
+          <a href="/admin/site-copy?page=guides" className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-bold text-[var(--t4)] hover:text-[var(--gold)]" data-testid="guides-edit-copy">
             <Type className="w-4 h-4" /> Edit the wording in Site Copy
           </a>
         </div>

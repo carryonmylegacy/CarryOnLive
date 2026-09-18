@@ -68,6 +68,14 @@ class AlertsIn(BaseModel):
     enabled: bool
 
 
+class DraftScheduleIn(BaseModel):
+    publish_at: str | None = Field(None, description="ISO-8601 UTC; null cancels the scheduled publish")
+    pages: list[dict] = Field(
+        default_factory=list, description="[{path,label}] the draft touches — for the alert e-mail"
+    )
+    field_labels: dict[str, str] = Field(default_factory=dict)
+
+
 class ReviewField(BaseModel):
     key: str
     label: str = ""
@@ -77,6 +85,7 @@ class ReviewField(BaseModel):
 
 class ReviewIn(BaseModel):
     fields: list[ReviewField]
+    legal: bool = Field(False, description="also flag sentences that read as legal, tax or medical advice")
 
 
 def clean_copy_value(value: str) -> str:
@@ -211,11 +220,13 @@ def clean_changes(changes: dict, limit: int = MAX_CHANGES) -> dict[str, str]:
 async def put_site_copy(
     payload: SiteCopyChanges, request: Request, current_user: dict = Depends(require_scope("marketing"))
 ):
-    return await apply_changes(clean_changes(payload.changes), current_user, request)
+    return await apply_changes(clean_changes(payload.changes), current_user, ip=get_client_ip(request))
 
 
-async def apply_changes(cleaned: dict[str, str], current_user: dict, request: Request, via: str = "") -> dict:
-    """Write overrides ("" = reset to default), record history (+ `via` draft name) and audit."""
+async def apply_changes(cleaned: dict[str, str], current_user: dict, via: str = "", ip: str | None = None) -> dict:
+    """Write overrides ("" = reset to default), record history (+ `via` draft name) and audit.
+
+    `current_user` needs id / email / role — a request user or the person who scheduled a draft."""
     now = datetime.now(timezone.utc).isoformat()
     actor = current_user.get("email", "")
     existing: dict[str, str] = {}
@@ -261,7 +272,7 @@ async def apply_changes(cleaned: dict[str, str], current_user: dict, request: Re
             resource_type="site_copy",
             resource_id="public-site",
             details={"set": set_keys, "reset": reset_keys, "via": via},
-            ip_address=get_client_ip(request),
+            ip_address=ip,
         )
     base, _ = await load_base()
     effective = await load_overrides()
@@ -381,6 +392,9 @@ def draft_out(doc: dict) -> dict:
         "created_at": doc.get("created_at", ""),
         "updated_by": doc.get("updated_by", ""),
         "updated_at": doc.get("updated_at", ""),
+        "publish_at": doc.get("publish_at"),
+        "scheduled_by": doc.get("scheduled_by", ""),
+        "publishing_at": doc.get("publishing_at"),
     }
 
 
@@ -461,10 +475,53 @@ async def publish_draft(draft_id: str, request: Request, current_user: dict = De
     doc = await db.site_copy_drafts.find_one({"_id": draft_id})
     if not doc:
         raise HTTPException(status_code=404, detail="Draft not found.")
-    result = await apply_changes(doc.get("changes") or {}, current_user, request, via=doc.get("name", ""))
+    result = await apply_changes(
+        doc.get("changes") or {}, current_user, via=doc.get("name", ""), ip=get_client_ip(request)
+    )
     await db.site_copy_drafts.delete_one({"_id": draft_id})
     await audit_draft("site_copy_draft_publish", doc, request, current_user)
     return {**result, "items": await load_drafts()}
+
+
+@router.put("/admin/site-copy/drafts/{draft_id}/schedule")
+async def schedule_draft(
+    draft_id: str, payload: DraftScheduleIn, request: Request, current_user: dict = Depends(require_scope("marketing"))
+):
+    """Publish the draft by itself at publish_at (null = cancel). Fires from the site_copy_alerts loop."""
+    doc = await db.site_copy_drafts.find_one({"_id": draft_id})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Draft not found.")
+    if doc.get("publishing_at"):
+        raise HTTPException(status_code=409, detail="This draft is being published right now.")
+    publish_at = parse_iso(payload.publish_at, "publish_at") if payload.publish_at else None
+    if publish_at and publish_at <= datetime.now(timezone.utc).isoformat():
+        raise HTTPException(status_code=400, detail="Pick a time in the future — or press Publish to publish now.")
+    pages = [
+        {"path": p.get("path", ""), "label": clean_copy_value(str(p.get("label", "")))[:120]}
+        for p in payload.pages[:20]
+        if PATH_RE.match(str(p.get("path", "")))
+    ]
+    field_labels = {
+        validate_key(k): clean_copy_value(str(v))[:200]
+        for k, v in list(payload.field_labels.items())[:MAX_DRAFT_CHANGES]
+    }
+    update = {
+        "publish_at": publish_at,
+        "scheduled_by": current_user.get("email", "") if publish_at else "",
+        "scheduled_by_id": current_user["id"] if publish_at else "",
+        "scheduled_by_role": current_user.get("role", "admin") if publish_at else "",
+        "pages": pages,
+        "field_labels": field_labels,
+    }
+    await db.site_copy_drafts.update_one({"_id": draft_id}, {"$set": update})
+    await audit_draft(
+        "site_copy_draft_schedule" if publish_at else "site_copy_draft_unschedule",
+        doc,
+        request,
+        current_user,
+        {"publish_at": publish_at},
+    )
+    return {"items": await load_drafts(), "id": draft_id}
 
 
 @router.delete("/admin/site-copy/drafts/{draft_id}")
@@ -629,6 +686,103 @@ async def llm_typo_issues(fields: list[ReviewField], actor_id: str) -> list[dict
     return issues
 
 
+# Phrases that make general information read as legal / tax / medical advice.
+LEGAL_PHRASES = [
+    (
+        r"\byou (must|are required to|are legally required to|have to|need to) (file|sign|notarize|probate|register|update|revoke|name|appoint)\b",
+        "tells the reader what they must do",
+    ),
+    (r"\b(required|mandated|mandatory) by (law|statute|the court|the state)\b", "states a legal requirement as fact"),
+    (r"\bthe law (requires|says|states|mandates)\b", "states what the law requires"),
+    (r"\byou (are|will be) (legally )?(entitled|liable|responsible|obligated)\b", "states legal rights or liability"),
+    (r"\b(is|are) (legally )?(binding|enforceable|void|invalid|unenforceable)\b", "makes a legal determination"),
+    (
+        r"\b(in (all|every) states?|in any state|everywhere)\b.{0,60}\b(law|court|probate|will|trust|deed)\b",
+        "generalises the law across states",
+    ),
+    (r"\b(always|never) (sign|file|name|appoint|use|leave|put|transfer|title|gift)\b", "absolute instruction"),
+    (r"\bwe (recommend|advise) (that )?you\b", "gives advice in our voice"),
+    (
+        r"\b(tax|taxes|deduct|deductible|exempt|exemption|estate tax|gift tax)\b.{0,50}\b(you (will|won't|can|cannot|should|must))\b",
+        "reads as tax advice",
+    ),
+    (r"\b(dose|dosage|diagnos|prescribe|treatment plan)\b", "reads as medical advice"),
+]
+_LEGAL_RE = [(re.compile(p, re.IGNORECASE), why) for p, why in LEGAL_PHRASES]
+_SENTENCE_RE = re.compile(r"(?<=[.!?])\s+(?=[A-Z“\"'(])")
+
+
+def legal_phrase_issues(f: ReviewField) -> list[dict]:
+    issues, seen = [], set()
+    for line in (f.text or "").split("\n"):
+        for sentence in _SENTENCE_RE.split(line.strip()):
+            for rx, why in _LEGAL_RE:
+                if rx.search(sentence) and sentence not in seen:
+                    seen.add(sentence)
+                    issues.append(
+                        {"key": f.key, "type": "legal", "message": f"Reads as advice ({why}): “{sentence.strip()}”"}
+                    )
+                    break
+    return issues
+
+
+async def llm_legal_issues(fields: list[ReviewField], actor_id: str) -> list[dict]:
+    if xai_client is None or not fields:
+        return []
+    numbered = "\n".join(f"{i + 1}. {f.text}" for i, f in enumerate(fields))
+    prompt = (
+        "You review articles for a US family-continuity website that is NOT a law firm, accountant or doctor. "
+        "For each numbered text, quote every sentence that reads as legal, tax or medical ADVICE — i.e. it tells the reader "
+        "what they must, should or are required to do, states what the law requires or what a court will do as a universal "
+        "fact, or makes a legal/tax/medical determination for the reader. General information, descriptions of what a role "
+        "involves, common practices ('many families…', 'in most places…', 'an attorney can confirm…') and suggestions to consult "
+        "a professional are FINE — do not flag them. For each flagged sentence give a softened rewrite that keeps the meaning "
+        "but reads as general information (e.g. 'Rules vary by state; …', 'Many families…', 'An attorney can tell you whether…'). "
+        "Copy the sentence exactly as written, including punctuation and any **stars**.\n"
+        'Reply with ONLY a JSON array like [{"n": 2, "sentence": "You must file the will within 30 days.", '
+        '"rewrite": "Most states expect the will to be filed within weeks; the court clerk or an attorney can confirm the deadline where you live.", '
+        '"why": "states a legal deadline as universal"}]. Reply [] if nothing reads as advice.\n\n' + numbered
+    )
+    t0 = time.time()
+    try:
+        resp = await asyncio.to_thread(
+            xai_client.chat.completions.create,
+            model=XAI_MODEL_LIGHT,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0,
+            max_tokens=3000,
+        )
+        try:
+            from services.llm_cost_ledger import record_xai_response
+
+            await record_xai_response(
+                resp, endpoint="site_copy.review_legal", model=XAI_MODEL_LIGHT, user_id=actor_id, started_at=t0
+            )
+        except Exception:  # noqa: BLE001
+            pass
+        parsed = _parse_llm_json(resp.choices[0].message.content)
+    except Exception as e:  # noqa: BLE001
+        logger.warning("Site copy legal-tone review failed: %s", e)
+        return [
+            {"key": "", "type": "llm", "message": "The AI legal-tone pass was unavailable — only the phrase check ran."}
+        ]
+    issues = []
+    for item in parsed if isinstance(parsed, list) else []:
+        try:
+            f = fields[int(item.get("n", 0)) - 1]
+        except (ValueError, TypeError, IndexError):
+            continue
+        sentence, rewrite = str(item.get("sentence", "")).strip(), str(item.get("rewrite", "")).strip()
+        if not sentence or sentence not in f.text:
+            continue
+        issue = {"key": f.key, "type": "legal", "message": f"Reads as advice ({item.get('why') or 'AI'}): “{sentence}”"}
+        if rewrite and rewrite != sentence:
+            issue["fix"] = f.text.replace(sentence, rewrite, 1)
+            issue["rewrite"] = rewrite
+        issues.append(issue)
+    return issues
+
+
 @router.post("/admin/site-copy/review")
 async def review_site_copy(payload: ReviewIn, current_user: dict = Depends(require_scope("marketing"))):
     if len(payload.fields) > REVIEW_MAX_FIELDS:
@@ -643,4 +797,21 @@ async def review_site_copy(payload: ReviewIn, current_user: dict = Depends(requi
         for issue in await llm_typo_issues(with_text[i : i + REVIEW_BATCH], current_user["id"]):
             if (issue["key"], issue.get("fix")) not in known_fixes:
                 issues.append(issue)
-    return {"issues": issues, "reviewed": len(payload.fields), "llm_used": llm_used}
+    if payload.legal:
+        phrase_hits = [i for f in with_text for i in legal_phrase_issues(f)]
+        quoted = {(i["key"], i["message"].split("“", 1)[-1]) for i in phrase_hits}
+        issues.extend(phrase_hits)
+        for i in range(0, len(with_text), REVIEW_BATCH):
+            for issue in await llm_legal_issues(with_text[i : i + REVIEW_BATCH], current_user["id"]):
+                if (issue["key"], issue["message"].split("“", 1)[-1]) in quoted:
+                    # the phrase check already quoted this sentence — keep the AI's rewrite on that row instead
+                    for hit in phrase_hits:
+                        if (
+                            hit["key"] == issue["key"]
+                            and hit["message"].endswith(issue["message"].split("“", 1)[-1])
+                            and "fix" in issue
+                        ):
+                            hit["fix"], hit["rewrite"] = issue["fix"], issue["rewrite"]
+                    continue
+                issues.append(issue)
+    return {"issues": issues, "reviewed": len(payload.fields), "llm_used": llm_used, "legal": payload.legal}

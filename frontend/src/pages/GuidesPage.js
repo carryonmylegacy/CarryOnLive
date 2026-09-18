@@ -8,6 +8,7 @@ import { RevealSection } from '../components/landing/RevealSection';
 import { useCopy, renderCopy, renderBlocks, copyList } from '../copy/CopyContext';
 import { useAuth } from '../contexts/AuthContext';
 import { GUIDE_ARTICLES } from '../copy/siteCopyGuides';
+import { API_URL } from '../config';
 
 const ORIGIN = 'https://www.carryon.us';
 const ICONS = { FolderOpen, Mail, UserCheck, Clock, Radio };
@@ -77,15 +78,16 @@ const GuideArticle = ({ a, t, publishedAt, navigateWithFade }) => {
   const k = (s) => `guides.${a.slug}.${s}`;
   const title = t(k('title'));
   const url = `${ORIGIN}/guides/${a.slug}`;
+  const card = `${API_URL}/public/guides/${a.slug}/card.png`;
   const minutes = readMinutes(articleText(a, t));
   const others = GUIDE_ARTICLES.filter(o => o.slug !== a.slug);
   useEffect(() => { window.scrollTo(0, 0); }, [a.slug]);
   return (
     <>
-      <SEO title={t(k('seo.title'))} description={t(k('seo.description'))} path={`/guides/${a.slug}`} />
+      <SEO title={t(k('seo.title'))} description={t(k('seo.description'))} path={`/guides/${a.slug}`} image={card} imageAlt={title} type="article" />
       <JsonLd data={{
         '@context': 'https://schema.org', '@type': 'Article', headline: title, description: t(k('dek')), url, mainEntityOfPage: url,
-        image: `${ORIGIN}/carryon-logo.png`, wordCount: articleText(a, t).split(/\s+/).filter(Boolean).length,
+        image: card, wordCount: articleText(a, t).split(/\s+/).filter(Boolean).length,
         author: { '@type': 'Person', name: t('guides.index.byline').split(',')[0].trim(), url: `${ORIGIN}${t('guides.index.byline_url')}` },
         publisher: { '@type': 'Organization', name: 'CarryOn', url: ORIGIN, logo: { '@type': 'ImageObject', url: `${ORIGIN}/carryon-logo.png` } },
         ...(publishedAt ? { datePublished: publishedAt, dateModified: publishedAt } : {}),

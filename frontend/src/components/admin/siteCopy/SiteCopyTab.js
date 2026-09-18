@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Type, Search, Save, Loader2, ExternalLink, Undo2, Eye, History, CalendarClock, SpellCheck, FileStack } from 'lucide-react';
 import apiClient from '../../../utils/apiClient';
 import { API_URL } from '../../../config';
@@ -28,9 +28,11 @@ export const SiteCopyTab = ({ getAuthHeaders }) => {
   const [alertsEnabled, setAlertsEnabled] = useState(true);
   const [drafts, setDrafts] = useState([]);
   const [activeDraft, setActiveDraft] = useState(null);
+  const deepLink = useRef(new URLSearchParams(window.location.search)).current;
   const [review, setReview] = useState(null);
   const [reviewing, setReviewing] = useState(false);
-  const [pageKey, setPageKey] = useState(PAGES[0].key);
+  const [legalCheck, setLegalCheck] = useState(deepLink.get('review') === 'legal');
+  const [pageKey, setPageKey] = useState(PAGES.some(p => p.key === deepLink.get('page')) ? deepLink.get('page') : PAGES[0].key);
   const [query, setQuery] = useState('');
   const [openSections, setOpenSections] = useState({ [`${PAGES[0].key}:${PAGES[0].sections[0].key}`]: true });
   const [loading, setLoading] = useState(true);
@@ -200,6 +202,24 @@ export const SiteCopyTab = ({ getAuthHeaders }) => {
     }
     setSaving(false);
   };
+  const scheduleDraft = async (id, publishAt) => {
+    const d = drafts.find(x => x.id === id);
+    if (!d) return false;
+    const fields = Object.keys(d.changes).map(k => FIELD_BY_KEY[k]).filter(Boolean);
+    const pages = [...new Map(fields.map(f => [f.page.path, { path: f.page.path, label: f.page.label }])).values()];
+    const field_labels = Object.fromEntries(fields.map(f => [f.k, `${f.page.label} › ${f.section.label} › ${f.label}`]));
+    setSaving(true);
+    let ok = false;
+    try {
+      afterDraftCall(await apiClient.put(`${API_URL}/admin/site-copy/drafts/${id}/schedule`, { publish_at: publishAt, pages, field_labels }, getAuthHeaders()));
+      toast.success(publishAt ? `“${d.name}” will publish itself on schedule` : 'Scheduled publish cancelled');
+      ok = true;
+    } catch (err) {
+      toast.error(err?.response?.data?.detail || 'Could not schedule the draft');
+    }
+    setSaving(false);
+    return ok;
+  };
   const deleteDraft = async (id) => {
     setSaving(true);
     try {
@@ -229,22 +249,23 @@ export const SiteCopyTab = ({ getAuthHeaders }) => {
   const editedTotal = Object.keys(saved).filter(k => FIELD_BY_KEY[k]).length;
 
   // Review: your unsaved edits if there are any, otherwise every field on the current page (or the search results)
-  const runReview = async () => {
+  const runReview = async (legalOverride) => {
+    const legal = typeof legalOverride === 'boolean' ? legalOverride : legalCheck;
     const scope = pendingCount ? 'edits' : 'page';
     const pool = pendingCount ? Object.keys(changes).map(k => FIELD_BY_KEY[k]) : (q ? ALL_FIELDS.filter(matches) : currentPage.sections.flatMap(s => s.fields));
     const fields = pool.filter(f => f && !f.locked).map(f => ({ key: f.k, label: f.label, text: valueOf(f.k), required_vars: varsOf(f.d) }));
     setPanel('review');
     setReviewing(true);
-    setReview({ issues: [], reviewed: fields.length, scope, label: q ? `“${query.trim()}”` : currentPage.label });
+    setReview({ issues: [], reviewed: fields.length, scope, legal, label: q ? `“${query.trim()}”` : currentPage.label });
     try {
       const issues = [];
       let llmUsed = false;
       for (let i = 0; i < fields.length; i += REVIEW_BATCH) {
-        const r = await apiClient.post(`${API_URL}/admin/site-copy/review`, { fields: fields.slice(i, i + REVIEW_BATCH) }, getAuthHeaders());
+        const r = await apiClient.post(`${API_URL}/admin/site-copy/review`, { fields: fields.slice(i, i + REVIEW_BATCH), legal }, getAuthHeaders());
         issues.push(...(r.data?.issues || []));
         llmUsed = llmUsed || !!r.data?.llm_used;
       }
-      setReview({ issues, reviewed: fields.length, llm_used: llmUsed, scope, label: q ? `“${query.trim()}”` : currentPage.label });
+      setReview({ issues, reviewed: fields.length, llm_used: llmUsed, scope, legal, label: q ? `“${query.trim()}”` : currentPage.label });
     } catch (err) {
       toast.error(err?.response?.data?.detail || 'Review failed');
       setReview(null);
@@ -257,6 +278,15 @@ export const SiteCopyTab = ({ getAuthHeaders }) => {
     setReview(r => (r ? { ...r, issues: r.issues.filter(i => i !== issue) } : r));
   };
   const closeReview = () => { setReview(null); setPanel(null); };
+  const toggleLegal = () => { const next = !legalCheck; setLegalCheck(next); runReview(next); };
+  // Deep links from other admin tabs: ?page=guides&review=legal runs the review on arrival; ?field=key jumps to a field
+  const deepLinked = useRef(false);
+  useEffect(() => {
+    if (loading || deepLinked.current) return;
+    deepLinked.current = true;
+    if (deepLink.get('field') && FIELD_BY_KEY[deepLink.get('field')]) jumpTo(deepLink.get('field'));
+    if (deepLink.get('review')) runReview(deepLink.get('review') === 'legal');
+  }, [loading]); // eslint-disable-line react-hooks/exhaustive-deps
   const togglePanel = (name) => setPanel(p => (p === name ? null : name));
 
   if (loading) return <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-[var(--t4)]" /></div>;
@@ -302,7 +332,7 @@ export const SiteCopyTab = ({ getAuthHeaders }) => {
           {activeDraftName && <span className="text-xs font-bold px-1.5 py-0.5 rounded" style={{ background: 'rgba(212,175,55,0.15)', color: 'var(--gold)' }} data-testid="site-copy-active-draft">Draft: {activeDraftName}</span>}
         </p>
         <div className="flex items-center gap-1.5 flex-wrap">
-          <button type="button" onClick={runReview} disabled={reviewing} className={barBtn(panel === 'review')} title={pendingCount ? 'Check your unsaved edits' : 'Check every field on this page'} data-testid="site-copy-review-toggle">
+          <button type="button" onClick={() => runReview()} disabled={reviewing} className={barBtn(panel === 'review')} title={pendingCount ? 'Check your unsaved edits' : 'Check every field on this page'} data-testid="site-copy-review-toggle">
             {reviewing ? <Loader2 className="w-4 h-4 animate-spin" /> : <SpellCheck className="w-4 h-4" />} Review
           </button>
           <button type="button" onClick={() => togglePanel('drafts')} className={barBtn(panel === 'drafts')} data-testid="site-copy-drafts-toggle">
@@ -338,10 +368,10 @@ export const SiteCopyTab = ({ getAuthHeaders }) => {
       )}
       {panel === 'drafts' && (
         <DraftsPanel drafts={drafts} activeId={activeDraft} pendingCount={pendingCount} fieldByKey={FIELD_BY_KEY} busy={saving}
-          onSaveNew={saveDraft} onUpdate={updateDraft} onOpen={openDraft} onPublish={publishDraft} onDelete={deleteDraft} />
+          onSaveNew={saveDraft} onUpdate={updateDraft} onOpen={openDraft} onPublish={publishDraft} onDelete={deleteDraft} onSchedule={scheduleDraft} />
       )}
       {panel === 'review' && (
-        <ReviewPanel review={review} running={reviewing} fieldByKey={FIELD_BY_KEY} onJump={jumpTo} onApplyFix={applyFix} onRerun={runReview} onClose={closeReview} />
+        <ReviewPanel review={review} running={reviewing} fieldByKey={FIELD_BY_KEY} onJump={jumpTo} onApplyFix={applyFix} onRerun={() => runReview()} onClose={closeReview} legal={legalCheck} onToggleLegal={toggleLegal} />
       )}
 
       {visiblePages.map(p => {

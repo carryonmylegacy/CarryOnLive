@@ -1,13 +1,58 @@
 import React, { useState } from 'react';
-import { FileStack, Loader2, Trash2, Upload, FolderOpen, Save } from 'lucide-react';
+import { FileStack, Loader2, Trash2, Upload, FolderOpen, Save, CalendarClock, X } from 'lucide-react';
+import { easternToIso, fmtEastern, isoToEasternInput } from './SiteCopySchedule';
 
 const when = (iso) => { try { return new Date(iso).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }); } catch { return iso; } };
 const who = (email) => (email || '').split('@')[0] || 'unknown';
 const pagesOf = (draft, fieldByKey) => [...new Set(Object.keys(draft.changes).map(k => fieldByKey[k]?.page.label).filter(Boolean))];
 const smallBtn = (accent) => `inline-flex items-center gap-1 flex-shrink-0 text-xs font-bold disabled:opacity-40 ${accent ? 'text-[var(--gold)] hover:underline' : 'text-[var(--t4)] hover:text-[var(--t)]'}`;
+const inputClass = 'px-3 py-1.5 rounded-lg bg-[var(--s)] border border-[var(--b2)] text-[var(--t)] text-base focus:outline-none focus:border-[var(--gold)]';
+const nextHourInput = () => { const d = new Date(); d.setMinutes(0, 0, 0); d.setHours(d.getHours() + 1); return isoToEasternInput(d.toISOString()); };
+
+/** "Publish at (ET)" — one draft publishes itself at a chosen time. */
+const ScheduleRow = ({ draft, busy, onSchedule, index }) => {
+  const [open, setOpen] = useState(false);
+  const [when, setWhen] = useState(() => (draft.publish_at ? isoToEasternInput(draft.publish_at) : nextHourInput()));
+  const [error, setError] = useState('');
+  const submit = async (e) => {
+    e.preventDefault();
+    if (!when) return setError('Pick a date and time.');
+    const iso = easternToIso(when);
+    if (iso <= new Date().toISOString()) return setError('Pick a time in the future — or press Publish to publish now.');
+    setError('');
+    if (await onSchedule(draft.id, iso)) setOpen(false);
+  };
+  if (draft.publishing_at) return <p className="text-xs font-bold text-[#22C993] mt-1" data-testid={`site-copy-draft-publishing-${index}`}>Publishing now…</p>;
+  return (
+    <div className="mt-1.5">
+      {draft.publish_at && !open && (
+        <p className="flex items-center gap-2 text-xs flex-wrap" data-testid={`site-copy-draft-scheduled-${index}`}>
+          <span className="font-bold px-1.5 py-0.5 rounded inline-flex items-center gap-1" style={{ background: 'rgba(245,158,11,0.15)', color: '#f59e0b' }}><CalendarClock className="w-3 h-3" /> Publishes {fmtEastern(draft.publish_at)}</span>
+          <span className="text-[var(--t5)]">set by {who(draft.scheduled_by)}</span>
+          <button type="button" disabled={busy} onClick={() => setOpen(true)} className={smallBtn(false)} data-testid={`site-copy-draft-reschedule-${index}`}>Change</button>
+          <button type="button" disabled={busy} onClick={() => onSchedule(draft.id, null)} className="inline-flex items-center gap-1 text-xs font-bold text-[var(--t4)] hover:text-[#ef4444] disabled:opacity-40" data-testid={`site-copy-draft-unschedule-${index}`}><X className="w-3 h-3" /> Cancel schedule</button>
+        </p>
+      )}
+      {!draft.publish_at && !open && (
+        <button type="button" disabled={busy} onClick={() => setOpen(true)} className={smallBtn(false)} data-testid={`site-copy-draft-schedule-${index}`}><CalendarClock className="w-3 h-3" /> Publish at (ET)…</button>
+      )}
+      {open && (
+        <form onSubmit={submit} className="flex flex-wrap items-center gap-2 mt-1" data-testid={`site-copy-draft-schedule-form-${index}`}>
+          <input type="datetime-local" value={when} onChange={e => setWhen(e.target.value)} className={`${inputClass} text-base`} style={{ colorScheme: 'dark' }} data-testid={`site-copy-draft-publish-at-${index}`} />
+          <span className="text-xs text-[var(--t5)]">US Eastern · you get the alert e-mail when it goes live</span>
+          <button type="submit" disabled={busy} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold disabled:opacity-40" style={{ background: 'var(--gold)', color: '#0F1629' }} data-testid={`site-copy-draft-schedule-submit-${index}`}>
+            {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : <CalendarClock className="w-3 h-3" />} Set
+          </button>
+          <button type="button" onClick={() => { setOpen(false); setError(''); }} className={smallBtn(false)} data-testid={`site-copy-draft-schedule-cancel-${index}`}>Cancel</button>
+          {error && <span className="text-xs font-bold text-[#f59e0b]" data-testid={`site-copy-draft-schedule-error-${index}`}>{error}</span>}
+        </form>
+      )}
+    </div>
+  );
+};
 
 /** Save-bar panel: named sets of unsaved wording changes — save, reopen, publish in one press, delete. */
-export const DraftsPanel = ({ drafts, activeId, pendingCount, fieldByKey, busy, onSaveNew, onUpdate, onOpen, onPublish, onDelete }) => {
+export const DraftsPanel = ({ drafts, activeId, pendingCount, fieldByKey, busy, onSaveNew, onUpdate, onOpen, onPublish, onDelete, onSchedule }) => {
   const [name, setName] = useState('');
   const active = drafts.find(d => d.id === activeId);
   const submit = (e) => { e.preventDefault(); if (name.trim()) { onSaveNew(name.trim()); setName(''); } };
@@ -18,7 +63,7 @@ export const DraftsPanel = ({ drafts, activeId, pendingCount, fieldByKey, busy, 
         <h4 className="text-sm font-bold text-[var(--t)]">Drafts</h4>
         <span className="text-xs font-bold text-[var(--t4)] ml-auto">{drafts.length} {drafts.length === 1 ? 'draft' : 'drafts'}</span>
       </div>
-      <p className="text-xs text-[var(--t4)] mb-3">A draft is a named set of wording changes that is not live yet. Open one to keep working on it — Preview and Review work on the draft — then press Publish to make every field in it live in one go. A draft can hold fields from more than one page.</p>
+      <p className="text-xs text-[var(--t4)] mb-3">A draft is a named set of wording changes that is not live yet. Open one to keep working on it — Preview and Review work on the draft — then press Publish to make every field in it live in one go, or set a time and it publishes itself (times are US Eastern). A draft can hold fields from more than one page.</p>
 
       {pendingCount > 0 && (
         <form onSubmit={submit} className="flex flex-wrap items-center gap-2 mb-3 rounded-lg p-3" style={{ background: 'var(--b)', border: '1px solid rgba(212,175,55,0.4)' }} data-testid="site-copy-draft-form">
@@ -59,6 +104,7 @@ export const DraftsPanel = ({ drafts, activeId, pendingCount, fieldByKey, busy, 
                 {d.count} {d.count === 1 ? 'field' : 'fields'} · {pagesOf(d, fieldByKey).join(', ') || '—'} · {who(d.updated_by)} {when(d.updated_at)}
                 {d.created_by && d.created_by !== d.updated_by && <span> · started by {who(d.created_by)}</span>}
               </p>
+              <ScheduleRow key={d.publish_at || 'none'} draft={d} busy={busy} onSchedule={onSchedule} index={i} />
             </div>
           );
         })}

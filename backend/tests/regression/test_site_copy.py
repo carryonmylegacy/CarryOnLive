@@ -5,6 +5,7 @@ when the API is reachable (REACT_APP_BACKEND_URL), round-trips an override
 through PUT /api/admin/site-copy → GET /api/public/site-copy → reset.
 """
 
+import asyncio
 import os
 
 import pytest
@@ -14,6 +15,13 @@ BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "").rstrip("/")
 FOUNDER = {"email": "founder@carryon.us", "password": "CarryOntheWisdom!", "force_login": True}
 BENEFACTOR = {"email": "info@carryon.us", "password": "Demo1234!", "force_login": True}
 PROBE_KEY = "qa.site_copy.probe"
+
+
+def _run(coro):
+    """In-process motor client binds to one loop — share it across tests (asyncio.run would close it)."""
+    if not hasattr(_run, "loop"):
+        _run.loop = asyncio.new_event_loop()
+    return _run.loop.run_until_complete(coro)
 
 
 def test_clean_copy_value_is_plain_text():
@@ -447,7 +455,6 @@ def test_copy_alerts_toggle_and_email_builder(founder_headers):
 
 
 def test_alert_scheduler_claims_each_schedule_once(founder_headers):
-    import asyncio
     from datetime import datetime, timedelta, timezone
 
     from services import site_copy_alerts as alerts
@@ -482,7 +489,7 @@ def test_alert_scheduler_claims_each_schedule_once(founder_headers):
     real = alerts._send_alert
     alerts._send_alert = fake_send
     try:
-        first, second = asyncio.run(run_twice())
+        first, second = _run(run_twice())
     finally:
         alerts._send_alert = real
     assert first >= 1 and sent.count((sid, "live")) == 1 and second == 0
@@ -510,3 +517,172 @@ def test_guides_launch_switch(founder_headers):
     assert requests.get(f"{BASE_URL}/api/public/site-copy", timeout=20).json()["flags"]["guides_launched"] is False
     if before["launched"]:
         requests.put(adm, json={"launched": True}, headers=founder_headers, timeout=20)
+
+
+# ── Legal-tone review, scheduled draft publish, guide share cards ───────────────
+
+
+def test_review_legal_tone_phrase_check(founder_headers):
+    from routes.site_copy import ReviewField, legal_phrase_issues
+
+    text = "Only the signed original counts in most states. You must file the will within 30 days. Always sign in front of a notary."
+    hits = legal_phrase_issues(ReviewField(key="guides.x.s1.body", text=text))
+    assert [h["type"] for h in hits] == ["legal", "legal"]
+    assert "You must file the will within 30 days." in hits[0]["message"]
+    assert (
+        legal_phrase_issues(
+            ReviewField(
+                key="guides.x.s1.body",
+                text="Many families keep the original in a fireproof box; an attorney can confirm what your state expects.",
+            )
+        )
+        == []
+    )
+
+    r = requests.post(
+        f"{BASE_URL}/api/admin/site-copy/review",
+        json={
+            "fields": [{"key": "guides.x.s1.body", "label": "Body", "text": text, "required_vars": []}],
+            "legal": True,
+        },
+        headers=founder_headers,
+        timeout=120,
+    )
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["legal"] is True
+    legal = [i for i in body["issues"] if i["type"] == "legal"]
+    assert any("You must file the will" in i["message"] for i in legal)
+    # without the flag nothing legal is reported
+    r = requests.post(
+        f"{BASE_URL}/api/admin/site-copy/review",
+        json={"fields": [{"key": "guides.x.s1.body", "label": "Body", "text": text, "required_vars": []}]},
+        headers=founder_headers,
+        timeout=120,
+    )
+    assert r.status_code == 200 and not [i for i in r.json()["issues"] if i["type"] == "legal"]
+
+
+def test_draft_schedule_and_self_publish(founder_headers):
+    import time as _time
+    from datetime import datetime, timedelta, timezone
+
+    from services import site_copy_alerts as alerts
+
+    base = f"{BASE_URL}/api/admin/site-copy/drafts"
+    requests.put(
+        f"{BASE_URL}/api/admin/site-copy", json={"changes": {PROBE_KEY: None}}, headers=founder_headers, timeout=20
+    )
+    r = requests.post(
+        base,
+        json={"name": "QA scheduled draft", "changes": {PROBE_KEY: "published on schedule"}},
+        headers=founder_headers,
+        timeout=20,
+    )
+    did = r.json()["id"]
+    now = datetime.now(timezone.utc)
+    sched = f"{base}/{did}/schedule"
+    assert requests.put(sched, json={"publish_at": "bad"}, headers=founder_headers, timeout=20).status_code == 400
+    assert (
+        requests.put(
+            sched, json={"publish_at": (now - timedelta(minutes=1)).isoformat()}, headers=founder_headers, timeout=20
+        ).status_code
+        == 400
+    )
+    assert (
+        requests.put(
+            f"{base}/missing/schedule", json={"publish_at": None}, headers=founder_headers, timeout=20
+        ).status_code
+        == 404
+    )
+    assert requests.put(sched, json={"publish_at": None}, headers=_login(BENEFACTOR), timeout=20).status_code == 403
+    # timestamps are taken right before each request — the bcrypt login above can take >1 s
+    soon = lambda: (datetime.now(timezone.utc) + timedelta(seconds=6)).isoformat()  # noqa: E731
+    r = requests.put(
+        sched,
+        json={
+            "publish_at": soon(),
+            "pages": [{"path": "/", "label": "Homepage"}],
+            "field_labels": {PROBE_KEY: "Homepage › QA › Probe"},
+        },
+        headers=founder_headers,
+        timeout=20,
+    )
+    assert r.status_code == 200, r.text
+    mine = [d for d in r.json()["items"] if d["id"] == did][0]
+    assert mine["publish_at"] and mine["scheduled_by"] == FOUNDER["email"]
+    # cancel → publish_at cleared; re-schedule
+    r = requests.put(sched, json={"publish_at": None}, headers=founder_headers, timeout=20)
+    assert [d for d in r.json()["items"] if d["id"] == did][0]["publish_at"] is None
+    r = requests.put(
+        sched,
+        json={"publish_at": soon(), "pages": [{"path": "/", "label": "Homepage"}]},
+        headers=founder_headers,
+        timeout=20,
+    )
+    assert r.status_code == 200, r.text
+    _time.sleep(7)
+
+    sent = []
+
+    async def fake_send(to, subject, html):
+        sent.append((to, subject, html))
+        return True
+
+    async def run():
+        alerts_enabled = await alerts.alerts_enabled()
+        return alerts_enabled, await alerts.publish_due_drafts(), await alerts.publish_due_drafts()
+
+    import services.email as email_mod
+
+    real = email_mod.send_email
+    email_mod.send_email = fake_send
+    # the live 60-second loop may beat us to it — either way the draft must publish exactly once
+    already = not any(d["id"] == did for d in requests.get(base, headers=founder_headers, timeout=20).json()["items"])
+    try:
+        enabled, first, second = _run(run())
+    finally:
+        email_mod.send_email = real
+    assert (first >= 1 or already) and second == 0
+    assert (
+        requests.get(f"{BASE_URL}/api/public/site-copy", timeout=20).json()["overrides"][PROBE_KEY]
+        == "published on schedule"
+    )
+    assert not any(d["id"] == did for d in requests.get(base, headers=founder_headers, timeout=20).json()["items"])
+    hist = requests.get(
+        f"{BASE_URL}/api/admin/site-copy/history?key={PROBE_KEY}&limit=3", headers=founder_headers, timeout=20
+    ).json()["items"]
+    assert hist[0]["via"] == "QA scheduled draft" and hist[0]["actor_email"] == FOUNDER["email"]
+    if enabled and not already:
+        assert (
+            sent
+            and sent[0][1] == "Draft published: QA scheduled draft"
+            and "published on schedule" in sent[0][2]
+            and "https://www.carryon.us/" in sent[0][2]
+        )
+    requests.put(
+        f"{BASE_URL}/api/admin/site-copy", json={"changes": {PROBE_KEY: None}}, headers=founder_headers, timeout=20
+    )
+
+
+def test_guide_share_card(founder_headers):
+    slug = "the-first-72-hours-after-a-death"
+    r = requests.get(f"{BASE_URL}/api/public/guides/{slug}/card.png", timeout=30)
+    assert r.status_code == 200 and r.headers["content-type"] == "image/png" and r.content[:8] == b"\x89PNG\r\n\x1a\n"
+    original = r.content
+    assert requests.get(f"{BASE_URL}/api/public/guides/not-a-guide/card.png", timeout=20).status_code == 404
+    # a Site Copy title override changes the card
+    key = f"guides.{slug}.title"
+    requests.put(
+        f"{BASE_URL}/api/admin/site-copy",
+        json={"changes": {key: "QA card title override"}},
+        headers=founder_headers,
+        timeout=20,
+    )
+    try:
+        r2 = requests.get(f"{BASE_URL}/api/public/guides/{slug}/card.png", timeout=30)
+        assert r2.status_code == 200 and r2.content != original
+    finally:
+        requests.put(
+            f"{BASE_URL}/api/admin/site-copy", json={"changes": {key: None}}, headers=founder_headers, timeout=20
+        )

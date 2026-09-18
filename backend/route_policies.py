@@ -570,6 +570,15 @@ ROUTE_POLICIES: dict = {
         "roles": ["admin"],
         "notes": "Marketing scope; audited as site_copy_draft_update",
     },
+    "PUT /api/admin/site-copy/drafts/{draft_id}/schedule": {
+        "auth": "required",
+        "roles": ["admin"],
+        "notes": "Marketing scope; self-publishing time for a draft; audited as site_copy_draft_schedule/unschedule",
+    },
+    "GET /api/public/guides/{slug}/card.png": {
+        "auth": "public",
+        "notes": "Generated social share card (title from site copy / built-in list) — no PII",
+    },
     "POST /api/admin/site-copy/drafts/{draft_id}/publish": {
         "auth": "required",
         "roles": ["admin"],
