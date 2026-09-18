@@ -32,8 +32,10 @@ from services.audit import get_client_ip, log_audit_event
 router = APIRouter()
 
 KEY_RE = re.compile(r"^[a-z0-9]+(?:\.[a-z0-9_-]+)+$")
+PATH_RE = re.compile(r"^/[a-z0-9/_-]*$")
 MAX_LEN = 5000
 MAX_CHANGES = 400
+MAX_DRAFT_CHANGES = 1000
 HISTORY_LIMIT = 500
 REVIEW_MAX_FIELDS = 200
 REVIEW_BATCH = 40
@@ -51,6 +53,19 @@ class ScheduleIn(BaseModel):
     start_at: str = Field(..., description="ISO-8601 UTC")
     end_at: str | None = Field(None, description="ISO-8601 UTC; null = stays live until removed")
     note: str = Field("", max_length=200)
+    page_path: str = Field("", max_length=120, description="public path of the page this field is on (for alerts)")
+    page_label: str = Field("", max_length=120)
+    field_label: str = Field("", max_length=200)
+    before_text: str = Field("", description="what visitors see before the change (for the alert e-mail)")
+
+
+class DraftIn(BaseModel):
+    name: str = Field("", max_length=200)
+    changes: dict[str, str | None] = Field(default_factory=dict)
+
+
+class AlertsIn(BaseModel):
+    enabled: bool
 
 
 class ReviewField(BaseModel):
@@ -125,6 +140,11 @@ async def load_schedules() -> list[dict]:
                 "start_at": doc["start_at"],
                 "end_at": doc.get("end_at"),
                 "note": doc.get("note", ""),
+                "page_path": doc.get("page_path", ""),
+                "page_label": doc.get("page_label", ""),
+                "field_label": doc.get("field_label", ""),
+                "live_alert_at": doc.get("live_alert_at"),
+                "revert_alert_at": doc.get("revert_alert_at"),
                 "created_by": doc.get("created_by", ""),
                 "created_at": doc.get("created_at", ""),
             }
@@ -146,35 +166,58 @@ async def load_overrides() -> dict:
 
 @router.get("/public/site-copy")
 async def get_public_site_copy():
-    """Public — founder overrides for the marketing site's text."""
-    return await load_overrides()
+    """Public — founder overrides for the marketing site's text (+ launch flags the site reads)."""
+    from routes.guides import guides_status
+
+    result = await load_overrides()
+    guides = await guides_status()
+    result["flags"] = {"guides_launched": guides["launched"], "guides_launched_at": guides["launched_at"]}
+    return result
 
 
 @router.get("/admin/site-copy/state")
 async def get_site_copy_state(current_user: dict = Depends(require_scope("marketing"))):
+    from services.site_copy_alerts import alerts_enabled
+
     now = datetime.now(timezone.utc).isoformat()
     base, _ = await load_base()
     schedules = await load_schedules()
     for s in schedules:
         s["status"] = schedule_status(s, now)
-    return {"overrides": base, "effective": apply_schedules(base, schedules, now), "schedules": schedules, "now": now}
+    return {
+        "overrides": base,
+        "effective": apply_schedules(base, schedules, now),
+        "schedules": schedules,
+        "drafts": await load_drafts(),
+        "alerts_enabled": await alerts_enabled(),
+        "now": now,
+    }
+
+
+def clean_changes(changes: dict, limit: int = MAX_CHANGES) -> dict[str, str]:
+    if len(changes) > limit:
+        raise HTTPException(status_code=400, detail=f"Too many changes in one save (max {limit}).")
+    cleaned: dict[str, str] = {}
+    for raw_key, raw_value in changes.items():
+        key = validate_key(raw_key)
+        value = clean_copy_value(raw_value) if isinstance(raw_value, str) else ""
+        if len(value) > MAX_LEN:
+            raise HTTPException(status_code=400, detail=f"{key}: text is too long (max {MAX_LEN} characters).")
+        cleaned[key] = value
+    return cleaned
 
 
 @router.put("/admin/site-copy")
 async def put_site_copy(
     payload: SiteCopyChanges, request: Request, current_user: dict = Depends(require_scope("marketing"))
 ):
-    if len(payload.changes) > MAX_CHANGES:
-        raise HTTPException(status_code=400, detail=f"Too many changes in one save (max {MAX_CHANGES}).")
+    return await apply_changes(clean_changes(payload.changes), current_user, request)
+
+
+async def apply_changes(cleaned: dict[str, str], current_user: dict, request: Request, via: str = "") -> dict:
+    """Write overrides ("" = reset to default), record history (+ `via` draft name) and audit."""
     now = datetime.now(timezone.utc).isoformat()
     actor = current_user.get("email", "")
-    cleaned: dict[str, str] = {}
-    for raw_key, raw_value in payload.changes.items():
-        key = validate_key(raw_key)
-        value = clean_copy_value(raw_value) if isinstance(raw_value, str) else ""
-        if len(value) > MAX_LEN:
-            raise HTTPException(status_code=400, detail=f"{key}: text is too long (max {MAX_LEN} characters).")
-        cleaned[key] = value
     existing: dict[str, str] = {}
     async for doc in db.site_copy.find({"_id": {"$in": list(cleaned)}}, {"_id": 1, "value": 1}):
         existing[doc["_id"]] = doc.get("value", "")
@@ -202,6 +245,7 @@ async def put_site_copy(
                     "actor_id": current_user["id"],
                     "actor_email": actor,
                     "at": now,
+                    "via": via,
                 }
             )
     if history:
@@ -216,7 +260,7 @@ async def put_site_copy(
             category="platform",
             resource_type="site_copy",
             resource_id="public-site",
-            details={"set": set_keys, "reset": reset_keys},
+            details={"set": set_keys, "reset": reset_keys, "via": via},
             ip_address=get_client_ip(request),
         )
     base, _ = await load_base()
@@ -242,6 +286,7 @@ async def get_site_copy_history(
                 "next": doc.get("next", ""),
                 "actor_email": doc.get("actor_email", ""),
                 "at": doc.get("at", ""),
+                "via": doc.get("via", ""),
             }
         )
     return {"items": items}
@@ -281,6 +326,10 @@ async def create_schedule(
         "start_at": start_at,
         "end_at": end_at,
         "note": clean_copy_value(payload.note or "")[:200],
+        "page_path": payload.page_path if PATH_RE.match(payload.page_path or "") else "",
+        "page_label": clean_copy_value(payload.page_label or "")[:120],
+        "field_label": clean_copy_value(payload.field_label or "")[:200],
+        "before_text": clean_copy_value(payload.before_text or "")[:MAX_LEN],
         "created_by": current_user.get("email", ""),
         "created_at": now,
     }
@@ -316,6 +365,144 @@ async def delete_schedule(schedule_id: str, request: Request, current_user: dict
         ip_address=get_client_ip(request),
     )
     return await list_schedules(current_user)
+
+
+# ── Drafts (a named set of wording changes, published together) ─────────────────
+
+
+def draft_out(doc: dict) -> dict:
+    changes = doc.get("changes") or {}
+    return {
+        "id": doc["_id"],
+        "name": doc.get("name", ""),
+        "changes": changes,
+        "count": len(changes),
+        "created_by": doc.get("created_by", ""),
+        "created_at": doc.get("created_at", ""),
+        "updated_by": doc.get("updated_by", ""),
+        "updated_at": doc.get("updated_at", ""),
+    }
+
+
+async def load_drafts() -> list[dict]:
+    return [draft_out(doc) async for doc in db.site_copy_drafts.find({}).sort("updated_at", -1)]
+
+
+def clean_draft_name(name: str) -> str:
+    cleaned = clean_copy_value(name)[:80]
+    if not cleaned:
+        raise HTTPException(status_code=400, detail="Give the draft a name.")
+    return cleaned
+
+
+async def audit_draft(action: str, doc: dict, request: Request, current_user: dict, extra: dict | None = None):
+    await log_audit_event(
+        actor_id=current_user["id"],
+        actor_email=current_user.get("email", ""),
+        actor_role=current_user.get("role", "admin"),
+        action=action,
+        category="platform",
+        resource_type="site_copy_draft",
+        resource_id=doc["_id"],
+        details={"name": doc.get("name"), "count": len(doc.get("changes") or {}), **(extra or {})},
+        ip_address=get_client_ip(request),
+    )
+
+
+@router.get("/admin/site-copy/drafts")
+async def list_drafts(current_user: dict = Depends(require_scope("marketing"))):
+    return {"items": await load_drafts()}
+
+
+@router.post("/admin/site-copy/drafts")
+async def create_draft(payload: DraftIn, request: Request, current_user: dict = Depends(require_scope("marketing"))):
+    changes = clean_changes(payload.changes, MAX_DRAFT_CHANGES)
+    if not changes:
+        raise HTTPException(status_code=400, detail="Nothing to save — make an edit first.")
+    now = datetime.now(timezone.utc).isoformat()
+    actor = current_user.get("email", "")
+    doc = {
+        "_id": str(uuid.uuid4()),
+        "name": clean_draft_name(payload.name),
+        "changes": changes,
+        "created_by": actor,
+        "created_at": now,
+        "updated_by": actor,
+        "updated_at": now,
+    }
+    await db.site_copy_drafts.insert_one(doc)
+    await audit_draft("site_copy_draft_create", doc, request, current_user)
+    return {"items": await load_drafts(), "id": doc["_id"]}
+
+
+@router.put("/admin/site-copy/drafts/{draft_id}")
+async def update_draft(
+    draft_id: str, payload: DraftIn, request: Request, current_user: dict = Depends(require_scope("marketing"))
+):
+    changes = clean_changes(payload.changes, MAX_DRAFT_CHANGES)
+    if not changes:
+        raise HTTPException(status_code=400, detail="A draft needs at least one change — delete it instead.")
+    update = {
+        "name": clean_draft_name(payload.name),
+        "changes": changes,
+        "updated_by": current_user.get("email", ""),
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+    }
+    res = await db.site_copy_drafts.update_one({"_id": draft_id}, {"$set": update})
+    if not res.matched_count:
+        raise HTTPException(status_code=404, detail="Draft not found.")
+    await audit_draft("site_copy_draft_update", {"_id": draft_id, **update}, request, current_user)
+    return {"items": await load_drafts(), "id": draft_id}
+
+
+@router.post("/admin/site-copy/drafts/{draft_id}/publish")
+async def publish_draft(draft_id: str, request: Request, current_user: dict = Depends(require_scope("marketing"))):
+    """Apply every change in the draft in one go (history rows carry the draft name), then remove the draft."""
+    doc = await db.site_copy_drafts.find_one({"_id": draft_id})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Draft not found.")
+    result = await apply_changes(doc.get("changes") or {}, current_user, request, via=doc.get("name", ""))
+    await db.site_copy_drafts.delete_one({"_id": draft_id})
+    await audit_draft("site_copy_draft_publish", doc, request, current_user)
+    return {**result, "items": await load_drafts()}
+
+
+@router.delete("/admin/site-copy/drafts/{draft_id}")
+async def delete_draft(draft_id: str, request: Request, current_user: dict = Depends(require_scope("marketing"))):
+    doc = await db.site_copy_drafts.find_one_and_delete({"_id": draft_id})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Draft not found.")
+    await audit_draft("site_copy_draft_delete", doc, request, current_user)
+    return {"items": await load_drafts()}
+
+
+# ── Copy alerts (e-mail when a schedule goes live / reverts) ───────────────────
+
+
+@router.get("/admin/site-copy/alerts")
+async def get_alerts(current_user: dict = Depends(require_scope("marketing"))):
+    from services.site_copy_alerts import alerts_enabled
+
+    return {"enabled": await alerts_enabled()}
+
+
+@router.put("/admin/site-copy/alerts")
+async def put_alerts(payload: AlertsIn, request: Request, current_user: dict = Depends(require_scope("marketing"))):
+    await db.platform_settings.update_one(
+        {"_id": "global"}, {"$set": {"copy_alerts_enabled": payload.enabled}}, upsert=True
+    )
+    await log_audit_event(
+        actor_id=current_user["id"],
+        actor_email=current_user.get("email", ""),
+        actor_role=current_user.get("role", "admin"),
+        action="site_copy_alerts_toggle",
+        category="platform",
+        resource_type="site_copy",
+        resource_id="alerts",
+        details={"enabled": payload.enabled},
+        ip_address=get_client_ip(request),
+    )
+    return {"enabled": payload.enabled}
 
 
 # ── Review (proof-read) ─────────────────────────────────────────────────────────

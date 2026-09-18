@@ -3,7 +3,8 @@ import apiClient from '../utils/apiClient';
 import { API_URL } from '../config';
 import { COPY_DEFAULTS } from './siteCopy';
 
-const CACHE_KEY = 'carryon_site_copy_v1';
+const CACHE_KEY = 'carryon_site_copy_v2';
+const NO_FLAGS = { guides_launched: false, guides_launched_at: null };
 export const PREVIEW_MSG = 'carryon:copy-preview';
 export const PREVIEW_READY_MSG = 'carryon:copy-preview-ready';
 
@@ -15,8 +16,8 @@ const isPreviewFrame = () => {
 const readCache = () => {
   try { return JSON.parse(localStorage.getItem(CACHE_KEY) || 'null') || {}; } catch { return {}; }
 };
-const writeCache = (overrides) => {
-  try { localStorage.setItem(CACHE_KEY, JSON.stringify(overrides)); } catch { /* storage full or blocked */ }
+const writeCache = (overrides, flags) => {
+  try { localStorage.setItem(CACHE_KEY, JSON.stringify({ overrides, flags })); } catch { /* storage full or blocked */ }
 };
 
 export const fillVars = (text, vars) => (
@@ -24,14 +25,16 @@ export const fillVars = (text, vars) => (
 );
 
 const CopyContext = createContext({
-  overrides: {}, loaded: false, ensureLoaded: () => {}, applyOverrides: () => {},
+  overrides: {}, flags: NO_FLAGS, loaded: false, ensureLoaded: () => {}, applyOverrides: () => {},
   t: (key, vars) => fillVars(COPY_DEFAULTS[key] ?? '', vars),
 });
 
 /** Founder-editable site copy: overrides fetched lazily (first useCopy call), defaults render instantly. */
 export const CopyProvider = ({ children }) => {
   const preview = useRef(isPreviewFrame()).current;
-  const [overrides, setOverrides] = useState(() => (preview ? {} : readCache()));
+  const cached = useRef(preview ? {} : readCache()).current;
+  const [overrides, setOverrides] = useState(cached.overrides || {});
+  const [flags, setFlags] = useState({ ...NO_FLAGS, ...(cached.flags || {}) });
   const [loaded, setLoaded] = useState(false);
   const started = useRef(false);
 
@@ -40,8 +43,10 @@ export const CopyProvider = ({ children }) => {
     started.current = true;
     apiClient.get(`${API_URL}/public/site-copy`).then(r => {
       const next = r.data?.overrides || {};
+      const nextFlags = { ...NO_FLAGS, ...(r.data?.flags || {}) };
       setOverrides(next);
-      writeCache(next);
+      setFlags(nextFlags);
+      writeCache(next, nextFlags);
     }).catch(() => {}).finally(() => setLoaded(true));
   }, [preview]);
 
@@ -50,6 +55,7 @@ export const CopyProvider = ({ children }) => {
     const onMessage = (e) => {
       if (e.origin !== window.location.origin || e.data?.type !== PREVIEW_MSG) return;
       setOverrides(e.data.overrides || {});
+      if (e.data.flags) setFlags(f => ({ ...f, ...e.data.flags }));
       setLoaded(true);
     };
     window.addEventListener('message', onMessage);
@@ -57,15 +63,16 @@ export const CopyProvider = ({ children }) => {
     return () => window.removeEventListener('message', onMessage);
   }, [preview]);
 
-  const applyOverrides = useCallback((next) => { setOverrides(next); if (!preview) writeCache(next); }, [preview]);
+  const applyOverrides = useCallback((next) => { setOverrides(next); if (!preview) writeCache(next, flags); }, [preview, flags]);
+  const applyFlags = useCallback((next) => { setFlags(f => { const merged = { ...f, ...next }; if (!preview) writeCache(overrides, merged); return merged; }); }, [preview, overrides]);
 
   const value = useMemo(() => ({
-    overrides, loaded, ensureLoaded, applyOverrides, preview,
+    overrides, flags, loaded, ensureLoaded, applyOverrides, applyFlags, preview,
     t: (key, vars) => {
       const raw = overrides[key];
       return fillVars(raw !== undefined && raw !== '' ? raw : (COPY_DEFAULTS[key] ?? ''), vars);
     },
-  }), [overrides, loaded, ensureLoaded, applyOverrides, preview]);
+  }), [overrides, flags, loaded, ensureLoaded, applyOverrides, applyFlags, preview]);
 
   return <CopyContext.Provider value={value}>{children}</CopyContext.Provider>;
 };

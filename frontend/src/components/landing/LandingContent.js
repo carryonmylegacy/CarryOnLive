@@ -33,7 +33,7 @@ const FAQ_COUNT = 6;
 const FAQ_LINKS = { 2: '/wind-down-promise', 3: '/wind-down-promise' };
 const FOOTER_LINKS = [
   ['pricing', '/pricing'], ['customers', '/customers'], ['compare', '/vs'], ['security', '/security'],
-  ['winddown', '/wind-down-promise'], ['changelog', '/changelog'], ['about', '/about'], ['privacy', '/privacy'], ['terms', '/terms'],
+  ['winddown', '/wind-down-promise'], ['readiness', '/readiness-score'], ['guides', '/guides'], ['changelog', '/changelog'], ['about', '/about'], ['privacy', '/privacy'], ['terms', '/terms'],
 ];
 
 const toolNum = (gi, i) => String(PILLAR_META.slice(0, gi).reduce((n, g) => n + g.tools.length, 0) + i + 1).padStart(2, '0');
@@ -104,7 +104,7 @@ const DEFAULT_FOOTER = { line1: '1550 Wilson Boulevard 7th Floor', line2: 'Arlin
 
 const LandingContent = ({ navigateWithFade, footerInfo = DEFAULT_FOOTER, testIdSuffix = '', beforeAbout, skipToRealFamilies = false, ctaOverride }) => {
   const [openFaq, setOpenFaq] = useState(null);
-  const { t } = useCopy();
+  const { t, flags } = useCopy();
 
   const tool = (key) => ({
     icon: TOOL_ICONS[key],
@@ -560,7 +560,7 @@ const LandingContent = ({ navigateWithFade, footerInfo = DEFAULT_FOOTER, testIdS
         <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
           <img src="/carryon-logo.png" alt="CarryOn" className="h-8 opacity-60" />
           <div className="flex items-center justify-center gap-x-6 gap-y-2 flex-wrap">
-            {FOOTER_LINKS.map(([key, href]) => (
+            {FOOTER_LINKS.filter(([key]) => key !== 'guides' || flags.guides_launched).map(([key, href]) => (
               <a key={key} href={href} className="text-[#334155] text-xs hover:text-[#7b879e] transition-colors" data-testid={`landing-footer-${key}-link${testIdSuffix}`}>{t(`footer.${key}`)}</a>
             ))}
             <span className="text-[#334155] text-xs">{t('footer.accessibility')}</span>

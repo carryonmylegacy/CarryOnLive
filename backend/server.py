@@ -24,6 +24,7 @@ from routes.admin_digest import router as admin_digest_router
 from routes.partner_digest import router as partner_digest_router
 from routes.public_content import router as public_content_router
 from routes.site_copy import router as site_copy_router
+from routes.guides import router as guides_router
 from routes.public_status import router as public_status_router
 from routes.our_promise import router as our_promise_router
 from routes.verification import router as verification_router
@@ -113,6 +114,7 @@ from schedulers import (
 )
 from services.scheduler_lock import with_scheduler_lock
 from services.signup_alerts import signup_alert_digest_scheduler
+from services.site_copy_alerts import site_copy_alert_scheduler
 
 
 # ===================== SCHEDULER WRAPPERS =====================
@@ -277,6 +279,7 @@ async def lifespan(app):
             asyncio.create_task(_supervise("xai_health", xai_health_scheduler)),
             asyncio.create_task(_supervise("integration_verify", integration_verify_scheduler)),
             asyncio.create_task(_supervise("signup_alert_digest", signup_alert_digest_scheduler, ttl=600)),
+            asyncio.create_task(_supervise("site_copy_alerts", site_copy_alert_scheduler, ttl=120)),
         ]
 
     # Warm up xAI connection + start periodic keepalive (local per-pod, no lock needed)
@@ -387,6 +390,7 @@ api_router.include_router(beneficiary_concierge_router)
 api_router.include_router(admin_router)
 api_router.include_router(public_content_router)
 api_router.include_router(site_copy_router)
+api_router.include_router(guides_router)
 api_router.include_router(auth_router)
 api_router.include_router(beneficiaries_router)
 api_router.include_router(checklist_router)

@@ -331,3 +331,182 @@ def test_review_flags_deterministic_issues(founder_headers):
         ).status_code
         == 400
     )
+
+
+# ── Drafts, copy alerts, guides launch ───────────────────────────────────────────
+
+
+def test_draft_lifecycle_publishes_in_one_press(founder_headers):
+    base = f"{BASE_URL}/api/admin/site-copy/drafts"
+    for d in requests.get(base, headers=founder_headers, timeout=20).json()["items"]:
+        if d["name"].startswith("QA draft"):
+            requests.delete(f"{base}/{d['id']}", headers=founder_headers, timeout=20)
+    requests.put(
+        f"{BASE_URL}/api/admin/site-copy", json={"changes": {PROBE_KEY: None}}, headers=founder_headers, timeout=20
+    )
+
+    assert (
+        requests.post(base, json={"name": "QA draft", "changes": {}}, headers=founder_headers, timeout=20).status_code
+        == 400
+    )
+    assert (
+        requests.post(
+            base, json={"name": "  ", "changes": {PROBE_KEY: "x"}}, headers=founder_headers, timeout=20
+        ).status_code
+        == 400
+    )
+    r = requests.post(
+        base,
+        json={"name": "QA draft one", "changes": {PROBE_KEY: "drafted text", "home.hero.title": "Draft headline"}},
+        headers=founder_headers,
+        timeout=20,
+    )
+    assert r.status_code == 200, r.text
+    draft_id = r.json()["id"]
+    mine = [d for d in r.json()["items"] if d["id"] == draft_id][0]
+    assert mine["count"] == 2 and mine["name"] == "QA draft one" and mine["created_by"] == FOUNDER["email"]
+    # nothing is live yet
+    assert PROBE_KEY not in requests.get(f"{BASE_URL}/api/public/site-copy", timeout=20).json()["overrides"]
+    # state carries drafts for the editor
+    state = requests.get(f"{BASE_URL}/api/admin/site-copy/state", headers=founder_headers, timeout=20).json()
+    assert any(d["id"] == draft_id for d in state["drafts"]) and "alerts_enabled" in state
+    # update: rename + narrow to one field
+    r = requests.put(
+        f"{base}/{draft_id}",
+        json={"name": "QA draft two", "changes": {PROBE_KEY: "published from draft"}},
+        headers=founder_headers,
+        timeout=20,
+    )
+    assert r.status_code == 200 and [d for d in r.json()["items"] if d["id"] == draft_id][0]["count"] == 1
+    assert (
+        requests.put(
+            f"{base}/missing", json={"name": "x", "changes": {PROBE_KEY: "x"}}, headers=founder_headers, timeout=20
+        ).status_code
+        == 404
+    )
+    # publish → live, history carries the draft name, draft gone
+    r = requests.post(f"{base}/{draft_id}/publish", json={}, headers=founder_headers, timeout=20)
+    assert r.status_code == 200, r.text
+    assert r.json()["overrides"][PROBE_KEY] == "published from draft"
+    assert not any(d["id"] == draft_id for d in r.json()["items"])
+    assert (
+        requests.get(f"{BASE_URL}/api/public/site-copy", timeout=20).json()["overrides"][PROBE_KEY]
+        == "published from draft"
+    )
+    hist = requests.get(
+        f"{BASE_URL}/api/admin/site-copy/history?key={PROBE_KEY}&limit=5", headers=founder_headers, timeout=20
+    ).json()["items"]
+    assert hist and hist[0]["via"] == "QA draft two" and hist[0]["next"] == "published from draft"
+    assert requests.post(f"{base}/{draft_id}/publish", json={}, headers=founder_headers, timeout=20).status_code == 404
+    # delete path + scope
+    r = requests.post(
+        base, json={"name": "QA draft three", "changes": {PROBE_KEY: "y"}}, headers=founder_headers, timeout=20
+    )
+    did = r.json()["id"]
+    assert requests.delete(f"{base}/{did}", headers=founder_headers, timeout=20).status_code == 200
+    assert requests.delete(f"{base}/{did}", headers=founder_headers, timeout=20).status_code == 404
+    assert requests.get(base, headers=_login(BENEFACTOR), timeout=20).status_code == 403
+    requests.put(
+        f"{BASE_URL}/api/admin/site-copy", json={"changes": {PROBE_KEY: None}}, headers=founder_headers, timeout=20
+    )
+
+
+def test_copy_alerts_toggle_and_email_builder(founder_headers):
+    url = f"{BASE_URL}/api/admin/site-copy/alerts"
+    original = requests.get(url, headers=founder_headers, timeout=20).json()["enabled"]
+    assert requests.put(url, json={"enabled": False}, headers=founder_headers, timeout=20).json()["enabled"] is False
+    assert requests.get(url, headers=founder_headers, timeout=20).json()["enabled"] is False
+    assert (
+        requests.put(url, json={"enabled": original}, headers=founder_headers, timeout=20).json()["enabled"] is original
+    )
+    assert requests.get(url, headers=_login(BENEFACTOR), timeout=20).status_code == 403
+
+    from services.site_copy_alerts import build_alert_email
+
+    sched = {
+        "key": "signup.hero.h1b",
+        "value": "Holiday headline",
+        "before_text": "Get your family ready.",
+        "start_at": "2026-12-24T14:00:00+00:00",
+        "end_at": "2026-12-26T14:00:00+00:00",
+        "page_path": "/signup",
+        "page_label": "Sign-up wizard",
+        "field_label": "Left panel › Headline line 2",
+        "note": "Christmas",
+    }
+    subject, html = build_alert_email(sched, "live", "Get your family ready.")
+    assert subject == "Site copy went live: Left panel › Headline line 2"
+    assert (
+        "https://www.carryon.us/signup" in html
+        and "Holiday headline" in html
+        and "Get your family ready." in html
+        and "Christmas" in html
+    )
+    subject, html = build_alert_email(sched, "revert", "")
+    assert subject.startswith("Site copy reverted") and "(built-in default)" in html
+
+
+def test_alert_scheduler_claims_each_schedule_once(founder_headers):
+    import asyncio
+    from datetime import datetime, timedelta, timezone
+
+    from services import site_copy_alerts as alerts
+
+    _purge_probe_schedules(founder_headers)
+    now = datetime.now(timezone.utc)
+    r = requests.post(
+        f"{BASE_URL}/api/admin/site-copy/schedules",
+        json={
+            "key": PROBE_KEY,
+            "value": "alert probe",
+            "start_at": (now - timedelta(minutes=1)).isoformat(),
+            "end_at": (now + timedelta(hours=1)).isoformat(),
+            "page_path": "/",
+            "page_label": "Home",
+            "field_label": "Probe",
+            "before_text": "before",
+        },
+        headers=founder_headers,
+        timeout=20,
+    )
+    assert r.status_code == 200, r.text
+    sid = [s for s in r.json()["items"] if s["key"] == PROBE_KEY][0]["id"]
+    sent = []
+
+    async def fake_send(schedule, kind):
+        sent.append((schedule["_id"], kind))
+
+    async def run_twice():
+        return await alerts.process_due_alerts(), await alerts.process_due_alerts()
+
+    real = alerts._send_alert
+    alerts._send_alert = fake_send
+    try:
+        first, second = asyncio.run(run_twice())
+    finally:
+        alerts._send_alert = real
+    assert first >= 1 and sent.count((sid, "live")) == 1 and second == 0
+    items = requests.get(f"{BASE_URL}/api/admin/site-copy/schedules", headers=founder_headers, timeout=20).json()[
+        "items"
+    ]
+    mine = [s for s in items if s["id"] == sid][0]
+    assert mine["live_alert_at"] and not mine["revert_alert_at"]
+    _purge_probe_schedules(founder_headers)
+
+
+def test_guides_launch_switch(founder_headers):
+    pub = f"{BASE_URL}/api/public/guides/status"
+    adm = f"{BASE_URL}/api/admin/guides/launch"
+    before = requests.get(pub, timeout=20).json()
+    assert set(before) == {"launched", "launched_at"}
+    assert requests.put(adm, json={"launched": True}, headers=_login(BENEFACTOR), timeout=20).status_code == 403
+    on = requests.put(adm, json={"launched": True}, headers=founder_headers, timeout=20).json()
+    assert on["launched"] is True and on["launched_at"]
+    assert requests.get(pub, timeout=20).json()["launched"] is True
+    flags = requests.get(f"{BASE_URL}/api/public/site-copy", timeout=20).json()["flags"]
+    assert flags["guides_launched"] is True and flags["guides_launched_at"] == on["launched_at"]
+    off = requests.put(adm, json={"launched": False}, headers=founder_headers, timeout=20).json()
+    assert off["launched"] is False
+    assert requests.get(f"{BASE_URL}/api/public/site-copy", timeout=20).json()["flags"]["guides_launched"] is False
+    if before["launched"]:
+        requests.put(adm, json={"launched": True}, headers=founder_headers, timeout=20)

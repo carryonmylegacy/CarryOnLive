@@ -555,6 +555,50 @@ ROUTE_POLICIES: dict = {
         "roles": ["admin"],
         "notes": "Marketing scope; proof-read pass (xAI light model, marketing text only — no PII)",
     },
+    "GET /api/admin/site-copy/drafts": {
+        "auth": "required",
+        "roles": ["admin"],
+        "notes": "Marketing scope; named sets of unpublished wording changes",
+    },
+    "POST /api/admin/site-copy/drafts": {
+        "auth": "required",
+        "roles": ["admin"],
+        "notes": "Marketing scope; audited as site_copy_draft_create",
+    },
+    "PUT /api/admin/site-copy/drafts/{draft_id}": {
+        "auth": "required",
+        "roles": ["admin"],
+        "notes": "Marketing scope; audited as site_copy_draft_update",
+    },
+    "POST /api/admin/site-copy/drafts/{draft_id}/publish": {
+        "auth": "required",
+        "roles": ["admin"],
+        "notes": "Marketing scope; applies every change in one press; audited as site_copy_draft_publish + site_copy_update",
+    },
+    "DELETE /api/admin/site-copy/drafts/{draft_id}": {
+        "auth": "required",
+        "roles": ["admin"],
+        "notes": "Marketing scope; audited as site_copy_draft_delete",
+    },
+    "GET /api/admin/site-copy/alerts": {
+        "auth": "required",
+        "roles": ["admin"],
+        "notes": "Marketing scope; copy-alert e-mail switch",
+    },
+    "PUT /api/admin/site-copy/alerts": {
+        "auth": "required",
+        "roles": ["admin"],
+        "notes": "Marketing scope; audited as site_copy_alerts_toggle",
+    },
+    "GET /api/public/guides/status": {
+        "auth": "public",
+        "notes": "Whether the /guides section is launched — no PII",
+    },
+    "PUT /api/admin/guides/launch": {
+        "auth": "required",
+        "roles": ["admin"],
+        "notes": "Marketing scope; audited as guides_launch / guides_unpublish",
+    },
 }
 
 

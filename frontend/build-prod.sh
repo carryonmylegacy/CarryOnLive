@@ -92,6 +92,9 @@ if [ $BUILD_EXIT -eq 0 ]; then
     #    crawlers and AI agents don't see an empty shell. Chromium comes
     #    from @sparticuz/chromium (built for Vercel/AWS build machines).
     #    Fail-soft: a Chromium problem must never block a deploy.
+    # Guides: only listed in the sitemap / prerendered once the founder has pressed
+    # Launch (reads the live flag; a plain Redeploy picks it up — no code change).
+    node scripts/guides-launch.js || true
     echo "Prerendering public pages..."
     node scripts/prerender.js || true
     if [ -f build/about/index.html ] && ! grep -q '<div id="root"></div>' build/about/index.html; then

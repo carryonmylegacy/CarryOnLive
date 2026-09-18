@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CalendarClock, Trash2, Loader2 } from 'lucide-react';
+import { CalendarClock, Trash2, Loader2, Mail } from 'lucide-react';
 
 /* All schedule times are entered and shown in US Eastern (founder directive); stored as UTC ISO. */
 export const ET_ZONE = 'America/New_York';
@@ -103,7 +103,7 @@ export const FieldSchedules = ({ schedules, onDelete, busy, k }) => (
 );
 
 /** Save-bar panel: every scheduled wording change across the site. */
-export const SchedulesPanel = ({ schedules, fieldByKey, onDelete, onJump, busy }) => (
+export const SchedulesPanel = ({ schedules, fieldByKey, onDelete, onJump, busy, alertsEnabled, onToggleAlerts }) => (
   <div className="rounded-xl p-4" style={{ background: 'var(--s)', border: '1px solid var(--b)' }} data-testid="site-copy-schedules">
     <div className="flex items-center gap-2 mb-1">
       <CalendarClock className="w-4 h-4 text-[var(--gold)]" />
@@ -111,6 +111,13 @@ export const SchedulesPanel = ({ schedules, fieldByKey, onDelete, onJump, busy }
       <span className="text-xs font-bold text-[var(--t4)] ml-auto">{schedules.length} {schedules.length === 1 ? 'schedule' : 'schedules'}</span>
     </div>
     <p className="text-xs text-[var(--t4)] mb-3">Text goes live at the start time and the saved text returns at the end time — automatically, no redeploy. Times are US Eastern. To add one, use the calendar icon on any field.</p>
+    <label className="flex items-start gap-3 rounded-lg px-3 py-2.5 mb-3 cursor-pointer" style={{ background: 'var(--b)', border: '1px solid var(--b2)' }} data-testid="site-copy-alerts-row">
+      <input type="checkbox" checked={!!alertsEnabled} onChange={onToggleAlerts} className="mt-0.5 w-4 h-4 accent-[var(--gold)]" data-testid="site-copy-alerts-toggle" />
+      <span className="text-xs text-[var(--t4)] leading-snug">
+        <span className="font-bold text-[var(--t)] inline-flex items-center gap-1"><Mail className="w-3 h-3 text-[var(--gold)]" /> E-mail me when a schedule goes live or reverts</span><br />
+        Every founder account gets the before/after text and a link to the live page, within a minute of the change.
+      </span>
+    </label>
     {!schedules.length && <p className="text-sm text-[var(--t4)]" data-testid="site-copy-schedules-empty">Nothing scheduled.</p>}
     <div className="divide-y divide-[var(--b)]">
       {schedules.map((s, i) => {

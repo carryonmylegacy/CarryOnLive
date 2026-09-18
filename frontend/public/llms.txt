@@ -58,6 +58,7 @@ Also: a Partner Portal for advisors, planners, hospices and organizations, inclu
 - [Compare](https://www.carryon.us/vs): dated comparisons with Trustworthy, Everplans and Resolve Legacy
 - [Security & Trust](https://www.carryon.us/security): encryption, keys, 2FA, subprocessors
 - [Wind-Down & Data Portability Promise](https://www.carryon.us/wind-down-promise)
+- [How CarryOn scores readiness](https://www.carryon.us/readiness-score): the four equal parts of the Estate Readiness Score (Documents, Milestone Messages, Checklist, Financials), the exact points behind each, what moves the number and what never does; plus the separate Family Contingency Plan score
 - [Our Promise](https://www.carryon.us/our-promise): the standing commitment that governs decisions
 - [About](https://www.carryon.us/about): mission, founder, team
 - [Customer stories](https://www.carryon.us/customers): only real, founder-reviewed member stories

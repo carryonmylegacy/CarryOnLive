@@ -116,6 +116,7 @@ async def main(once: bool = False) -> int:
     from routes.onboarding_drip import onboarding_drip_scheduler
     from routes.email_health_scheduler import email_health_scheduler
     from services.signup_alerts import signup_alert_digest_scheduler
+    from services.site_copy_alerts import site_copy_alert_scheduler
     from schedulers import (
         bill_reminder_scheduler,
         daily_dob_check_scheduler,
@@ -159,6 +160,7 @@ async def main(once: bool = False) -> int:
         "onboarding_drip",
         "email_health",
         "signup_alert_digest",
+        "site_copy_alerts",
     ]
     for _n in _scheduler_names:
         _mark(_n, "starting")
@@ -177,6 +179,7 @@ async def main(once: bool = False) -> int:
         asyncio.create_task(_locked_loop("onboarding_drip", onboarding_drip_scheduler, ttl_seconds=600)),
         asyncio.create_task(_locked_loop("email_health", email_health_scheduler, ttl_seconds=600)),
         asyncio.create_task(_locked_loop("signup_alert_digest", signup_alert_digest_scheduler, ttl_seconds=600)),
+        asyncio.create_task(_locked_loop("site_copy_alerts", site_copy_alert_scheduler, ttl_seconds=120)),
     ]
 
     stop = asyncio.Event()

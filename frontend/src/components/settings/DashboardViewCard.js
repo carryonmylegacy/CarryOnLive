@@ -152,6 +152,7 @@ export default function DashboardViewCard() {
                       labelText="Preview"
                       labelColor="var(--gold)"
                       variant={c.value}
+                      showPolicyLink={false}
                     />
                   </div>
                 </div>

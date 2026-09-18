@@ -13,10 +13,12 @@ const LINKS = [
   { to: '/security', k: 'security' },
   { to: '/wind-down-promise', k: 'winddown' },
   { to: '/accessibility', k: 'accessibility' },
+  { to: '/readiness-score', k: 'readiness' },
+  { to: '/guides', k: 'guides', flag: 'guides_launched' },
 ];
 
 export const PublicFooter = () => {
-  const { t } = useCopy();
+  const { t, flags } = useCopy();
   const [info, setInfo] = useState(
     cachedInfo || { line1: COMPANY.addressLine1, line2: COMPANY.addressLine2, phone: COMPANY.phone }
   );
@@ -41,7 +43,7 @@ export const PublicFooter = () => {
         <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
           <img src="/carryon-logo.png" alt="CarryOn" className="h-8 opacity-60" />
           <nav className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2" aria-label="Legal and trust pages">
-            {LINKS.map(l => (
+            {LINKS.filter(l => !l.flag || flags[l.flag]).map(l => (
               <Link
                 key={l.to}
                 to={l.to}

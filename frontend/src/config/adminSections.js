@@ -101,6 +101,7 @@ export const ADMIN_SECTIONS = [
       { key: 'beta-testing', label: 'Beta Testing', icon: Zap, path: '/admin/beta-testing' },
       { key: 'site-content', label: 'Site Content', icon: Film, path: '/admin/site-content' },
       { key: 'site-copy', label: 'Site Copy', icon: Type, path: '/admin/site-copy' },
+      { key: 'guides', label: 'Guides', icon: BookOpen, path: '/admin/guides' },
       { key: 'founder-emails', label: 'Emails', icon: Mail, path: '/admin/founder-emails' },
       { key: 'announcements', label: 'Announcements', icon: Megaphone, path: '/admin/announcements' },
       { key: 'marketing-members', label: 'Members', icon: UserCog, path: '/admin/marketing-members' },

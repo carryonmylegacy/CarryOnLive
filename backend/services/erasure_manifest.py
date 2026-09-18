@@ -207,6 +207,10 @@ RETAIN = {
         "period_days": 3 * 365,
         "basis": "GDPR Art. 6(1)(f); staff accountability — scheduled public-site text, created_by = staff email",
     },
+    "site_copy_drafts": {
+        "period_days": 3 * 365,
+        "basis": "GDPR Art. 6(1)(f); staff accountability — unpublished public-site text, created_by = staff email",
+    },
     "security_incidents": {"period_days": 7 * 365, "basis": "GDPR Art. 33(5) breach documentation; 17(3)(e)"},
     "consent_audit_log": {
         "period_days": 3 * 365,

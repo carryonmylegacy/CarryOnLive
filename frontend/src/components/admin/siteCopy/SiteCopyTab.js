@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Type, Search, Save, Loader2, ExternalLink, Undo2, Eye, History, CalendarClock, SpellCheck } from 'lucide-react';
+import { Type, Search, Save, Loader2, ExternalLink, Undo2, Eye, History, CalendarClock, SpellCheck, FileStack } from 'lucide-react';
 import apiClient from '../../../utils/apiClient';
 import { API_URL } from '../../../config';
 import { toast } from '../../../utils/toast';
@@ -10,6 +10,7 @@ import { SiteCopyPreview } from './SiteCopyPreview';
 import { RecentChanges } from './SiteCopyHistory';
 import { SchedulesPanel } from './SiteCopySchedule';
 import { ReviewPanel } from './SiteCopyReview';
+import { DraftsPanel } from './SiteCopyDrafts';
 
 const ALL_FIELDS = PAGES.flatMap(p => p.sections.flatMap(s => s.fields.map(f => ({ ...f, page: p, section: s }))));
 const FIELD_BY_KEY = Object.fromEntries(ALL_FIELDS.map(f => [f.k, f]));
@@ -24,6 +25,9 @@ export const SiteCopyTab = ({ getAuthHeaders }) => {
   const [draft, setDraft] = useState({});
   const [history, setHistory] = useState([]);
   const [schedules, setSchedules] = useState([]);
+  const [alertsEnabled, setAlertsEnabled] = useState(true);
+  const [drafts, setDrafts] = useState([]);
+  const [activeDraft, setActiveDraft] = useState(null);
   const [review, setReview] = useState(null);
   const [reviewing, setReviewing] = useState(false);
   const [pageKey, setPageKey] = useState(PAGES[0].key);
@@ -31,7 +35,7 @@ export const SiteCopyTab = ({ getAuthHeaders }) => {
   const [openSections, setOpenSections] = useState({ [`${PAGES[0].key}:${PAGES[0].sections[0].key}`]: true });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [panel, setPanel] = useState(null); // 'recent' | 'schedules' | 'review'
+  const [panel, setPanel] = useState(null); // 'recent' | 'schedules' | 'review' | 'drafts'
   const [showPreview, setShowPreview] = useState(false);
 
   const loadHistory = () => apiClient.get(`${API_URL}/admin/site-copy/history?limit=500`, getAuthHeaders()).then(r => setHistory(r.data?.items || [])).catch(() => {});
@@ -39,7 +43,7 @@ export const SiteCopyTab = ({ getAuthHeaders }) => {
 
   useEffect(() => {
     apiClient.get(`${API_URL}/admin/site-copy/state`, getAuthHeaders())
-      .then(r => { setSaved(r.data?.overrides || {}); setSchedules(r.data?.schedules || []); })
+      .then(r => { setSaved(r.data?.overrides || {}); setSchedules(r.data?.schedules || []); setDrafts(r.data?.drafts || []); setAlertsEnabled(r.data?.alerts_enabled !== false); })
       .catch(() => toast.error('Could not load site copy')).finally(() => setLoading(false));
     loadHistory();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -92,11 +96,18 @@ export const SiteCopyTab = ({ getAuthHeaders }) => {
   const handleSave = () => pendingCount && persist(changes, `Site copy saved — ${pendingCount} ${pendingCount === 1 ? 'change' : 'changes'} live`);
   const handleRestore = (k, text) => persist({ [k]: text || null }, `Restored: ${FIELD_BY_KEY[k]?.label || k}`);
 
+  const liveTextOf = (k) => {
+    const live = schedules.filter(s => s.key === k && s.status === 'active').sort((a, b) => (a.start_at < b.start_at ? 1 : -1))[0];
+    if (live) return live.value || FIELD_BY_KEY[k]?.d || '';
+    return saved[k] || FIELD_BY_KEY[k]?.d || '';
+  };
   const createSchedule = async (payload) => {
     setSaving(true);
     let ok = false;
+    const f = FIELD_BY_KEY[payload.key];
+    const body = { ...payload, page_path: f?.page.path || '', page_label: f?.page.label || '', field_label: f ? `${f.section.label} › ${f.label}` : '', before_text: liveTextOf(payload.key) };
     try {
-      const r = await apiClient.post(`${API_URL}/admin/site-copy/schedules`, payload, getAuthHeaders());
+      const r = await apiClient.post(`${API_URL}/admin/site-copy/schedules`, body, getAuthHeaders());
       setSchedules(r.data?.items || []);
       toast.success(`Scheduled: ${FIELD_BY_KEY[payload.key]?.label || payload.key}`);
       syncPublic();
@@ -119,6 +130,88 @@ export const SiteCopyTab = ({ getAuthHeaders }) => {
     }
     setSaving(false);
   };
+
+  const toggleAlerts = async () => {
+    const next = !alertsEnabled;
+    setAlertsEnabled(next);
+    try {
+      await apiClient.put(`${API_URL}/admin/site-copy/alerts`, { enabled: next }, getAuthHeaders());
+      toast.success(next ? 'You will get an e-mail when a schedule goes live or reverts' : 'Copy alerts turned off');
+    } catch (err) {
+      setAlertsEnabled(!next);
+      toast.error(err?.response?.data?.detail || 'Could not update copy alerts');
+    }
+  };
+
+  // Drafts: a named set of changes ("" = reset to default) kept server-side until published
+  const draftChanges = () => Object.fromEntries(Object.entries(changes).map(([k, v]) => [k, v ?? '']));
+  const afterDraftCall = (r) => { setDrafts(r.data?.items || []); return r.data?.id; };
+  const saveDraft = async (name) => {
+    setSaving(true);
+    try {
+      const id = afterDraftCall(await apiClient.post(`${API_URL}/admin/site-copy/drafts`, { name, changes: draftChanges() }, getAuthHeaders()));
+      setActiveDraft(id);
+      toast.success(`Draft saved: ${name}`);
+    } catch (err) {
+      toast.error(err?.response?.data?.detail || 'Could not save the draft');
+    }
+    setSaving(false);
+  };
+  const updateDraft = async (id) => {
+    const d = drafts.find(x => x.id === id);
+    if (!d) return false;
+    setSaving(true);
+    let ok = false;
+    try {
+      afterDraftCall(await apiClient.put(`${API_URL}/admin/site-copy/drafts/${id}`, { name: d.name, changes: draftChanges() }, getAuthHeaders()));
+      toast.success(`Draft updated: ${d.name}`);
+      ok = true;
+    } catch (err) {
+      toast.error(err?.response?.data?.detail || 'Could not update the draft');
+    }
+    setSaving(false);
+    return ok;
+  };
+  const openDraft = (id) => {
+    const d = drafts.find(x => x.id === id);
+    if (!d) return;
+    setDraft(Object.fromEntries(Object.entries(d.changes).map(([k, v]) => [k, v || FIELD_BY_KEY[k]?.d || ''])));
+    setActiveDraft(id);
+    setReview(null);
+    const first = Object.keys(d.changes).find(k => FIELD_BY_KEY[k]);
+    if (first) jumpTo(first);
+    toast.success(`Opened draft: ${d.name} — ${d.count} ${d.count === 1 ? 'field' : 'fields'} loaded as unsaved edits`);
+  };
+  const publishDraft = async (id) => {
+    const d = drafts.find(x => x.id === id);
+    if (!d) return;
+    if (id === activeDraft && pendingCount && !(await updateDraft(id))) return;
+    setSaving(true);
+    try {
+      const r = await apiClient.post(`${API_URL}/admin/site-copy/drafts/${id}/publish`, {}, getAuthHeaders());
+      setSaved(r.data?.overrides || {});
+      setDrafts(r.data?.items || []);
+      applyOverrides(r.data?.effective || {});
+      if (id === activeDraft) { setDraft({}); setActiveDraft(null); }
+      toast.success(`Published: ${d.name} — ${d.count} ${d.count === 1 ? 'field is' : 'fields are'} live`);
+      loadHistory();
+    } catch (err) {
+      toast.error(err?.response?.data?.detail || 'Could not publish the draft');
+    }
+    setSaving(false);
+  };
+  const deleteDraft = async (id) => {
+    setSaving(true);
+    try {
+      afterDraftCall(await apiClient.delete(`${API_URL}/admin/site-copy/drafts/${id}`, getAuthHeaders()));
+      if (id === activeDraft) setActiveDraft(null);
+      toast.success('Draft deleted');
+    } catch (err) {
+      toast.error(err?.response?.data?.detail || 'Could not delete the draft');
+    }
+    setSaving(false);
+  };
+  const activeDraftName = drafts.find(x => x.id === activeDraft)?.name;
 
   const jumpTo = (k) => {
     const f = FIELD_BY_KEY[k];
@@ -204,12 +297,16 @@ export const SiteCopyTab = ({ getAuthHeaders }) => {
       </div>
 
       <div className="sticky z-20 flex items-center justify-between gap-3 rounded-xl px-4 py-3 flex-wrap" style={{ top: 'calc(0.5rem + env(safe-area-inset-top, 0px))', background: 'var(--s)', border: `1px solid ${pendingCount ? 'rgba(212,175,55,0.5)' : 'var(--b)'}`, boxShadow: '0 8px 24px rgba(0,0,0,0.25)' }} data-testid="site-copy-savebar">
-        <p className="text-sm font-bold text-[var(--t)]" data-testid="site-copy-pending">
+        <p className="text-sm font-bold text-[var(--t)] flex items-center gap-2 flex-wrap" data-testid="site-copy-pending">
           {pendingCount ? `${pendingCount} unsaved ${pendingCount === 1 ? 'change' : 'changes'}` : 'All changes saved'}
+          {activeDraftName && <span className="text-xs font-bold px-1.5 py-0.5 rounded" style={{ background: 'rgba(212,175,55,0.15)', color: 'var(--gold)' }} data-testid="site-copy-active-draft">Draft: {activeDraftName}</span>}
         </p>
         <div className="flex items-center gap-1.5 flex-wrap">
           <button type="button" onClick={runReview} disabled={reviewing} className={barBtn(panel === 'review')} title={pendingCount ? 'Check your unsaved edits' : 'Check every field on this page'} data-testid="site-copy-review-toggle">
             {reviewing ? <Loader2 className="w-4 h-4 animate-spin" /> : <SpellCheck className="w-4 h-4" />} Review
+          </button>
+          <button type="button" onClick={() => togglePanel('drafts')} className={barBtn(panel === 'drafts')} data-testid="site-copy-drafts-toggle">
+            <FileStack className="w-4 h-4" /> Drafts{drafts.length > 0 && <span className="text-xs opacity-80">({drafts.length})</span>}
           </button>
           <button type="button" onClick={() => togglePanel('schedules')} className={barBtn(panel === 'schedules')} data-testid="site-copy-schedules-toggle">
             <CalendarClock className="w-4 h-4" /> Schedules{schedules.length > 0 && <span className="text-xs opacity-80">({schedules.length})</span>}
@@ -221,7 +318,7 @@ export const SiteCopyTab = ({ getAuthHeaders }) => {
             <Eye className="w-4 h-4" /> Preview
           </button>
           {pendingCount > 0 && (
-            <button type="button" onClick={() => setDraft({})} disabled={saving} className={barBtn(false)} data-testid="site-copy-discard">
+            <button type="button" onClick={() => { setDraft({}); setActiveDraft(null); }} disabled={saving} className={barBtn(false)} data-testid="site-copy-discard">
               <Undo2 className="w-4 h-4" /> Discard
             </button>
           )}
@@ -237,7 +334,11 @@ export const SiteCopyTab = ({ getAuthHeaders }) => {
         <RecentChanges entries={history.slice(0, 50)} fieldByKey={FIELD_BY_KEY} currentOf={savedOf} onRestore={handleRestore} restoring={saving} onJump={jumpTo} />
       )}
       {panel === 'schedules' && (
-        <SchedulesPanel schedules={schedules} fieldByKey={FIELD_BY_KEY} onDelete={deleteSchedule} onJump={jumpTo} busy={saving} />
+        <SchedulesPanel schedules={schedules} fieldByKey={FIELD_BY_KEY} onDelete={deleteSchedule} onJump={jumpTo} busy={saving} alertsEnabled={alertsEnabled} onToggleAlerts={toggleAlerts} />
+      )}
+      {panel === 'drafts' && (
+        <DraftsPanel drafts={drafts} activeId={activeDraft} pendingCount={pendingCount} fieldByKey={FIELD_BY_KEY} busy={saving}
+          onSaveNew={saveDraft} onUpdate={updateDraft} onOpen={openDraft} onPublish={publishDraft} onDelete={deleteDraft} />
       )}
       {panel === 'review' && (
         <ReviewPanel review={review} running={reviewing} fieldByKey={FIELD_BY_KEY} onJump={jumpTo} onApplyFix={applyFix} onRerun={runReview} onClose={closeReview} />

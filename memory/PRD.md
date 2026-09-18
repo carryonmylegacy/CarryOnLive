@@ -569,6 +569,8 @@ bug — fix it in the preview DB immediately (snippet in
 - Hardcoded `rgba(212,175,55,…)` → `var(--gold-rgb)` sweep.
 
 ### Last verified end-to-end working item
+**Sep 18 2026 (latest) — Drafts · Copy alerts · /readiness-score · Guides (launch-gated) (NOT PUSHED).** Site Copy **Drafts** (named, multi-page, publish in one press, history `via`); **Copy alerts** e-mail + in-app when a schedule goes live/reverts (switch in Schedules panel, default on); public **/readiness-score** policy page (editable, footers + dashboard "How is this calculated?"); **Guides** — five articles written and editable, hidden behind Admin → Marketing → Guides → **Launch** (noindex until then; sitemap/prerender pick them up at the next deploy after launch). iteration_67 backend 13/13, frontend 100%; regression 27/27; housekeeping --strict 0/0. **Founder next**: push → read /guides as admin → edit in Site Copy → Launch when ready → Redeploy.
+
 **Sep 18 2026 (latest) — Site Copy Phase 3 (NOT PUSHED).** In-app text (signup / paywall / onboarding) editable; Scheduled copy (US Eastern, auto go-live + revert, `Schedules` panel); one-click Review (typos via xAI, double spaces, stray `**`/HTML, missing `{placeholders}`, overlong SEO titles) with Apply fix; `frontend/yarn.lock` regenerated (`--frozen-lockfile` clean). iteration_208: backend 35/35, frontend 100%; housekeeping --strict 0/0. **Founder next**: push → on prod edit a signup line, Review, Save, open /signup; schedule a headline 5 min out (ET) and watch it swap + revert.
 
 **Sep 17 2026 (latest) — Site Copy Phase 2 + change history + live preview (NOT PUSHED).** All public pages are now in the CMS (629 fields: + Customers, Compare incl. competitor facts, What's New, Voices, Wind-Down, Privacy, Terms, Accessibility). Every save logs who/when/before→after (`site_copy_history`, `GET /api/admin/site-copy/history`) with one-click Restore per field and a "Recent changes" panel; **Preview** drawer shows the live page with unsaved edits pushed in as you type (same-origin iframe + postMessage, `?copyPreview=1`). iteration_207: backend 27/27, frontend 100%. `frontend/yarn.lock` was rewritten by check.sh's yarn-audit stage and restored — see CHANGELOG. **Founder next**: push → on prod open Site Copy, Preview a change, Save, check History.
@@ -615,5 +617,5 @@ bug — fix it in the preview DB immediately (snippet in
 
 ---
 
-*Last reviewed by agent: Sep 18, 2026.*
+*Last reviewed by agent: Sep 18, 2026 (PM).*
 *Last structural change: full rewrite from iteration journal to spec.*

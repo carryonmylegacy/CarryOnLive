@@ -135,6 +135,8 @@ const PricingPage = lazy(() => import('./pages/PricingPage'));
 const CustomersPage = lazy(() => import('./pages/CustomersPage'));
 const ComparePage = lazy(() => import('./pages/ComparePage'));
 const ChangelogPage = lazy(() => import('./pages/ChangelogPage'));
+const ReadinessScorePage = lazy(() => import('./pages/ReadinessScorePage'));
+const GuidesPage = lazy(() => import('./pages/GuidesPage'));
 const VoicesPage = lazy(() => import('./pages/VoicesPage'));
 const PartnerBriefPage = lazy(() => import('./pages/PartnerBriefPage'));
 const QuickStartTrialPage = lazy(() => import('./pages/QuickStartTrialPage'));
@@ -665,6 +667,9 @@ function AppRoutes() {
       <Route path="/vs" element={<ComparePage />} />
       <Route path="/vs/:slug" element={<ComparePage />} />
       <Route path="/changelog" element={<ChangelogPage />} />
+      <Route path="/readiness-score" element={<ReadinessScorePage />} />
+      <Route path="/guides" element={<GuidesPage />} />
+      <Route path="/guides/:slug" element={<GuidesPage />} />
       <Route path="/voices" element={<VoicesPage />} />
       {/* B2B white-label partner landing — `/p/:slug`. Public, mirrors
           the LoginPage hero but swaps the CarryOn logo for the

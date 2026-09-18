@@ -10,7 +10,7 @@ const show = (text) => (text ? text : <span className="italic opacity-70">(defau
 /** Timeline for one field: every saved version, newest first, with one-click restore. */
 export const FieldHistory = ({ entries, current, onRestore, restoring, k }) => {
   if (!entries.length) return null;
-  const versions = entries.map(e => ({ id: e.id, at: e.at, actor: e.actor_email, text: e.next }));
+  const versions = entries.map(e => ({ id: e.id, at: e.at, actor: e.actor_email, via: e.via, text: e.next }));
   const oldest = entries[entries.length - 1];
   versions.push({ id: `${oldest.id}-before`, at: oldest.at, actor: '', text: oldest.previous, before: true });
   return (
@@ -22,6 +22,7 @@ export const FieldHistory = ({ entries, current, onRestore, restoring, k }) => {
             <div className="min-w-0">
               <p className="font-bold text-[var(--t4)]">
                 {v.before ? 'Before the first change' : `${when(v.at)} · ${who(v.actor)}`}
+                {v.via && <span className="text-[var(--t5)]"> · draft “{v.via}”</span>}
                 {isCurrent && <span className="ml-2 px-1.5 py-0.5 rounded text-[#22C993]" style={{ background: 'rgba(34,201,147,0.15)' }}>Current</span>}
               </p>
               <p className="text-[var(--t3)] whitespace-pre-wrap break-words leading-snug mt-0.5">{show(v.text)}</p>
@@ -56,7 +57,7 @@ export const RecentChanges = ({ entries, fieldByKey, currentOf, onRestore, resto
           <div key={e.id} className="py-2.5 text-xs" data-testid={`site-copy-recent-row-${i}`}>
             <div className="flex items-center justify-between gap-3">
               <p className="font-bold text-[var(--t4)] truncate">
-                {when(e.at)} · {who(e.actor_email)} ·{' '}
+                {when(e.at)} · {who(e.actor_email)}{e.via && <span className="text-[var(--t5)]"> · draft “{e.via}”</span>} ·{' '}
                 <button type="button" onClick={() => onJump(e.key)} className="text-[var(--t)] hover:text-[var(--gold)] underline-offset-2 hover:underline" data-testid={`site-copy-recent-jump-${i}`}>
                   {field ? `${field.page.label} › ${field.section.label} › ${field.label}` : e.key}
                 </button>

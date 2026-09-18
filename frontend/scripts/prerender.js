@@ -53,7 +53,15 @@ const PUBLIC_ROUTES = [
   '/vs/trustworthy',
   '/vs/everplans',
   '/vs/resolve-legacy',
+  '/readiness-score',
 ];
+
+// /guides is prerendered only once the founder has launched it (scripts/guides-launch.js
+// writes build/.guides-routes.json from the live launch flag during build-prod.sh).
+try {
+  const extra = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', 'build', '.guides-routes.json'), 'utf8'));
+  if (Array.isArray(extra)) PUBLIC_ROUTES.push(...extra.filter((r) => typeof r === 'string' && r.startsWith('/guides')));
+} catch { /* not launched — nothing to add */ }
 
 const MIME = {
   '.html': 'text/html', '.js': 'application/javascript', '.css': 'text/css',

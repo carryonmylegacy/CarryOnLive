@@ -9,6 +9,8 @@
  */
 import { PAGES_PHASE2 } from './siteCopyPhase2';
 import { PAGES_APP } from './siteCopyApp';
+import { PAGES_READINESS } from './siteCopyReadiness';
+import { PAGES_GUIDES } from './siteCopyGuides';
 
 const f = (k, label, d, extra = {}) => ({ k, label, d, ...extra });
 const L = (k, label, d) => f(k, label, d, { locked: true });
@@ -108,6 +110,8 @@ const PAGES_PHASE1 = [
         f('footer.privacy', 'Footer: Privacy Policy', 'Privacy Policy'),
         f('footer.terms', 'Footer: Terms of Service', 'Terms of Service'),
         f('footer.accessibility', 'Footer: Accessibility', 'Accessibility'),
+        f('footer.readiness', 'Footer: How We Score Readiness', 'How We Score Readiness'),
+        f('footer.guides', 'Footer: Guides (shown once the Guides section is launched)', 'Guides'),
         f('footer.copyright', 'Footer: copyright line (year is added automatically)', 'CarryOn Technologies LLC. All rights reserved.'),
       ] },
       { key: 'hero', label: 'Hero (top of /home page)', fields: [
@@ -498,7 +502,7 @@ const PAGES_PHASE1 = [
   },
 ];
 
-export const PAGES = [...PAGES_PHASE1, ...PAGES_PHASE2, ...PAGES_APP];
+export const PAGES = [...PAGES_PHASE1, ...PAGES_PHASE2, ...PAGES_READINESS, ...PAGES_GUIDES, ...PAGES_APP];
 
 export const COPY_DEFAULTS = Object.fromEntries(PAGES.flatMap(p => p.sections.flatMap(s => s.fields.map(x => [x.k, x.d]))));
 export const COPY_FIELD_COUNT = Object.keys(COPY_DEFAULTS).length;
