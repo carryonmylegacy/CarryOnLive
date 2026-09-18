@@ -14,6 +14,7 @@ import { API_URL } from '../config';
 import { openStripeCheckout } from '../utils/stripeRedirect';
 import { suspendAutoLogout } from '../utils/autoLogoutSuspend';
 import { FreeModeBanner } from './FreeModeBanner';
+import { useCopy, renderCopy, copyList } from '../copy/CopyContext';
 
 const TIER_ICONS = {
   premium: Crown,
@@ -51,6 +52,7 @@ export default function SubscriptionPaywall({ onDismiss }) {
   // Family-plan discount percentages come from the catalog (Admin → Finance → Subs), never hardcoded.
   const [familyDiscounts, setFamilyDiscounts] = useState({ benefactor: 0, beneficiary: 0 });
   const [billing, setBilling] = useState('annual');
+  const { t } = useCopy();
   const [selectedPlan, setSelectedPlan] = useState('premium');
   const [loading, setLoading] = useState(true);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
@@ -362,19 +364,17 @@ export default function SubscriptionPaywall({ onDismiss }) {
         <div className="w-full max-w-md glass-card p-6 space-y-5 animate-fade-in">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>
-              {verificationTitle} Verification
+              {t('paywall.verify.title', { tier: verificationTitle })}
             </h2>
             <button onClick={() => setShowVerification(false)} className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-[var(--t4)] active:scale-90 transition-transform">
               <X className="w-4 h-4" />
             </button>
           </div>
 
-          <p className="text-sm text-[var(--t4)]">
-            Please upload one of the following documents to verify your eligibility:
-          </p>
+          <p className="text-sm text-[var(--t4)]">{t('paywall.verify.intro')}</p>
 
           <div className="space-y-3">
-            <label className="text-sm text-[var(--t4)]">Document Type</label>
+            <label className="text-sm text-[var(--t4)]">{t('paywall.verify.doc_type')}</label>
             <div className="flex flex-col gap-2">
               {docOptions.map(doc => (
                 <button
@@ -394,7 +394,7 @@ export default function SubscriptionPaywall({ onDismiss }) {
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm text-[var(--t4)]">Upload Document</label>
+            <label className="text-sm text-[var(--t4)]">{t('paywall.verify.upload')}</label>
             <label className="flex items-center justify-center gap-2 p-6 rounded-xl border-2 border-dashed border-[var(--b)] hover:border-[#d4af37]/50 cursor-pointer transition-colors" data-testid="verification-file-input">
               <input
                 type="file"
@@ -419,7 +419,7 @@ export default function SubscriptionPaywall({ onDismiss }) {
               />
               <Upload className="w-5 h-5 text-[var(--t5)]" />
               <span className="text-sm text-[var(--t4)]">
-                {verificationFile ? verificationFile.name : 'Click to select file'}
+                {verificationFile ? verificationFile.name : t('paywall.verify.pick')}
               </span>
             </label>
           </div>
@@ -431,12 +431,10 @@ export default function SubscriptionPaywall({ onDismiss }) {
             data-testid="submit-verification-btn"
           >
             {uploadingVerification ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <Upload className="w-5 h-5 mr-2" />}
-            Submit for Review
+            {t('paywall.verify.submit')}
           </Button>
 
-          <p className="text-xs text-[var(--t5)] text-center">
-            Documents are reviewed within 24 hours. You'll be notified once approved.
-          </p>
+          <p className="text-xs text-[var(--t5)] text-center">{t('paywall.verify.footnote')}</p>
         </div>
       </div>
     );
@@ -454,7 +452,7 @@ export default function SubscriptionPaywall({ onDismiss }) {
             style={{ background: 'var(--s)', border: '1px solid var(--b)' }}
             data-testid="paywall-skip"
           >
-            {subStatus?.has_active_subscription ? 'Go to Dashboard' : `Continue exploring (${trial.days_remaining} days remaining)`}
+            {subStatus?.has_active_subscription ? t('paywall.dashboard') : t('paywall.continue', { days: trial.days_remaining })}
           </button>
         </div>
         )}
@@ -465,36 +463,22 @@ export default function SubscriptionPaywall({ onDismiss }) {
 
           {trial.trial_expired ? (
             <>
-              <h1 className="text-2xl sm:text-3xl font-bold text-[var(--t)] mb-2" style={{ fontFamily: 'var(--sans)' }}>
-                Your Exploration Period Has Ended
-              </h1>
-              <p className="text-[var(--t4)] text-sm">
-                Choose a plan to continue protecting your family's estate plan with CarryOn.
-              </p>
+              <h1 className="text-2xl sm:text-3xl font-bold text-[var(--t)] mb-2" style={{ fontFamily: 'var(--sans)' }}>{t('paywall.expired.title')}</h1>
+              <p className="text-[var(--t4)] text-sm">{renderCopy(t('paywall.expired.sub'))}</p>
             </>
           ) : trial.trial_active ? (
             <>
-              <h1 className="text-2xl sm:text-3xl font-bold text-[var(--t)] mb-2" style={{ fontFamily: 'var(--sans)' }}>
-                Choose Your Plan
-              </h1>
+              <h1 className="text-2xl sm:text-3xl font-bold text-[var(--t)] mb-2" style={{ fontFamily: 'var(--sans)' }}>{t('paywall.active.title')}</h1>
               <div className="flex items-center justify-center gap-2 mb-2">
                 <Clock className="w-4 h-4 text-[#d4af37]" />
-                <span className="text-[#d4af37] text-sm font-medium">
-                  {trial.days_remaining} days left in your exploration period
-                </span>
+                <span className="text-[#d4af37] text-sm font-medium">{t('paywall.active.days', { days: trial.days_remaining })}</span>
               </div>
-              <p className="text-[var(--t4)] text-sm">
-                Select a plan now to ensure uninterrupted access when your exploration period ends.
-              </p>
+              <p className="text-[var(--t4)] text-sm">{renderCopy(t('paywall.active.sub'))}</p>
             </>
           ) : (
             <>
-              <h1 className="text-2xl sm:text-3xl font-bold text-[var(--t)] mb-2" style={{ fontFamily: 'var(--sans)' }}>
-                Choose Your Plan
-              </h1>
-              <p className="text-[var(--t4)] text-sm">
-                Subscribe to access the full CarryOn platform.
-              </p>
+              <h1 className="text-2xl sm:text-3xl font-bold text-[var(--t)] mb-2" style={{ fontFamily: 'var(--sans)' }}>{t('paywall.default.title')}</h1>
+              <p className="text-[var(--t4)] text-sm">{renderCopy(t('paywall.default.sub'))}</p>
             </>
           )}
 
@@ -503,7 +487,7 @@ export default function SubscriptionPaywall({ onDismiss }) {
             <div className="mt-4 p-3 rounded-xl bg-[#F59E0B]/10 border border-[#F59E0B]/20">
               <div className="flex items-center gap-2 text-[#F59E0B] text-sm">
                 <Clock className="w-4 h-4" />
-                Your {subStatus.verification.tier_requested} verification is under review
+                {t('paywall.pending_review', { tier: subStatus.verification.tier_requested })}
               </div>
             </div>
           )}
@@ -530,9 +514,7 @@ export default function SubscriptionPaywall({ onDismiss }) {
             >
               {b}
               {b === 'annual' && billing !== 'annual' && (
-                <span className="absolute -top-2 -right-2 text-[11px] bg-[#22C993] text-white px-1.5 py-0.5 rounded-full font-bold">
-                  Best Value
-                </span>
+                <span className="absolute -top-2 -right-2 text-[11px] bg-[#22C993] text-white px-1.5 py-0.5 rounded-full font-bold">{t('paywall.badge.best_value')}</span>
               )}
               {b !== 'monthly' && billing === b && (
                 <span className="absolute -top-2 -right-2 text-[11px] bg-[#22C993] text-white px-1.5 py-0.5 rounded-full font-bold">
@@ -750,7 +732,7 @@ export default function SubscriptionPaywall({ onDismiss }) {
                         ? '0 4px 16px rgba(34,201,147,0.4)'
                         : '0 4px 16px rgba(var(--gold-rgb), 0.4)',
                     }}>
-                    {showRecommendedPulse ? 'Recommended — Best Value' : 'Most Popular'}
+                    {showRecommendedPulse ? t('paywall.badge.recommended') : t('paywall.badge.popular')}
                   </div>
                 )}
 
@@ -813,15 +795,11 @@ export default function SubscriptionPaywall({ onDismiss }) {
 
                   {/* CTA Button */}
                   {!eligible ? (
-                    <div className="w-full text-center text-xs font-medium py-3 rounded-xl text-[var(--t5)]" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
-                      Ages {ageLabel(plan)} only
-                    </div>
+                    <div className="w-full text-center text-xs font-medium py-3 rounded-xl text-[var(--t5)]" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>{t('paywall.cta.ages', { ages: ageLabel(plan) })}</div>
                   ) : isActivePlan ? (
                     <div className="w-full text-center text-xs font-bold py-3 rounded-xl text-[#22C993]"
                       style={{ background: 'rgba(34,201,147,0.08)', border: '1px solid rgba(34,201,147,0.2)' }}
-                      data-testid={`paywall-active-${plan.id}`}>
-                      Current Plan
-                    </div>
+                      data-testid={`paywall-active-${plan.id}`}>{t('paywall.cta.current')}</div>
                   ) : isPendingPlan ? (
                     <div
                       className="w-full text-center text-xs font-bold py-3 rounded-xl flex items-center justify-center gap-2"
@@ -833,11 +811,11 @@ export default function SubscriptionPaywall({ onDismiss }) {
                       data-testid={`paywall-pending-${plan.id}`}
                     >
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      Confirming your payment…
+                      {t('paywall.cta.confirming')}
                     </div>
                   ) : isGreyedOut && !showRecommendedPulse ? (
                     <div className="w-full text-center text-xs font-medium py-3 rounded-xl text-[var(--t5)]" style={{ background: 'var(--s)', border: '1px solid var(--b)' }}>
-                      {plan.price > (plans.find(p => p.id === activePlanId)?.price || 0) ? 'Upgrade' : 'Downgrade'}
+                      {plan.price > (plans.find(p => p.id === activePlanId)?.price || 0) ? t('paywall.cta.upgrade') : t('paywall.cta.downgrade')}
                     </div>
                   ) : (
                     <Button
@@ -854,7 +832,7 @@ export default function SubscriptionPaywall({ onDismiss }) {
                       data-testid={`paywall-select-${plan.id}`}
                     >
                       {checkoutLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                      {showRecommendedPulse ? 'Upgrade to Best Value' : plan.requires_verification && plan.id !== 'new_adult' ? 'Verify & Subscribe' : 'Subscribe'}
+                      {showRecommendedPulse ? t('paywall.cta.upgrade_best') : plan.requires_verification && plan.id !== 'new_adult' ? t('paywall.cta.verify') : t('paywall.cta.subscribe')}
                       <ChevronRight className="w-4 h-4 ml-1" />
                     </Button>
                   )}
@@ -905,9 +883,7 @@ export default function SubscriptionPaywall({ onDismiss }) {
                     style={{ maxHeight: discountOpen ? '5000px' : '0px', opacity: discountOpen ? 1 : 0 }}
                     aria-hidden={!discountOpen}
                   >
-                    <p className="text-center text-[11px] uppercase tracking-[0.18em] mt-5 mb-4" style={{ color: 'var(--gold)' }}>
-                      Dedicated tiers · same features · eligibility verified after subscribe
-                    </p>
+                    <p className="text-center text-[11px] uppercase tracking-[0.18em] mt-5 mb-4" style={{ color: 'var(--gold)' }}>{t('paywall.discount_line')}</p>
                     <div className="flex flex-wrap justify-center gap-5">
                       {discountPlans.map(p => renderPaywallCard(p, true))}
                     </div>
@@ -941,20 +917,18 @@ export default function SubscriptionPaywall({ onDismiss }) {
                   style={{ background: 'rgba(var(--gold-rgb), 0.12)', border: '1px solid rgba(var(--gold-rgb), 0.25)' }}>
                   <Users className="w-5 h-5 text-[#d4af37]" />
                 </div>
-                <h3 className="font-bold text-lg text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>Family Plan</h3>
+                <h3 className="font-bold text-lg text-[var(--t)]" style={{ fontFamily: 'var(--sans)' }}>{t('paywall.family.title')}</h3>
               </div>
 
               <div className="mb-1">
-                <span className="text-2xl font-bold text-[#d4af37]" style={{ fontFamily: 'var(--sans)' }}>
-                  Bundle & Save
-                </span>
+                <span className="text-2xl font-bold text-[#d4af37]" style={{ fontFamily: 'var(--sans)' }}>{t('paywall.family.price')}</span>
               </div>
-              <p className="text-xs text-[var(--t5)] mb-4" data-testid="family-tile-beneficiary-discount">All beneficiaries: <span className="text-[var(--t5)]">{familyDiscounts.beneficiary}% off their tier rate</span></p>
+              <p className="text-xs text-[var(--t5)] mb-4" data-testid="family-tile-beneficiary-discount">{t('paywall.family.ben_line', { pct: familyDiscounts.beneficiary })}</p>
 
               <div className="h-px mb-4" style={{ background: 'linear-gradient(90deg, transparent, rgba(var(--gold-rgb), 0.2), transparent)' }} />
 
               <div className="space-y-2.5 mb-5 flex-1">
-                {['Owner pays their regular tier rate', `Added benefactors save ${familyDiscounts.benefactor}%`, `Beneficiaries save ${familyDiscounts.beneficiary}%`, 'Successor inherits ownership'].map((f, i) => (
+                {copyList(t('paywall.family.bullets', { benefactor: familyDiscounts.benefactor, beneficiary: familyDiscounts.beneficiary })).map((f, i) => (
                   <div key={i} className="flex items-start gap-2.5 text-sm">
                     <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: 'rgba(var(--gold-rgb), 0.12)' }}>
                       <Check className="w-3 h-3 text-[#d4af37]" />
@@ -964,7 +938,7 @@ export default function SubscriptionPaywall({ onDismiss }) {
                 ))}
               </div>
 
-              <p className="text-xs text-[var(--t5)] italic mb-4">Subscribe individually, then add family from Settings</p>
+              <p className="text-xs text-[var(--t5)] italic mb-4">{t('paywall.family.note')}</p>
 
               <Button
                 onClick={(e) => { e.stopPropagation(); setShowFamilyInfo(!showFamilyInfo); }}
@@ -972,7 +946,7 @@ export default function SubscriptionPaywall({ onDismiss }) {
                 style={{ borderColor: 'rgba(var(--gold-rgb), 0.35)', color: '#d4af37' }}
                 data-testid="paywall-select-family"
               >
-                Learn More <ChevronRight className="w-4 h-4 ml-1" />
+                {t('paywall.family.learn')} <ChevronRight className="w-4 h-4 ml-1" />
               </Button>
             </div>
           </div>
@@ -989,7 +963,7 @@ export default function SubscriptionPaywall({ onDismiss }) {
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-bold text-[var(--t)] text-lg flex items-center gap-2">
                   <Users className="w-5 h-5 text-[#d4af37]" />
-                  Family Plan Details
+                  {t('paywall.family.details_title')}
                 </h3>
                 <button onClick={() => setShowFamilyInfo(false)} className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-[var(--t4)] active:scale-90 transition-transform">
                   <X className="w-4 h-4" />
@@ -997,21 +971,19 @@ export default function SubscriptionPaywall({ onDismiss }) {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
                 <div className="p-3 rounded-xl bg-[var(--s)]">
-                  <p className="text-[#d4af37] font-bold">Plan Owner</p>
-                  <p className="text-[var(--t4)]">Pays their regular tier rate. Sets the plan anchor.</p>
+                  <p className="text-[#d4af37] font-bold">{t('paywall.family.owner_label')}</p>
+                  <p className="text-[var(--t4)]">{t('paywall.family.owner_text')}</p>
                 </div>
                 <div className="p-3 rounded-xl bg-[var(--s)]">
-                  <p className="text-[#60A5FA] font-bold">Added Benefactors</p>
-                  <p className="text-[var(--t4)]" data-testid="family-info-benefactor-discount">{familyDiscounts.benefactor}% off their individual tier rate</p>
+                  <p className="text-[#60A5FA] font-bold">{t('paywall.family.benefactors_label')}</p>
+                  <p className="text-[var(--t4)]" data-testid="family-info-benefactor-discount">{t('paywall.family.benefactors_text', { pct: familyDiscounts.benefactor })}</p>
                 </div>
                 <div className="p-3 rounded-xl bg-[var(--s)]">
-                  <p className="text-[#22C993] font-bold">All Beneficiaries</p>
-                  <p className="text-[var(--t4)]" data-testid="family-info-beneficiary-discount">{familyDiscounts.beneficiary}% off their tier's beneficiary rate</p>
+                  <p className="text-[#22C993] font-bold">{t('paywall.family.beneficiaries_label')}</p>
+                  <p className="text-[var(--t4)]" data-testid="family-info-beneficiary-discount">{t('paywall.family.beneficiaries_text', { pct: familyDiscounts.beneficiary })}</p>
                 </div>
               </div>
-              <p className="text-xs text-[var(--t5)] mt-3">
-                Subscribe to any individual plan first, then set up your Family Plan from Settings. Designate a successor who inherits ownership upon transition.
-              </p>
+              <p className="text-xs text-[var(--t5)] mt-3">{renderCopy(t('paywall.family.details_note'))}</p>
             </div>
           </div>
         )}
@@ -1022,9 +994,7 @@ export default function SubscriptionPaywall({ onDismiss }) {
             onClick={onDismiss}
             className="text-[var(--t5)] text-sm hover:text-white transition-colors mb-4"
             data-testid="paywall-dismiss"
-          >
-            Continue exploring ({trial.days_remaining} days remaining)
-          </button>
+          >{t('paywall.continue', { days: trial.days_remaining })}</button>
         )}
 
         {/* Restore Purchases (Apple IAP requirement) */}
@@ -1036,20 +1006,14 @@ export default function SubscriptionPaywall({ onDismiss }) {
             data-testid="paywall-restore-purchases"
           >
             {restoringPurchases ? <Loader2 className="w-3 h-3 animate-spin" /> : <RotateCcw className="w-3 h-3" />}
-            Restore Purchases
+            {t('paywall.restore')}
           </button>
         )}
 
         {/* Apple-required subscription disclosure (Guideline 3.1.2) */}
         <div className="text-center mb-4 animate-fade-in max-w-md mx-auto">
-          <p className="text-[var(--t5)] text-xs">
-            Every plan includes the same protection: your files are scrambled before they're stored, with a separate lock for every family.
-          </p>
-          <p className="text-[var(--t5)] text-[11px] mt-2 leading-relaxed">
-            Payment will be charged to your {useAppleIAP ? 'Apple ID' : 'payment method'} at confirmation of purchase.
-            Subscriptions automatically renew unless canceled at least 24 hours before the end of the current period.
-            {useAppleIAP ? ' Manage subscriptions in your iPhone Settings > Apple ID > Subscriptions.' : ''}
-          </p>
+          <p className="text-[var(--t5)] text-xs">{renderCopy(t('paywall.disclosure.protection'))}</p>
+          <p className="text-[var(--t5)] text-[11px] mt-2 leading-relaxed">{renderCopy(t('paywall.disclosure.payment', { method: useAppleIAP ? 'Apple ID' : 'payment method' }))}{useAppleIAP ? ` ${t('paywall.disclosure.apple')}` : ''}</p>
           <div className="flex items-center justify-center gap-3 mt-2">
             <a href="/terms" className="text-[var(--t5)] text-[11px] underline hover:text-[var(--t4)]" data-testid="paywall-terms-link">Terms of Service</a>
             <span className="text-[var(--t5)] text-[11px]">·</span>

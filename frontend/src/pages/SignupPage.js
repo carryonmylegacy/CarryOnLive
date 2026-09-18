@@ -2,6 +2,7 @@ import { FlagBackdrop } from '../components/FlagBackdrop';
 import React, { useState, useEffect, useRef } from 'react';
 import SEO from '../components/SEO';
 import { useNavigate, Link } from 'react-router-dom';
+import { useCopy, renderCopy } from '../copy/CopyContext';
 import { useAuth } from '../contexts/AuthContext';
 import {
   Mail, Lock, Eye, EyeOff, Loader2, ArrowLeft, ArrowRight,
@@ -69,6 +70,7 @@ const postSignupPath = () => (sessionStorage.getItem('carryon_checkout_intent') 
 
 const SignupPage = () => {
   const navigate = useNavigate();
+  const { t } = useCopy();
   const { verifyOtp, resendOtp } = useAuth();
 
   const [step, setStep] = useState(0);
@@ -667,15 +669,15 @@ const SignupPage = () => {
                 </div>
                 <div className="flex-1 pt-2">
                   <h1 className="text-5xl font-bold text-white leading-[1.08] mb-3" style={{ fontFamily: 'var(--sans)' }}>
-                    Join {partnerLandingCompany || 'CarryOn'}.
-                    <span className="block text-[#d4af37] mt-1">Get your family ready.</span>
+                    {t('signup.hero.join', { company: partnerLandingCompany || 'CarryOn' })}
+                    <span className="block text-[#d4af37] mt-1">{t('signup.hero.h1b')}</span>
                   </h1>
                   <p className="text-[#7b879e] text-base max-w-sm leading-relaxed mb-6">
-                    Start in under a minute. Build the rest at your pace.
+                    {t('signup.hero.sub')}
                   </p>
 
                   <div className="flex items-center gap-4">
-                    {['Scrambled before it\u2019s stored', 'A separate lock for every family', 'Two-step sign-in'].map(badge => (
+                    {[1, 2, 3].map(n => t(`signup.hero.badge${n}`)).filter(Boolean).map(badge => (
                       <div key={badge} className="flex items-center gap-1.5">
                         <div className="w-1.5 h-1.5 rounded-full bg-[#10b981]" />
                         <span className="text-[#525c72] text-xs">{badge}</span>
@@ -692,9 +694,9 @@ const SignupPage = () => {
               transition: 'opacity 0.6s ease 0.1s',
             }}>
               <h1 className="text-xl sm:text-2xl font-bold text-white leading-tight mb-0.5" style={{ fontFamily: 'var(--sans)' }}>
-                Join {partnerLandingCompany || 'CarryOn'}. <span className="text-[#d4af37]">Get your family ready.</span>
+                {t('signup.hero.join', { company: partnerLandingCompany || 'CarryOn' })} <span className="text-[#d4af37]">{t('signup.hero.h1b')}</span>
               </h1>
-              <p className="text-[#6b7a90] text-xs">Start in under a minute. Build the rest at your pace.</p>
+              <p className="text-[#6b7a90] text-xs">{t('signup.hero.sub')}</p>
             </div>
 
             {/* RIGHT — Wizard Card */}
@@ -738,7 +740,7 @@ const SignupPage = () => {
                       </div>
                     ))}
                   </div>
-                  <p className="text-[#525c72] text-xs mb-3">Step {step + 1} of {STEPS.length}</p>
+                  <p className="text-[#525c72] text-xs mb-3">{t('signup.step_counter', { n: step + 1, total: STEPS.length })}</p>
                 </div>
 
                 {/* Step Content */}
@@ -748,8 +750,8 @@ const SignupPage = () => {
                     {currentStep?.id === 'name' && (
                       <div className="space-y-4 sm:space-y-5">
                         <div>
-                          <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'var(--sans)' }}>What's your full legal name?</h2>
-                          <p className="text-[#6b7a90] text-sm">Use the name your family knows you by.</p>
+                          <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'var(--sans)' }}>{t('signup.name.title')}</h2>
+                          <p className="text-[#6b7a90] text-sm">{t('signup.name.sub')}</p>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-2">
@@ -791,7 +793,7 @@ const SignupPage = () => {
                                 {genderOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
                               </SelectContent>
                             </Select>
-                            <p className="text-[#6b7a90] text-xs" data-testid="signup-gender-helper">Used for relationship terms in your family plan.</p>
+                            <p className="text-[#6b7a90] text-xs" data-testid="signup-gender-helper">{t('signup.name.gender_hint')}</p>
                           </div>
                           <div className="space-y-1.5">
                             <Label className="text-[#7b879e] text-sm font-medium">Date of Birth</Label>
@@ -806,18 +808,18 @@ const SignupPage = () => {
                     {currentStep?.id === 'minor_blocked' && (
                       <div className="space-y-4">
                         <div>
-                          <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'var(--sans)' }}>Invitation Required</h2>
-                          <p className="text-[#6b7a90] text-sm">Accounts for family members under 18 are created through an invitation from a benefactor.</p>
+                          <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'var(--sans)' }}>{t('signup.minor.title')}</h2>
+                          <p className="text-[#6b7a90] text-sm">{t('signup.minor.sub')}</p>
                         </div>
                         <div className="rounded-xl p-4" style={{ background: 'rgba(96,165,250,0.06)', border: '1px solid rgba(96,165,250,0.15)' }}>
                           <p className="text-[#60A5FA] text-sm leading-relaxed flex items-start gap-2">
                             <Users className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                            Ask your parent or guardian to add you as a beneficiary from their CarryOn dashboard. They'll send you an invitation link to create your account.
+                            {renderCopy(t('signup.minor.text'))}
                           </p>
                         </div>
                         <div className="pt-2">
                           <Link to="/login" className="text-[#d4af37] text-sm font-semibold hover:text-[#fcd34d] transition-colors flex items-center gap-1">
-                            Already have an invitation? Sign in here <ChevronRight className="w-3.5 h-3.5" />
+                            {t('signup.minor.link')} <ChevronRight className="w-3.5 h-3.5" />
                           </Link>
                         </div>
                       </div>
@@ -827,8 +829,8 @@ const SignupPage = () => {
                     {currentStep?.id === 'eligibility' && (
                       <div className="space-y-3">
                         <div>
-                          <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'var(--sans)' }}>Special Eligibility</h2>
-                          <p className="text-[#94a3b8] text-sm">Select if any apply for discounted pricing.</p>
+                          <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'var(--sans)' }}>{t('signup.eligibility.title')}</h2>
+                          <p className="text-[#94a3b8] text-sm">{t('signup.eligibility.sub')}</p>
                         </div>
                         <div className="grid grid-cols-2 gap-2.5">
                           {[
@@ -863,7 +865,7 @@ const SignupPage = () => {
                                     {s.label}
                                   </span>
                                   {active && s.id !== 'enterprise' && (
-                                    <span className="text-[11px] block mt-0.5" style={{ color: `${s.color}aa` }}>Verification required</span>
+                                    <span className="text-[11px] block mt-0.5" style={{ color: `${s.color}aa` }}>{t('signup.eligibility.verify')}</span>
                                   )}
                                 </div>
                               </button>
@@ -886,7 +888,7 @@ const SignupPage = () => {
                         )}
 
                         {!specialStatus.includes('enterprise') && specialStatus.length > 0 && (
-                          <p className="text-[#64748b] text-xs text-center pt-2">Selections are optional.</p>
+                          <p className="text-[#64748b] text-xs text-center pt-2">{t('signup.eligibility.optional')}</p>
                         )}
                       </div>
                     )}
@@ -895,8 +897,8 @@ const SignupPage = () => {
                     {currentStep?.id === 'credentials' && (
                       <div className="space-y-4 sm:space-y-5">
                         <div>
-                          <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'var(--sans)' }}>Secure your account</h2>
-                          <p className="text-[#6b7a90] text-sm">Choose a unique username and strong password to protect your family&apos;s data.</p>
+                          <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'var(--sans)' }}>{t('signup.account.title')}</h2>
+                          <p className="text-[#6b7a90] text-sm">{t('signup.account.sub')}</p>
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="signup-username" className="text-[#7b879e] text-sm font-medium">Username <span className="text-red-400">*</span></Label>
@@ -931,7 +933,7 @@ const SignupPage = () => {
                           {usernameError ? (
                             <p className="text-red-400 text-xs flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {usernameError}</p>
                           ) : (
-                            <p className="text-[#525c72] text-[11px]">This is how you&apos;ll sign in. Letters, numbers, and underscores only.</p>
+                            <p className="text-[#525c72] text-[11px]">{t('signup.account.username_hint')}</p>
                           )}
                         </div>
                         <div className="space-y-2">
@@ -943,7 +945,7 @@ const SignupPage = () => {
                               placeholder="john@example.com" className={`${inputClass} pl-12`}
                               data-testid="signup-email-input" />
                           </div>
-                          <p className="text-[#525c72] text-[11px]">For verification codes and notifications. Can be shared with family members.</p>
+                          <p className="text-[#525c72] text-[11px]">{t('signup.account.email_hint')}</p>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-2">
@@ -1010,7 +1012,7 @@ const SignupPage = () => {
                           </button>
                           <label onClick={() => setSmsConsent(!smsConsent)}
                             className="text-[#7b879e] text-xs leading-relaxed cursor-pointer select-none" data-testid="sms-consent-label">
-                            I agree to receive text messages from CarryOn&trade; for account verification. Message and data rates may apply. I also agree to the{' '}
+                            {t('signup.account.consent')}{' '}
                             <Link to="/terms" className="text-[#d4af37] hover:text-[#fcd34d] underline underline-offset-2" data-testid="signup-terms-link">Terms</Link> and{' '}
                             <Link to="/privacy" className="text-[#d4af37] hover:text-[#fcd34d] underline underline-offset-2" data-testid="signup-privacy-link">Privacy Policy</Link>.
                           </label>
@@ -1025,16 +1027,14 @@ const SignupPage = () => {
                           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full mb-3"
                             style={{ background: 'rgba(139,92,246,0.12)', border: '1px solid rgba(139,92,246,0.3)' }}>
                             <Sparkles className="w-3.5 h-3.5 text-[#a78bfa]" />
-                            <span className="text-[#a78bfa] text-[11px] font-bold tracking-wider uppercase">Last step</span>
+                            <span className="text-[#a78bfa] text-[11px] font-bold tracking-wider uppercase">{t('signup.partner.badge')}</span>
                           </div>
-                          <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'var(--sans)' }}>
-                            Enterprise Access Code
-                          </h2>
+                          <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'var(--sans)' }}>{t('signup.partner.title')}</h2>
                           <p className="text-[#94a3b8] text-sm leading-relaxed">
                             {partnerLandingCompany ? (
-                              <>Enter the code <span className="text-white font-semibold">{partnerLandingCompany}</span> shared with you to unlock your custom CarryOn experience. No code? Tap <span className="text-[#d4af37] font-semibold">Skip</span> below.</>
+                              <>{renderCopy(t('signup.partner.text_partner', { company: partnerLandingCompany }), 'text-white font-semibold')}</>
                             ) : (
-                              <>If you arrived from a CarryOn partner&apos;s portal, enter your access code below. Otherwise tap <span className="text-[#d4af37] font-semibold">Skip</span> to continue.</>
+                              <>{renderCopy(t('signup.partner.text_generic'), 'text-white font-semibold')}</>
                             )}
                           </p>
                         </div>
@@ -1049,9 +1049,7 @@ const SignupPage = () => {
                                 <p className="text-[#34d399] text-sm font-bold">
                                   {partnerCodeApplied.company_name} access unlocked
                                 </p>
-                                <p className="text-[#94a3b8] text-xs mt-1">
-                                  Your custom feature set is now active. Taking you to your dashboard…
-                                </p>
+                                <p className="text-[#94a3b8] text-xs mt-1">{t('signup.partner.applied_sub')}</p>
                               </div>
                             </div>
                           </div>
@@ -1096,9 +1094,7 @@ const SignupPage = () => {
                             <div className="rounded-xl p-3.5" style={{ background: 'rgba(139,92,246,0.06)', border: '1px solid rgba(139,92,246,0.18)' }}>
                               <p className="text-[#a78bfa] text-xs leading-relaxed flex items-start gap-2">
                                 <Briefcase className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                                <span>
-                                  An enterprise code unlocks the custom feature set your B2B partner negotiated with CarryOn. You can skip this and add a code later from your profile.
-                                </span>
+                                <span>{renderCopy(t('signup.partner.info'))}</span>
                               </p>
                             </div>
 
@@ -1107,9 +1103,7 @@ const SignupPage = () => {
                               onClick={() => { finishToDashboard(); }}
                               className="text-[#6b7a90] text-sm font-medium hover:text-[#d4af37] transition-colors"
                               data-testid="partner-code-skip-btn"
-                            >
-                              I don&apos;t have a code — skip
-                            </button>
+                            >{t('signup.partner.skip')}</button>
                           </>
                         )}
                       </div>
@@ -1128,12 +1122,10 @@ const SignupPage = () => {
                       <button onClick={() => goTo(step - 1)}
                         className="flex items-center gap-2 text-[#6b7a90] text-sm font-medium hover:text-white transition-colors"
                         data-testid="signup-back-btn">
-                        <ArrowLeft className="w-4 h-4" /> Back
-                      </button>
+                        <ArrowLeft className="w-4 h-4" /> {t('signup.btn.back')}</button>
                     ) : (
                       <Link to="/login" className="flex items-center gap-2 text-[#6b7a90] text-sm font-medium hover:text-[#d4af37] transition-colors">
-                        <ArrowLeft className="w-4 h-4" /> Sign In
-                      </Link>
+                        <ArrowLeft className="w-4 h-4" /> {t('signup.btn.signin')}</Link>
                     )}
 
                     <Button onClick={handleNext} disabled={loading || usernameChecking || applyingPartnerCode}
@@ -1154,20 +1146,20 @@ const SignupPage = () => {
                         <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Checking username...</>
                       ) : currentStep?.id === 'partner_code' ? (
                         partnerCodeApplied ? (
-                          <>Continue <ArrowRight className="w-4 h-4 ml-1" /></>
+                          <>{t('signup.btn.continue')} <ArrowRight className="w-4 h-4 ml-1" /></>
                         ) : partnerCodeInput.trim() ? (
-                          <>Apply Code <ChevronRight className="w-4 h-4 ml-1" /></>
+                          <>{t('signup.btn.apply_code')} <ChevronRight className="w-4 h-4 ml-1" /></>
                         ) : (
-                          <>Skip — No Code <ArrowRight className="w-4 h-4 ml-1" /></>
+                          <>{t('signup.btn.skip_code')} <ArrowRight className="w-4 h-4 ml-1" /></>
                         )
                       ) : (step === STEPS.length - 1 && currentStep?.id !== 'minor_blocked') || STEPS[step + 1]?.id === 'partner_code' ? (
                         currentStep?.id === 'eligibility' && specialStatus.length === 0 ? (
-                          <>None Apply — Create Account <ChevronRight className="w-4 h-4 ml-1" /></>
+                          <>{t('signup.btn.none_create')} <ChevronRight className="w-4 h-4 ml-1" /></>
                         ) : (
-                          <>Create Account <ChevronRight className="w-4 h-4 ml-1" /></>
+                          <>{t('signup.btn.create')} <ChevronRight className="w-4 h-4 ml-1" /></>
                         )
                       ) : (
-                        <>Continue <ArrowRight className="w-4 h-4 ml-1" /></>
+                        <>{t('signup.btn.continue')} <ArrowRight className="w-4 h-4 ml-1" /></>
                       )}
                     </Button>
                     </div>
@@ -1175,7 +1167,7 @@ const SignupPage = () => {
                     {/* Security footer inside card */}
                     <div className="mt-3 flex items-center justify-center gap-2">
                       <Shield className="w-3.5 h-3.5 text-[#10b981]" />
-                      <span className="text-[#3a4a63] text-xs">Scrambled before it&rsquo;s stored &middot; A separate lock for every family &middot; Secure connection</span>
+                      <span className="text-[#3a4a63] text-xs">{t('signup.trust_line')}</span>
                     </div>
                   </div>
                 </div>

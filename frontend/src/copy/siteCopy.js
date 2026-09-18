@@ -8,6 +8,7 @@
  * `locked` fields are platform law (official tool / pillar names) and render read-only.
  */
 import { PAGES_PHASE2 } from './siteCopyPhase2';
+import { PAGES_APP } from './siteCopyApp';
 
 const f = (k, label, d, extra = {}) => ({ k, label, d, ...extra });
 const L = (k, label, d) => f(k, label, d, { locked: true });
@@ -497,7 +498,7 @@ const PAGES_PHASE1 = [
   },
 ];
 
-export const PAGES = [...PAGES_PHASE1, ...PAGES_PHASE2];
+export const PAGES = [...PAGES_PHASE1, ...PAGES_PHASE2, ...PAGES_APP];
 
 export const COPY_DEFAULTS = Object.fromEntries(PAGES.flatMap(p => p.sections.flatMap(s => s.fields.map(x => [x.k, x.d]))));
 export const COPY_FIELD_COUNT = Object.keys(COPY_DEFAULTS).length;

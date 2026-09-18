@@ -22,6 +22,7 @@ import { resolvePhotoUrl } from '../utils/photoUrl';
 import { API_URL } from '../config';
 
 import { formatPhoneUS } from '../utils/phoneFormat';
+import { useCopy } from '../copy/CopyContext';
 
 const relations = ['Spouse', 'Son', 'Daughter', 'Son-in-law', 'Daughter-in-law', 'Mother', 'Father', 'Mother-in-law', 'Father-in-law', 'Brother', 'Sister', 'Aunt', 'Uncle', 'Grandson', 'Granddaughter', 'Grandmother', 'Grandfather', 'Nephew', 'Niece', 'Great-Grandson', 'Great-Granddaughter', 'Great-Grandmother', 'Great-Grandfather', 'Friend', 'Other'];
 const avatarColors = ['#d4af37', '#3b82f6', '#10b981', '#8b5cf6', '#ef4444', '#f59e0b', '#ec4899', '#06b6d4'];
@@ -35,6 +36,7 @@ const usStates = [
 
 const OnboardingPage = () => {
   const navigate = useNavigate();
+  const { t } = useCopy();
   const { user, getAuthHeaders, partnerBranding } = useAuth();
   const [estate, setEstate] = useState(null);
   const [beneficiaries, setBeneficiaries] = useState([]);
@@ -166,12 +168,8 @@ const OnboardingPage = () => {
         {/* Header */}
         <div className="text-center mb-8">
           <img src={partnerBranding?.logoUrl || "/carryon-logo.png"} alt={partnerBranding?.companyName || "CarryOn™"} className="w-32 h-auto mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-white mb-2" style={{ fontFamily: 'var(--sans)' }}>
-            Welcome, {user?.first_name || user?.name?.split(' ')[0]}! 🎉
-          </h1>
-          <p className="text-[#94a3b8]">
-            Let's add the people who matter most to your estate plan
-          </p>
+          <h1 className="text-2xl font-bold text-white mb-2" style={{ fontFamily: 'var(--sans)' }}>{t('onboarding.welcome.title', { name: user?.first_name || user?.name?.split(' ')[0] || '' })}</h1>
+          <p className="text-[#94a3b8]">{t('onboarding.welcome.sub')}</p>
         </div>
 
         {/* Progress indicator */}
@@ -180,21 +178,21 @@ const OnboardingPage = () => {
             <div className="w-8 h-8 rounded-full bg-[#10b981] flex items-center justify-center">
               <CheckCircle className="w-5 h-5 text-white" />
             </div>
-            <span className="text-sm text-[#10b981] font-medium">Account Created</span>
+            <span className="text-sm text-[#10b981] font-medium">{t('onboarding.welcome.step1')}</span>
           </div>
           <div className="w-8 h-px bg-[#d4af37]" />
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-full bg-[#d4af37] flex items-center justify-center">
               <Users className="w-5 h-5 text-[#0f1629]" />
             </div>
-            <span className="text-sm text-[#d4af37] font-medium">Add Beneficiaries</span>
+            <span className="text-sm text-[#d4af37] font-medium">{t('onboarding.welcome.step2')}</span>
           </div>
           <div className="w-8 h-px bg-[#334155]" />
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-full bg-[#334155] flex items-center justify-center text-[#64748b]">
               3
             </div>
-            <span className="text-sm text-[#64748b]">Dashboard</span>
+            <span className="text-sm text-[#64748b]">{t('onboarding.welcome.step3')}</span>
           </div>
         </div>
 
@@ -207,10 +205,10 @@ const OnboardingPage = () => {
                 <Users className="w-6 h-6 text-[#d4af37]" />
               </div>
               <div>
-                <h2 className="text-lg font-bold text-white">Your Beneficiaries</h2>
+                <h2 className="text-lg font-bold text-white">{t('onboarding.welcome.card_title')}</h2>
                 <p className="text-sm text-[#94a3b8]">
                   {beneficiaries.length === 0 
-                    ? 'Add the people who will inherit your estate plan'
+                    ? t('onboarding.welcome.card_empty')
                     : `${beneficiaries.length} beneficiar${beneficiaries.length === 1 ? 'y' : 'ies'} added`
                   }
                 </p>
@@ -246,7 +244,7 @@ const OnboardingPage = () => {
               onClick={() => { resetForm(); setShowAddModal(true); }}
             >
               <UserPlus className="w-5 h-5 mr-2" />
-              {beneficiaries.length === 0 ? 'Add Your First Beneficiary' : 'Add Another Beneficiary'}
+              {beneficiaries.length === 0 ? t('onboarding.welcome.add_first') : t('onboarding.welcome.add_another')}
             </Button>
           </CardContent>
         </Card>
@@ -257,21 +255,17 @@ const OnboardingPage = () => {
             variant="outline"
             className="flex-1 border-[var(--b)] text-[#94a3b8] hover:text-white"
             onClick={() => navigate('/dashboard')}
-          >
-            Skip for Now
-          </Button>
+          >{t('onboarding.welcome.skip')}</Button>
           <Button
             className="flex-1 gold-button"
             onClick={handleContinue}
           >
-            Continue to Dashboard
+            {t('onboarding.welcome.continue')}
             <ArrowRight className="w-5 h-5 ml-2" />
           </Button>
         </div>
 
-        <p className="text-center text-xs text-[#64748b] mt-4">
-          You can always add or manage beneficiaries from your dashboard
-        </p>
+        <p className="text-center text-xs text-[#64748b] mt-4">{t('onboarding.welcome.footnote')}</p>
       </div>
 
       {/* Add Beneficiary Modal */}

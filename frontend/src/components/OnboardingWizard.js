@@ -10,6 +10,7 @@ import {
 import { Progress } from '../components/ui/progress';
 import { API_URL } from '../config';
 import { isFeatureEnabled } from '../utils/featureGates';
+import { useCopy, renderCopy, copyList } from '../copy/CopyContext';
 import {
   isPlatformOfflineVisible,
   PLATFORM_OFFLINE_FLAG_EVENT,
@@ -80,6 +81,7 @@ const OnboardingWizard = ({ onAllComplete, onContentChange }) => {
   // is respected on every subsequent visit.
   const autoExpandedOnce = useRef(false);
   const [popping, setPopping] = useState({});
+  const { t } = useCopy();
   const [dismissPhase, setDismissPhase] = useState('idle'); // 'idle' | 'confirm' | 'info'
   const prevCompleted = useRef({});
   const initialLoadDone = useRef(false);
@@ -399,19 +401,15 @@ const OnboardingWizard = ({ onAllComplete, onContentChange }) => {
             <AlertTriangle className="w-14 h-14" style={{ color: '#F59E0B' }} />
           </div>
           <h1 className="text-2xl lg:text-3xl font-bold mb-3"
-            style={{ fontFamily: 'var(--sans)', color: 'var(--guided-title, #ffffff)' }}>
-            Close Getting Started?
-          </h1>
+            style={{ fontFamily: 'var(--sans)', color: 'var(--guided-title, #ffffff)' }}>{t('onboarding.dismiss.title')}</h1>
           <p className="text-sm lg:text-base mb-8 max-w-sm mx-auto leading-relaxed"
-            style={{ color: 'var(--guided-desc, #94a3b8)' }}>
-            This will hide the Getting Started guide. You won&apos;t see it again unless you re-enable it in Settings.
-          </p>
+            style={{ color: 'var(--guided-desc, #94a3b8)' }}>{renderCopy(t('onboarding.dismiss.text'))}</p>
           <div className="flex gap-3 justify-center">
             <button onClick={() => setDismissPhase('idle')}
               className="px-8 py-4 rounded-2xl text-base font-bold transition-transform active:scale-[0.97]"
               style={{ background: 'var(--b)', border: '1px solid rgba(255,255,255,0.12)', color: 'var(--guided-desc, #94a3b8)' }}
               data-testid="onboarding-dismiss-cancel">
-              Cancel
+              {t('onboarding.dismiss.cancel')}
             </button>
             <button onClick={async () => {
               await handleDismiss();
@@ -462,13 +460,9 @@ const OnboardingWizard = ({ onAllComplete, onContentChange }) => {
             <Settings className="w-14 h-14" style={{ color: '#d4af37' }} />
           </div>
           <h1 className="text-2xl lg:text-3xl font-bold mb-3"
-            style={{ fontFamily: 'var(--sans)', color: 'var(--guided-title, #ffffff)' }}>
-            Guide Hidden
-          </h1>
+            style={{ fontFamily: 'var(--sans)', color: 'var(--guided-title, #ffffff)' }}>{t('onboarding.hidden.title')}</h1>
           <p className="text-sm lg:text-base mb-8 max-w-sm mx-auto leading-relaxed"
-            style={{ color: 'var(--guided-desc, #94a3b8)' }}>
-            To see the Getting Started guide again, go to <strong style={{ color: '#d4af37' }}>Settings</strong> and toggle it back on.
-          </p>
+            style={{ color: 'var(--guided-desc, #94a3b8)' }}>{renderCopy(t('onboarding.hidden.text'), 'text-[#d4af37]')}</p>
           <button onClick={() => {
             setDismissPhase('idle');
             setManuallyDismissed(true);
@@ -551,8 +545,8 @@ const OnboardingWizard = ({ onAllComplete, onContentChange }) => {
             <ListChecks className="w-5 h-5" style={{ color: '#60A5FA' }} />
           </div>
           <div className="min-w-0 flex-1">
-            <h3 className="text-base lg:text-lg font-semibold text-[var(--t)]">Setup Guide</h3>
-            <p className="text-xs lg:text-sm text-[var(--t4)]">{progress.completed_count} of {progress.total_steps} done</p>
+            <h3 className="text-base lg:text-lg font-semibold text-[var(--t)]">{t('onboarding.guide.title')}</h3>
+            <p className="text-xs lg:text-sm text-[var(--t4)]">{t('onboarding.guide.progress', { done: progress.completed_count, total: progress.total_steps })}</p>
           </div>
         </div>
 
@@ -567,7 +561,7 @@ const OnboardingWizard = ({ onAllComplete, onContentChange }) => {
           const isComplete = step.completed && !isPop;
           const label = step.key === 'create_message' && benNames.length > 0
             ? `Leave a message for ${benLabel}!`
-            : config.label;
+            : t(`onboarding.steps.${step.key}.label`);
           return (
             <div
               key={step.key}
@@ -605,7 +599,7 @@ const OnboardingWizard = ({ onAllComplete, onContentChange }) => {
                     {label}
                     {step.optional && !isComplete && <span className="text-xs font-normal text-[var(--t5)] ml-2">(optional)</span>}
                   </p>
-                  <p className={`text-xs ${isComplete ? 'text-[var(--t5)]' : 'text-[var(--t4)]'}`}>{config.desc}</p>
+                  <p className={`text-xs ${isComplete ? 'text-[var(--t5)]' : 'text-[var(--t4)]'}`}>{t(`onboarding.steps.${step.key}.desc`)}</p>
                 </div>
                 {isComplete ? (
                   <span className="text-xs text-[#22C993] font-bold flex-shrink-0">Done</span>
@@ -643,7 +637,7 @@ const OnboardingWizard = ({ onAllComplete, onContentChange }) => {
                 WebkitTapHighlightColor: 'transparent',
               }}
             >
-              <span>{allStepsExpanded ? 'Hide all steps' : 'View all steps'}</span>
+              <span>{allStepsExpanded ? t('onboarding.guide.hide_all') : t('onboarding.guide.view_all')}</span>
               <ChevronDown
                 className={`w-4 h-4 transition-transform duration-200 ${allStepsExpanded ? 'rotate-180' : ''}`}
                 strokeWidth={2.5}
@@ -657,14 +651,14 @@ const OnboardingWizard = ({ onAllComplete, onContentChange }) => {
                     smallest mobile font; Step column uses flex-1
                     and absorbs the rest of the row. */}
                 <div className="flex items-center gap-2 px-2 pb-1 text-[11px] lg:text-xs uppercase tracking-wider text-[var(--t5)] font-bold">
-                  <span className="w-10 flex-shrink-0 text-center" aria-hidden="true">Done</span>
-                  <span className="w-10 flex-shrink-0 text-center" aria-hidden="true">Skip</span>
-                  <span className="flex-1">Step</span>
+                  <span className="w-10 flex-shrink-0 text-center" aria-hidden="true">{t('onboarding.guide.done')}</span>
+                  <span className="w-10 flex-shrink-0 text-center" aria-hidden="true">{t('onboarding.guide.skip')}</span>
+                  <span className="flex-1">{t('onboarding.guide.step')}</span>
                 </div>
                 <ul className="space-y-1">
                   {allSteps.map((s, i) => {
                     const cfg = STEP_CONFIG[s.key];
-                    const stepLabel = cfg?.label || s.label || s.key;
+                    const stepLabel = (cfg && t(`onboarding.steps.${s.key}.label`)) || s.label || s.key;
                     const accentColor = cfg?.color || 'var(--gold)';
                     const isDone = !!s.completed;
                     const isSkip = !!s.skipped;
@@ -764,10 +758,8 @@ const OnboardingWizard = ({ onAllComplete, onContentChange }) => {
               <ArrowLeftRight className="w-5 h-5" style={{ color: '#a78bfa' }} />
             </div>
             <div className="min-w-0 flex-1">
-              <h3 className="text-base lg:text-lg font-semibold text-[var(--t)]">Welcome — Two Views</h3>
-              <p className="text-xs lg:text-sm text-[var(--t4)]">
-                Switch between your <strong style={{ color: '#d4af37' }}>Benefactor</strong> estate and <strong style={{ color: '#60A5FA' }}>Beneficiary</strong> access anytime via <strong>Switch View</strong> in the {window.innerWidth >= 1024 ? 'left menu' : 'hamburger menu'}.
-              </p>
+              <h3 className="text-base lg:text-lg font-semibold text-[var(--t)]">{t('onboarding.views.title')}</h3>
+              <p className="text-xs lg:text-sm text-[var(--t4)]">{renderCopy(t('onboarding.views.text', { menu: window.innerWidth >= 1024 ? 'left menu' : 'hamburger menu' }), 'text-[#d4af37]')}</p>
             </div>
           </div>
         </div>
@@ -808,12 +800,9 @@ const OnboardingWizard = ({ onAllComplete, onContentChange }) => {
               <WifiOff className="w-5 h-5" style={{ color: '#0EA5E9' }} />
             </div>
             <div className="min-w-0 flex-1">
-              <h3 className="text-base lg:text-lg font-semibold text-[var(--t)] mb-1.5">Offline Mode — Quick Setup</h3>
+              <h3 className="text-base lg:text-lg font-semibold text-[var(--t)] mb-1.5">{t('onboarding.offline.title')}</h3>
               <ul className="text-xs lg:text-sm text-[var(--t4)] space-y-1 list-disc pl-5">
-                <li>Install CarryOn to your <strong style={{ color: '#0EA5E9' }}>home screen</strong> (PWA only).</li>
-                <li>Sign in once while <strong style={{ color: '#0EA5E9' }}>online</strong> and wait ~30s for sync.</li>
-                <li>Enable in <strong style={{ color: '#d4af37' }}>Settings → Offline</strong>. Stays 90 days; revoke anytime.</li>
-                <li>Your password is <strong style={{ color: '#0EA5E9' }}>never stored</strong> — only an encrypted credential.</li>
+                {copyList(t('onboarding.offline.steps')).map((item, i) => <li key={i}>{renderCopy(item, 'text-[#0EA5E9]')}</li>)}
               </ul>
             </div>
           </div>

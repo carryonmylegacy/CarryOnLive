@@ -530,6 +530,11 @@ ROUTE_POLICIES: dict = {
         "roles": ["admin"],
         "notes": "Marketing scope; change log of public-site text (actor email = staff)",
     },
+    "GET /api/admin/site-copy/state": {"auth": "required", "roles": ["admin"], "notes": "Marketing scope; base overrides + schedules for the editor"},
+    "GET /api/admin/site-copy/schedules": {"auth": "required", "roles": ["admin"], "notes": "Marketing scope; scheduled wording changes"},
+    "POST /api/admin/site-copy/schedules": {"auth": "required", "roles": ["admin"], "notes": "Marketing scope; audited as site_copy_schedule_create"},
+    "DELETE /api/admin/site-copy/schedules/{schedule_id}": {"auth": "required", "roles": ["admin"], "notes": "Marketing scope; audited as site_copy_schedule_delete"},
+    "POST /api/admin/site-copy/review": {"auth": "required", "roles": ["admin"], "notes": "Marketing scope; proof-read pass (xAI light model, marketing text only — no PII)"},
 }
 
 

@@ -3,9 +3,10 @@ import { ChevronDown } from 'lucide-react';
 import { SiteCopyField } from './SiteCopyField';
 
 /** Collapsible group of fields (one page section). Always open while searching. */
-export const SiteCopySection = ({ section, fields, open, onToggle, forceOpen, valueOf, savedOf, onChange, historyOf, onRestore, restoring }) => {
+export const SiteCopySection = ({ section, fields, open, onToggle, forceOpen, valueOf, savedOf, onChange, historyOf, onRestore, restoring, schedulesOf, onSchedule, onDeleteSchedule, issuesOf, onApplyFix }) => {
   const editedCount = fields.filter(f => !f.locked && savedOf(f.k)).length;
   const dirtyCount = fields.filter(f => !f.locked && valueOf(f.k) !== (savedOf(f.k) || f.d)).length;
+  const issueCount = fields.reduce((n, f) => n + issuesOf(f.k).length, 0);
   const isOpen = forceOpen || open;
   return (
     <div className="rounded-xl overflow-hidden" style={{ background: 'var(--s)', border: '1px solid var(--b)' }} data-testid={`copy-section-${section.key}`}>
@@ -16,6 +17,7 @@ export const SiteCopySection = ({ section, fields, open, onToggle, forceOpen, va
             {fields.length} {fields.length === 1 ? 'field' : 'fields'}
             {editedCount > 0 && <span className="text-[#22C993] font-bold"> · {editedCount} edited</span>}
             {dirtyCount > 0 && <span className="text-[var(--gold)] font-bold"> · {dirtyCount} unsaved</span>}
+            {issueCount > 0 && <span className="text-[#f59e0b] font-bold"> · {issueCount} flagged</span>}
           </p>
         </div>
         {!forceOpen && <ChevronDown className={`w-4 h-4 text-[var(--gold)] flex-shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />}
@@ -24,7 +26,9 @@ export const SiteCopySection = ({ section, fields, open, onToggle, forceOpen, va
         <div className="px-4 pb-3" style={{ borderTop: '1px solid var(--b)' }}>
           {fields.map(f => (
             <SiteCopyField key={f.k} field={f} value={valueOf(f.k)} savedValue={savedOf(f.k)} onChange={v => onChange(f.k, v)}
-              history={historyOf(f.k)} onRestore={onRestore} restoring={restoring} />
+              history={historyOf(f.k)} onRestore={onRestore} restoring={restoring}
+              schedules={schedulesOf(f.k)} onSchedule={onSchedule} onDeleteSchedule={onDeleteSchedule}
+              issues={issuesOf(f.k)} onApplyFix={onApplyFix} />
           ))}
         </div>
       )}

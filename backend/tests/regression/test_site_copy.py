@@ -187,3 +187,96 @@ def test_history_is_admin_only_and_validates_key(founder_headers):
         f"{BASE_URL}/api/admin/site-copy/history", params={"limit": 5}, headers=founder_headers, timeout=20
     )
     assert r.status_code == 200 and len(r.json()["items"]) <= 5
+
+
+# ── Phase 3: schedules + review ─────────────────────────────────────────────────
+
+
+def _purge_probe_schedules(headers):
+    items = requests.get(f"{BASE_URL}/api/admin/site-copy/schedules", headers=headers, timeout=20).json()["items"]
+    for s in items:
+        if s["key"] == PROBE_KEY:
+            requests.delete(f"{BASE_URL}/api/admin/site-copy/schedules/{s['id']}", headers=headers, timeout=20)
+
+
+def test_schedule_goes_live_and_reverts(founder_headers):
+    from datetime import datetime, timedelta, timezone
+
+    _purge_probe_schedules(founder_headers)
+    now = datetime.now(timezone.utc)
+    requests.put(
+        f"{BASE_URL}/api/admin/site-copy", json={"changes": {PROBE_KEY: "saved text"}}, headers=founder_headers, timeout=20
+    )
+    # upcoming → not live yet
+    r = requests.post(
+        f"{BASE_URL}/api/admin/site-copy/schedules",
+        json={"key": PROBE_KEY, "value": "future text", "start_at": (now + timedelta(days=1)).isoformat(), "end_at": None, "note": "qa"},
+        headers=founder_headers,
+        timeout=20,
+    )
+    assert r.status_code == 200, r.text
+    upcoming = [s for s in r.json()["items"] if s["key"] == PROBE_KEY]
+    assert upcoming and upcoming[0]["status"] == "upcoming"
+    assert requests.get(f"{BASE_URL}/api/public/site-copy", timeout=20).json()["overrides"][PROBE_KEY] == "saved text"
+    # active window → public shows the scheduled text, editor state keeps the saved text
+    r = requests.post(
+        f"{BASE_URL}/api/admin/site-copy/schedules",
+        json={"key": PROBE_KEY, "value": "live text", "start_at": (now - timedelta(minutes=5)).isoformat(), "end_at": (now + timedelta(hours=1)).isoformat()},
+        headers=founder_headers,
+        timeout=20,
+    )
+    assert r.status_code == 200, r.text
+    active = [s for s in r.json()["items"] if s["key"] == PROBE_KEY and s["status"] == "active"]
+    assert len(active) == 1
+    assert requests.get(f"{BASE_URL}/api/public/site-copy", timeout=20).json()["overrides"][PROBE_KEY] == "live text"
+    state = requests.get(f"{BASE_URL}/api/admin/site-copy/state", headers=founder_headers, timeout=20).json()
+    assert state["overrides"][PROBE_KEY] == "saved text" and state["effective"][PROBE_KEY] == "live text"
+    # remove the live one → saved text is back
+    r = requests.delete(f"{BASE_URL}/api/admin/site-copy/schedules/{active[0]['id']}", headers=founder_headers, timeout=20)
+    assert r.status_code == 200
+    assert requests.get(f"{BASE_URL}/api/public/site-copy", timeout=20).json()["overrides"][PROBE_KEY] == "saved text"
+    _purge_probe_schedules(founder_headers)
+    assert requests.delete(f"{BASE_URL}/api/admin/site-copy/schedules/{active[0]['id']}", headers=founder_headers, timeout=20).status_code == 404
+
+
+def test_schedule_validation_and_scope(founder_headers):
+    from datetime import datetime, timedelta, timezone
+
+    now = datetime.now(timezone.utc)
+    bad = [
+        {"key": PROBE_KEY, "value": "x", "start_at": "not-a-date"},
+        {"key": PROBE_KEY, "value": "x", "start_at": now.isoformat(), "end_at": (now - timedelta(hours=1)).isoformat()},
+        {"key": PROBE_KEY, "value": "x", "start_at": (now - timedelta(days=2)).isoformat(), "end_at": (now - timedelta(days=1)).isoformat()},
+        {"key": "$where", "value": "x", "start_at": now.isoformat()},
+    ]
+    for payload in bad:
+        assert requests.post(f"{BASE_URL}/api/admin/site-copy/schedules", json=payload, headers=founder_headers, timeout=20).status_code == 400, payload
+    assert requests.get(f"{BASE_URL}/api/admin/site-copy/schedules", timeout=20).status_code in (401, 403)
+    assert requests.get(f"{BASE_URL}/api/admin/site-copy/schedules", headers=_login(BENEFACTOR), timeout=20).status_code == 403
+    assert requests.get(f"{BASE_URL}/api/admin/site-copy/state", headers=_login(BENEFACTOR), timeout=20).status_code == 403
+
+
+def test_review_flags_deterministic_issues(founder_headers):
+    from routes.site_copy import ReviewField, deterministic_issues
+
+    types = {i["type"] for i in deterministic_issues(ReviewField(key="home.hero.title", text="Hello  world **bold"))}
+    assert {"spacing", "markup"} <= types
+    seo = deterministic_issues(ReviewField(key="home.seo.title", text="x" * 61))
+    assert any(i["type"] == "seo" for i in seo)
+    missing = deterministic_issues(ReviewField(key="signup.step_counter", text="Step {n}", required_vars=["n", "total"]))
+    assert [i["type"] for i in missing] == ["placeholder"]
+    assert deterministic_issues(ReviewField(key="home.hero.title", text="Clean sentence.")) == []
+
+    r = requests.post(
+        f"{BASE_URL}/api/admin/site-copy/review",
+        json={"fields": [{"key": PROBE_KEY, "label": "Probe", "text": "Two  spaces here.", "required_vars": []}]},
+        headers=founder_headers,
+        timeout=90,
+    )
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["reviewed"] == 1 and "llm_used" in body
+    spacing = [i for i in body["issues"] if i["type"] == "spacing"]
+    assert spacing and spacing[0]["fix"] == "Two spaces here."
+    assert requests.post(f"{BASE_URL}/api/admin/site-copy/review", json={"fields": []}, headers=_login(BENEFACTOR), timeout=20).status_code == 403
+    assert requests.post(f"{BASE_URL}/api/admin/site-copy/review", json={"fields": [{"key": "$bad", "text": "x"}]}, headers=founder_headers, timeout=20).status_code == 400
