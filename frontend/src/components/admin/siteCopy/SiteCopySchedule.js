@@ -56,7 +56,7 @@ export const ScheduleForm = ({ field, initialText, onSubmit, onCancel, busy }) =
       <p className="text-xs font-bold text-[var(--gold)] inline-flex items-center gap-1"><CalendarClock className="w-3.5 h-3.5" /> Schedule this text · times are US Eastern</p>
       <div>
         <label className="text-xs font-bold text-[var(--t4)]">Text to show during the window</label>
-        <textarea value={text} rows={Math.min(6, Math.max(2, Math.ceil(text.length / 90)))} onChange={e => setText(e.target.value)} className={`${inputClass} resize-y mt-1`} data-testid={`copy-schedule-text-${field.k}`} />
+        <textarea value={text} rows={Math.min(6, Math.max(2, Math.ceil(text.length / 90)))} onChange={e => setText(e.target.value)} className={`${inputClass} text-base resize-y mt-1`} data-testid={`copy-schedule-text-${field.k}`} />
         <p className="text-xs text-[var(--t5)] mt-0.5">Leave empty to show the built-in default during the window. The saved text comes back automatically when the window ends.</p>
       </div>
       <div className="grid sm:grid-cols-2 gap-2.5">
@@ -66,10 +66,10 @@ export const ScheduleForm = ({ field, initialText, onSubmit, onCancel, busy }) =
         </div>
         <div>
           <label className="text-xs font-bold text-[var(--t4)]">Revert (ET, optional)</label>
-          <input type="datetime-local" value={end} min={start} onChange={e => setEnd(e.target.value)} className={`${inputClass} mt-1`} style={{ colorScheme: 'dark' }} data-testid={`copy-schedule-end-${field.k}`} />
+          <input type="datetime-local" value={end} onChange={e => setEnd(e.target.value)} className={`${inputClass} mt-1`} style={{ colorScheme: 'dark' }} data-testid={`copy-schedule-end-${field.k}`} />
         </div>
       </div>
-      <input type="text" value={note} maxLength={200} onChange={e => setNote(e.target.value)} placeholder="Note (optional) — e.g. Memorial Day wording" className={inputClass} data-testid={`copy-schedule-note-${field.k}`} />
+      <input type="text" value={note} maxLength={200} onChange={e => setNote(e.target.value)} placeholder="Note (optional) — e.g. Memorial Day wording" className={`${inputClass} text-base`} data-testid={`copy-schedule-note-${field.k}`} />
       {error && <p className="text-xs font-bold text-[#f59e0b]" data-testid={`copy-schedule-error-${field.k}`}>{error}</p>}
       <div className="flex items-center justify-end gap-2">
         <button type="button" onClick={onCancel} className="px-3 py-1.5 rounded-lg text-xs font-bold text-[var(--t4)] hover:text-[var(--t)]" data-testid={`copy-schedule-cancel-${field.k}`}>Cancel</button>

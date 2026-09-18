@@ -383,7 +383,15 @@ Compare, What's New, Voices, Wind-Down, Privacy, Terms, Accessibility) lives in
 legal bodies are line-per-paragraph with `- ` bullets (`renderBlocks`). Every
 save is journaled in `site_copy_history` (restore from the editor); the editor's
 Preview drawer frames the live page with `?copyPreview=1` and pushes unsaved
-edits via postMessage. In-app (logged-in) text is still hardcoded.
+edits via postMessage. **Phase 3 (Sep 18, 2026):** the Sign-up wizard, Subscription
+paywall and Onboarding screens are editable too (`copy/siteCopyApp.js`, 760 fields
+total; `{curly}` placeholders are filled at runtime and must be kept). **Scheduled
+copy** (`site_copy_schedules`, calendar icon per field, times in **US Eastern**,
+stored UTC) goes live / reverts automatically — `GET /api/public/site-copy` returns
+the effective text, the editor reads base text from `GET /api/admin/site-copy/state`.
+**Review** (save-bar) proof-reads unsaved edits or the whole page —
+`POST /api/admin/site-copy/review`: deterministic spacing/markup/placeholder/SEO
+checks + xAI typo pass, with one-click *Apply fix* into the editor (never auto-saves).
 
 ### Critical pathways (housekeeping FAIL if broken)
 
@@ -561,6 +569,8 @@ bug — fix it in the preview DB immediately (snippet in
 - Hardcoded `rgba(212,175,55,…)` → `var(--gold-rgb)` sweep.
 
 ### Last verified end-to-end working item
+**Sep 18 2026 (latest) — Site Copy Phase 3 (NOT PUSHED).** In-app text (signup / paywall / onboarding) editable; Scheduled copy (US Eastern, auto go-live + revert, `Schedules` panel); one-click Review (typos via xAI, double spaces, stray `**`/HTML, missing `{placeholders}`, overlong SEO titles) with Apply fix; `frontend/yarn.lock` regenerated (`--frozen-lockfile` clean). iteration_208: backend 35/35, frontend 100%; housekeeping --strict 0/0. **Founder next**: push → on prod edit a signup line, Review, Save, open /signup; schedule a headline 5 min out (ET) and watch it swap + revert.
+
 **Sep 17 2026 (latest) — Site Copy Phase 2 + change history + live preview (NOT PUSHED).** All public pages are now in the CMS (629 fields: + Customers, Compare incl. competitor facts, What's New, Voices, Wind-Down, Privacy, Terms, Accessibility). Every save logs who/when/before→after (`site_copy_history`, `GET /api/admin/site-copy/history`) with one-click Restore per field and a "Recent changes" panel; **Preview** drawer shows the live page with unsaved edits pushed in as you type (same-origin iframe + postMessage, `?copyPreview=1`). iteration_207: backend 27/27, frontend 100%. `frontend/yarn.lock` was rewritten by check.sh's yarn-audit stage and restored — see CHANGELOG. **Founder next**: push → on prod open Site Copy, Preview a change, Save, check History.
 
 **Sep 17 2026 — Site Copy mini-CMS Phase 1 (NOT PUSHED).** 360 marketing strings (Home incl. `/` hero, About, Founder gate, Security, Pricing, Start, nav/footer, FAQ, SEO titles/descriptions) now read from `copy/siteCopy.js` defaults with founder overrides from `site_copy` via `GET /api/public/site-copy`; editor at Admin → Marketing → Site Copy (`PUT /api/admin/site-copy`, marketing scope, audited). 12 tool names + 4 pillar names locked. iteration_206: backend 19/19, frontend 100%; `tests/regression/test_site_copy.py`. check.sh ALL CLEAR (pip-audit baseline ratcheted 32→33 for litellm advisory drift). **Founder next**: push → Vercel/Render → on prod open Site Copy, change one line, Save, reload the public page. Phase 2 (other public pages / in-app text) awaits founder go-ahead.
@@ -605,5 +615,5 @@ bug — fix it in the preview DB immediately (snippet in
 
 ---
 
-*Last reviewed by agent: May 22, 2026.*
+*Last reviewed by agent: Sep 18, 2026.*
 *Last structural change: full rewrite from iteration journal to spec.*

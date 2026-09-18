@@ -117,11 +117,18 @@ async def load_base() -> tuple[dict, str]:
 async def load_schedules() -> list[dict]:
     items = []
     async for doc in db.site_copy_schedules.find({}).sort("start_at", 1):
-        items.append({
-            "id": doc["_id"], "key": doc["key"], "value": doc.get("value", ""), "start_at": doc["start_at"],
-            "end_at": doc.get("end_at"), "note": doc.get("note", ""), "created_by": doc.get("created_by", ""),
-            "created_at": doc.get("created_at", ""),
-        })
+        items.append(
+            {
+                "id": doc["_id"],
+                "key": doc["key"],
+                "value": doc.get("value", ""),
+                "start_at": doc["start_at"],
+                "end_at": doc.get("end_at"),
+                "note": doc.get("note", ""),
+                "created_by": doc.get("created_by", ""),
+                "created_at": doc.get("created_at", ""),
+            }
+        )
     return items
 
 
@@ -186,10 +193,17 @@ async def put_site_copy(
             )
             set_keys.append(key)
         if value != previous:
-            history.append({
-                "_id": str(uuid.uuid4()), "key": key, "previous": previous, "next": value,
-                "actor_id": current_user["id"], "actor_email": actor, "at": now,
-            })
+            history.append(
+                {
+                    "_id": str(uuid.uuid4()),
+                    "key": key,
+                    "previous": previous,
+                    "next": value,
+                    "actor_id": current_user["id"],
+                    "actor_email": actor,
+                    "at": now,
+                }
+            )
     if history:
         await db.site_copy_history.insert_many(history)
     if set_keys or reset_keys:
@@ -220,10 +234,16 @@ async def get_site_copy_history(
     query = {"key": validate_key(key)} if key else {}
     items = []
     async for doc in db.site_copy_history.find(query).sort("at", -1).limit(limit):
-        items.append({
-            "id": doc["_id"], "key": doc["key"], "previous": doc.get("previous", ""), "next": doc.get("next", ""),
-            "actor_email": doc.get("actor_email", ""), "at": doc.get("at", ""),
-        })
+        items.append(
+            {
+                "id": doc["_id"],
+                "key": doc["key"],
+                "previous": doc.get("previous", ""),
+                "next": doc.get("next", ""),
+                "actor_email": doc.get("actor_email", ""),
+                "at": doc.get("at", ""),
+            }
+        )
     return {"items": items}
 
 
@@ -255,31 +275,43 @@ async def create_schedule(
     if end_at and end_at <= now:
         raise HTTPException(status_code=400, detail="That window has already ended.")
     doc = {
-        "_id": str(uuid.uuid4()), "key": key, "value": value, "start_at": start_at, "end_at": end_at,
-        "note": clean_copy_value(payload.note or "")[:200], "created_by": current_user.get("email", ""),
+        "_id": str(uuid.uuid4()),
+        "key": key,
+        "value": value,
+        "start_at": start_at,
+        "end_at": end_at,
+        "note": clean_copy_value(payload.note or "")[:200],
+        "created_by": current_user.get("email", ""),
         "created_at": now,
     }
     await db.site_copy_schedules.insert_one(doc)
     await log_audit_event(
-        actor_id=current_user["id"], actor_email=current_user.get("email", ""),
-        actor_role=current_user.get("role", "admin"), action="site_copy_schedule_create", category="platform",
-        resource_type="site_copy_schedule", resource_id=doc["_id"],
-        details={"key": key, "start_at": start_at, "end_at": end_at}, ip_address=get_client_ip(request),
+        actor_id=current_user["id"],
+        actor_email=current_user.get("email", ""),
+        actor_role=current_user.get("role", "admin"),
+        action="site_copy_schedule_create",
+        category="platform",
+        resource_type="site_copy_schedule",
+        resource_id=doc["_id"],
+        details={"key": key, "start_at": start_at, "end_at": end_at},
+        ip_address=get_client_ip(request),
     )
     return await list_schedules(current_user)
 
 
 @router.delete("/admin/site-copy/schedules/{schedule_id}")
-async def delete_schedule(
-    schedule_id: str, request: Request, current_user: dict = Depends(require_scope("marketing"))
-):
+async def delete_schedule(schedule_id: str, request: Request, current_user: dict = Depends(require_scope("marketing"))):
     doc = await db.site_copy_schedules.find_one_and_delete({"_id": schedule_id})
     if not doc:
         raise HTTPException(status_code=404, detail="Schedule not found.")
     await log_audit_event(
-        actor_id=current_user["id"], actor_email=current_user.get("email", ""),
-        actor_role=current_user.get("role", "admin"), action="site_copy_schedule_delete", category="platform",
-        resource_type="site_copy_schedule", resource_id=schedule_id,
+        actor_id=current_user["id"],
+        actor_email=current_user.get("email", ""),
+        actor_role=current_user.get("role", "admin"),
+        action="site_copy_schedule_delete",
+        category="platform",
+        resource_type="site_copy_schedule",
+        resource_id=schedule_id,
         details={"key": doc.get("key"), "start_at": doc.get("start_at"), "end_at": doc.get("end_at")},
         ip_address=get_client_ip(request),
     )
@@ -293,29 +325,56 @@ def deterministic_issues(f: ReviewField) -> list[dict]:
     text = f.text or ""
     issues = []
     if not text.strip():
-        issues.append({"key": f.key, "type": "empty", "message": "Empty text — the built-in default will show instead."})
+        issues.append(
+            {"key": f.key, "type": "empty", "message": "Empty text — the built-in default will show instead."}
+        )
         return issues
     if "  " in text or re.search(r"[ \t]+\n|\n[ \t]+", text):
         fixed = re.sub(r"[ \t]{2,}", " ", text)
         fixed = re.sub(r"[ \t]+\n", "\n", fixed)
         fixed = re.sub(r"\n[ \t]+", "\n", fixed)
-        issues.append({"key": f.key, "type": "spacing", "message": "Double spaces or stray spaces around a line break.", "fix": fixed})
+        issues.append(
+            {
+                "key": f.key,
+                "type": "spacing",
+                "message": "Double spaces or stray spaces around a line break.",
+                "fix": fixed,
+            }
+        )
     if text != text.strip():
-        issues.append({"key": f.key, "type": "spacing", "message": "Leading or trailing whitespace.", "fix": text.strip()})
+        issues.append(
+            {"key": f.key, "type": "spacing", "message": "Leading or trailing whitespace.", "fix": text.strip()}
+        )
     if text.count("**") % 2:
         issues.append({"key": f.key, "type": "markup", "message": "Unbalanced ** — bold marks must come in pairs."})
     if re.search(r"<[a-zA-Z/][^>]*>", text):
-        issues.append({"key": f.key, "type": "markup", "message": "Looks like HTML — tags are shown as plain text on the site."})
+        issues.append(
+            {"key": f.key, "type": "markup", "message": "Looks like HTML — tags are shown as plain text on the site."}
+        )
     if re.search(r" ,| \.(?!\.)|\.\.(?!\.)", text):
-        issues.append({"key": f.key, "type": "punctuation", "message": "Space before a comma/period, or a stray double period."})
+        issues.append(
+            {"key": f.key, "type": "punctuation", "message": "Space before a comma/period, or a stray double period."}
+        )
     for var in f.required_vars:
         if f"{{{var}}}" not in text:
-            issues.append({"key": f.key, "type": "placeholder", "message": f"Missing {{{var}}} — this spot is filled in automatically and the text no longer has it."})
+            issues.append(
+                {
+                    "key": f.key,
+                    "type": "placeholder",
+                    "message": f"Missing {{{var}}} — this spot is filled in automatically and the text no longer has it.",
+                }
+            )
     if ".seo." in f.key:
         kind = "title" if f.key.endswith(".title") else "description"
         limit = SEO_LIMITS[kind]
         if len(text) > limit:
-            issues.append({"key": f.key, "type": "seo", "message": f"Search {kind} is {len(text)} characters — Google shows about {limit}."})
+            issues.append(
+                {
+                    "key": f.key,
+                    "type": "seo",
+                    "message": f"Search {kind} is {len(text)} characters — Google shows about {limit}.",
+                }
+            )
     return issues
 
 
@@ -352,13 +411,17 @@ async def llm_typo_issues(fields: list[ReviewField], actor_id: str) -> list[dict
         try:
             from services.llm_cost_ledger import record_xai_response
 
-            await record_xai_response(resp, endpoint="site_copy.review", model=XAI_MODEL_LIGHT, user_id=actor_id, started_at=t0)
+            await record_xai_response(
+                resp, endpoint="site_copy.review", model=XAI_MODEL_LIGHT, user_id=actor_id, started_at=t0
+            )
         except Exception:  # noqa: BLE001
             pass
         parsed = _parse_llm_json(resp.choices[0].message.content)
     except Exception as e:  # noqa: BLE001
         logger.warning("Site copy AI review failed: %s", e)
-        return [{"key": "", "type": "llm", "message": "The AI typo pass was unavailable — only the automatic checks ran."}]
+        return [
+            {"key": "", "type": "llm", "message": "The AI typo pass was unavailable — only the automatic checks ran."}
+        ]
     issues = []
     for item in parsed if isinstance(parsed, list) else []:
         try:
@@ -368,7 +431,11 @@ async def llm_typo_issues(fields: list[ReviewField], actor_id: str) -> list[dict
         wrong, right = str(item.get("wrong", "")).strip(), str(item.get("right", "")).strip()
         if not wrong or wrong not in f.text:
             continue
-        issue = {"key": f.key, "type": "typo", "message": f"“{wrong}” → “{right}”" + (f" ({item.get('why')})" if item.get("why") else "")}
+        issue = {
+            "key": f.key,
+            "type": "typo",
+            "message": f"“{wrong}” → “{right}”" + (f" ({item.get('why')})" if item.get("why") else ""),
+        }
         if right:
             issue["fix"] = f.text.replace(wrong, right, 1)
         issues.append(issue)
