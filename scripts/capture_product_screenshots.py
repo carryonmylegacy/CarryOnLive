@@ -20,12 +20,39 @@ CHECKLIST_MOBILE_CSS = """@media (max-width: 639px) {
   [data-testid^="iac-item-"] > div { flex-wrap: wrap; }
   [data-testid^="iac-item-"] > div > div:last-child { width: 100%; justify-content: flex-end; padding-left: 3rem; margin-top: 0.5rem; }
 }"""
+# Dashboard: start the shot at the Total Family Continuity meter (founder directive, Sep 19 2026) —
+# the welcome line, beneficiary vault banner and onboarding group above it stay out of the preview.
+METER_SELECTORS = '[data-testid="readiness-card"], [data-testid="readiness-card-side"], [data-testid="core-pillars-card"]'
+SCROLL_TO_METER_JS = f"""(() => {{
+  const cards = [...document.querySelectorAll('{METER_SELECTORS}')].filter(e => e.offsetParent !== null);
+  if (!cards.length) return 'no meter card';
+  const el = cards.reduce((a, b) => a.getBoundingClientRect().top <= b.getBoundingClientRect().top ? a : b);
+  let scroller = el.parentElement;
+  while (scroller && scroller !== document.body) {{
+    const cs = getComputedStyle(scroller);
+    if (/(auto|scroll)/.test(cs.overflowY) && scroller.scrollHeight > scroller.clientHeight + 4) break;
+    scroller = scroller.parentElement;
+  }}
+  const useWindow = !scroller || scroller === document.body;
+  el.scrollIntoView({{ block: 'start' }});
+  let headerBottom = 0;
+  for (let n = document.elementFromPoint(window.innerWidth / 2, 4); n && n !== document.body; n = n.parentElement) {{
+    const pos = getComputedStyle(n).position;
+    if (pos === 'fixed' || pos === 'sticky') {{ headerBottom = Math.max(headerBottom, n.getBoundingClientRect().bottom); break; }}
+  }}
+  const delta = el.getBoundingClientRect().top - headerBottom - 12;
+  if (useWindow) window.scrollBy(0, delta); else scroller.scrollTop += delta;
+  return `${{el.dataset.testid}} via ${{useWindow ? 'window' : 'container'}} headerBottom=${{Math.round(headerBottom)}}`;
+}})()"""
 PAGES = [
-    ("dashboard", "/dashboard", None),
-    ("vault", "/vault", None),
-    ("contacts", "/beneficiaries", None),
-    ("checklist", "/checklist", "Critical"),
+    ("dashboard", "/dashboard", None, True),
+    ("vault", "/vault", None, False),
+    ("contacts", "/beneficiaries", None, False),
+    ("checklist", "/checklist", "Critical", False),
 ]
+ONLY = {s for s in os.environ.get("SHOT_ONLY", "").split(",") if s}
+if ONLY:
+    PAGES = [p for p in PAGES if p[0] in ONLY]
 
 os.makedirs(OUT, exist_ok=True)
 with sync_playwright() as p:
@@ -48,7 +75,7 @@ with sync_playwright() as p:
     page.wait_for_url(lambda u: "/login" not in u, timeout=60000)
     page.wait_for_timeout(2500)
     print("logged in ->", page.url, "viewport", vw, vh)
-    for name, path, click_text in PAGES:
+    for name, path, click_text, to_meter in PAGES:
         try:
             page.goto(f"{BASE}{path}", wait_until="networkidle", timeout=60000)
         except PlaywrightTimeoutError:
@@ -61,6 +88,9 @@ with sync_playwright() as p:
             page.get_by_text(click_text, exact=False).first.click()
             page.wait_for_timeout(800)
         hidden += page.evaluate(hide_js)
+        if to_meter:
+            print("scroll:", page.evaluate(SCROLL_TO_METER_JS))
+            page.wait_for_timeout(700)
         page.wait_for_timeout(500)
         out = f"{OUT}/{PREFIX}{name}.png"
         page.screenshot(path=out, full_page=False)
