@@ -23,33 +23,38 @@ CHECKLIST_MOBILE_CSS = """@media (max-width: 639px) {
 # Dashboard: start the shot at the Total Family Continuity meter (founder directive, Sep 19 2026) —
 # the welcome line, beneficiary vault banner and onboarding group above it stay out of the preview.
 METER_SELECTORS = '[data-testid="readiness-card"], [data-testid="readiness-card-side"], [data-testid="core-pillars-card"]'
-SCROLL_TO_METER_JS = f"""(() => {{
-  const cards = [...document.querySelectorAll('{METER_SELECTORS}')].filter(e => e.offsetParent !== null);
-  if (!cards.length) return 'no meter card';
+# Phone shots (founder, Sep 19 2026): "Who to call first" starts at the people list, "Document vault" at the document cards.
+PEOPLE_SELECTOR = '[data-testid="beneficiary-tiles"]'
+DOCS_SELECTOR = '[data-testid^="document-"]:not([data-testid="document-vault"])'
+# Scrolls the topmost visible match to just under the fixed/sticky header (window or nearest scroll container).
+SCROLL_TO_JS = """(sel) => {
+  const cards = [...document.querySelectorAll(sel)].filter(e => e.offsetParent !== null);
+  if (!cards.length) return 'no match for ' + sel;
   const el = cards.reduce((a, b) => a.getBoundingClientRect().top <= b.getBoundingClientRect().top ? a : b);
   let scroller = el.parentElement;
-  while (scroller && scroller !== document.body) {{
+  while (scroller && scroller !== document.body) {
     const cs = getComputedStyle(scroller);
     if (/(auto|scroll)/.test(cs.overflowY) && scroller.scrollHeight > scroller.clientHeight + 4) break;
     scroller = scroller.parentElement;
-  }}
+  }
   const useWindow = !scroller || scroller === document.body;
-  el.scrollIntoView({{ block: 'start' }});
+  el.scrollIntoView({ block: 'start' });
   let headerBottom = 0;
-  for (let n = document.elementFromPoint(window.innerWidth / 2, 4); n && n !== document.body; n = n.parentElement) {{
+  for (let n = document.elementFromPoint(window.innerWidth / 2, 4); n && n !== document.body; n = n.parentElement) {
     const pos = getComputedStyle(n).position;
-    if (pos === 'fixed' || pos === 'sticky') {{ headerBottom = Math.max(headerBottom, n.getBoundingClientRect().bottom); break; }}
-  }}
+    if (pos === 'fixed' || pos === 'sticky') { headerBottom = Math.max(headerBottom, n.getBoundingClientRect().bottom); break; }
+  }
   const delta = el.getBoundingClientRect().top - headerBottom - 12;
   if (useWindow) window.scrollBy(0, delta); else scroller.scrollTop += delta;
-  return `${{el.dataset.testid}} via ${{useWindow ? 'window' : 'container'}} headerBottom=${{Math.round(headerBottom)}}`;
-}})()"""
+  return `${el.dataset.testid} via ${useWindow ? 'window' : 'container'} headerBottom=${Math.round(headerBottom)}`;
+}"""
+# (name, path, text to click first, scroll target on desktop, scroll target on phone)
 PAGES = [
-    ("dashboard", "/dashboard", None, True),
-    ("messages", "/messages", None, False),
-    ("vault", "/vault", None, False),
-    ("contacts", "/beneficiaries", None, False),
-    ("checklist", "/checklist", "Critical", False),
+    ("dashboard", "/dashboard", None, METER_SELECTORS, METER_SELECTORS),
+    ("messages", "/messages", None, None, None),
+    ("vault", "/vault", None, None, DOCS_SELECTOR),
+    ("contacts", "/beneficiaries", None, None, PEOPLE_SELECTOR),
+    ("checklist", "/checklist", "Critical", None, None),
 ]
 ONLY = {s for s in os.environ.get("SHOT_ONLY", "").split(",") if s}
 if ONLY:
@@ -76,7 +81,8 @@ with sync_playwright() as p:
     page.wait_for_url(lambda u: "/login" not in u, timeout=60000)
     page.wait_for_timeout(2500)
     print("logged in ->", page.url, "viewport", vw, vh)
-    for name, path, click_text, to_meter in PAGES:
+    for name, path, click_text, desktop_target, mobile_target in PAGES:
+        target = mobile_target if MOBILE else desktop_target
         try:
             page.goto(f"{BASE}{path}", wait_until="networkidle", timeout=60000)
         except PlaywrightTimeoutError:
@@ -89,8 +95,8 @@ with sync_playwright() as p:
             page.get_by_text(click_text, exact=False).first.click()
             page.wait_for_timeout(800)
         hidden += page.evaluate(hide_js)
-        if to_meter:
-            print("scroll:", page.evaluate(SCROLL_TO_METER_JS))
+        if target:
+            print("scroll:", page.evaluate(SCROLL_TO_JS, target))
             page.wait_for_timeout(700)
         page.wait_for_timeout(500)
         out = f"{OUT}/{PREFIX}{name}.png"

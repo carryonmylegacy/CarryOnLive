@@ -1,6 +1,13 @@
 # CarryOn — Changelog
 
 
+## Sep 19, 2026 (night, later) — Phone product shots start at the content — VERIFIED, NOT PUSHED
+
+- `m-contacts.webp` ("Who to call first", phone) now opens on the **beneficiary tiles** (Penny · Primary, Tom · Secondary, Emma · Tertiary, John) and `m-vault.webp` ("Document vault", phone) on the **document cards** (Last Will & Testament, Life Insurance Policy) — page header, Add / Upload buttons and explainer cards are scrolled out. Desktop shots unchanged. Re-captured from `petemitchell` on carryon.us.
+- `scripts/capture_product_screenshots.py`: `PAGES` rows now carry a desktop and a phone scroll target (`SCROLL_TO_JS(sel)` scrolls the topmost visible match under the fixed header); phone targets `[data-testid="beneficiary-tiles"]` and the first `[data-testid^="document-"]` card. Only account-specific nudges are hidden — the floating mobile back button stays visible over the first card's corner because that is what the phone really shows. README updated; check.sh ALL CLEAR.
+- **Founder next**: push → Vercel → on the phone, open carryon.us, "See inside CarryOn" → "Who to call first" and "Document vault".
+
+
 ## Sep 19, 2026 (latest) — `/benefactor` paid-traffic acquisition page + Premium tag (iteration_210) — VERIFIED, NOT PUSHED
 
 - **New route `/benefactor`** (`pages/BenefactorPage.js`, `components/benefactor/*`): one-job landing page for ads — logo + Sign In only (no marketing menu), PROBLEM → PROMISE → PROOF → PAYOFF → PRICE → CTA spine, tiny legal-only footer, `noindex` (prerendered for link previews, not in the sitemap). Every string is founder-editable in Site Copy → "Benefactor landing page" (`copy/siteCopyBenefactor.js`, 50 fields, `{days}` filled live from `trial_days`).
