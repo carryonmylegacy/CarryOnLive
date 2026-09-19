@@ -17,7 +17,8 @@ Token is returned as `access_token`; frontend stores it in `localStorage.carryon
 - Note: if this account ever shows role=admin again, that is stale data — set role back to benefactor.
 
 ## Production demo account (carryon.us — marketing screenshots only)
-- Username: petemitchell · Password: Demo1234!!! · benefactor · LIVE prod only (not in preview DB)
+- Username: petemitchell · Password: Demo1234!!! (three `!` — confirmed by founder Sep 19, 2026) · benefactor · LIVE prod only (not in preview DB)
+- Used by `scripts/capture_product_screenshots.py` (homepage product screenshots). On prod this login resolves to info@carryon.us.
 
 ## Environment facts (preview)
 - Preview DB mirrors LIVE config via `python backend/scripts/mirror_live_config.py` (beta_mode=false, family discounts 30%/50%, live prices + feature gates). Run with `--check` for a drift report.

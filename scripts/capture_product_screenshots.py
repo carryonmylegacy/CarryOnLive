@@ -4,6 +4,7 @@ Run: SHOT_USER=... SHOT_PASS=... [SHOT_MODE=mobile] /opt/plugins-venv/bin/python
 import os
 import sys
 from PIL import Image
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from playwright.sync_api import sync_playwright
 
 BASE = os.environ.get("SHOT_BASE_URL", "https://www.carryon.us")
@@ -12,8 +13,8 @@ PASS = os.environ["SHOT_PASS"]
 MOBILE = os.environ.get("SHOT_MODE") == "mobile"
 OUT = "/app/frontend/public/screenshots"
 PREFIX = "m-" if MOBILE else ""
-# Account-specific nudges hidden before shooting (onboarding wizard, push prompt, section-lock setup banners)
-HIDE_SELECTORS = '[data-testid="onboarding-wizard"], [data-testid="push-notification-prompt"], [data-testid^="lock-banner-"]'
+# Account-specific nudges hidden before shooting (QuickStart modal, onboarding wizard/action-item group, push prompt, section-lock setup banners)
+HIDE_SELECTORS = '[data-testid="quickstart-modal"], [data-testid="onboarding-wizard"], [data-testid="onboarding-prompts-group"], [data-testid="push-notification-prompt"], [data-testid^="lock-banner-"]'
 # Mirrors the responsive fix shipped in ChecklistPage.renderItemCard (actions wrap under the title on phones)
 CHECKLIST_MOBILE_CSS = """@media (max-width: 639px) {
   [data-testid^="iac-item-"] > div { flex-wrap: wrap; }
@@ -48,13 +49,18 @@ with sync_playwright() as p:
     page.wait_for_timeout(2500)
     print("logged in ->", page.url, "viewport", vw, vh)
     for name, path, click_text in PAGES:
-        page.goto(f"{BASE}{path}", wait_until="networkidle", timeout=60000)
+        try:
+            page.goto(f"{BASE}{path}", wait_until="networkidle", timeout=60000)
+        except PlaywrightTimeoutError:
+            pass  # a websocket / long-poll keeps the network busy — the page has rendered by now
         page.wait_for_timeout(3500)
         page.add_style_tag(content=CHECKLIST_MOBILE_CSS)
+        hide_js = f"(() => {{ const els = document.querySelectorAll('{HIDE_SELECTORS}'); els.forEach(e => e.style.display = 'none'); return els.length; }})()"
+        hidden = page.evaluate(hide_js)
         if click_text:
             page.get_by_text(click_text, exact=False).first.click()
             page.wait_for_timeout(800)
-        hidden = page.evaluate(f"(() => {{ const els = document.querySelectorAll('{HIDE_SELECTORS}'); els.forEach(e => e.style.display = 'none'); return els.length; }})()")
+        hidden += page.evaluate(hide_js)
         page.wait_for_timeout(500)
         out = f"{OUT}/{PREFIX}{name}.png"
         page.screenshot(path=out, full_page=False)

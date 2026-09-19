@@ -10,7 +10,7 @@ const TABS = [
     alt: 'CarryOn Immediate Action Checklist with critical first steps such as notifying family and obtaining death certificates',
     caption: 'Step-by-step instructions your family follows in the first days \u2014 written in your words, with the phone numbers already in them.' },
   { id: 'dashboard', label: 'Your dashboard', icon: LayoutDashboard, url: 'carryon.us/dashboard',
-    alt: 'CarryOn dashboard showing an estate readiness score of 67% and a financial health gauge',
+    alt: 'CarryOn dashboard showing the four pillar tiles — People, Access, Money, Action — and a Total Family Continuity score of 72%',
     caption: 'A readiness score that moves as you add documents, messages, and checklist items \u2014 so you always know where you stand.' },
   { id: 'vault', label: 'Document vault', icon: FolderLock, url: 'carryon.us/vault',
     alt: 'CarryOn Secure Document Vault listing a will, life insurance policy, power of attorney, trust, and living will',

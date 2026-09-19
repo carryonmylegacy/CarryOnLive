@@ -10,10 +10,10 @@ export const HeroShot = ({ testIdSuffix = '' }) => (
         <div className="flex gap-1.5">{['#ff5f57', '#febc2e', '#28c840'].map(c => <span key={c} className="w-2.5 h-2.5 rounded-full" style={{ background: c }} />)}</div>
         <div className="flex-1 flex items-center gap-2 rounded-md px-3 py-1 text-xs text-[#8b97ab]" style={{ background: 'rgba(255,255,255,0.04)' }}><Lock className="w-3 h-3 text-[#10b981]" /> carryon.us/dashboard</div>
       </div>
-      <img src="/screenshots/dashboard.webp" alt="CarryOn dashboard showing the family readiness score, financial health, and the estate's next steps" width="2160" height="1350" loading="eager" fetchPriority="high" className="w-full h-auto block" />
+      <img src="/screenshots/dashboard.webp" alt="CarryOn dashboard showing the four pillar tiles — People, Access, Money, Action — and a Total Family Continuity score of 72%" width="2160" height="1350" loading="eager" fetchPriority="high" className="w-full h-auto block" />
     </div>
     <div className="sm:hidden mx-auto max-w-[250px] rounded-t-[2rem] p-2 pb-0 overflow-hidden" style={{ background: 'linear-gradient(160deg, #1c2a44, #0b1322)', border: '1px solid rgba(255,255,255,0.16)', borderBottom: 'none', maxHeight: '300px', boxShadow: '0 -20px 60px rgba(0,0,0,0.55)' }}>
-      <img src="/screenshots/m-dashboard.webp" alt="CarryOn dashboard on a phone showing the family readiness score" width="780" height="1328" loading="eager" fetchPriority="high" className="w-full h-auto block rounded-t-[1.6rem]" />
+      <img src="/screenshots/m-dashboard.webp" alt="CarryOn dashboard on a phone showing the Total Family Continuity score" width="780" height="1328" loading="eager" fetchPriority="high" className="w-full h-auto block rounded-t-[1.6rem]" />
     </div>
   </div>
 );

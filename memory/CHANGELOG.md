@@ -1,6 +1,12 @@
 # CarryOn — Changelog
 
 
+## Sep 19, 2026 (later) — Homepage product screenshots re-captured from the live demo account — VERIFIED, NOT PUSHED
+
+- Root cause of "the screenshots aren't from my demo account": the eight `/screenshots/*.webp` files were shot on Sep 16 while carryon.us still served the old marketing-branch build (old "Estate Readiness / Financial Health" dashboard). The published product has since moved to the People / Access / Money / Action build, so the pictures no longer matched `petemitchell`.
+- Re-captured all 8 (desktop 2160×1350 + iPhone 780×1328) from `petemitchell` on carryon.us with `scripts/capture_product_screenshots.py`; script now also hides the QuickStart modal and the dashboard "Onboarding — N action items" group, and tolerates `networkidle` timeouts on `/beneficiaries` (websocket). Dashboard alt text updated (72 % Total Family Continuity). README in `public/screenshots/` records the capture date + regenerate steps. Prod demo password confirmed `Demo1234!!!` (`test_credentials.md`). check.sh ALL CLEAR.
+
+
 ## Sep 19, 2026 — Founder story: Public / Invite-only switch + full Site Copy migration (iteration_209) — VERIFIED, NOT PUSHED
 
 - **Switch**: `platform_settings.founder_story_public` (default false). Accepted by `PUT /api/admin/platform-settings`; exposed on `GET /api/public/site-content` and as `flags.founder_story_public` on `GET /api/public/site-copy` (so nav/footers react instantly through `CopyContext`). Card **Admin → Marketing → Site Content → Founder Story** (`founder-story-public-toggle`). Operations → Invites shows a note while public (`founder-story-public-note`).

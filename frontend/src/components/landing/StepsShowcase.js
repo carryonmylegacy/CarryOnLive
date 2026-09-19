@@ -4,7 +4,7 @@ import { RevealSection } from './RevealSection';
 const STEP_SHOTS = ['contacts', 'dashboard', 'vault', 'checklist', 'dashboard'];
 const SHOT_ALT = {
   contacts: 'CarryOn beneficiaries screen on a phone showing the ranked list of who to call first',
-  dashboard: 'CarryOn dashboard on a phone showing the family readiness score',
+  dashboard: 'CarryOn dashboard on a phone showing the Total Family Continuity score',
   vault: 'CarryOn document vault on a phone listing a will, insurance policy, and power of attorney',
   checklist: 'CarryOn what-to-do-first checklist on a phone',
 };
