@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { LayoutDashboard, FolderLock, PhoneCall, ListChecks, Lock, Camera, MessageSquareHeart } from 'lucide-react';
 import { RevealSection } from './RevealSection';
+import { SHOTS_VERSION } from './shotsVersion';
 
 const card = { background: 'linear-gradient(160deg, #1a2d4d 0%, #16284a 50%, #142240 100%)', border: '1px solid rgba(212,175,55,0.22)' };
 
@@ -25,7 +26,7 @@ const TABS = [
 ];
 
 const Shots = ({ active, prefix, suffix }) => TABS.map(t => (
-  <img key={t.id} src={`/screenshots/${prefix}${t.id}.webp`} alt={t.alt}
+  <img key={t.id} src={`/screenshots/${prefix}${t.id}.webp?v=${SHOTS_VERSION}`} alt={t.alt}
     width={prefix ? 780 : 2160} height={prefix ? 1328 : 1350}
     loading={t.id === 'checklist' ? 'eager' : 'lazy'}
     data-testid={t.id === active ? `preview-panel-${t.id}${suffix}` : undefined}

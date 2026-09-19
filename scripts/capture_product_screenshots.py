@@ -2,7 +2,9 @@
 Run: SHOT_USER=... SHOT_PASS=... [SHOT_MODE=mobile] /opt/plugins-venv/bin/python /app/scripts/capture_product_screenshots.py
 """
 import os
+import pathlib
 import sys
+from datetime import datetime, timezone
 from PIL import Image
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from playwright.sync_api import sync_playwright
@@ -106,4 +108,12 @@ with sync_playwright() as p:
         os.remove(out)
         print("saved", f"{OUT}/{PREFIX}{name}.webp", "hidden:", hidden, page.url)
     browser.close()
+# Bump the cache-buster so browsers/CDN fetch the new pictures immediately after deploy.
+version_file = pathlib.Path("/app/frontend/src/components/landing/shotsVersion.js")
+stamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M")
+version_file.write_text(
+    "// Written by scripts/capture_product_screenshots.py on every capture — busts browser/CDN caches.\n"
+    f"export const SHOTS_VERSION = '{stamp}';\n"
+)
+print("shots version ->", stamp, file=sys.stderr)
 print("done", file=sys.stderr)

@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { RevealSection } from './RevealSection';
+import { SHOTS_VERSION } from './shotsVersion';
 
 const STEP_SHOTS = ['contacts', 'dashboard', 'vault', 'checklist', 'dashboard'];
 const SHOT_ALT = {
@@ -45,7 +46,7 @@ export const StepsShowcase = ({ steps, testIdSuffix = '' }) => {
         <div className="relative rounded-[2.4rem] p-2.5 mx-auto" style={{ maxWidth: '300px', background: 'linear-gradient(160deg, #1c2a44, #0b1322)', border: '1px solid rgba(255,255,255,0.14)', boxShadow: '0 30px 80px rgba(0,0,0,0.6), 0 0 50px rgba(212,175,55,0.08)' }}>
           <div className="relative rounded-[2rem] overflow-hidden" style={{ aspectRatio: '390 / 664', background: '#0b1322' }}>
             {[...new Set(STEP_SHOTS)].map(id => (
-              <img key={id} src={`/screenshots/m-${id}.webp`} alt={SHOT_ALT[id]} width="780" height="1328" loading="lazy"
+              <img key={id} src={`/screenshots/m-${id}.webp?v=${SHOTS_VERSION}`} alt={SHOT_ALT[id]} width="780" height="1328" loading="lazy"
                 className="absolute inset-0 w-full h-full object-cover object-top transition-opacity duration-500"
                 style={{ opacity: id === shot ? 1 : 0 }} />
             ))}
