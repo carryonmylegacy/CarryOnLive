@@ -450,6 +450,8 @@ const SignupPage = () => {
         b2b_code: specialStatus.includes('enterprise') ? b2bCodeSignup : null,
         // UTM / referral tracking from session
         ...(JSON.parse(sessionStorage.getItem('carryon_utm') || '{}')),
+        // Acquisition-page tag (/benefactor): preferred_plan + landing_page
+        ...(JSON.parse(sessionStorage.getItem('carryon_signup_intent') || '{}')),
       });
       // Apr 27, 2026 — when admin has flipped `signup_otp_disabled` ON in the
       // founder portal, /auth/register returns an access_token + user object

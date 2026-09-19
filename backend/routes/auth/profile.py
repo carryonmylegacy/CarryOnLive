@@ -177,6 +177,7 @@ async def get_me(current_user: dict = Depends(get_current_user)):
         "hide_benefactor_reminder": user_doc.get("hide_benefactor_reminder", False),
         "otp_enabled": user_doc.get("otp_enabled", True),
         "primary_estate_id": user_doc.get("primary_estate_id", ""),
+        "preferred_plan": user_doc.get("preferred_plan", "") or "",
         "session_timeout_minutes": session_timeout,
         "public_device_mode": pdm_active,
         "public_device_idle_seconds": pdm_idle_seconds if pdm_active else 0,

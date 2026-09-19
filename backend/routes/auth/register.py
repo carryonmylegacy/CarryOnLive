@@ -9,7 +9,7 @@ from fastapi import HTTPException
 from config import db, logger
 from models import UserCreate
 from routes.admin.trial_policy import get_trial_days
-from routes.subscriptions.plans import age_eligible_plan_ids, get_subscription_settings
+from routes.subscriptions.plans import PLAN_ORDER, age_eligible_plan_ids, get_subscription_settings
 from services.encryption import generate_estate_salt
 from utils import generate_otp, hash_password_async, send_otp_email
 
@@ -116,6 +116,11 @@ async def register(data: UserCreate):
         val = getattr(data, utm_key, None)
         if val:
             user[utm_key] = str(val)[:500]
+    # /benefactor tag: the paywall preselects this plan when the exploration period ends
+    if data.preferred_plan in PLAN_ORDER:
+        user["preferred_plan"] = data.preferred_plan
+    if data.landing_page:
+        user["landing_page"] = str(data.landing_page)[:40]
     await db.users.insert_one(user)
 
     if user["role"] == "benefactor":

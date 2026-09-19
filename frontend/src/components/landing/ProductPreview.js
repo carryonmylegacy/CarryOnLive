@@ -1,14 +1,18 @@
 import React, { useState } from 'react';
-import { LayoutDashboard, FolderLock, PhoneCall, ListChecks, Lock, Camera } from 'lucide-react';
+import { LayoutDashboard, FolderLock, PhoneCall, ListChecks, Lock, Camera, MessageSquareHeart } from 'lucide-react';
 import { RevealSection } from './RevealSection';
 
 const card = { background: 'linear-gradient(160deg, #1a2d4d 0%, #16284a 50%, #142240 100%)', border: '1px solid rgba(212,175,55,0.22)' };
 
 // The Immediate Action Checklist leads (D1.5) — it is the sharpest differentiator, so it is the default tab.
+// Milestone Messages sits second: it is the most human, most shareable feature (founder, Sep 19 2026).
 const TABS = [
   { id: 'checklist', label: 'What to do first', icon: ListChecks, url: 'carryon.us/checklist',
     alt: 'CarryOn Immediate Action Checklist with critical first steps such as notifying family and obtaining death certificates',
     caption: 'Step-by-step instructions your family follows in the first days \u2014 written in your words, with the phone numbers already in them.' },
+  { id: 'messages', label: 'Messages for later', icon: MessageSquareHeart, url: 'carryon.us/messages',
+    alt: 'CarryOn Milestone Messages page listing recorded messages scheduled for future family moments',
+    caption: 'Your words for a wedding, a graduation, a birthday \u2014 recorded now, delivered on the day you choose.' },
   { id: 'dashboard', label: 'Your dashboard', icon: LayoutDashboard, url: 'carryon.us/dashboard',
     alt: 'CarryOn dashboard showing the four pillar tiles — People, Access, Money, Action — and a Total Family Continuity score of 72%',
     caption: 'A readiness score that moves as you add documents, messages, and checklist items \u2014 so you always know where you stand.' },

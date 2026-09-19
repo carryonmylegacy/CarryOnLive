@@ -46,14 +46,16 @@ const TIER_COLORS = {
 // Main vs discount tiers and their order are founder-defined (plan.requires_verification + plan_order).
 
 export default function SubscriptionPaywall({ onDismiss }) {
-  const { token, refreshSubscription, partnerBranding } = useAuth();
+  const { token, refreshSubscription, partnerBranding, user } = useAuth();
   const [plans, setPlans] = useState([]);
   const [beneficiaryPlans, setBeneficiaryPlans] = useState([]);
   // Family-plan discount percentages come from the catalog (Admin → Finance → Subs), never hardcoded.
   const [familyDiscounts, setFamilyDiscounts] = useState({ benefactor: 0, beneficiary: 0 });
   const [billing, setBilling] = useState('annual');
   const { t } = useCopy();
-  const [selectedPlan, setSelectedPlan] = useState('premium');
+  // Accounts tagged on an acquisition page (/benefactor) open on the plan they saw there.
+  const [selectedPlan, setSelectedPlan] = useState(user?.preferred_plan || 'premium');
+  useEffect(() => { if (user?.preferred_plan) setSelectedPlan(user.preferred_plan); }, [user?.preferred_plan]);
   const [loading, setLoading] = useState(true);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [subStatus, setSubStatus] = useState(null);

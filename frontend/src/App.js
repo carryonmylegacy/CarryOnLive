@@ -132,6 +132,7 @@ const VerifyPage = lazy(() => import('./pages/VerifyPage'));
 const HomePage = lazy(() => import('./pages/HomePage'));
 const StartPage = lazy(() => import('./pages/StartPage'));
 const PricingPage = lazy(() => import('./pages/PricingPage'));
+const BenefactorPage = lazy(() => import('./pages/BenefactorPage'));
 const CustomersPage = lazy(() => import('./pages/CustomersPage'));
 const ComparePage = lazy(() => import('./pages/ComparePage'));
 const ChangelogPage = lazy(() => import('./pages/ChangelogPage'));
@@ -663,6 +664,7 @@ function AppRoutes() {
       <Route path="/home" element={<HomePage />} />
       <Route path="/start" element={<StartPage />} />
       <Route path="/pricing" element={<PricingPage />} />
+      <Route path="/benefactor" element={<BenefactorPage />} />
       <Route path="/customers" element={<CustomersPage />} />
       <Route path="/vs" element={<ComparePage />} />
       <Route path="/vs/:slug" element={<ComparePage />} />

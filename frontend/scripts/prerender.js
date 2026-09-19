@@ -47,6 +47,7 @@ const PUBLIC_ROUTES = [
   '/partner',
   '/start',
   '/pricing',
+  '/benefactor',
   '/customers',
   '/changelog',
   '/vs',

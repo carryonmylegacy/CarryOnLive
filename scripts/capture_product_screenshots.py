@@ -46,6 +46,7 @@ SCROLL_TO_METER_JS = f"""(() => {{
 }})()"""
 PAGES = [
     ("dashboard", "/dashboard", None, True),
+    ("messages", "/messages", None, False),
     ("vault", "/vault", None, False),
     ("contacts", "/beneficiaries", None, False),
     ("checklist", "/checklist", "Critical", False),

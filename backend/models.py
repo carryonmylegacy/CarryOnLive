@@ -47,6 +47,9 @@ class UserCreate(BaseModel):
     utm_content: Optional[str] = None
     ref: Optional[str] = None
     referrer: Optional[str] = None
+    # Acquisition-page tag (/benefactor): plan the visitor saw + page they came from
+    preferred_plan: Optional[str] = None
+    landing_page: Optional[str] = None
 
 
 class UserLogin(BaseModel):
