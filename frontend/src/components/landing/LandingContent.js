@@ -9,7 +9,7 @@ import { LiveStats } from './LiveStats';
 import { TestimonialsBlock } from './TestimonialsBlock';
 import { TrustBadges, LastUpdated } from './TrustBadges';
 import { ReviewsCard } from './ReviewsCard';
-import { useCopy, renderCopy } from '../../copy/CopyContext';
+import { useCopy, renderCopy, linkVisible } from '../../copy/CopyContext';
 
 /* ── layout data: the twelve tools, grouped by pillar (People → Access → Money → Action).
    Order + names are platform law: config/benefactorSections.js and
@@ -35,7 +35,7 @@ const FAQ_COUNT = 6;
 const FAQ_LINKS = { 2: '/wind-down-promise', 3: '/wind-down-promise' };
 const FOOTER_LINKS = [
   ['pricing', '/pricing'], ['customers', '/customers'], ['compare', '/vs'], ['security', '/security'],
-  ['winddown', '/wind-down-promise'], ['readiness', '/readiness-score'], ['guides', '/guides'], ['changelog', '/changelog'], ['about', '/about'], ['privacy', '/privacy'], ['terms', '/terms'],
+  ['winddown', '/wind-down-promise'], ['readiness', '/readiness-score'], ['guides', '/guides'], ['changelog', '/changelog'], ['about', '/about'], ['founder', '/founder-about'], ['privacy', '/privacy'], ['terms', '/terms'],
 ];
 
 const toolNum = (gi, i) => String(PILLAR_META.slice(0, gi).reduce((n, g) => n + g.tools.length, 0) + i + 1).padStart(2, '0');
@@ -572,7 +572,7 @@ const LandingContent = ({ navigateWithFade, footerInfo = DEFAULT_FOOTER, testIdS
         <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
           <img src="/carryon-logo.png" alt="CarryOn" className="h-8 opacity-60" />
           <div className="flex items-center justify-center gap-x-6 gap-y-2 flex-wrap">
-            {FOOTER_LINKS.filter(([key]) => key !== 'guides' || flags.guides_launched).map(([key, href]) => (
+            {FOOTER_LINKS.filter(([key]) => linkVisible(key, flags)).map(([key, href]) => (
               <a key={key} href={href} className="text-[#334155] text-xs hover:text-[#7b879e] transition-colors" data-testid={`landing-footer-${key}-link${testIdSuffix}`}>{t(`footer.${key}`)}</a>
             ))}
             <span className="text-[#334155] text-xs">{t('footer.accessibility')}</span>

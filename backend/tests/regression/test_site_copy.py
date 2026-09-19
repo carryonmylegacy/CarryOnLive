@@ -519,6 +519,30 @@ def test_guides_launch_switch(founder_headers):
         requests.put(adm, json={"launched": True}, headers=founder_headers, timeout=20)
 
 
+def test_founder_story_public_switch(founder_headers):
+    """Admin → Site Content switch: gate ↔ public, mirrored on both public endpoints (site-content + site-copy flags)."""
+    adm = f"{BASE_URL}/api/admin/platform-settings"
+    content = f"{BASE_URL}/api/public/site-content"
+    copy = f"{BASE_URL}/api/public/site-copy"
+    before = requests.get(content, timeout=20).json()
+    assert isinstance(before["founder_story_public"], bool)
+    assert requests.put(adm, json={"founder_story_public": True}, headers=_login(BENEFACTOR), timeout=20).status_code == 403
+
+    def flag_pair():
+        return (
+            requests.get(content, timeout=20).json()["founder_story_public"],
+            requests.get(copy, timeout=20).json()["flags"]["founder_story_public"],
+        )
+
+    on = requests.put(adm, json={"founder_story_public": True}, headers=founder_headers, timeout=20)
+    assert on.status_code == 200 and on.json()["founder_story_public"] is True
+    assert flag_pair() == (True, True)
+    off = requests.put(adm, json={"founder_story_public": False}, headers=founder_headers, timeout=20)
+    assert off.status_code == 200 and off.json()["founder_story_public"] is False
+    assert flag_pair() == (False, False)
+    requests.put(adm, json={"founder_story_public": before["founder_story_public"]}, headers=founder_headers, timeout=20)
+
+
 # ── Legal-tone review, scheduled draft publish, guide share cards ───────────────
 
 

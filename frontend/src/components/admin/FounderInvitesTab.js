@@ -8,6 +8,7 @@ import apiClient from '../../utils/apiClient';
 export const FounderInvitesTab = ({ onPendingChange }) => {
   const [invites, setInvites] = useState([]);
   const [requests, setRequests] = useState([]);
+  const [storyPublic, setStoryPublic] = useState(false);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [note, setNote] = useState('');
@@ -26,12 +27,14 @@ export const FounderInvitesTab = ({ onPendingChange }) => {
 
   const fetchData = useCallback(async () => {
     try {
-      const [invRes, reqRes] = await Promise.all([
+      const [invRes, reqRes, siteRes] = await Promise.all([
         apiClient.get(`${API_URL}/founder/invites`, getAuth()),
         apiClient.get(`${API_URL}/founder/requests`, getAuth()),
+        apiClient.get(`${API_URL}/public/site-content`).catch(() => ({ data: {} })),
       ]);
       setInvites(invRes.data);
       setRequests(reqRes.data);
+      setStoryPublic(Boolean(siteRes.data?.founder_story_public));
     } catch {
       toast.error('Failed to load founder access data');
     } finally {
@@ -206,6 +209,13 @@ export const FounderInvitesTab = ({ onPendingChange }) => {
 
   return (
     <div className="space-y-8" data-testid="founder-invites-tab">
+
+      {storyPublic && (
+        <div className="flex items-start gap-2 px-4 py-3 rounded-lg text-xs" style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.25)', color: 'var(--t3)' }} data-testid="founder-story-public-note">
+          <Sparkles className="w-4 h-4 text-[#d4af37] flex-shrink-0 mt-0.5" />
+          <span>The Founder story is currently <strong className="text-[#d4af37]">public</strong> (Marketing &rarr; Site Content). Anyone can read it at <span className="font-mono">/founder-about</span>, so invite links and access requests aren&rsquo;t needed while it stays public.</span>
+        </div>
+      )}
 
       {/* ═══ SECTION 1: INVITE LINKS ═══ */}
       <div>

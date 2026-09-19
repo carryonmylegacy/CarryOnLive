@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Linkedin, ArrowRight, Medal } from 'lucide-react';
 import { API_URL } from '../../config';
+import { useCopy } from '../../copy/CopyContext';
 
 const DEFAULTS = { name: 'Barnet Harris', title: 'Founder & CEO \u00b7 24-Year U.S. Military Veteran' };
 // Built-in founder LinkedIn (D3.3) — Admin → Marketing → Site Content overrides it when set.
@@ -25,6 +26,9 @@ export const useFounder = () => {
 
 export const FounderCard = ({ testIdSuffix = '', compact = false }) => {
   const f = useFounder();
+  const { flags } = useCopy();
+  // Public founder story → straight to it; invite-only → the About page (which links to the request gate).
+  const storyHref = flags.founder_story_public ? '/founder-about' : '/about';
   const initials = f.name.split(' ').map(w => w[0]).join('').slice(0, 2);
   return (
     <div className={`rounded-xl ${compact ? 'p-5' : 'p-6'} flex gap-5 items-center`} style={{ background: 'rgba(15,26,46,0.6)', border: '1px solid rgba(212,175,55,0.25)' }} data-testid={`founder-card${testIdSuffix}`}>
@@ -38,7 +42,7 @@ export const FounderCard = ({ testIdSuffix = '', compact = false }) => {
         <p className="text-white text-lg font-bold leading-tight" style={{ fontFamily: 'Outfit, sans-serif' }} data-testid={`founder-name${testIdSuffix}`}>{f.name}</p>
         <p className="text-[#8b97ab] text-sm mb-2">{f.title}</p>
         <div className="flex items-center gap-4 flex-wrap text-sm">
-          <a href="/about" className="text-[#d4af37] hover:text-[#fcd34d] inline-flex items-center gap-1 underline underline-offset-4" data-testid={`founder-about-link${testIdSuffix}`}>Read his story <ArrowRight className="w-3.5 h-3.5" /></a>
+          <a href={storyHref} className="text-[#d4af37] hover:text-[#fcd34d] inline-flex items-center gap-1 underline underline-offset-4" data-testid={`founder-about-link${testIdSuffix}`}>Read his story <ArrowRight className="w-3.5 h-3.5" /></a>
           {f.linkedin_url && (
             <a href={f.linkedin_url} target="_blank" rel="noopener noreferrer" className="text-[#8b97ab] hover:text-white inline-flex items-center gap-1.5" data-testid={`founder-linkedin${testIdSuffix}`}><Linkedin className="w-4 h-4" /> LinkedIn</a>
           )}

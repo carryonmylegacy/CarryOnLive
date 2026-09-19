@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import apiClient from '../../utils/apiClient';
-import { Save, ExternalLink, Play, Loader2, MapPin, Monitor, Smartphone, Gift, User, Upload, Trash2, Linkedin, Activity, Star } from 'lucide-react';
+import { Save, ExternalLink, Play, Loader2, MapPin, Monitor, Smartphone, Gift, User, Upload, Trash2, Linkedin, Activity, Star, BookOpen } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { toast } from '../../utils/toast';
 import { API_URL } from '../../config';
 import { formatPhoneUS } from '../../utils/phoneFormat';
+import { useCopy } from '../../copy/CopyContext';
 
 export const SiteContentTab = ({ getAuthHeaders }) => {
+  const { applyFlags } = useCopy();
+  const [storyPublic, setStoryPublic] = useState(false);
+  const [storyBusy, setStoryBusy] = useState(false);
   const [videoId, setVideoId] = useState('');
   const [savedVideoId, setSavedVideoId] = useState('');
   const [videoIdVertical, setVideoIdVertical] = useState('');
@@ -61,6 +65,7 @@ export const SiteContentTab = ({ getAuthHeaders }) => {
         setFooterPhone(ph);
         setSavedFooter({ line1: l1, line2: l2, phone: ph });
         setReferralEnabled(Boolean(res.data?.referral_program_enabled));
+        setStoryPublic(Boolean(res.data?.founder_story_public));
         const f = {
           name: res.data?.founder_name || '',
           title: res.data?.founder_title || '',
@@ -144,6 +149,19 @@ export const SiteContentTab = ({ getAuthHeaders }) => {
       toast.error('Failed to update referral program');
     }
     setReferralBusy(false);
+  };
+
+  const handleToggleStory = async (next) => {
+    setStoryBusy(true);
+    try {
+      await apiClient.put(`${API_URL}/admin/platform-settings`, { founder_story_public: next }, getAuthHeaders());
+      setStoryPublic(next);
+      applyFlags({ founder_story_public: next });
+      toast.success(next ? 'Founder story is now public' : 'Founder story is invite-only again');
+    } catch {
+      toast.error('Failed to update the Founder story setting');
+    }
+    setStoryBusy(false);
   };
 
   const handleHeadshotUpload = async (e) => {
@@ -480,6 +498,47 @@ export const SiteContentTab = ({ getAuthHeaders }) => {
             {savingFounder ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             Save Founder Profile
           </button>
+        </CardContent>
+      </Card>
+
+      {/* Founder Story — public or invite-only */}
+      <Card className="border-[var(--b)] bg-[var(--s)]">
+        <CardContent className="p-5 space-y-4">
+          <div className="flex items-center gap-2">
+            <BookOpen className="w-4 h-4 text-[var(--gold)]" />
+            <h3 className="text-base font-bold text-[var(--t)]">Founder Story</h3>
+          </div>
+          <p className="text-sm text-[var(--t4)]">
+            <strong className="text-[var(--t)]">Invite-only</strong> (default): <span className="font-mono">/founder-about</span> shows the request-access gate, invite links and approved sign-ins still work, and the homepage &ldquo;Read his story&rdquo; link goes to the About page.
+            {' '}<strong className="text-[var(--t)]">Public</strong>: anyone can read the story, search engines may index it (it joins the sitemap at the next deploy), &ldquo;Read his story&rdquo; goes straight to it, and a <strong className="text-[var(--t)]">Founder story</strong> link appears in the site footers.
+            {' '}The text itself is edited in <strong className="text-[var(--t)]">Site Copy &rarr; Founder story</strong>.
+          </p>
+          <div className="flex items-center justify-between p-4 rounded-xl" style={{ background: 'var(--b)', border: '1px solid var(--b2)' }}>
+            <div>
+              <p className="text-sm font-bold text-[var(--t)]" data-testid="founder-story-status">
+                Founder story is currently {storyPublic ? 'PUBLIC' : 'INVITE-ONLY'}
+              </p>
+              <p className="text-xs text-[var(--t4)] mt-1">
+                Toggle to make it {storyPublic ? 'invite-only again' : 'public'}.
+                {' '}<a href="/founder-about" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[var(--t4)] hover:text-[var(--gold)] transition-colors" data-testid="founder-story-view-link"><ExternalLink className="w-3 h-3" /> Open the page</a>
+              </p>
+            </div>
+            <button
+              onClick={() => handleToggleStory(!storyPublic)}
+              disabled={storyBusy}
+              role="switch"
+              aria-checked={storyPublic}
+              aria-label="Founder story public"
+              data-testid="founder-story-public-toggle"
+              className="relative inline-flex h-7 w-12 items-center rounded-full transition-colors disabled:opacity-50"
+              style={{ background: storyPublic ? 'var(--gold)' : 'var(--b2)' }}
+            >
+              <span
+                className="inline-block h-5 w-5 transform rounded-full bg-white transition-transform"
+                style={{ transform: storyPublic ? 'translateX(22px)' : 'translateX(4px)' }}
+              />
+            </button>
+          </div>
         </CardContent>
       </Card>
 

@@ -180,7 +180,12 @@ async def get_public_site_copy():
 
     result = await load_overrides()
     guides = await guides_status()
-    result["flags"] = {"guides_launched": guides["launched"], "guides_launched_at": guides["launched_at"]}
+    settings = await db.platform_settings.find_one({"_id": "global"}, {"_id": 0, "founder_story_public": 1})  # allow-missing-id: settings singleton
+    result["flags"] = {
+        "guides_launched": guides["launched"],
+        "guides_launched_at": guides["launched_at"],
+        "founder_story_public": bool((settings or {}).get("founder_story_public", False)),
+    }
     return result
 
 

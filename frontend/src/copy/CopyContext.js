@@ -4,9 +4,13 @@ import { API_URL } from '../config';
 import { COPY_DEFAULTS } from './siteCopy';
 
 const CACHE_KEY = 'carryon_site_copy_v2';
-const NO_FLAGS = { guides_launched: false, guides_launched_at: null };
+const NO_FLAGS = { guides_launched: false, guides_launched_at: null, founder_story_public: false };
 export const PREVIEW_MSG = 'carryon:copy-preview';
 export const PREVIEW_READY_MSG = 'carryon:copy-preview-ready';
+
+/* Footer/nav links that only appear once the founder flips a switch (Admin → Marketing). */
+const LINK_FLAGS = { guides: 'guides_launched', founder: 'founder_story_public' };
+export const linkVisible = (key, flags) => !LINK_FLAGS[key] || Boolean(flags[LINK_FLAGS[key]]);
 
 /* Preview mode: the page is framed by the Site Copy editor (same origin) and receives unsaved edits via postMessage. */
 const isPreviewFrame = () => {

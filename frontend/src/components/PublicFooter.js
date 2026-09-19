@@ -15,6 +15,7 @@ const LINKS = [
   { to: '/accessibility', k: 'accessibility' },
   { to: '/readiness-score', k: 'readiness' },
   { to: '/guides', k: 'guides', flag: 'guides_launched' },
+  { to: '/founder-about', k: 'founder', flag: 'founder_story_public' },
 ];
 
 export const PublicFooter = () => {

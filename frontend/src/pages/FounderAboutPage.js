@@ -1,19 +1,24 @@
 import { FlagBackdrop } from '../components/FlagBackdrop';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import SEO from '../components/SEO';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { Loader2, ShieldX, Lock, Eye, EyeOff, Send, ArrowLeft } from 'lucide-react';
 import { API_URL } from '../config';
 import { useCopy, renderCopy } from '../copy/CopyContext';
+import { MarketingNav } from '../components/landing/MarketingNav';
+import { MarketingFooter } from '../components/landing/MarketingFooter';
+import { FounderStory } from '../components/founder/FounderStory';
 
 const FounderAboutPage = () => {
-  const { t } = useCopy();
+  const { t, flags, loaded, preview } = useCopy();
   const { token } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [status, setStatus] = useState(token ? 'verifying' : 'gate');
   const [reason, setReason] = useState('');
-  const iframeRef = useRef(null);
+  // Public switch (Admin → Marketing → Site Content) removes the gate; the Site Copy preview frame always shows the story.
+  const isPublic = Boolean(flags.founder_story_public);
+  const unlocked = isPublic || preview || status === 'valid';
 
   // Gate mode: 'request' (default) or 'login'
   // Auto-switch to login when an approval email link arrives with ?login=1
@@ -101,6 +106,18 @@ const FounderAboutPage = () => {
     }
   };
 
+  // Story — public, previewed in the Site Copy editor, or unlocked by invite / sign-in
+  if (unlocked) {
+    return (
+      <div className="min-h-screen" style={{ background: '#0d1b2a' }} data-testid="founder-page-content">
+        <SEO title={t('founder.seo.title')} description={t('founder.seo.description')} path="/founder-about" noindex={!isPublic} type="article" />
+        <MarketingNav current="/founder-about" testIdSuffix="-founder" />
+        <FounderStory />
+        <MarketingFooter hide="founder" testIdSuffix="-founder" />
+      </div>
+    );
+  }
+
   // Loading state (token verification)
   if (status === 'verifying') {
     return (
@@ -136,66 +153,9 @@ const FounderAboutPage = () => {
     );
   }
 
-  // Valid access — show iframe
-  if (status === 'valid') {
-    // Resize handler used by both onLoad AND ongoing observers/listeners
-    // so the iframe height tracks the founder-story body as images
-    // finish loading. Without this the page goes white at the bottom
-    // because images now load async (extracted from inline base64 to
-    // separate /founder-images/ files for shippability).
-    const syncIframeHeight = () => {
-      const iframe = iframeRef.current;
-      if (!iframe) return;
-      try {
-        const doc = iframe.contentDocument;
-        const body = doc?.body;
-        if (!body) return;
-        const h = Math.max(body.scrollHeight, doc.documentElement?.scrollHeight || 0);
-        if (h > 0 && Math.abs(parseInt(iframe.style.height || '0', 10) - h) > 4) {
-          iframe.style.height = h + 'px';
-        }
-      } catch { /* cross-origin or detached — keep current height */ }
-    };
-
-    const handleIframeLoad = () => {
-      syncIframeHeight();
-      const iframe = iframeRef.current;
-      try {
-        const doc = iframe?.contentDocument;
-        if (!doc) return;
-        // (a) Watch every image — recompute height as each one finishes.
-        Array.from(doc.images || []).forEach((img) => {
-          if (img.complete) return;
-          img.addEventListener('load', syncIframeHeight, { once: true });
-          img.addEventListener('error', syncIframeHeight, { once: true });
-        });
-        // (b) ResizeObserver on the body catches font swaps, lazy
-        //     content, and any layout shift that doesn't come from imgs.
-        if (typeof ResizeObserver !== 'undefined') {
-          const ro = new ResizeObserver(syncIframeHeight);
-          ro.observe(doc.body);
-          // Stop observing when iframe unmounts.
-          iframe._ro = ro;
-        }
-        // (c) Belt-and-suspenders: poll a few times after load to catch
-        //     anything the observers miss (Safari occasionally skips RO
-        //     ticks on cross-document content).
-        [200, 600, 1500, 3000].forEach((t) => setTimeout(syncIframeHeight, t));
-      } catch { /* non-fatal */ }
-    };
-
-    return (
-      <div className="min-h-screen" style={{ background: '#0d1b2a' }} data-testid="founder-page-content">
-        <iframe
-          ref={iframeRef}
-          src="/founder-story.html"
-          title="About the Founder"
-          className="w-full border-0 block"
-          style={{ minHeight: '100vh', display: 'block' }}
-          onLoad={handleIframeLoad}
-        />
-      </div>
-    );
+  // Don't flash the gate while the public switch is still loading (no cached flags yet)
+  if (!loaded) {
+    return <div className="min-h-screen" style={{ background: '#0d1b2a' }} aria-busy="true" data-testid="founder-page-loading-flags" />;
   }
 
   // Gate page — request access or sign in

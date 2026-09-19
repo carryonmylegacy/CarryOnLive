@@ -62,6 +62,7 @@ async def update_platform_settings(data: dict, current_user: dict = Depends(requ
         "founder_linkedin_url",
         "trustpilot_url",
         "show_live_stats",
+        "founder_story_public",
     }
     update = {k: v for k, v in data.items() if k in allowed_keys}
     if update:

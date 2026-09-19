@@ -63,6 +63,8 @@ async def get_public_site_content(request: Request):
         "founder_linkedin_url": settings.get("founder_linkedin_url", ""),
         # Third-party reviews (homepage trust block + onboarding review ask); empty until the founder sets it
         "trustpilot_url": settings.get("trustpilot_url", ""),
+        # Founder story (/founder-about): False = request-access gate, True = open to everyone
+        "founder_story_public": bool(settings.get("founder_story_public", False)),
         "show_live_stats": settings.get("show_live_stats", "auto"),
         # Public, non-sensitive feature flags (mirrors prior admin/platform behavior).
         "offline_mode": settings.get("offline_mode", "off"),

@@ -113,6 +113,7 @@ const PAGES_PHASE1 = [
         f('footer.accessibility', 'Footer: Accessibility', 'Accessibility'),
         f('footer.readiness', 'Footer: How We Score Readiness', 'How We Score Readiness'),
         f('footer.guides', 'Footer: Guides (shown once the Guides section is launched)', 'Guides'),
+        f('footer.founder', 'Footer: Founder story (shown while the Founder story is public)', 'Founder story'),
         f('footer.copyright', 'Footer: copyright line (year is added automatically)', 'CarryOn Technologies LLC. All rights reserved.'),
       ] },
       { key: 'hero', label: 'Hero (top of /home page)', fields: [
@@ -329,11 +330,98 @@ const PAGES_PHASE1 = [
     ],
   },
   {
-    key: 'founder', label: 'Founder page (request-access gate)', path: '/founder-about',
+    key: 'founder', label: 'Founder story (public or invite-only — Admin → Site Content)', path: '/founder-about',
     sections: [
       { key: 'seo', label: 'Search result (Google)', fields: [
         f('founder.seo.title', 'Page title', 'Founder — CarryOn'),
         f('founder.seo.description', 'Meta description', 'About the founder of CarryOn.'),
+      ] },
+      { key: 'story_hero', label: 'Story — Hero', fields: [
+        f('founder.story.hero.h1a', 'Headline — line 1 (white)', 'CarryOn™ Technologies:'),
+        f('founder.story.hero.h1b', 'Headline — line 2 (gold)', 'Why I Built It'),
+        f('founder.story.hero.byline', 'Byline', 'A Founder\'s Story by Barnet L. Harris II'),
+        f('founder.story.hero.epigraph', 'Opening line', 'In my family, legacy isn\'t an abstract word—it\'s a living thread.'),
+      ] },
+      { key: 'story_origins', label: 'Story — Family Origins', fields: [
+        f('founder.story.origins.title', 'Heading', 'Family Origins — The Marine\'s Marine'),
+        f('founder.story.origins.p1', 'Paragraph 1', 'The legacy I inherited began with my grandfather, Barnet L. Harris—an orphan who ran away from home as a boy, stowing away on a train to anywhere. He was taken in by a Scottish immigrant family who gave him their name and a new start. He became a Marine in World War I, right in the thick of it—in the places that forged the Corps\' legend: the "Devil Dog" grit, the blood-stripe pride. Decorated by the French Foreign Legion and later serving as one of the Corps\' premier bayonet instructors, he forged the lore that echoed at our dinner table.', { multiline: true }),
+        f('founder.story.origins.p2', 'Paragraph 2 (**…** shows in gold italics)', 'After the war, he drove a taxi in New York City. Not glamorous, but honest. He carried people where they needed to go, and he used to say, **"if you always tell the truth, you ain\'t gotta remember notin\'!"** That simple practicality fit him. Over time, that plainspoken wisdom became something more—a quiet family ethos that shaped how we showed up in the world: direct, honorable, and accountable. Even so, much of his deeper guidance faded with the years, leaving only this surviving fragment despite my father\'s best efforts to keep his memory alive in mine.', { multiline: true }),
+      ] },
+      { key: 'story_father', label: 'Story — My Father', fields: [
+        f('founder.story.father.title', 'Heading', 'My Father — The Warrior Turned Inventor'),
+        f('founder.story.father.p1', 'Paragraph 1', 'My father, Arthur M. Harris, was a WWII Marine—a flamethrower in the first wave at Cape Gloucester—later a chief engineer aboard a Maritime Sea Transport Service ship operating with the U.S. Navy in the Korean War. At home, he turned that same courage into creation and invented things we take for granted: the mouth-to-mouth resuscitator, the inhaler, the aerosol valve, ultrasonic debonding, even the injection-molding process for golf balls—over 300 patents in a lifetime.', { multiline: true }),
+        f('founder.story.father.p2', 'Paragraph 2', 'A stand-up comedian, singer, prize fighter, stock-car driver, international corporate president, CIA courier, and close friend of Albert Einstein in the twilight of Einstein\'s life—because, why not?! He had me at 50 and lived to 88. My father didn\'t just make products; he made possibility.', { multiline: true }),
+        f('founder.story.father.p3', 'Paragraph 3', 'But all that he passed to me in his stories, his mentorship, and his fatherly legacy, I can feel fading as I try to pass it on to my own children.', { multiline: true }),
+      ] },
+      { key: 'story_son', label: 'Story — The Son', fields: [
+        f('founder.story.son.title', 'Heading', 'The Son — Following in Their Footsteps'),
+        f('founder.story.son.p1', 'Paragraph 1', 'Born on my grandfather\'s birthday—and thus carrying his name—I followed the only path that made sense in my lineage: service and discipline, with a little danger baked in.', { multiline: true }),
+        f('founder.story.son.p2', 'Paragraph 2', 'Valedictorian of my Army and Navy Academy Class of 1996 and a 2000 graduate of the U.S. Naval Academy, I became a Naval Aviator—helicopters and fixed wing—served as a Squadron Commanding Officer and an Amphibious Aircraft Carrier Air Boss. I served as the U.S. Naval Attaché to Brazil, representing the most powerful maritime force in the world to the second largest Democracy and Military in the Western Hemisphere, worked as a military diplomat and Embassy pilot, and learned to think and feel in other languages—Japanese and Brazilian Portuguese.', { multiline: true }),
+        f('founder.story.son.p3', 'Paragraph 3', 'I earned an Executive MBA from the Naval Postgraduate School and a Master\'s in National Security and Strategic Studies from the Naval War College, all while building a small real-estate investment portfolio.', { multiline: true }),
+        f('founder.story.son.p4', 'Paragraph 4', 'After 24 years in uniform, I retired a U.S. Navy Captain at 46 years of age and continue flying as a pilot for United Airlines.', { multiline: true }),
+      ] },
+      { key: 'story_center', label: 'Story — My Center of Gravity', fields: [
+        f('founder.story.center.title', 'Heading', 'My Center of Gravity'),
+        f('founder.story.center.p1', 'Paragraph 1', 'Yes, I\'ve lived a high-speed, low-drag life—with plenty of stories and hard-won lessons my children can benefit from. But the gravitational center of my world is home: my wife—my childhood sweetheart since we were 13—and our two teenaged children.', { multiline: true }),
+        f('founder.story.center.p2', 'Paragraph 2', 'Our daughter embodies relentless excellence—never less than an A, her AP catalog maxed out with 4s and 5s. She\'s President of her Model UN delegation and her school\'s National Honor Society, fluent in Japanese, a Battalion Commander in NJROTC, and both a musician and an athlete who swims, sails, and rides horses. Beautiful, inside and out, she\'s now a proud member of the Class of 2030 at the U.S. Naval Academy!', { multiline: true }),
+        f('founder.story.center.p3', 'Paragraph 3', 'Our son won\'t be outdone by his sister: he\'s an athlete, a musician, a straight-A student, and a creator of value. At 15, his self-built investment portfolio already makes me wish I were his kid, and his natural hustle has "future entrepreneur" written all over it.', { multiline: true }),
+        f('founder.story.center.quote', 'Pull quote', '"My wife depends on me for more than the bacon—she depends on me for ballast."'),
+      ] },
+      { key: 'story_realization', label: 'Story — The Realization', fields: [
+        f('founder.story.realization.title', 'Heading', 'The Realization'),
+        f('founder.story.realization.p1', 'Paragraph 1 (**…** shows in gold italics)', 'Aviation has a way of making you honest about mortality. The risk is non-zero. The requests from the people I love are constant and human—**Dad, what should I do about…? Honey, where is…? Papa, how do we…?**', { multiline: true }),
+        f('founder.story.realization.p2', 'Paragraph 2', 'Life is complex: accounts, passwords, policies, documents. My will? Dusted off the other day realizing that the last time we updated it was in 2009. If I didn\'t make it home tomorrow, there would be heartbreak—and then there would be chaos. My family would be grieving and searching—for answers, for instructions, for me.', { multiline: true }),
+        f('founder.story.realization.p3', 'Paragraph 3', 'One night, on some international layover, after yet another round of "Where\'s this account info? How should we handle x, y, z…?" I realized something simple and terrifying: my legacy wasn\'t organized for the people who need it most. Not my medals, not my résumé—my guidance. The operating manual for the most important mission of my life: my family after me.', { multiline: true }),
+      ] },
+      { key: 'story_threads', label: 'Story — Three Threads', fields: [
+        f('founder.story.threads.title', 'Heading', 'Three Threads'),
+        f('founder.story.threads.1', 'Thread 1', 'Our family pedigree of service and creation—carry your people forward.'),
+        f('founder.story.threads.2', 'Thread 2', 'The aviator\'s discipline—checklists, flight plans, emergency procedures.'),
+        f('founder.story.threads.3', 'Thread 3', 'And my Navy callsign, "Luggage." My best friend\'s callsign? "Carry On."'),
+        f('founder.story.born.title', 'Banner line (gold, above the logo)', 'CarryOn Technologies was born.'),
+      ] },
+      { key: 'story_idea', label: 'Story — The Idea', fields: [
+        f('founder.story.idea.title', 'Heading', 'The Idea'),
+        f('founder.story.idea.p1', 'Paragraph 1', 'What if your family didn\'t have to scramble? What if every document was already organized, every checklist already built, every critical detail already in one secure place?', { multiline: true }),
+        f('founder.story.idea.p2', 'Paragraph 2', 'What if readiness weren\'t something you did at the last minute—but something you maintained all along, like a flight plan?', { multiline: true }),
+        f('founder.story.idea.closing', 'Closing line (italic, centered)', 'What if the people you love never had to wonder where to look, who to call, or what to do next—because you\'d already taken care of it?', { multiline: true }),
+      ] },
+      { key: 'story_platform', label: 'Story — The Platform', fields: [
+        f('founder.story.platform.title', 'Heading', 'The Platform'),
+        f('founder.story.platform.intro', 'Intro paragraph', 'CarryOn is the first family readiness platform designed for all American families—built so the people you love are never left searching.', { multiline: true }),
+        f('founder.story.platform.items', 'Bullets (one per line; **name** shows in white)', [
+          '**Secure Document Vault** — AES-256 encrypted storage for wills, trusts, policies, and digital assets, with an air-gapped AI Estate Guardian™ that analyzes your documents for gaps and contradictions.',
+          '**Immediate Action Checklist** — A real-time updatable, step-by-step guide for your family after transition: who to call, what to do first, what comes next. Auto-populated by the Estate Guardian with key details from your vault.',
+          '**Milestone Messages** — Video, audio, or written messages for life\'s biggest moments—weddings, births, graduations—delivered at the time you choose.',
+        ].join('\n'), { multiline: true, list: true }),
+        f('founder.story.platform.closing', 'Closing line (italic, centered)', 'It\'s the NATOPS of your life—the flight manual the people you love can actually use.'),
+      ] },
+      { key: 'story_how', label: 'Story — How It Works', fields: [
+        f('founder.story.how.title', 'Heading', 'How It Works'),
+        f('founder.story.how.steps', 'Numbered steps (one per line; **word** shows in white)', [
+          '**Organize** what matters—upload documents, policies, and accounts into your encrypted vault. Estate Guardian analyzes everything and flags gaps.',
+          '**Build** your checklist—step-by-step instructions for your family, auto-populated with key details from your vault.',
+          '**Record** what only you can say—milestone messages for weddings, births, graduations, and the moments that matter most.',
+          'When the time comes, your family **knows exactly what to do, where to look, and who to call**—because you made them ready.',
+        ].join('\n'), { multiline: true, list: true }),
+      ] },
+      { key: 'story_why', label: 'Story — Why Now?', fields: [
+        f('founder.story.why.title', 'Heading', 'Why Now?'),
+        f('founder.story.why.p1', 'Paragraph 1', '76% of Americans are unprepared. Modern lives are digitally fragmented and procedurally fragile. The average family juggles dozens of accounts, policies, cloud drives, passwords, properties, and platforms—with no plan for what happens when the person who manages it all is gone.', { multiline: true }),
+        f('founder.story.why.p2', 'Paragraph 2', 'In aviation, we don\'t leave emergencies to improvisation; we brief, rehearse, and checklist. Families deserve the same rigor—delivered with compassion.', { multiline: true }),
+        f('founder.story.why.p3', 'Paragraph 3', 'And at the foundation of that rigor sits the same truth my grandfather lived by: clarity, honesty, and simplicity make everything easier to carry forward. CarryOn is built on that truth—designed so nothing essential is ever lost, forgotten, or left to chance.', { multiline: true }),
+      ] },
+      { key: 'story_promise', label: 'Story — The Promise', fields: [
+        f('founder.story.promise.title', 'Heading', 'The Promise'),
+        f('founder.story.promise.p1', 'Paragraph 1', 'CarryOn is the product I wish my grandfather had left my father, and my father had left me: not just memories, but organized clarity; not just stories, but instructions; not just love, but readiness.', { multiline: true }),
+        f('founder.story.promise.p2', 'Paragraph 2', 'It\'s the platform I owe Emma and Kent, and the still-unseen grandchildren who will ask questions I won\'t be here to answer.', { multiline: true }),
+        f('founder.story.promise.quote', 'Pull quote', '"I\'m not building a death product. I\'m building a readiness product."'),
+        f('founder.story.promise.p3', 'Paragraph 3', 'My family\'s story began with Marines carrying colors through fire and mud. It continued with an inventor who put air back into people\'s lungs. I became an aviator who brought aircraft safely to pitching, rolling flight decks in the middle of the night, thousands of miles from shore.', { multiline: true }),
+        f('founder.story.promise.p4', 'Paragraph 4', 'CarryOn Technologies is how I extend that purpose—that mission: to make the people I love—and yours—ready for whatever comes next.', { multiline: true }),
+      ] },
+      { key: 'story_closing', label: 'Story — Closing', fields: [
+        f('founder.story.closing.l1', 'Closing — line 1 (white)', 'Because readiness shouldn\'t be an afterthought.'),
+        f('founder.story.closing.l2', 'Closing — line 2 (gold)', 'It should be a gift you give the people you love—before they ever need it.'),
       ] },
       { key: 'gate', label: 'Request access', fields: [
         f('founder.gate.intro', 'Intro line above the card', 'This page holds the personal story of CarryOn’s founder, Barnet Harris, a retired 24-year military veteran — shared on request rather than published publicly.', { multiline: true }),
