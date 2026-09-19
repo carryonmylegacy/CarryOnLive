@@ -10,6 +10,8 @@ import { useCopy, renderCopy } from '../copy/CopyContext';
 import { MobileNav, MARKETING_LINKS } from '../components/landing/MobileNav';
 import { HeroCtas } from '../components/landing/HeroCtas';
 import { HeroShot } from '../components/landing/HeroShot';
+import { LiveCountBadge } from '../components/landing/LiveStats';
+import { FOUNDER_LINKEDIN_DEFAULT } from '../components/landing/FounderCard';
 
 const useIsMobileViewport = (breakpoint = 768) => {
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < breakpoint);
@@ -30,7 +32,7 @@ const HomePage = () => {
   const [footerInfo, setFooterInfo] = useState({ line1: '1550 Wilson Boulevard 7th Floor', line2: 'Arlington, VA 22209 U.S.A.', phone: '(703) 884-1527' });
   const [landscapeVideoId, setLandscapeVideoId] = useState('EhU-jojs1jk');
   const [verticalVideoId, setVerticalVideoId] = useState('');
-  const [founderLinkedin, setFounderLinkedin] = useState('');
+  const [founderLinkedin, setFounderLinkedin] = useState(FOUNDER_LINKEDIN_DEFAULT);
   const { t } = useCopy();
 
   const isMobileView = useIsMobileViewport();
@@ -96,7 +98,7 @@ const HomePage = () => {
             "Private encrypted family messaging (Estate Communications Tool)",
             "Bill and debt tracking (Financial Portal)",
             "What-to-do-first checklist for your family (Immediate Action Checklist)",
-            "Passwords and accounts, assigned to the right person (Digital Access Vault)",
+            "Passwords and accounts, assigned to the right person",
             "Who to notify list (Family & Friends Notification)"
           ],
           "provider": {
@@ -190,6 +192,7 @@ const HomePage = () => {
                 </div>
               ))}
             </div>
+            <div className="flex justify-center mt-5"><LiveCountBadge testIdSuffix="-home" /></div>
           </RevealSection>
           <RevealSection delay={0.35} distance={50}>
             <HeroShot testIdSuffix="-home" />

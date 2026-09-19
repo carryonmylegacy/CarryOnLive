@@ -155,6 +155,7 @@ export const PAGES_APP = [
         f('onboarding.welcome.skip', 'Button: skip', 'Skip for Now'),
         f('onboarding.welcome.continue', 'Button: continue', 'Continue to Dashboard'),
         f('onboarding.welcome.footnote', 'Footnote', 'You can always add or manage beneficiaries from your dashboard'),
+        f('onboarding.welcome.review', 'Trustpilot line (shown once a Trustpilot link is set in Site Content)', 'Already know CarryOn? A quick review on Trustpilot helps other families find us.'),
       ] },
       { key: 'guide', label: 'Setup Guide (dashboard tile)', fields: [
         f('onboarding.guide.title', 'Tile heading', 'Setup Guide'),

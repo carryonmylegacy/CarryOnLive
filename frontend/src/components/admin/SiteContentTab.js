@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import apiClient from '../../utils/apiClient';
-import { Save, ExternalLink, Play, Loader2, MapPin, Monitor, Smartphone, Gift, User, Upload, Trash2, Linkedin, Activity } from 'lucide-react';
+import { Save, ExternalLink, Play, Loader2, MapPin, Monitor, Smartphone, Gift, User, Upload, Trash2, Linkedin, Activity, Star } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { toast } from '../../utils/toast';
 import { API_URL } from '../../config';
@@ -35,6 +35,9 @@ export const SiteContentTab = ({ getAuthHeaders }) => {
   const [savedFounder, setSavedFounder] = useState({ name: '', title: '', bio: '', linkedin: '' });
   const [savingFounder, setSavingFounder] = useState(false);
   const [liveStatsMode, setLiveStatsMode] = useState('auto');
+  const [trustpilotUrl, setTrustpilotUrl] = useState('');
+  const [savedTrustpilotUrl, setSavedTrustpilotUrl] = useState('');
+  const [savingTrustpilot, setSavingTrustpilot] = useState(false);
   const [liveStats, setLiveStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -67,6 +70,8 @@ export const SiteContentTab = ({ getAuthHeaders }) => {
         setFounder(f);
         setSavedFounder(f);
         setLiveStatsMode(res.data?.show_live_stats || 'auto');
+        setTrustpilotUrl(res.data?.trustpilot_url || '');
+        setSavedTrustpilotUrl(res.data?.trustpilot_url || '');
         apiClient.get(`${API_URL}/public/platform-stats`).then(r => setLiveStats(r.data)).catch(() => {});
       } catch { /* ignore */ }
       setLoading(false);
@@ -189,6 +194,19 @@ export const SiteContentTab = ({ getAuthHeaders }) => {
       toast.success('Founder profile updated');
     } catch { toast.error('Failed to save founder profile'); }
     setSavingFounder(false);
+  };
+
+  const handleSaveTrustpilot = async () => {
+    const url = trustpilotUrl.trim();
+    if (url && !/^https:\/\/(www\.)?trustpilot\.com\/review\/[^\s]+$/i.test(url)) { toast.error('Use your Trustpilot profile link, e.g. https://www.trustpilot.com/review/carryon.us'); return; }
+    setSavingTrustpilot(true);
+    try {
+      await apiClient.put(`${API_URL}/admin/platform-settings`, { trustpilot_url: url }, getAuthHeaders());
+      setTrustpilotUrl(url);
+      setSavedTrustpilotUrl(url);
+      toast.success(url ? 'Trustpilot link saved — the reviews card is live on the homepage' : 'Trustpilot link removed');
+    } catch { toast.error('Failed to save'); }
+    setSavingTrustpilot(false);
   };
 
   const handleLiveStatsMode = async (mode) => {
@@ -488,6 +506,30 @@ export const SiteContentTab = ({ getAuthHeaders }) => {
                 data-testid={`live-stats-mode-${mode}`}>{mode}</button>
             ))}
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Third-party reviews (Trustpilot) — homepage trust block + onboarding review ask */}
+      <Card className="border-[var(--b)] bg-[var(--s)]">
+        <CardContent className="p-5 space-y-4">
+          <div className="flex items-center gap-2">
+            <Star className="w-4 h-4 text-[var(--gold)]" />
+            <h3 className="text-base font-bold text-[var(--t)]">Independent Reviews (Trustpilot)</h3>
+          </div>
+          <p className="text-sm text-[var(--t4)]">
+            Paste your Trustpilot profile link once the company profile exists. The homepage trust block then shows a <strong className="text-[var(--t)]">Read the reviews / Write a review</strong> card, and new members see a one-line review ask on the welcome screen. Leave empty to show nothing.
+          </p>
+          <input type="url" value={trustpilotUrl} onChange={e => setTrustpilotUrl(e.target.value)}
+            placeholder="https://www.trustpilot.com/review/carryon.us"
+            className="w-full px-3 py-2.5 rounded-lg bg-[var(--b)] border border-[var(--b2)] text-[var(--t)] text-base focus:outline-none focus:border-[var(--gold)]"
+            data-testid="trustpilot-url-input" />
+          <button onClick={handleSaveTrustpilot} disabled={savingTrustpilot || trustpilotUrl.trim() === savedTrustpilotUrl}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all disabled:opacity-40"
+            style={{ background: trustpilotUrl.trim() !== savedTrustpilotUrl ? 'var(--gold)' : 'var(--b2)', color: trustpilotUrl.trim() !== savedTrustpilotUrl ? '#0F1629' : 'var(--t4)' }}
+            data-testid="save-trustpilot-btn">
+            {savingTrustpilot ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            Save Trustpilot Link
+          </button>
         </CardContent>
       </Card>
 

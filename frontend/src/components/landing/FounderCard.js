@@ -4,6 +4,8 @@ import { Linkedin, ArrowRight, Medal } from 'lucide-react';
 import { API_URL } from '../../config';
 
 const DEFAULTS = { name: 'Barnet Harris', title: 'Founder & CEO \u00b7 24-Year U.S. Military Veteran' };
+// Built-in founder LinkedIn (D3.3) — Admin → Marketing → Site Content overrides it when set.
+export const FOUNDER_LINKEDIN_DEFAULT = 'https://linkedin.com/in/barnetharris';
 
 // Always address the headshot through the site's own API base (the backend's
 // self-reported host can be an internal ingress name); `v` busts the 5-min cache.
@@ -11,11 +13,11 @@ export const founderPhotoUrl = (d = {}) =>
   d.founder_photo_url ? `${API_URL}/public/founder-headshot?v=${encodeURIComponent(d.founder_photo_updated_at || '')}` : '';
 
 export const useFounder = () => {
-  const [founder, setFounder] = useState({ ...DEFAULTS, photo_url: '', linkedin_url: '', video_id: '' });
+  const [founder, setFounder] = useState({ ...DEFAULTS, photo_url: '', linkedin_url: FOUNDER_LINKEDIN_DEFAULT, video_id: '', trustpilot_url: '' });
   useEffect(() => {
     axios.get(`${API_URL}/public/site-content`).then(r => {
       const d = r.data || {};
-      setFounder({ name: d.founder_name || DEFAULTS.name, title: d.founder_title || DEFAULTS.title, photo_url: founderPhotoUrl(d), linkedin_url: d.founder_linkedin_url || '', video_id: d.homepage_video_id || '' });
+      setFounder({ name: d.founder_name || DEFAULTS.name, title: d.founder_title || DEFAULTS.title, photo_url: founderPhotoUrl(d), linkedin_url: d.founder_linkedin_url || FOUNDER_LINKEDIN_DEFAULT, video_id: d.homepage_video_id || '', trustpilot_url: d.trustpilot_url || '' });
     }).catch(() => {});
   }, []);
   return founder;

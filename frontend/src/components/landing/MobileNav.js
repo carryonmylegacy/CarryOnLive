@@ -9,6 +9,7 @@ export const MARKETING_LINKS = [
   { k: 'security', label: 'Security', href: '#security' },
   { k: 'steps', label: 'How It Works', href: '#steps' },
   { k: 'pricing', label: 'Pricing', href: '/pricing' },
+  { k: 'compare', label: 'Compare', href: '/vs' },
   { k: 'customers', label: 'Customers', href: '/customers' },
   { k: 'about', label: 'About', href: '/about' },
 ];

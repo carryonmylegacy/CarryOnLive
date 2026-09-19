@@ -23,6 +23,8 @@ import { API_URL } from '../config';
 
 import { formatPhoneUS } from '../utils/phoneFormat';
 import { useCopy } from '../copy/CopyContext';
+import { useFounder } from '../components/landing/FounderCard';
+import { trustpilotWriteUrl } from '../components/landing/ReviewsCard';
 
 const relations = ['Spouse', 'Son', 'Daughter', 'Son-in-law', 'Daughter-in-law', 'Mother', 'Father', 'Mother-in-law', 'Father-in-law', 'Brother', 'Sister', 'Aunt', 'Uncle', 'Grandson', 'Granddaughter', 'Grandmother', 'Grandfather', 'Nephew', 'Niece', 'Great-Grandson', 'Great-Granddaughter', 'Great-Grandmother', 'Great-Grandfather', 'Friend', 'Other'];
 const avatarColors = ['#d4af37', '#3b82f6', '#10b981', '#8b5cf6', '#ef4444', '#f59e0b', '#ec4899', '#06b6d4'];
@@ -37,6 +39,7 @@ const usStates = [
 const OnboardingPage = () => {
   const navigate = useNavigate();
   const { t } = useCopy();
+  const { trustpilot_url: trustpilotUrl } = useFounder();
   const { user, getAuthHeaders, partnerBranding } = useAuth();
   const [estate, setEstate] = useState(null);
   const [beneficiaries, setBeneficiaries] = useState([]);
@@ -266,6 +269,11 @@ const OnboardingPage = () => {
         </div>
 
         <p className="text-center text-xs text-[#64748b] mt-4">{t('onboarding.welcome.footnote')}</p>
+        {trustpilotUrl && (
+          <p className="text-center text-xs text-[#64748b] mt-2" data-testid="onboarding-review-ask">
+            <a href={trustpilotWriteUrl(trustpilotUrl)} target="_blank" rel="noopener noreferrer" className="text-[#d4af37] hover:text-[#fcd34d] underline underline-offset-4" data-testid="onboarding-review-link">{t('onboarding.welcome.review')}</a>
+          </p>
+        )}
       </div>
 
       {/* Add Beneficiary Modal */}

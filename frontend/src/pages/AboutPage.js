@@ -4,7 +4,7 @@ import { ChevronRight, ChevronLeft, Linkedin } from 'lucide-react';
 import axios from 'axios';
 import { API_URL } from '../config';
 import { MobileNav } from '../components/landing/MobileNav';
-import { founderPhotoUrl } from '../components/landing/FounderCard';
+import { founderPhotoUrl, FOUNDER_LINKEDIN_DEFAULT } from '../components/landing/FounderCard';
 import { useCopy, renderCopy } from '../copy/CopyContext';
 
 /* ─── scroll-reveal hook ─── */
@@ -47,7 +47,7 @@ const ABOUT_NAV = [
 
 const AboutPage = () => {
   const { t } = useCopy();
-  const [founder, setFounder] = useState({ name: '', title: '', bio: '', photo_url: '', linkedin_url: '' });
+  const [founder, setFounder] = useState({ name: '', title: '', bio: '', photo_url: '', linkedin_url: FOUNDER_LINKEDIN_DEFAULT });
 
   useEffect(() => {
     axios.get(`${API_URL}/public/site-content`).then(res => {
@@ -57,7 +57,7 @@ const AboutPage = () => {
         title: d.founder_title || 'Founder & CEO \u00b7 24-Year U.S. Military Veteran',
         bio: d.founder_bio || 'After 24 years of military service, Barnet saw firsthand what happens when families aren\u2019t prepared. He built CarryOn so that no family \u2014 military or civilian \u2014 has to face a crisis wondering where things are, who to call, or what to do next.',
         photo_url: founderPhotoUrl(d),
-        linkedin_url: d.founder_linkedin_url || '',
+        linkedin_url: d.founder_linkedin_url || FOUNDER_LINKEDIN_DEFAULT,
       });
     }).catch(() => {});
   }, []);

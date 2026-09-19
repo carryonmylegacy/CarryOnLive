@@ -8,6 +8,7 @@ import { FounderCard } from './FounderCard';
 import { LiveStats } from './LiveStats';
 import { TestimonialsBlock } from './TestimonialsBlock';
 import { TrustBadges, LastUpdated } from './TrustBadges';
+import { ReviewsCard } from './ReviewsCard';
 import { useCopy, renderCopy } from '../../copy/CopyContext';
 
 /* ── layout data: the twelve tools, grouped by pillar (People → Access → Money → Action).
@@ -29,6 +30,7 @@ const PLATFORM_ICONS = [UserCheck, ArrowUpDown, Layers, Users, ShieldAlert, Slid
 const SECURITY_ICONS = [LockIcon, Sparkles, Shield, Users, Trash2, FileCheck];
 const OUTCOME_ICONS = [Heart, HandHeart, MessageSquare];
 const TRUST_ICONS = [EyeOff, Download, Clock, Medal];
+const HIDE_OFFICIAL_NAME = new Set(['dav']);
 const FAQ_COUNT = 6;
 const FAQ_LINKS = { 2: '/wind-down-promise', 3: '/wind-down-promise' };
 const FOOTER_LINKS = [
@@ -84,7 +86,7 @@ const ToolCard = ({ num, icon: Icon, title, product, bold, desc, accent = '#d4af
       </div>
       <div className="flex-1 min-w-0">
         <h4 className="text-white text-lg font-bold leading-tight mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>{title}</h4>
-        <span className="text-[#8b97ab] text-xs font-semibold tracking-wide block mb-2.5">{product}</span>
+        {product && <span className="text-[#8b97ab] text-xs font-semibold tracking-wide block mb-2.5">{product}</span>}
         <p className="text-sm font-medium mb-2 leading-relaxed" style={{ color: '#e8c972' }}>{bold}</p>
         <p className="text-[#8b97ab] text-sm leading-relaxed">{renderCopy(desc)}</p>
       </div>
@@ -106,9 +108,10 @@ const LandingContent = ({ navigateWithFade, footerInfo = DEFAULT_FOOTER, testIdS
   const [openFaq, setOpenFaq] = useState(null);
   const { t, flags } = useCopy();
 
+  // D1.6: the homepage card for passwords leads with plain English only; the official name stays in-app.
   const tool = (key) => ({
     icon: TOOL_ICONS[key],
-    product: t(`home.tools.${key}.product`), title: t(`home.tools.${key}.title`),
+    product: HIDE_OFFICIAL_NAME.has(key) ? '' : t(`home.tools.${key}.product`), title: t(`home.tools.${key}.title`),
     bold: t(`home.tools.${key}.bold`), desc: t(`home.tools.${key}.desc`),
   });
   const pillarGroups = PILLAR_META.map(g => ({ ...g, label: t(`home.pillars.${g.key}.label`), tagline: t(`home.pillars.${g.key}.tagline`), tools: g.tools.map(tool) }));
@@ -157,6 +160,12 @@ const LandingContent = ({ navigateWithFade, footerInfo = DEFAULT_FOOTER, testIdS
           <RevealSection delay={0.2}>
             <p className="mt-10 text-[#d4af37] text-sm lg:text-base italic font-medium">
               {t('home.problem.italic')}
+            </p>
+          </RevealSection>
+          <RevealSection delay={0.25}>
+            <p className="inline-flex items-start sm:items-center gap-3 mt-8 rounded-xl px-5 py-3.5 text-left text-[#e2e8f0] text-sm lg:text-base leading-relaxed" style={{ background: 'rgba(15,26,46,0.6)', border: '1px solid rgba(212,175,55,0.25)' }} data-testid={`problem-stat${testIdSuffix}`}>
+              <Clock className="w-5 h-5 text-[#d4af37] flex-shrink-0 mt-0.5 sm:mt-0" />
+              <span>{renderCopy(t('home.problem.stat'), 'text-[#d4af37] font-bold')}</span>
             </p>
           </RevealSection>
           <RevealSection delay={0.3}>
@@ -424,6 +433,9 @@ const LandingContent = ({ navigateWithFade, footerInfo = DEFAULT_FOOTER, testIdS
           </RevealSection>
           <RevealSection delay={0.08}>
             <div className="mb-5"><LiveStats testIdSuffix={testIdSuffix} /></div>
+          </RevealSection>
+          <RevealSection delay={0.1}>
+            <div className="mb-5"><ReviewsCard testIdSuffix={testIdSuffix} /></div>
           </RevealSection>
           <div className="grid sm:grid-cols-2 gap-5" data-testid={`trust-grid${testIdSuffix}`}>
             {trustItems.map(({ icon: Icon, title, desc }, i) => (

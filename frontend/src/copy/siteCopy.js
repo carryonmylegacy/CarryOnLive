@@ -31,10 +31,10 @@ const TOOLS = [
   ['sdv', 'Secure Document Vault', 'Every important document, in one place',
     'Wills, trusts, insurance policies, deeds — encrypted, organized, and shared only with the people you choose.',
     'Upload the paperwork your family would otherwise tear the house apart looking for. Your files are scrambled before they’re stored, with a separate lock for every family, and our support team can’t open them from their screens. Your loved ones see exactly what you allow — nothing more.'],
-  ['dav', 'Digital Access Vault', 'Passwords & accounts',
+  ['dav', 'Digital Access Vault', 'Passwords and accounts',
     'Logins, subscriptions, crypto keys, and account numbers — saved, encrypted, and assigned to the right person.',
     'The average family has dozens of accounts nobody else can get into. Store them here, decide who gets what, and nothing gets locked away forever or forgotten.'],
-  ['ega', 'Estate Guardian™ AI', 'A second set of eyes on your paperwork',
+  ['ega', 'Estate Guardian™ AI', 'An AI review of your documents',
     'An AI review, tuned to your state’s laws, that finds what you missed — and only reads your documents when you ask it to.',
     'It looks for contradictions, gaps, outdated provisions, and missing pieces, then pulls out the details your family will need in a hurry: claim phone numbers, executor contacts, filing deadlines. It uses a trusted AI service under contract, and your documents are never used to teach it.'],
   ['cfp', 'CarryOn Financial Picture', 'The full money picture',
@@ -86,7 +86,7 @@ const PAGES_PHASE1 = [
     sections: [
       { key: 'seo', label: 'Search result (Google)', fields: [
         f('home.seo.title', 'Page title', 'CarryOn - Get Your Family’s Affairs in Order, In One Secure Place'),
-        f('home.seo.description', 'Meta description', 'One secure place for your documents, passwords, who to call first, and what to do next — so your family can handle what comes next. Scrambled before it’s stored, with a separate lock for every family. Built by a 24-year veteran.', { multiline: true }),
+        f('home.seo.description', 'Meta description (keep under 155 characters)', 'One secure place for documents, passwords, who to call first, and what to do next — so your family can handle what comes next. Built by a 24-year veteran.', { multiline: true }),
       ] },
       { key: 'nav', label: 'Navigation bar & footer (all marketing pages)', fields: [
         f('nav.features', 'Menu: Features', 'Features'),
@@ -94,6 +94,7 @@ const PAGES_PHASE1 = [
         f('nav.security', 'Menu: Security', 'Security'),
         f('nav.steps', 'Menu: How It Works', 'How It Works'),
         f('nav.pricing', 'Menu: Pricing', 'Pricing'),
+        f('nav.compare', 'Menu: Compare', 'Compare'),
         f('nav.customers', 'Menu: Customers', 'Customers'),
         f('nav.about', 'Menu: About', 'About'),
         f('nav.founder', 'Menu: Founder (About page nav)', 'Founder'),
@@ -127,6 +128,7 @@ const PAGES_PHASE1 = [
         f('home.hero.nocard', 'Line under the buttons (before the links)', 'Explore first — no credit card needed. Or'),
         f('home.hero.quizlink', 'Link text: readiness quiz', 'take the 60-second readiness quiz'),
         f('home.hero.pricinglink', 'Link text: pricing', 'view pricing'),
+        f('home.hero.livecount', 'Live family count badge — text after the number', 'families set up — live count'),
       ] },
       { key: 'login', label: 'Sign-in page hero (/) — the page visitors land on', fields: [
         f('login.seo.title', 'Page title', 'CarryOn™ — The Family Continuity Platform'),
@@ -148,6 +150,7 @@ const PAGES_PHASE1 = [
         f('home.problem.p2', 'Paragraph 2', 'CarryOn™ is that place. One secure spot to get your affairs in order — your documents, your passwords, the people to call, the messages you want to leave, and a clear plan your loved ones can actually follow — so they can handle what comes next instead of trying to figure it out alone.', { multiline: true }),
         f('home.problem.cta', 'Button', 'Get Started'),
         f('home.problem.italic', 'Italic gold line', 'Useful today — finding the deed, sharing a policy with your spouse — and essential on the day your family needs it most.'),
+        f('home.problem.stat', 'Statistic line', 'Settling an estate without organized records takes an average of **570 hours**. Writing it all down in one place is how that number comes down.'),
         f('home.problem.for_label', '“Built for” label', 'Built for'),
         f('home.problem.for_text', '“Built for” text', 'Everyday American families — a house, a phone full of accounts, a few policies, and people who\'d have to sort it all out. No estate attorney on retainer required.', { multiline: true }),
         f('home.problem.notfor_label', '“Probably not for” label', 'Probably not for'),
@@ -161,13 +164,13 @@ const PAGES_PHASE1 = [
         f('home.outcomes.1.desc', 'Card 1 text', 'Once it’s written down and shared, you get to stop worrying about the what-ifs.'),
         f('home.outcomes.2.title', 'Card 2 title', 'Be the one who made it easy'),
         f('home.outcomes.2.desc', 'Card 2 text', 'Your family will remember that when everything else was hard, this part wasn’t.'),
-        f('home.outcomes.3.title', 'Card 3 title', 'No awkward conversations required'),
-        f('home.outcomes.3.desc', 'Card 3 text', 'Share what each person needs to know, when they need to know it — on your terms.'),
+        f('home.outcomes.3.title', 'Card 3 title', 'Be seen as the one who cared enough to plan'),
+        f('home.outcomes.3.desc', 'Card 3 text', 'No awkward conversations required — share what each person needs to know, when they need it, on your terms. What your family remembers is that you thought of them first.'),
         f('home.outcomes.closing', 'Closing italic line', 'CarryOn™ isn\'t something you set up and forget. It\'s a living plan your family uses today and relies on tomorrow.'),
       ] },
       { key: 'pillars', label: 'Four pillars · twelve tools', fields: [
         f('home.pillars.title', 'Heading', 'Everything your family will need. In one place.'),
-        f('home.pillars.sub', 'Sub-heading', 'Four pillars. Twelve tools — plus one that works for your family after you\'re gone. Each piece builds on the last, so you can start with what matters most and add the rest over time.', { multiline: true }),
+        f('home.pillars.sub', 'Sub-heading', 'Your documents, your passwords, the people to call, your money, and what your family does first — twelve tools, grouped the way your family will use them, plus one that works for them after you\'re gone. Start with what matters most and add the rest over time.', { multiline: true }),
         f('home.pillars.pillar_word', 'Word before the pillar number (“Pillar 01”)', 'Pillar'),
         ...PILLARS.flatMap(([key, label, tagline]) => [
           L(`home.pillars.${key}.label`, `Pillar: ${label} — official name`, label),
@@ -178,7 +181,7 @@ const PAGES_PHASE1 = [
         f('home.after.title', 'Family-side tool — heading', 'Not a pillar'),
         f('home.after.tagline', 'Family-side tool — tagline', 'the one tool built for the people you leave behind.'),
         f('home.handled.title', 'Closing tile — heading', 'It\'s handled.'),
-        f('home.handled.text', 'Closing tile — text', 'Four pillars. Twelve tools. One family. A living plan that grows with you — so that whatever life brings, your family is never left searching, wondering, or scrambling. And you get to stop carrying it all in your head.', { multiline: true }),
+        f('home.handled.text', 'Closing tile — text', 'One place. One family. A living plan that grows with you — so that whatever life brings, your family is never left searching, wondering, or scrambling. And you get to stop carrying it all in your head.', { multiline: true }),
         f('home.handled.italic', 'Closing tile — italic line', 'They\'re ready. Because you prepared.'),
       ] },
       { key: 'platform', label: '“Built for Real Families”', fields: [
@@ -227,6 +230,11 @@ const PAGES_PHASE1 = [
       { key: 'trust', label: '“We’re new. Here’s what we can promise.”', fields: [
         f('home.trust.title', 'Heading', 'We\'re new. Here\'s what we can promise.'),
         f('home.trust.sub', 'Sub-heading', 'You won\'t find invented testimonials or made-up customer counts here. Every number and every story on this site is real, or it isn\'t here. These are the things we can stand behind today.', { multiline: true }),
+        f('home.trust.reviews.eyebrow', 'Independent reviews card — small label (shown once a Trustpilot link is set in Site Content)', 'Independent reviews'),
+        f('home.trust.reviews.title', 'Independent reviews card — heading', 'What families say about us on Trustpilot'),
+        f('home.trust.reviews.text', 'Independent reviews card — text', 'Reviews there are collected and shown by Trustpilot, not by us — we can\'t edit or remove them.'),
+        f('home.trust.reviews.read', 'Independent reviews card — read link', 'Read the reviews'),
+        f('home.trust.reviews.write', 'Independent reviews card — write link', 'Write a review'),
         ...[
           ['1', 'Your files stay yours to open', 'Scrambled before they’re stored, with a separate lock for every family. Our support team can’t open them from their screens, and every time a file is opened, we write down who did it and when.'],
           ['2', 'Your data is yours. Leave anytime.', 'Export everything whenever you want and cancel from your account. No hoops, no phone calls.'],
@@ -351,7 +359,7 @@ const PAGES_PHASE1 = [
     sections: [
       { key: 'seo', label: 'Search result (Google)', fields: [
         f('security.seo.title', 'Page title', 'Security & Trust — CarryOn'),
-        f('security.seo.description', 'Meta description', 'AES-256-GCM encryption, per-estate keys, 2FA, subprocessors, and our full security posture — documented honestly and updated before practice changes.', { multiline: true }),
+        f('security.seo.description', 'Meta description', 'Files scrambled before they’re stored, a separate lock for every family, two-step sign-in, subprocessors — our full security posture, documented honestly.', { multiline: true }),
       ] },
       { key: 'hero', label: 'Hero', fields: [
         f('security.hero.pill', 'Small pill label', 'Trust & Security'),
@@ -371,7 +379,7 @@ const PAGES_PHASE1 = [
         f('security.s.reporting', 'Reporting', 'Reporting a Vulnerability'),
       ] },
       { key: 'encryption', label: 'Encryption bullets', fields: [
-        f('security.encryption.1', 'Bullet 1', '**AES-256-GCM** for every encrypted document, message, and vault item.'),
+        f('security.encryption.1', 'Bullet 1', '**Scrambled before it’s stored** — every document, message, and vault item is encrypted (AES-256-GCM).'),
         f('security.encryption.2', 'Bullet 2', '**Per-estate encryption salt** generated at estate creation. No two families share a key.'),
         f('security.encryption.3', 'Bullet 3', '**PBKDF2-HMAC-SHA256, 600,000 iterations** for password-derived keys (NIST recommends ≥600k).'),
         f('security.encryption.4', 'Bullet 4', '**TLS 1.3** with HSTS preload (max-age 1 year, includeSubDomains, preload).'),

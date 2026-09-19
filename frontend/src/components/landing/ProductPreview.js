@@ -4,7 +4,11 @@ import { RevealSection } from './RevealSection';
 
 const card = { background: 'linear-gradient(160deg, #1a2d4d 0%, #16284a 50%, #142240 100%)', border: '1px solid rgba(212,175,55,0.22)' };
 
+// The Immediate Action Checklist leads (D1.5) — it is the sharpest differentiator, so it is the default tab.
 const TABS = [
+  { id: 'checklist', label: 'What to do first', icon: ListChecks, url: 'carryon.us/checklist',
+    alt: 'CarryOn Immediate Action Checklist with critical first steps such as notifying family and obtaining death certificates',
+    caption: 'Step-by-step instructions your family follows in the first days \u2014 written in your words, with the phone numbers already in them.' },
   { id: 'dashboard', label: 'Your dashboard', icon: LayoutDashboard, url: 'carryon.us/dashboard',
     alt: 'CarryOn dashboard showing an estate readiness score of 67% and a financial health gauge',
     caption: 'A readiness score that moves as you add documents, messages, and checklist items \u2014 so you always know where you stand.' },
@@ -14,15 +18,12 @@ const TABS = [
   { id: 'contacts', label: 'Who to call first', icon: PhoneCall, url: 'carryon.us/beneficiaries',
     alt: 'CarryOn beneficiaries page showing a family estate tree and a ranked succession list with primary, secondary, and tertiary contacts',
     caption: 'Your people in order \u2014 primary, secondary, tertiary \u2014 so there\u2019s never a question about who steps in.' },
-  { id: 'checklist', label: 'What to do first', icon: ListChecks, url: 'carryon.us/checklist',
-    alt: 'CarryOn Immediate Action Checklist with critical first steps such as notifying family and obtaining death certificates',
-    caption: 'Step-by-step instructions your family follows in the first days \u2014 written in your words, with the phone numbers already in them.' },
 ];
 
 const Shots = ({ active, prefix, suffix }) => TABS.map(t => (
   <img key={t.id} src={`/screenshots/${prefix}${t.id}.webp`} alt={t.alt}
     width={prefix ? 780 : 2160} height={prefix ? 1328 : 1350}
-    loading={t.id === 'vault' ? 'eager' : 'lazy'}
+    loading={t.id === 'checklist' ? 'eager' : 'lazy'}
     data-testid={t.id === active ? `preview-panel-${t.id}${suffix}` : undefined}
     className="absolute inset-0 w-full h-full object-cover object-top transition-opacity duration-300"
     style={{ opacity: t.id === active ? 1 : 0, pointerEvents: t.id === active ? 'auto' : 'none' }} />
@@ -53,7 +54,7 @@ const PhoneFrame = ({ active, testIdSuffix }) => (
 );
 
 export const ProductPreview = ({ testIdSuffix = '' }) => {
-  const [active, setActive] = useState('vault');
+  const [active, setActive] = useState('checklist');
   const tab = TABS.find(t => t.id === active);
   return (
     <section id="preview" className="relative z-[5]" data-testid={`product-preview${testIdSuffix}`}>
