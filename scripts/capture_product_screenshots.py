@@ -23,8 +23,8 @@ CHECKLIST_MOBILE_CSS = """@media (max-width: 639px) {
 # Dashboard: start the shot at the Total Family Continuity meter (founder directive, Sep 19 2026) —
 # the welcome line, beneficiary vault banner and onboarding group above it stay out of the preview.
 METER_SELECTORS = '[data-testid="readiness-card"], [data-testid="readiness-card-side"], [data-testid="core-pillars-card"]'
-# Phone shots (founder, Sep 19 2026): "Who to call first" starts at the people list, "Document vault" at the document cards.
-PEOPLE_SELECTOR = '[data-testid="beneficiary-tiles"]'
+# Phone shots (founder, Sep 19 2026): "Who to call first" starts at the Estate Tree panel, "Document vault" at the document cards.
+PEOPLE_SELECTOR = '[data-testid="family-tree-panel"]'
 DOCS_SELECTOR = '[data-testid^="document-"]:not([data-testid="document-vault"])'
 # Scrolls the topmost visible match to just under the fixed/sticky header (window or nearest scroll container).
 SCROLL_TO_JS = """(sel) => {

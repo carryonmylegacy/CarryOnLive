@@ -16,7 +16,7 @@ Continuity 72%, 10 beneficiaries, 7 documents, 59-item IAC).
 "Critical – Do Immediately" group expanded. `dashboard` starts at the **Total Family Continuity
 meter** (founder directive, Sep 19 2026) — the welcome line, beneficiary vault banner and onboarding
 group above it are scrolled out of frame, on both desktop and phone. **Phone shots** of `contacts`
-and `vault` start at the **people list** / the **document cards** (founder, Sep 19 2026) — the page
+and `vault` start at the **Estate Tree panel** / the **document cards** (founder, Sep 19 2026) — the page
 header, Add / Upload buttons and explainer cards are scrolled out; desktop shots keep the header.
 Scroll targets per page live in `PAGES` in the capture script (desktop target, phone target).
 
