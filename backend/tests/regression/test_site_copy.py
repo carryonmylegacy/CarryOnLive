@@ -526,7 +526,10 @@ def test_founder_story_public_switch(founder_headers):
     copy = f"{BASE_URL}/api/public/site-copy"
     before = requests.get(content, timeout=20).json()
     assert isinstance(before["founder_story_public"], bool)
-    assert requests.put(adm, json={"founder_story_public": True}, headers=_login(BENEFACTOR), timeout=20).status_code == 403
+    assert (
+        requests.put(adm, json={"founder_story_public": True}, headers=_login(BENEFACTOR), timeout=20).status_code
+        == 403
+    )
 
     def flag_pair():
         return (
@@ -540,7 +543,9 @@ def test_founder_story_public_switch(founder_headers):
     off = requests.put(adm, json={"founder_story_public": False}, headers=founder_headers, timeout=20)
     assert off.status_code == 200 and off.json()["founder_story_public"] is False
     assert flag_pair() == (False, False)
-    requests.put(adm, json={"founder_story_public": before["founder_story_public"]}, headers=founder_headers, timeout=20)
+    requests.put(
+        adm, json={"founder_story_public": before["founder_story_public"]}, headers=founder_headers, timeout=20
+    )
 
 
 # ── Legal-tone review, scheduled draft publish, guide share cards ───────────────

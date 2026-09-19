@@ -1,6 +1,14 @@
 # CarryOn — Changelog
 
 
+## Sep 19, 2026 — Founder story: Public / Invite-only switch + full Site Copy migration (iteration_209) — VERIFIED, NOT PUSHED
+
+- **Switch**: `platform_settings.founder_story_public` (default false). Accepted by `PUT /api/admin/platform-settings`; exposed on `GET /api/public/site-content` and as `flags.founder_story_public` on `GET /api/public/site-copy` (so nav/footers react instantly through `CopyContext`). Card **Admin → Marketing → Site Content → Founder Story** (`founder-story-public-toggle`). Operations → Invites shows a note while public (`founder-story-public-note`).
+- **Story is now a React page, every string editable**: `frontend/public/founder-story.html` (iframe) deleted; `components/founder/FounderStory.js` renders 13 sections from 60 new `founder.story.*` fields in `copy/siteCopy.js` (Site Copy page "Founder story"; `**…**` = gold italics in narrative paragraphs, white bold in the Platform / How-it-works lists; both lists are one-item-per-line). Photos in `/founder-images/` are fixed assets. Uses the standard `MarketingNav` + `MarketingFooter`.
+- **Routing**: Public → `/founder-about` open to everyone, no `noindex`, `/founder-about` appended to the sitemap at the next deploy (`scripts/guides-launch.js` now also reads the switch); homepage FounderCard "Read his story" → `/founder-about`; a **Founder story** footer link (`footer.founder`) appears in the homepage footer, `MarketingFooter` and `PublicFooter` (`linkVisible()` helper in `CopyContext`). Invite-only → today's request/sign-in gate, "Read his story" → `/about`, no footer link. Invite tokens / approved logins unlock the story either way; the Site Copy Preview frame always shows the story.
+- Tests: `tests/regression/test_site_copy.py::test_founder_story_public_switch`; iteration_209 backend + frontend all 12 checks pass, regression 31/31. Preview DB left at invite-only (default).
+
+
 ## Sep 16, 2026 (later) — Partner roster import (spreadsheet → plan → background job) + partner-login root cause (iteration_201/202) — VERIFIED, NOT PUSHED
 
 **Root cause of "partner can't log in / accounts deactivated"**: the frontend published on app.carryon.us is the marketing-branch build, which has no `/partner` route — the catch-all sends `/partner` to `/login`, so partner-manager credentials hit the family login and fail. Backend (Render) still has `/api/manager/login`; nothing deactivates partners and there is no signup minimum. Fixed by publishing the reconciled build (restores `/partner`).

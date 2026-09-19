@@ -389,6 +389,11 @@ total; `{curly}` placeholders are filled at runtime and must be kept). **Schedul
 copy** (`site_copy_schedules`, calendar icon per field, times in **US Eastern**,
 stored UTC) goes live / reverts automatically — `GET /api/public/site-copy` returns
 the effective text, the editor reads base text from `GET /api/admin/site-copy/state`.
+**Founder story (Sep 19, 2026):** `/founder-about` is a React page whose 60 `founder.story.*`
+fields live in the same registry; the request-access gate is bypassed when
+`platform_settings.founder_story_public` is true (Admin → Marketing → Site Content),
+which also flips the homepage "Read his story" target (`/founder-about` vs `/about`) and
+the "Founder story" footer link (`linkVisible()` in `CopyContext`).
 **Review** (save-bar) proof-reads unsaved edits or the whole page —
 `POST /api/admin/site-copy/review`: deterministic spacing/markup/placeholder/SEO
 checks + xAI typo pass, with one-click *Apply fix* into the editor (never auto-saves).
@@ -569,7 +574,9 @@ bug — fix it in the preview DB immediately (snippet in
 - Hardcoded `rgba(212,175,55,…)` → `var(--gold-rgb)` sweep.
 
 ### Last verified end-to-end working item
-**Sep 19 2026 (latest) — heycatch.ai audit pass (NOT PUSHED).** Compare nav link, hero live-count badge, 154-char meta description, 570-hours stat, social-JTBD outcome card, checklist-first product preview, plain-English DAV/EGA cards, no "Four pillars. Twelve tools" on public pages, /security leads with "scrambled before it’s stored", founder LinkedIn baked in, Trustpilot card + onboarding review ask gated on `trustpilot_url` (Admin → Site Content). iteration_69 pass; check.sh ALL CLEAR. **Founder next**: push → collect 3–5 testimonials (/customers form → approve) → create Trustpilot profile and paste URL → update the brief's prices before re-running the audit.
+**Sep 19 2026 (latest) — Founder story Public / Invite-only switch + Site Copy migration (NOT PUSHED).** Admin → Marketing → Site Content → **Founder Story** toggle (`platform_settings.founder_story_public`, default invite-only). The story is a React page (`components/founder/FounderStory.js`), every string editable in Site Copy → "Founder story" (60 `founder.story.*` fields; old `founder-story.html` iframe deleted). Public → `/founder-about` open + indexable (sitemap at next deploy), homepage "Read his story" → `/founder-about`, "Founder story" link in all three footers, Invites tab shows a note. Invite-only → unchanged gate, "Read his story" → `/about`. iteration_209 pass; regression 31/31; check.sh ALL CLEAR. **Founder next**: push → on prod flip the switch in Site Content, open /founder-about logged out, check the homepage card link + footer link, edit a story paragraph in Site Copy; Redeploy once to list it in the sitemap.
+
+**Sep 19 2026 — heycatch.ai audit pass (NOT PUSHED).** Compare nav link, hero live-count badge, 154-char meta description, 570-hours stat, social-JTBD outcome card, checklist-first product preview, plain-English DAV/EGA cards, no "Four pillars. Twelve tools" on public pages, /security leads with "scrambled before it’s stored", founder LinkedIn baked in, Trustpilot card + onboarding review ask gated on `trustpilot_url` (Admin → Site Content). iteration_69 pass; check.sh ALL CLEAR. **Founder next**: push → collect 3–5 testimonials (/customers form → approve) → create Trustpilot profile and paste URL → update the brief's prices before re-running the audit.
 
 **Sep 18 2026 (latest, PM) — Guide legal review · Scheduled draft publish · Score explainers · Guide share cards (NOT PUSHED).** Review gains a **Flag legal-advice wording** toggle (phrase check + xAI pass); Admin → Guides → **Review the five guides** opens Site Copy with it already running. Drafts can **Publish at (ET)** — the 60 s loop applies them and e-mails founders before/after + page links. Dashboard tiles show "<Feature> N% · …" with **Why?** → `/readiness-score#people|access|money|action`. `GET /api/public/guides/{slug}/card.png` renders a live 1200×630 card from the current title, wired as `og:image`/`twitter:image` per guide. Flaky regression test fixed (timing + shared event loop). iteration_68 backend 4/4 + regression 30/30, frontend 100%; housekeeping --strict 0/0. Guides still unlaunched. **Founder next**: push → on prod run the guide review, schedule a draft 5 min out, click Why?, check a guide link in a social preview tool.
 
