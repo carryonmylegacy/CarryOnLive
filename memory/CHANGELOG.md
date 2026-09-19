@@ -1,6 +1,18 @@
 # CarryOn — Changelog
 
 
+## Sep 19, 2026 (latest) — `/benefactor` paid-traffic acquisition page + Premium tag (iteration_210) — VERIFIED, NOT PUSHED
+
+- **New route `/benefactor`** (`pages/BenefactorPage.js`, `components/benefactor/*`): one-job landing page for ads — logo + Sign In only (no marketing menu), PROBLEM → PROMISE → PROOF → PAYOFF → PRICE → CTA spine, tiny legal-only footer, `noindex` (prerendered for link previews, not in the sitemap). Every string is founder-editable in Site Copy → "Benefactor landing page" (`copy/siteCopyBenefactor.js`, 50 fields, `{days}` filled live from `trial_days`).
+- **Single-plan price test**: only the Premium card ($19.99/mo from the live catalog) with "{days} days free · No credit card · Cancel anytime". `?v=all` shows Base / Standard / Premium for an A/B run. `/pricing` and the homepage pricing are untouched.
+- **Milestone Messages hook**: 5th "Messages for later" tab in the shared "See inside CarryOn" preview (`/screenshots/messages.webp` + `m-messages.webp`, captured from the demo account). Founder chose to keep it on `/` and `/home` as well.
+- **CTAs**: "Get Started Free" / plan CTA / final CTA → `/signup` (free exploration, no card); "Subscribe today" → `/start?plan=premium&cycle=monthly` (Premium preselected, all three tiers shown — founder decision); logged-in visitors → `/dashboard` or straight to Stripe. UTM params ride along in `sessionStorage.carryon_utm` exactly as on `/start`.
+- **Premium tag (founder: yes)**: the page stashes `sessionStorage.carryon_signup_intent = {preferred_plan, landing_page:'benefactor'}`; `SignupPage` spreads it into `POST /api/auth/register`; backend stores `preferred_plan` (only if in `PLAN_ORDER`) + `landing_page[:40]` on the user; `GET /api/auth/me` returns `preferred_plan`. `SubscriptionManagement` (the plan grid benefactors see at `/subscription` after the exploration period) and the fullscreen `SubscriptionPaywall` now highlight / preselect `user.preferred_plan` (default Premium as before).
+- Preview `platform_settings.trial_policy.trial_days` set to **10** to mirror the founder portal (prod). Housekeeping 7c allow-list extended for the always-dark `components/benefactor/` + `BenefactorPage` (same class as `components/landing/`).
+- Tests: iteration_210 — backend 5/5 (`backend/tests/test_benefactor_iter210.py`, QA accounts auto-purged), frontend 100 % incl. live `cs_live_` Stripe redirect; `SubscriptionManagement` highlight verified by computed style with a temporarily tagged account (reset). check.sh ALL CLEAR.
+- **Founder next**: Save to GitHub → Vercel/Render → open `carryon.us/benefactor` logged out on desktop + phone; tap the Messages tab; sign up a throwaway from the page and confirm `/subscription` opens on Premium; point the first ad at `/benefactor?utm_source=…`. Optional: `?v=all` for the three-plan variant.
+
+
 ## Sep 19, 2026 (later) — Homepage product screenshots re-captured from the live demo account — VERIFIED, NOT PUSHED
 
 - Root cause of "the screenshots aren't from my demo account": the eight `/screenshots/*.webp` files were shot on Sep 16 while carryon.us still served the old marketing-branch build (old "Estate Readiness / Financial Health" dashboard). The published product has since moved to the People / Access / Money / Action build, so the pictures no longer matched `petemitchell`.

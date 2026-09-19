@@ -17,6 +17,7 @@ import { toast } from '../../utils/toast';
 import { API_URL } from '../../config';
 import { suspendAutoLogout } from '../../utils/autoLogoutSuspend';
 import { FreeModeBanner } from '../FreeModeBanner';
+import { useAuth } from '../../contexts/AuthContext';
 
 const TIER_STYLES = {
   ben_premium: { accent: '#d4af37', icon: Crown, label: 'Best Value' },
@@ -130,6 +131,9 @@ export const SubscriptionManagement = ({
   _onShowPaywall,
 }) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  // Accounts tagged on an acquisition page (/benefactor) get the plan they saw there highlighted.
+  const preferredPlan = user?.preferred_plan || 'premium';
   const [plans, setPlans] = useState([]);
   const [beneficiaryPlans, setBeneficiaryPlans] = useState([]);
   // Admin-configured per-tier feature gates (keyed by tier id).
@@ -701,7 +705,7 @@ export const SubscriptionManagement = ({
             // checkout intent. Flips back to `isCurrent` automatically
             // when the webhook activates (intent is then deleted).
             const isPendingThisPlan = !!(pendingPlanId && pendingPlanId === plan.id);
-            const isRecommended = plan.id === 'ben_premium' || plan.id === 'premium';
+            const isRecommended = plan.id === 'ben_premium' || plan.id === preferredPlan;
             const locked = isPlanLocked(plan.id);
             const isAutoSelected = autoTier === plan.id;
             // Flex-wrap rows need explicit per-card widths so any orphan
