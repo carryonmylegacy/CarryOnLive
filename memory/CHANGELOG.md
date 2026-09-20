@@ -1,6 +1,14 @@
 # CarryOn — Changelog
 
 
+## Sep 20, 2026 — Real logo, upper-left, on every public page; tap → homepage (iteration_211) — VERIFIED, NOT PUSHED
+
+- Founder spotted `/start` showing a generic shield icon + "CarryOn" text instead of the logo. New shared `components/landing/LogoHome.js` (`<Link to="/"><img src="/carryon-logo.png" class="h-12"/></Link>`, same size as the homepage nav) now sits upper-left on: `/start`, `/pricing` (shield → logo), `/login` (was scroll-to-top → now home), `/signup` (was → /login), `/voices` + `/landing-consumer` (28 px squashed icon + text → logo), `/privacy`, `/terms`, `/security`, `/accessibility`, `/wind-down-promise`, `/our-promise` (no logo before), `/get-started` quiz header, `/partner-brief` + `/quickstart/try` (serif text wordmark → logo), `/speak-with-us` hero logo (now clickable), `/partner` manager login + `/founder` gate (floating top-left), `/accept-invitation/<token>` nav (text → logo). MarketingNav pages (`/about`, `/customers`, `/changelog`, `/vs`, `/readiness-score`, `/guides`, `/benefactor`) already had it.
+- In-app header logo unchanged: tapping it goes to the dashboard of the current portal (`MobileNav.handleLogoTap`), not the marketing site.
+- iteration_211: 24/24 public routes at 390 px + 1440 px — logo present, real image, top-left, `href="/"`, click lands on the homepage; all back-links / quiz / partner-brief / sign-in regressions pass. Notes only: `/speak-with-us` keeps its large hero logo (no compact header by design); `/partner-brief` phone top bar is crowded (pre-existing). check.sh ALL CLEAR.
+- **Founder next**: push → open carryon.us/start on the phone: real logo top-left, tap it → homepage.
+
+
 ## Sep 19, 2026 (night, later) — Phone product shots start at the content — VERIFIED, NOT PUSHED
 
 - `m-contacts.webp` ("Who to call first", phone) now opens on **Pete's Estate Tree** (the two-column family tree — Mitchell, Emma's, Joshua's, Louise's, Tom's, Sophie's, Lanna's, John's, Phillip's, Megan's families; founder asked for the tree, not the tiles) and `m-vault.webp` ("Document vault", phone) on the **document cards** (Last Will & Testament, Life Insurance Policy) — page header, Add / Upload buttons and explainer cards are scrolled out. Desktop shots unchanged. Re-captured from `petemitchell` on carryon.us.
