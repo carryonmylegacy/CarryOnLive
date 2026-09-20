@@ -6,6 +6,7 @@ import apiClient from '../utils/apiClient';
 import { RevealSection } from '../components/landing/RevealSection';
 import LandingContent from '../components/landing/LandingContent';
 import { API_URL } from '../config';
+import { LogoHome } from '../components/landing/LogoHome';
 
 const useIsMobileViewport = (breakpoint = 768) => {
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < breakpoint);
@@ -61,7 +62,7 @@ const SpeakWithUsPage = () => {
               <RevealSection delay={0.1}>
                 <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 lg:gap-8">
                   <div className="flex-shrink-0">
-                    <img src="/carryon-logo.png" alt="CarryOn" className="w-[160px] lg:w-[200px] xl:w-[260px] h-auto" />
+                    <LogoHome testId="speak-logo" className="w-[160px] lg:w-[200px] xl:w-[260px] h-auto" />
                   </div>
                   <div className="text-center sm:text-left flex-1 sm:pt-2">
                     <h1 className="text-3xl sm:text-4xl xl:text-5xl font-bold text-white leading-[1.08] mb-4" style={{ fontFamily: 'var(--sans)' }}>

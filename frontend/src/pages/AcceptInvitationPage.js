@@ -13,6 +13,7 @@ import { toast } from '../utils/toast';
 import { API_URL } from '../config';
 
 import { formatPhoneUS } from '../utils/phoneFormat';
+import { LogoHome } from '../components/landing/LogoHome';
 
 const AcceptInvitationPage = () => {
   const { token } = useParams();
@@ -154,9 +155,7 @@ const AcceptInvitationPage = () => {
       {/* Nav */}
       <nav className="fixed top-0 w-full z-50" style={{ borderBottom: '1px solid rgba(var(--gold-rgb), 0.08)', background: 'rgba(8,14,26,0.97)', paddingTop: 'env(safe-area-inset-top, 0px)' }}>
         <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
-          <h1 className="text-lg font-bold" style={{ fontFamily: 'var(--sans)' }}>
-            <span className="text-[#d4af37]">CarryOn</span><span className="text-white text-xs align-top">™</span>
-          </h1>
+          <LogoHome testId="invitation-logo" />
           <button onClick={() => navigate('/login')} className="text-[#6b7a90] text-sm font-medium">Sign In</button>
         </div>
       </nav>

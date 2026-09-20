@@ -26,6 +26,7 @@ import { ArrowLeft, ArrowRight, CheckCircle2, Loader2, Mail, Sparkles, ShieldChe
 import axios from 'axios';
 import { API_URL } from '../config';
 import { isStepValid, QuickStartStep, STEPS } from '../components/QuickStartWizard';
+import { LogoHome } from '../components/landing/LogoHome';
 
 const TRIAL_STORAGE_KEY = 'carryon_quickstart_trial_v1';
 
@@ -332,10 +333,10 @@ function TrialTopBar() {
       borderBottom: '1px solid rgba(var(--gold-rgb), 0.18)',
     }}>
       <div style={{ maxWidth: 1080, margin: '0 auto', padding: '14px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-        <Link to="/partner-brief" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 22, fontWeight: 600, color: '#d4af37' }}>CarryOn<span style={{ fontSize: 12, verticalAlign: 'top' }}>™</span></span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <LogoHome testId="quickstart-logo" className="h-10" />
           <span style={{ fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#94A3B8' }}>QuickStart Trial</span>
-        </Link>
+        </div>
         <Link
           to="/partner-brief"
           data-testid="qs-trial-exit"

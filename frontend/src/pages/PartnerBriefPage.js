@@ -3,6 +3,7 @@ import SEO from '../components/SEO';
 import PublicFooter from '../components/PublicFooter';
 import apiClient from '../utils/apiClient';
 import { API_URL } from '../config';
+import { LogoHome } from '../components/landing/LogoHome';
 
 /**
  * PartnerBriefPage — public, no-auth, shareable B2B screening brief.
@@ -78,7 +79,7 @@ export default function PartnerBriefPage() {
       <div className="no-print" style={{ position: 'sticky', top: 0, zIndex: 50, background: 'rgba(15,22,41,0.92)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(var(--gold-rgb), 0.18)', paddingTop: 'env(safe-area-inset-top, 0px)' }}>
         <div style={{ maxWidth: 1080, margin: '0 auto', padding: '14px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <span style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 22, fontWeight: 600, color: '#d4af37' }}>CarryOn<span style={{ fontSize: 12, verticalAlign: 'top' }}>™</span></span>
+            <LogoHome testId="partner-brief-logo" className="h-10" />
             <span style={{ fontSize: 12, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#94A3B8' }}>Partner Brief</span>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>

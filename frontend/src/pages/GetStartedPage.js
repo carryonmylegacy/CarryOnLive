@@ -10,6 +10,7 @@ import { API_URL } from '../config';
 import apiClient from '../utils/apiClient';
 import useTrialDays, { trialDaysLabel } from '../hooks/useTrialDays';
 import confetti from 'canvas-confetti';
+import { LogoHome } from '../components/landing/LogoHome';
 
 const INTERESTS = [
   { id: 'protect_family', label: 'Protect my family', icon: Shield },
@@ -334,6 +335,7 @@ export default function GetStartedPage() {
         {/* Header */}
         <div className="flex items-center justify-between px-4 sm:px-8 pb-2" style={{ paddingTop: 'max(1.25rem, env(safe-area-inset-top, 1.25rem))' }}>
           <div className="flex items-center gap-3">
+            <LogoHome testId="funnel-logo" className="h-10" />
             {step > 1 && (
               <button onClick={handleBack} data-testid="funnel-back-btn"
                 style={{ background: 'rgba(255,255,255,0.6)', backdropFilter: 'blur(12px)', borderRadius: '0.75rem', border: '1px solid rgba(255,255,255,0.5)', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}

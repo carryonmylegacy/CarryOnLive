@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { COMPANY } from '../config/company';
 import { useCopy, renderCopy, copyList } from '../copy/CopyContext';
+import { LogoHome } from '../components/landing/LogoHome';
 
 const Section = ({ icon: Icon, title, children, testid }) => (
   <section
@@ -52,14 +53,17 @@ const AccessibilityPage = () => {
   <div className="min-h-screen" style={{ background: 'var(--bg)', color: 'var(--t)' }} data-testid="accessibility-page">
     <SEO title={t('a11y.seo.title')} description={t('a11y.seo.description')} path="/accessibility" />
     <div className="max-w-3xl mx-auto px-5 sm:px-8 pt-12 pb-24" style={{ paddingTop: 'calc(48px + env(safe-area-inset-top, 0px))' }}>
-      <Link
-        to="/"
-        className="inline-flex items-center gap-1.5 text-sm mb-8 hover:text-white transition-colors"
-        style={{ color: 'var(--t4)' }}
-        data-testid="accessibility-back-home"
-      >
-        <ArrowLeft className="w-4 h-4" /> {t('a11y.back')}
-      </Link>
+      <div className="flex items-center justify-between mb-8">
+        <LogoHome testId="accessibility-logo" />
+        <Link
+          to="/"
+          className="inline-flex items-center gap-1.5 text-sm hover:text-white transition-colors"
+          style={{ color: 'var(--t4)' }}
+          data-testid="accessibility-back-home"
+        >
+          <ArrowLeft className="w-4 h-4" /> {t('a11y.back')}
+        </Link>
+      </div>
 
       {/* Hero */}
       <div className="mb-10">

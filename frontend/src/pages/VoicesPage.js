@@ -8,6 +8,7 @@ import { API_URL } from '../config';
 import { getOfflineMode } from '../offline/featureFlag';
 import { getLocalVoices, upsertLocalVoices } from '../offline/repos/voicesRepo';
 import { useCopy, renderCopy } from '../copy/CopyContext';
+import { LogoHome } from '../components/landing/LogoHome';
 
 /**
  * Public "Voices" page — feeds from GET /api/share-cards/voices/public,
@@ -93,10 +94,7 @@ export default function VoicesPage() {
         data-testid="voices-header"
       >
         <div className="max-w-6xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2.5" data-testid="voices-logo">
-            <img src="/carryon-logo.png" alt="CarryOn" className="w-7 h-7 rounded-md" />
-            <span className="text-white font-semibold tracking-tight" style={{ fontFamily: 'var(--sans)' }}>CarryOn</span>
-          </Link>
+          <LogoHome testId="voices-logo" />
           <nav className="hidden md:flex items-center gap-7 text-[22px]" style={{ color: 'var(--t3)' }}>
             <a href="/#features" className="hover:text-white transition-colors">{t('nav.features')}</a>
             <a href="/#pricing" className="hover:text-white transition-colors">{t('nav.pricing')}</a>

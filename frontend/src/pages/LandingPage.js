@@ -10,6 +10,7 @@ import { recordFunnelEvent } from '../utils/funnelTelemetry';
 import { API_URL } from '../config';
 import LandingPricing from '../components/landing/LandingPricing';
 import useTrialDays from '../hooks/useTrialDays';
+import { LogoHome } from '../components/landing/LogoHome';
 
 const TRUST_BADGES = [
   { label: 'AES-256 Encrypted' },
@@ -128,10 +129,7 @@ const LandingPage = () => {
         data-testid="landing-header"
       >
         <div className="max-w-6xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2.5" data-testid="landing-logo">
-            <img src="/carryon-logo.png" alt="CarryOn" className="w-7 h-7 rounded-md" />
-            <span className="text-white font-semibold tracking-tight" style={{ fontFamily: 'var(--sans)' }}>CarryOn</span>
-          </Link>
+          <LogoHome testId="landing-logo" />
           <nav className="hidden md:flex items-center gap-7 text-sm" style={{ color: 'var(--t3)' }}>
             <a href="#features" className="hover:text-white transition-colors">Features</a>
             <a href="#pricing" className="hover:text-white transition-colors">Pricing</a>

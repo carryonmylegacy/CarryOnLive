@@ -19,6 +19,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { toast } from '../utils/toast';
 import { API_URL } from '../config';
+import { LogoHome } from '../components/landing/LogoHome';
 
 export default function ManagerLoginPage() {
   const navigate = useNavigate();
@@ -91,6 +92,7 @@ export default function ManagerLoginPage() {
         <FlagBackdrop style={{ filter: 'brightness(0.55) contrast(1.05)' }} />
       </div>
       <div className="absolute inset-0 z-[1]" style={{ background: 'linear-gradient(180deg, rgba(11,18,33,0.55) 0%, rgba(11,18,33,0.85) 100%)' }} />
+      <div className="absolute left-6 z-10" style={{ top: 'calc(1rem + env(safe-area-inset-top, 0px))' }}><LogoHome testId="partner-login-logo" /></div>
       <div className="relative z-10 max-w-md w-full mx-6 rounded-2xl p-8" style={{
         background: 'linear-gradient(160deg, rgba(17,27,48,0.97), rgba(13,22,40,0.99))',
         border: '1px solid rgba(var(--gold-rgb), 0.18)',

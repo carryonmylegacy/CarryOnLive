@@ -17,6 +17,7 @@ import {
   HeartHandshake, Download, Calendar, Archive, Code2, ArrowLeft, CheckCircle2,
 } from 'lucide-react';
 import { useCopy, renderCopy, copyList } from '../copy/CopyContext';
+import { LogoHome } from '../components/landing/LogoHome';
 
 const Card = ({ icon: Icon, title, children, testid }) => (
   <section
@@ -65,14 +66,17 @@ const WindDownPromisePage = () => {
   <div className="min-h-screen" style={{ background: 'var(--bg)', color: 'var(--t)' }} data-testid="wind-down-page">
     <SEO title={t('winddown.seo.title')} description={t('winddown.seo.description')} path="/wind-down-promise" />
     <div className="max-w-3xl mx-auto px-5 sm:px-8 pt-12 pb-24" style={{ paddingTop: 'calc(48px + env(safe-area-inset-top, 0px))' }}>
-      <Link
-        to="/"
-        className="inline-flex items-center gap-1.5 text-sm mb-8 hover:text-white transition-colors"
-        style={{ color: 'var(--t4)' }}
-        data-testid="winddown-back-home"
-      >
-        <ArrowLeft className="w-4 h-4" /> {t('winddown.back')}
-      </Link>
+      <div className="flex items-center justify-between mb-8">
+        <LogoHome testId="winddown-logo" />
+        <Link
+          to="/"
+          className="inline-flex items-center gap-1.5 text-sm hover:text-white transition-colors"
+          style={{ color: 'var(--t4)' }}
+          data-testid="winddown-back-home"
+        >
+          <ArrowLeft className="w-4 h-4" /> {t('winddown.back')}
+        </Link>
+      </div>
 
       <div className="mb-10">
         <div

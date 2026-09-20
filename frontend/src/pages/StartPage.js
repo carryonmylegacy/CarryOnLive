@@ -12,6 +12,7 @@ import { TrustBadges, StripeNote } from '../components/landing/TrustBadges';
 import { startPlanCheckout } from '../utils/stripeRedirect';
 import { toast } from 'sonner';
 import { useCopy, renderCopy } from '../copy/CopyContext';
+import { LogoHome } from '../components/landing/LogoHome';
 
 const CYCLE_LABELS = { monthly: 'Monthly', quarterly: 'Quarterly', annual: 'Annual' };
 const CYCLE_SAVINGS = { monthly: null, quarterly: '10% off', annual: '20% off' };
@@ -195,10 +196,7 @@ const StartPage = () => {
       )}
       {/* Header */}
       <header className="flex items-center justify-between px-4 sm:px-8 pb-4" style={{ borderBottom: '1px solid var(--b)', paddingTop: 'calc(1rem + env(safe-area-inset-top, 0px))' }}>
-        <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
-          <Shield className="w-6 h-6 text-[#d4af37]" />
-          <span className="text-lg font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>CarryOn</span>
-        </div>
+        <LogoHome testId="start-logo" />
         <button onClick={() => navigate('/login')} className="text-sm text-[var(--t4)] hover:text-[var(--t)]">
           {t('nav.signin')}
         </button>

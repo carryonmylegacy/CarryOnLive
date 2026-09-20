@@ -6,6 +6,7 @@ import { Loader2, ShieldX, Lock, Eye, EyeOff, Send, ArrowLeft } from 'lucide-rea
 import { API_URL } from '../config';
 import { useCopy, renderCopy } from '../copy/CopyContext';
 import { MarketingNav } from '../components/landing/MarketingNav';
+import { LogoHome } from '../components/landing/LogoHome';
 import { MarketingFooter } from '../components/landing/MarketingFooter';
 import { FounderStory } from '../components/founder/FounderStory';
 
@@ -166,6 +167,7 @@ const FounderAboutPage = () => {
         <FlagBackdrop style={{ filter: 'brightness(0.35) contrast(1.05) saturate(0.8)' }} />
       </div>
       <div className="absolute inset-0 z-[1]" style={{ background: 'radial-gradient(ellipse 80% 60% at 50% 50%, rgba(13,27,42,0.5) 0%, rgba(13,27,42,0.85) 100%)' }} />
+      <div className="absolute left-6 z-10" style={{ top: 'calc(1rem + env(safe-area-inset-top, 0px))' }}><LogoHome testId="founder-gate-logo" /></div>
 
       <div className="relative z-10 w-full max-w-sm">
         {/* Back link */}

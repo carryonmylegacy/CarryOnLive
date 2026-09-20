@@ -19,6 +19,7 @@ import { toast } from '../utils/toast';
 import DateMaskInput from '../components/DateMaskInput';
 import apiClient from '../utils/apiClient';
 import { API_URL } from '../config';
+import { LogoHome } from '../components/landing/LogoHome';
 
 const suffixOptions = [
   { value: 'none', label: 'None' },
@@ -638,7 +639,7 @@ const SignupPage = () => {
       {/* NAV */}
       <nav className="fixed top-0 w-full z-50" style={{ borderBottom: '1px solid rgba(var(--gold-rgb), 0.08)', background: 'rgba(8,14,26,0.97)', paddingTop: 'env(safe-area-inset-top, 0px)' }}>
         <div className="max-w-[1400px] mx-auto px-6 lg:px-10 h-16 flex items-center justify-between">
-          <Link to="/login"><img src={partnerLandingLogo || "/carryon-logo.png"} alt={partnerLandingCompany || "CarryOn"} className="h-12" /></Link>
+          <LogoHome testId="signup-logo" src={partnerLandingLogo || "/carryon-logo.png"} alt={partnerLandingCompany || "CarryOn"} />
           <Link to="/login" className="text-[#d4af37] text-sm font-semibold hover:text-[#fcd34d] transition-colors flex items-center gap-1">
             Sign In <ChevronRight className="w-3.5 h-3.5" />
           </Link>

@@ -17,6 +17,7 @@ import {
   Eye, Mail, ArrowLeft, CheckCircle2, Clock,
 } from 'lucide-react';
 import { useCopy, renderCopy } from '../copy/CopyContext';
+import { LogoHome } from '../components/landing/LogoHome';
 
 const Section = ({ icon: Icon, title, children, testid }) => (
   <section
@@ -69,14 +70,17 @@ const SecurityPage = () => {
     <SEO title={t('security.seo.title')} description={t('security.seo.description')} path="/security" />
     <div className="max-w-3xl mx-auto px-5 sm:px-8 pt-12 pb-24" style={{ paddingTop: 'calc(48px + env(safe-area-inset-top, 0px))' }}>
       {/* Back link */}
-      <Link
-        to="/"
-        className="inline-flex items-center gap-1.5 text-sm mb-8 hover:text-white transition-colors"
-        style={{ color: 'var(--t4)' }}
-        data-testid="security-back-home"
-      >
-        <ArrowLeft className="w-4 h-4" /> Home
-      </Link>
+      <div className="flex items-center justify-between mb-8">
+        <LogoHome testId="security-logo" />
+        <Link
+          to="/"
+          className="inline-flex items-center gap-1.5 text-sm hover:text-white transition-colors"
+          style={{ color: 'var(--t4)' }}
+          data-testid="security-back-home"
+        >
+          <ArrowLeft className="w-4 h-4" /> Home
+        </Link>
+      </div>
 
       {/* Hero */}
       <div className="mb-10">
