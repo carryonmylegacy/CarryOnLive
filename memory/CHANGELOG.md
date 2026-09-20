@@ -1,6 +1,12 @@
 # CarryOn — Changelog
 
 
+## Sep 20, 2026 — `/start` "Choose a Plan" preselects Premium — VERIFIED, NOT PUSHED
+
+- `StartPage.js` fell back to **Standard** when no catalog plan carried `is_default` (none does), so "Choose a Plan" opened with Standard highlighted. Fallback is now **Premium**; `?plan=` (used by `/benefactor`) and an admin `is_default` flag still take precedence. Verified on preview: Premium card has the gold border + filled Subscribe, Standard/Base plain. check.sh ALL CLEAR.
+- **Founder next**: push → carryon.us/start → Choose a Plan → Premium is the highlighted card.
+
+
 ## Sep 20, 2026 — Real logo, upper-left, on every public page; tap → homepage (iteration_211) — VERIFIED, NOT PUSHED
 
 - Founder spotted `/start` showing a generic shield icon + "CarryOn" text instead of the logo. New shared `components/landing/LogoHome.js` (`<Link to="/"><img src="/carryon-logo.png" class="h-12"/></Link>`, same size as the homepage nav) now sits upper-left on: `/start`, `/pricing` (shield → logo), `/login` (was scroll-to-top → now home), `/signup` (was → /login), `/voices` + `/landing-consumer` (28 px squashed icon + text → logo), `/privacy`, `/terms`, `/security`, `/accessibility`, `/wind-down-promise`, `/our-promise` (no logo before), `/get-started` quiz header, `/partner-brief` + `/quickstart/try` (serif text wordmark → logo), `/speak-with-us` hero logo (now clickable), `/partner` manager login + `/founder` gate (floating top-left), `/accept-invitation/<token>` nav (text → logo). MarketingNav pages (`/about`, `/customers`, `/changelog`, `/vs`, `/readiness-score`, `/guides`, `/benefactor`) already had it.

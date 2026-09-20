@@ -67,8 +67,9 @@ const StartPage = () => {
       setPlans(mainPlans);
       setTrialDays(data.trial_duration_days || 30);
       setFamilyDiscount(data.family_benefactor_discount_percent || 0);
+      // Premium is the default pick (founder, Sep 20 2026); ?plan= and an admin is_default flag still win.
       const defaultPlan = mainPlans.find(p => p.id === requestedPlan)
-        || mainPlans.find(p => p.is_default) || mainPlans.find(p => p.id === 'standard') || mainPlans[0];
+        || mainPlans.find(p => p.is_default) || mainPlans.find(p => p.id === 'premium') || mainPlans[0];
       if (defaultPlan) setSelectedPlan(defaultPlan.id);
     } catch { /* silent */ }
     setLoading(false);
