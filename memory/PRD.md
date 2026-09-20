@@ -362,6 +362,19 @@ Founder Dashboard (`/admin` root) shows only revenue tiles + Code
 Health — every other surface lives inside the six section pages above.
 Operations runs separately at `/ops/*` (`OperationsPage`).
 
+### Paid-traffic acquisition surfaces (Sep 2026)
+
+Three stripped-down landing pages, not linked from the site, `noindex`, all copy in Site Copy:
+`/benefactor` (Premium, single plan), `/ready` (Family Readiness — quiz first), `/moments`
+(Milestone Messages). Shared plumbing `components/benefactor/useAcquisition.js`: stashes the ad's
+UTM params, records `landing_view`/`landing_cta_click {page}`, routes every CTA to `/signup` with
+`sessionStorage.carryon_signup_intent = {preferred_plan, landing_page}`. `SignupPage` sends
+`landing_page` (acquisition tag, else the first path of the visit via `entryLandingPage()`); the
+paywall/plan grid preselect `preferred_plan`. Read-out: Admin → Marketing → Funnel → **By Landing
+Page** (`GET /admin/funnel-analytics/landing-pages?days=`), activated = 1+ document or 1+ message.
+Precise statistics carry a `SourceRef` superscript to `/sources` (registry `siteCopySources.js`).
+The homepage encyclopedia is collapsed behind `MoreDetails` (`collapseDetails` prop, homepage only).
+
 ### Public copy is founder-editable (Site Copy, Sep 2026)
 
 Every string on the Phase-1 marketing surfaces (`/`, `/home`, `/about`,
@@ -574,6 +587,8 @@ bug — fix it in the preview DB immediately (snippet in
 - Hardcoded `rgba(212,175,55,…)` → `var(--gold-rgb)` sweep.
 
 ### Last verified end-to-end working item
+**Sep 20 2026 — Marketing audit executed (iteration_212, NOT PUSHED).** (4) Admin → Marketing → Funnel "By Landing Page" card + `GET /admin/funnel-analytics/landing-pages` (visitors → CTA → signups → activated [1+ doc or 1+ message] → paid, per `landing_page`; every signup now tagged — acquisition page or first path of the visit). (2) `/ready` quiz-first landing page, (3) `/moments` Milestone Messages page (both Site Copy-editable, noindex, shared `useAcquisition` hook). (5) `/sources` Sources & Methodology + `[n]` superscripts (570 h → EstateExec, 76 % → Caring.com 2025, 300 k hospice → NHPCO, live numbers → counted live incl. demo account) — founder to confirm entries. (6) `home.security.sub` default rewritten to specific controls (check prod Site Copy override). (1) Homepage encyclopedia collapsed behind "See everything CarryOn includes" (`MoreDetails`), trust moved up, anchors auto-open. (7) compact founder card under the homepage video + founder video on `/moments`. Backend 8/8, frontend all flows; check.sh ALL CLEAR. **Founder next**: push → confirm sources + security override → point ads at `/benefactor`, `/ready`, `/moments` with UTMs → read the By Landing Page card after a week.
+
 **Sep 20 2026 — Phone preview swipe + dots (NOT PUSHED).** `ProductPreview.js`: swipe left/right on the phone frame steps through the 5 screenshots; 5 dots below (gold pill = active, tap to jump). Desktop unchanged. Verified on preview at 390 px; check.sh ALL CLEAR. **Founder next**: push → phone → homepage → swipe.
 
 **Sep 20 2026 — `/start` Choose a Plan preselects Premium (NOT PUSHED).** `StartPage.js` fallback changed Standard → Premium (`?plan=` and admin `is_default` still win). Verified on preview (gold border + filled Subscribe on Premium); check.sh ALL CLEAR. **Founder next**: push → carryon.us/start → Choose a Plan.
