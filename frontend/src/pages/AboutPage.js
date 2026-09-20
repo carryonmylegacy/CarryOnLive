@@ -6,6 +6,7 @@ import { API_URL } from '../config';
 import { MobileNav } from '../components/landing/MobileNav';
 import { founderPhotoUrl, FOUNDER_LINKEDIN_DEFAULT } from '../components/landing/FounderCard';
 import { useCopy, renderCopy } from '../copy/CopyContext';
+import { SourceRef } from '../components/landing/SourceRef';
 
 /* ─── scroll-reveal hook ─── */
 const useReveal = (threshold = 0.15) => {
@@ -150,7 +151,7 @@ const AboutPage = () => {
             </RevealSection>
             <RevealSection delay={0.15}>
               <p className="text-[#7b879e] text-base leading-relaxed mb-10">
-                {renderCopy(t('about.every.p2'))}
+                {renderCopy(t('about.every.p2'))}<SourceRef id="will" n={2} testIdSuffix="-about" />
               </p>
             </RevealSection>
 

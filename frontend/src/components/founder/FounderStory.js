@@ -1,5 +1,6 @@
 import React from 'react';
 import { useCopy, renderCopy, copyList } from '../../copy/CopyContext';
+import { SourceRef } from '../landing/SourceRef';
 
 const IMG = '/founder-images/';
 const GOLD = 'text-[#d4a029] italic font-normal';
@@ -23,10 +24,10 @@ const Section = ({ id, bg, tint = false, children }) => (
 
 const H2 = ({ k, t }) => <h2 className="text-3xl font-bold text-center text-white mb-8" data-testid={`${k.split('.')[2]}-title`}>{t(k)}</h2>;
 
-const Paras = ({ keys, t }) => (
+const Paras = ({ keys, t, refs = {} }) => (
   <div className="max-w-4xl mx-auto">
     {keys.map((k, i) => (
-      <p key={k} className={`text-[#9aa5b4] text-lg leading-[1.8] ${i < keys.length - 1 ? 'mb-6' : ''}`}>{renderCopy(t(k), GOLD)}</p>
+      <p key={k} className={`text-[#9aa5b4] text-lg leading-[1.8] ${i < keys.length - 1 ? 'mb-6' : ''}`}>{renderCopy(t(k), GOLD)}{refs[k]}</p>
     ))}
   </div>
 );
@@ -125,7 +126,7 @@ export const FounderStory = () => {
 
       <Section id="why" tint>
         <H2 k="founder.story.why.title" t={t} />
-        <Paras keys={['founder.story.why.p1', 'founder.story.why.p2', 'founder.story.why.p3']} t={t} />
+        <Paras keys={['founder.story.why.p1', 'founder.story.why.p2', 'founder.story.why.p3']} t={t} refs={{ 'founder.story.why.p1': <SourceRef id="will" n={2} testIdSuffix="-founder" /> }} />
       </Section>
 
       <Section id="promise">

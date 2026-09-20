@@ -7,6 +7,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { API_URL } from '../../config';
+import { LandingPagesCard } from './LandingPagesCard';
 
 const STEP_LABELS = { 1: 'Interests', 2: 'Family', 3: 'Plan', 4: 'CTA', 5: 'Referral' };
 const DEVICE_ICONS = { mobile: Smartphone, desktop: Monitor, tablet: Tablet };
@@ -57,6 +58,8 @@ export const FunnelAnalyticsTab = ({ getAuthHeaders }) => {
           <RefreshCw className="w-4 h-4" />
         </Button>
       </div>
+
+      <LandingPagesCard getAuthHeaders={getAuthHeaders} />
 
       {/* Top metrics */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">

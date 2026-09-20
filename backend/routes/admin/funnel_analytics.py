@@ -196,6 +196,87 @@ async def admin_funnel_analytics(
     }
 
 
+PAID_STATUSES = ("active", "past_due")
+
+
+async def _actors_by_page(event: str, since: datetime) -> dict[str, int]:
+    """Distinct visitors (user or anon session) per `meta.page` for one event."""
+    pipeline = [
+        {"$match": {"event": event, "created_at": {"$gte": since}, "meta.page": {"$type": "string"}}},
+        {
+            "$group": {
+                "_id": {"page": "$meta.page", "actor": {"$ifNull": [{"$toString": "$user_id"}, "$anon_session_id"]}}
+            }
+        },
+        {"$group": {"_id": "$_id.page", "n": {"$sum": 1}}},
+    ]
+    rows = await db.funnel_events.aggregate(pipeline).to_list(length=100)
+    return {r["_id"]: r["n"] for r in rows}
+
+
+@router.get("/admin/funnel-analytics/landing-pages")
+async def admin_landing_pages(
+    days: int = Query(30, ge=1, le=180),
+    _user: dict = Depends(require_admin),
+):
+    """Visitors → signups → activated → paid, split by the page a family came in on.
+
+    Visitors/CTA clicks come from `landing_view` / `landing_cta_click` events (meta.page).
+    Signups are users tagged `landing_page` at registration. Activated = the account has at
+    least one vault document or one milestone message. Paid = a real (non-beta) subscription.
+    """
+    since = datetime.now(timezone.utc) - timedelta(days=days)
+    visitors = await _actors_by_page("landing_view", since)
+    cta = await _actors_by_page("landing_cta_click", since)
+
+    users = await db.users.find(
+        {"created_at": {"$gte": since.isoformat()}, "role": "benefactor"},
+        {"_id": 0, "id": 1, "landing_page": 1},
+    ).to_list(length=None)
+    ids_by_page: dict[str, list[str]] = {}
+    for u in users:
+        ids_by_page.setdefault(u.get("landing_page") or "untagged", []).append(u["id"])
+    all_ids = [u["id"] for u in users]
+
+    doc_owners = set(await db.documents.distinct("owner_id", {"owner_id": {"$in": all_ids}}))
+    msg_owners = set(await db.messages.distinct("user_id", {"user_id": {"$in": all_ids}}))
+    activated_ids = doc_owners | msg_owners
+    paid_ids = set(
+        await db.user_subscriptions.distinct(
+            "user_id",
+            {"user_id": {"$in": all_ids}, "status": {"$in": list(PAID_STATUSES)}, "beta_plan": {"$ne": True}},
+        )
+    )
+
+    pct = lambda n, d: round(100 * n / d, 1) if d else 0.0  # noqa: E731
+    rows = []
+    for page in sorted(set(visitors) | set(cta) | set(ids_by_page), key=lambda p: (-visitors.get(p, 0), p)):
+        ids = ids_by_page.get(page, [])
+        signups = len(ids)
+        activated = sum(1 for i in ids if i in activated_ids)
+        paid = sum(1 for i in ids if i in paid_ids)
+        v = visitors.get(page, 0)
+        rows.append(
+            {
+                "page": page,
+                "visitors": v,
+                "cta_clicks": cta.get(page, 0),
+                "signups": signups,
+                "activated": activated,
+                "paid": paid,
+                "visitor_to_signup": pct(signups, v),
+                "signup_to_activated": pct(activated, signups),
+                "activated_to_paid": pct(paid, activated),
+            }
+        )
+    return {
+        "days": days,
+        "since": since.isoformat(),
+        "rows": rows,
+        "activation_rule": "1+ vault document or 1+ milestone message",
+    }
+
+
 async def ensure_indexes():
     """TTL on `created_at` (90 days) + compound (event, created_at) for the
     aggregation queries."""

@@ -37,6 +37,22 @@ const getOrCreateAnonSession = () => {
   return id;
 };
 
+const ENTRY_KEY = 'carryon_entry_path';
+
+// First public path of this tab's session — the fallback `landing_page` tag for signups that did
+// not come through a dedicated acquisition page ("/" → "home", "/pricing" → "pricing", ...).
+export const rememberEntryPath = () => {
+  try {
+    if (!sessionStorage.getItem(ENTRY_KEY)) sessionStorage.setItem(ENTRY_KEY, window.location.pathname.slice(0, 60));
+  } catch {}
+};
+export const entryLandingPage = () => {
+  let p = '';
+  try { p = sessionStorage.getItem(ENTRY_KEY) || ''; } catch {}
+  const seg = p.replace(/^\//, '').split('/')[0].slice(0, 40);
+  return !seg || seg === 'home' ? 'home' : seg;
+};
+
 export const recordFunnelEvent = ({ event, meta }) => {
   if (!event) return;
   try {

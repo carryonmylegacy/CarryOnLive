@@ -164,7 +164,7 @@ const Result = ({ answers, resultId, onRetake, onStart }) => {
   );
 };
 
-export const ReadinessQuiz = ({ navigateWithFade, testIdSuffix = '' }) => {
+export const ReadinessQuiz = ({ navigateWithFade, testIdSuffix = '', onStart }) => {
   const [stage, setStage] = useState('intro');
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState([]);
@@ -185,6 +185,8 @@ export const ReadinessQuiz = ({ navigateWithFade, testIdSuffix = '' }) => {
   const retake = () => { setAnswers([]); setIndex(0); setResultId(null); setStage('intro'); };
   const start = (score) => {
     sessionStorage.setItem('carryon_quiz_score', String(score));
+    // Acquisition pages hand off themselves so the ad's UTM parameters are not overwritten.
+    if (onStart) { onStart(score); return; }
     navigateWithFade(`/start?utm_source=readiness_quiz&utm_medium=homepage&utm_content=score_${score}`);
   };
 

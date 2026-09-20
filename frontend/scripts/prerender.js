@@ -48,6 +48,8 @@ const PUBLIC_ROUTES = [
   '/start',
   '/pricing',
   '/benefactor',
+  '/ready',
+  '/moments',
   '/customers',
   '/changelog',
   '/vs',
@@ -55,6 +57,7 @@ const PUBLIC_ROUTES = [
   '/vs/everplans',
   '/vs/resolve-legacy',
   '/readiness-score',
+  '/sources',
 ];
 
 // /guides is prerendered only once the founder has launched it (scripts/guides-launch.js

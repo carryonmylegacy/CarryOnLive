@@ -9,6 +9,7 @@ import { SpeedInsights } from '@vercel/speed-insights/react';
 import { CapacitorUpdater } from '@capgo/capacitor-updater';
 import { isNative } from './services/native';
 import { isPWA } from './utils/pwaDetect';
+import { rememberEntryPath } from './utils/funnelTelemetry';
 import SubscriptionPaywall from './components/SubscriptionPaywall';
 import DashboardLayout from './components/layout/DashboardLayout';
 import ShareUploadModal from './components/ShareUploadModal';
@@ -56,6 +57,9 @@ if (typeof window !== 'undefined' && !window.__CARRYON_BUILD_LOGGED) {
 }
 
 // Lazy-loaded pages — only downloaded when navigated to
+// First public path of this tab's visit — fallback landing_page tag for signups.
+rememberEntryPath();
+
 const VaultPage = lazy(() => import('./pages/VaultPage'));
 const MessagesPage = lazy(() => import('./pages/MessagesPage'));
 const BeneficiariesPage = lazy(() => import('./pages/BeneficiariesPage'));
@@ -133,6 +137,9 @@ const HomePage = lazy(() => import('./pages/HomePage'));
 const StartPage = lazy(() => import('./pages/StartPage'));
 const PricingPage = lazy(() => import('./pages/PricingPage'));
 const BenefactorPage = lazy(() => import('./pages/BenefactorPage'));
+const ReadyPage = lazy(() => import('./pages/ReadyPage'));
+const MomentsPage = lazy(() => import('./pages/MomentsPage'));
+const SourcesPage = lazy(() => import('./pages/SourcesPage'));
 const CustomersPage = lazy(() => import('./pages/CustomersPage'));
 const ComparePage = lazy(() => import('./pages/ComparePage'));
 const ChangelogPage = lazy(() => import('./pages/ChangelogPage'));
@@ -665,6 +672,9 @@ function AppRoutes() {
       <Route path="/start" element={<StartPage />} />
       <Route path="/pricing" element={<PricingPage />} />
       <Route path="/benefactor" element={<BenefactorPage />} />
+      <Route path="/ready" element={<ReadyPage />} />
+      <Route path="/moments" element={<MomentsPage />} />
+      <Route path="/sources" element={<SourcesPage />} />
       <Route path="/customers" element={<CustomersPage />} />
       <Route path="/vs" element={<ComparePage />} />
       <Route path="/vs/:slug" element={<ComparePage />} />

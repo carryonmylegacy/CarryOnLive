@@ -83,8 +83,8 @@ const Dots = ({ active, onSelect, testIdSuffix }) => (
   </div>
 );
 
-export const ProductPreview = ({ testIdSuffix = '' }) => {
-  const [active, setActive] = useState('checklist');
+export const ProductPreview = ({ testIdSuffix = '', defaultTab = 'checklist' }) => {
+  const [active, setActive] = useState(defaultTab);
   const tab = TABS.find(t => t.id === active);
   const step = dir => setActive(a => TABS[(TABS.findIndex(t => t.id === a) + dir + TABS.length) % TABS.length].id);
   return (

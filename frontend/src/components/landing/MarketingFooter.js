@@ -1,7 +1,7 @@
 import React from 'react';
 import { useCopy, linkVisible } from '../../copy/CopyContext';
 
-const LINKS = [['home', '/'], ['pricing', '/pricing'], ['customers', '/customers'], ['compare', '/vs'], ['guides', '/guides'], ['readiness', '/readiness-score'], ['about', '/about'], ['founder', '/founder-about'], ['changelog', '/changelog']];
+const LINKS = [['home', '/'], ['pricing', '/pricing'], ['customers', '/customers'], ['compare', '/vs'], ['guides', '/guides'], ['readiness', '/readiness-score'], ['sources', '/sources'], ['about', '/about'], ['founder', '/founder-about'], ['changelog', '/changelog']];
 
 // Compact footer shared by /customers, /vs, /changelog, /readiness-score, /guides and the public founder story. `hide` drops the link to the page you are on.
 export const MarketingFooter = ({ hide = '', testIdSuffix = '' }) => {

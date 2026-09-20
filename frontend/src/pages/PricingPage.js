@@ -12,6 +12,7 @@ import { startPlanCheckout } from '../utils/stripeRedirect';
 import { toast } from 'sonner';
 import { useCopy, renderCopy } from '../copy/CopyContext';
 import { LogoHome } from '../components/landing/LogoHome';
+import { SourceRef } from '../components/landing/SourceRef';
 
 const CYCLE_LABELS = { monthly: 'Monthly', quarterly: 'Quarterly', annual: 'Annual' };
 const CYCLE_SAVINGS = { monthly: null, quarterly: 'Save 10%', annual: 'Save 20%' };
@@ -290,7 +291,7 @@ const PricingPage = () => {
         <div className="rounded-xl p-4 mb-12 text-center" style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.15)' }} data-testid="pricing-value-anchor">
           <p className="text-sm text-[var(--t3)] leading-relaxed">
             For comparison: one hour with an estate attorney typically runs $250&ndash;$500. On annual billing, <strong className="text-[var(--t)]">a full year of any plan above costs less than {attorneyHours === 1 ? 'one hour' : `${attorneyHours} hours`}</strong> &mdash; and your family stays ready every month, not just once.
-            <span className="block text-xs text-[var(--t5)] mt-1">{t('pricing.anchor')}</span>
+            <span className="block text-xs text-[var(--t5)] mt-1">{t('pricing.anchor')}<SourceRef id="hours" n={1} testIdSuffix="-pricing" /></span>
           </p>
         </div>
 

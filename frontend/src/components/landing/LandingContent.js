@@ -3,6 +3,8 @@ import { Shield, Users, ChevronRight, ChevronDown, Lock as LockIcon, Sparkles, F
 import { RevealSection } from './RevealSection';
 import { ProductPreview } from './ProductPreview';
 import { ReadinessQuiz } from './ReadinessQuiz';
+import { SourceRef } from './SourceRef';
+import { MoreDetails } from './MoreDetails';
 import { StepsShowcase } from './StepsShowcase';
 import { FounderCard } from './FounderCard';
 import { LiveStats } from './LiveStats';
@@ -35,7 +37,7 @@ const FAQ_COUNT = 6;
 const FAQ_LINKS = { 2: '/wind-down-promise', 3: '/wind-down-promise' };
 const FOOTER_LINKS = [
   ['pricing', '/pricing'], ['customers', '/customers'], ['compare', '/vs'], ['security', '/security'],
-  ['winddown', '/wind-down-promise'], ['readiness', '/readiness-score'], ['guides', '/guides'], ['changelog', '/changelog'], ['about', '/about'], ['founder', '/founder-about'], ['privacy', '/privacy'], ['terms', '/terms'],
+  ['winddown', '/wind-down-promise'], ['readiness', '/readiness-score'], ['sources', '/sources'], ['guides', '/guides'], ['changelog', '/changelog'], ['about', '/about'], ['founder', '/founder-about'], ['privacy', '/privacy'], ['terms', '/terms'],
 ];
 
 const toolNum = (gi, i) => String(PILLAR_META.slice(0, gi).reduce((n, g) => n + g.tools.length, 0) + i + 1).padStart(2, '0');
@@ -104,7 +106,7 @@ const ToolCard = ({ num, icon: Icon, title, product, bold, desc, accent = '#d4af
  */
 const DEFAULT_FOOTER = { line1: '1550 Wilson Boulevard 7th Floor', line2: 'Arlington, VA 22209 U.S.A.', phone: '(703) 884-1527' };
 
-const LandingContent = ({ navigateWithFade, footerInfo = DEFAULT_FOOTER, testIdSuffix = '', beforeAbout, skipToRealFamilies = false, ctaOverride }) => {
+const LandingContent = ({ navigateWithFade, footerInfo = DEFAULT_FOOTER, testIdSuffix = '', beforeAbout, skipToRealFamilies = false, ctaOverride, collapseDetails = false }) => {
   const [openFaq, setOpenFaq] = useState(null);
   const { t, flags } = useCopy();
 
@@ -165,7 +167,7 @@ const LandingContent = ({ navigateWithFade, footerInfo = DEFAULT_FOOTER, testIdS
           <RevealSection delay={0.25}>
             <p className="inline-flex items-start sm:items-center gap-3 mt-8 rounded-xl px-5 py-3.5 text-left text-[#e2e8f0] text-sm lg:text-base leading-relaxed" style={{ background: 'rgba(15,26,46,0.6)', border: '1px solid rgba(212,175,55,0.25)' }} data-testid={`problem-stat${testIdSuffix}`}>
               <Clock className="w-5 h-5 text-[#d4af37] flex-shrink-0 mt-0.5 sm:mt-0" />
-              <span>{renderCopy(t('home.problem.stat'), 'text-[#d4af37] font-bold')}</span>
+              <span>{renderCopy(t('home.problem.stat'), 'text-[#d4af37] font-bold')}<SourceRef id="hours" n={1} testIdSuffix={testIdSuffix} /></span>
             </p>
           </RevealSection>
           <RevealSection delay={0.3}>
@@ -187,6 +189,62 @@ const LandingContent = ({ navigateWithFade, footerInfo = DEFAULT_FOOTER, testIdS
     {/* ═══════════════════ READINESS QUIZ ═══════════════════ */}
     <ReadinessQuiz navigateWithFade={navigateWithFade} testIdSuffix={testIdSuffix} />
 
+    {/* ═══════════════════ HONEST TRUST (D1.4) ═══════════════════ */}
+    <section className="relative z-[52] -mt-1" id="trust">
+      <div className="rounded-t-[2rem] py-20 lg:py-24 relative overflow-hidden" style={{ background: 'linear-gradient(180deg, #111F34, #0D1B2A)', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
+        <div className="max-w-[1000px] mx-auto px-6 relative z-10">
+          <RevealSection>
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white text-center mb-4" style={{ fontFamily: 'Outfit, sans-serif' }} data-testid={`trust-heading${testIdSuffix}`}>
+              {t('home.trust.title')}
+            </h2>
+            <p className="text-[#7b879e] text-base text-center max-w-[640px] mx-auto mb-12 leading-relaxed">
+              {renderCopy(t('home.trust.sub'))}
+            </p>
+          </RevealSection>
+          <RevealSection delay={0.05}>
+            <div className="mb-5"><FounderCard testIdSuffix={testIdSuffix} /></div>
+          </RevealSection>
+          <RevealSection delay={0.08}>
+            <div className="mb-5"><LiveStats testIdSuffix={testIdSuffix} /></div>
+          </RevealSection>
+          <RevealSection delay={0.1}>
+            <div className="mb-5"><ReviewsCard testIdSuffix={testIdSuffix} /></div>
+          </RevealSection>
+          <div className="grid sm:grid-cols-2 gap-5" data-testid={`trust-grid${testIdSuffix}`}>
+            {trustItems.map(({ icon: Icon, title, desc }, i) => (
+              <RevealSection key={i} delay={i * 0.08}>
+                <div className="rounded-xl p-6 h-full flex gap-4" style={{ background: 'rgba(15,26,46,0.6)', border: '1px solid rgba(212,175,55,0.2)' }}>
+                  <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.15)' }}>
+                    <Icon className="w-5 h-5 text-[#d4af37]" />
+                  </div>
+                  <div>
+                    <h4 className="text-white text-base font-semibold mb-1.5" style={{ fontFamily: 'Outfit, sans-serif' }}>{title}</h4>
+                    <p className="text-[#8b97ab] text-sm leading-relaxed">{desc}</p>
+                  </div>
+                </div>
+              </RevealSection>
+            ))}
+          </div>
+          <RevealSection delay={0.1}>
+            <div className="mt-12"><TestimonialsBlock testIdSuffix={testIdSuffix} /></div>
+          </RevealSection>
+          <RevealSection delay={0.12}>
+            <div className="mt-10 flex flex-col items-center gap-4">
+              <TrustBadges testIdSuffix={testIdSuffix} />
+              <LastUpdated testIdSuffix={testIdSuffix} />
+            </div>
+          </RevealSection>
+        </div>
+      </div>
+    </section>
+
+    </>
+    )}
+
+    {/* ═══════════════════ EVERYTHING ELSE — collapsed on the homepage (audit, Sep 2026) ═══════════════════ */}
+    <MoreDetails enabled={collapseDetails} testIdSuffix={testIdSuffix}>
+    {!skipToRealFamilies && (
+    <>
     {/* ═══════════════════ WHY FAMILIES DO THIS (D1.3) ═══════════════════ */}
     <section className="relative z-20 -mt-1">
       <div className="rounded-t-[2rem] py-20 lg:py-28 relative overflow-hidden" style={{ background: 'linear-gradient(180deg, #111F34, #0E1829)', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
@@ -416,55 +474,6 @@ const LandingContent = ({ navigateWithFade, footerInfo = DEFAULT_FOOTER, testIdS
 
     {!skipToRealFamilies && (
     <>
-    {/* ═══════════════════ HONEST TRUST (D1.4) ═══════════════════ */}
-    <section className="relative z-[52] -mt-1" id="trust">
-      <div className="rounded-t-[2rem] py-20 lg:py-24 relative overflow-hidden" style={{ background: 'linear-gradient(180deg, #111F34, #0D1B2A)', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
-        <div className="max-w-[1000px] mx-auto px-6 relative z-10">
-          <RevealSection>
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white text-center mb-4" style={{ fontFamily: 'Outfit, sans-serif' }} data-testid={`trust-heading${testIdSuffix}`}>
-              {t('home.trust.title')}
-            </h2>
-            <p className="text-[#7b879e] text-base text-center max-w-[640px] mx-auto mb-12 leading-relaxed">
-              {renderCopy(t('home.trust.sub'))}
-            </p>
-          </RevealSection>
-          <RevealSection delay={0.05}>
-            <div className="mb-5"><FounderCard testIdSuffix={testIdSuffix} /></div>
-          </RevealSection>
-          <RevealSection delay={0.08}>
-            <div className="mb-5"><LiveStats testIdSuffix={testIdSuffix} /></div>
-          </RevealSection>
-          <RevealSection delay={0.1}>
-            <div className="mb-5"><ReviewsCard testIdSuffix={testIdSuffix} /></div>
-          </RevealSection>
-          <div className="grid sm:grid-cols-2 gap-5" data-testid={`trust-grid${testIdSuffix}`}>
-            {trustItems.map(({ icon: Icon, title, desc }, i) => (
-              <RevealSection key={i} delay={i * 0.08}>
-                <div className="rounded-xl p-6 h-full flex gap-4" style={{ background: 'rgba(15,26,46,0.6)', border: '1px solid rgba(212,175,55,0.2)' }}>
-                  <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.15)' }}>
-                    <Icon className="w-5 h-5 text-[#d4af37]" />
-                  </div>
-                  <div>
-                    <h4 className="text-white text-base font-semibold mb-1.5" style={{ fontFamily: 'Outfit, sans-serif' }}>{title}</h4>
-                    <p className="text-[#8b97ab] text-sm leading-relaxed">{desc}</p>
-                  </div>
-                </div>
-              </RevealSection>
-            ))}
-          </div>
-          <RevealSection delay={0.1}>
-            <div className="mt-12"><TestimonialsBlock testIdSuffix={testIdSuffix} /></div>
-          </RevealSection>
-          <RevealSection delay={0.12}>
-            <div className="mt-10 flex flex-col items-center gap-4">
-              <TrustBadges testIdSuffix={testIdSuffix} />
-              <LastUpdated testIdSuffix={testIdSuffix} />
-            </div>
-          </RevealSection>
-        </div>
-      </div>
-    </section>
-
     {/* ═══════════════════ FAQ (D1.4) ═══════════════════ */}
     <section className="relative z-[55] -mt-1" id="faq">
       <div className="rounded-t-[2rem] py-20 lg:py-24 relative overflow-hidden" style={{ background: '#0D1B2A', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
@@ -503,6 +512,7 @@ const LandingContent = ({ navigateWithFade, footerInfo = DEFAULT_FOOTER, testIdS
     </>
     )}
 
+
     {/* ═══════════════════ HOSPICE ═══════════════════ */}
     <section className="relative z-[60] -mt-1">
       <div className="rounded-t-[2rem] py-20 lg:py-24 relative overflow-hidden" style={{ background: '#111F34', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
@@ -516,7 +526,7 @@ const LandingContent = ({ navigateWithFade, footerInfo = DEFAULT_FOOTER, testIdS
               {t('home.hospice.title')}
             </h2>
             <p className="text-[#7b879e] text-base leading-relaxed mb-6">
-              {renderCopy(t('home.hospice.p1'))}
+              {renderCopy(t('home.hospice.p1'))}<SourceRef id="hospice" n={3} testIdSuffix={testIdSuffix} />
             </p>
             <p className="text-white text-base font-semibold italic leading-relaxed">
               {t('home.hospice.p2')}
@@ -545,6 +555,8 @@ const LandingContent = ({ navigateWithFade, footerInfo = DEFAULT_FOOTER, testIdS
         </div>
       </div>
     </section>
+
+    </MoreDetails>
 
     {/* ═══════════════════ FINAL CTA ═══════════════════ */}
     <section className="relative z-[70] -mt-1">

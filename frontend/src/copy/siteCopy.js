@@ -12,6 +12,8 @@ import { PAGES_APP } from './siteCopyApp';
 import { PAGES_READINESS } from './siteCopyReadiness';
 import { PAGES_GUIDES } from './siteCopyGuides';
 import { PAGES_BENEFACTOR } from './siteCopyBenefactor';
+import { PAGES_LANDING } from './siteCopyLanding';
+import { PAGES_SOURCES } from './siteCopySources';
 
 const f = (k, label, d, extra = {}) => ({ k, label, d, ...extra });
 const L = (k, label, d) => f(k, label, d, { locked: true });
@@ -113,6 +115,7 @@ const PAGES_PHASE1 = [
         f('footer.terms', 'Footer: Terms of Service', 'Terms of Service'),
         f('footer.accessibility', 'Footer: Accessibility', 'Accessibility'),
         f('footer.readiness', 'Footer: How We Score Readiness', 'How We Score Readiness'),
+        f('footer.sources', 'Footer: Sources & Methodology', 'Sources & Methodology'),
         f('footer.guides', 'Footer: Guides (shown once the Guides section is launched)', 'Guides'),
         f('footer.founder', 'Footer: Founder story (shown while the Founder story is public)', 'Founder story'),
         f('footer.copyright', 'Footer: copyright line (year is added automatically)', 'CarryOn Technologies LLC. All rights reserved.'),
@@ -140,6 +143,12 @@ const PAGES_PHASE1 = [
         f('login.hero.h1b', 'Headline — line 2 (gold, italic)', 'exactly what to do.'),
         f('login.hero.sub', 'Sub-headline (desktop)', 'CarryOn is the continuity system for your family — keeping everyone ready, connected, and clear through every disruption, from a hospital stay to the final day. Built calmly today; there the moment your family needs it.', { multiline: true }),
         f('login.hero.sub_mobile', 'Sub-headline (phone)', 'CarryOn is the continuity system for your family — ready, connected, and clear through every disruption, from a hospital stay to the final day.', { multiline: true }),
+      ] },
+      { key: 'more', label: 'Collapsed detail — “See everything CarryOn includes”', fields: [
+        f('home.more.title', 'Expander heading', 'See everything CarryOn includes'),
+        f('home.more.sub', 'Line under the heading', 'The twelve tools, how setup works in five steps, exactly how we protect your information, our hospice and military programs, and answers to the questions families ask.'),
+        f('home.more.open', 'Button — expand', 'Show me everything'),
+        f('home.more.close', 'Button — collapse', 'Show less'),
       ] },
       { key: 'video', label: 'Video section', fields: [
         f('home.video.title', 'Heading', 'See CarryOn in Action'),
@@ -219,7 +228,7 @@ const PAGES_PHASE1 = [
       ] },
       { key: 'security', label: 'Security section', fields: [
         f('home.security.title', 'Heading', 'Your Family\'s Privacy Is Non-Negotiable.'),
-        f('home.security.sub', 'Sub-heading', 'The most important things your family will ever share live here. That\'s why every layer of CarryOn™ is built to the same standards that protect banks and government systems — because your family deserves nothing less.', { multiline: true }),
+        f('home.security.sub', 'Sub-heading', 'The most important things your family will ever share live here. So we don\'t say “bank-grade.” We say exactly what we do: a separate encryption key for every family, support staff who cannot open your files, two-step sign-in, real people who verify before anything unlocks, a record of every access, and your right to export or delete everything — any time.', { multiline: true }),
         ...[
           'Your files are scrambled before they’re stored, with a separate lock for every family — our support team can’t open them from their screens',
           'Estate Guardian™ AI only reads your documents when you ask it to. It uses a trusted AI service under contract, and your documents are never used to teach it',
@@ -599,7 +608,7 @@ const PAGES_PHASE1 = [
   },
 ];
 
-export const PAGES = [...PAGES_PHASE1, ...PAGES_PHASE2, ...PAGES_READINESS, ...PAGES_GUIDES, ...PAGES_BENEFACTOR, ...PAGES_APP];
+export const PAGES = [...PAGES_PHASE1, ...PAGES_PHASE2, ...PAGES_READINESS, ...PAGES_GUIDES, ...PAGES_BENEFACTOR, ...PAGES_LANDING, ...PAGES_SOURCES, ...PAGES_APP];
 
 export const COPY_DEFAULTS = Object.fromEntries(PAGES.flatMap(p => p.sections.flatMap(s => s.fields.map(x => [x.k, x.d]))));
 export const COPY_FIELD_COUNT = Object.keys(COPY_DEFAULTS).length;

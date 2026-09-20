@@ -20,6 +20,7 @@ import DateMaskInput from '../components/DateMaskInput';
 import apiClient from '../utils/apiClient';
 import { API_URL } from '../config';
 import { LogoHome } from '../components/landing/LogoHome';
+import { entryLandingPage } from '../utils/funnelTelemetry';
 
 const suffixOptions = [
   { value: 'none', label: 'None' },
@@ -451,7 +452,9 @@ const SignupPage = () => {
         b2b_code: specialStatus.includes('enterprise') ? b2bCodeSignup : null,
         // UTM / referral tracking from session
         ...(JSON.parse(sessionStorage.getItem('carryon_utm') || '{}')),
-        // Acquisition-page tag (/benefactor): preferred_plan + landing_page
+        // Acquisition-page tag (/benefactor, /ready, /moments): preferred_plan + landing_page;
+        // everyone else is tagged with the first page of their visit ("home", "pricing", ...).
+        landing_page: entryLandingPage(),
         ...(JSON.parse(sessionStorage.getItem('carryon_signup_intent') || '{}')),
       });
       // Apr 27, 2026 — when admin has flipped `signup_otp_disabled` ON in the

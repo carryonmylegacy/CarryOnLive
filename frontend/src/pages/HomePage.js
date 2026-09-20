@@ -11,7 +11,8 @@ import { MobileNav, MARKETING_LINKS } from '../components/landing/MobileNav';
 import { HeroCtas } from '../components/landing/HeroCtas';
 import { HeroShot } from '../components/landing/HeroShot';
 import { LiveCountBadge } from '../components/landing/LiveStats';
-import { FOUNDER_LINKEDIN_DEFAULT } from '../components/landing/FounderCard';
+import { FOUNDER_LINKEDIN_DEFAULT, FounderCard } from '../components/landing/FounderCard';
+import { recordFunnelEvent } from '../utils/funnelTelemetry';
 
 const useIsMobileViewport = (breakpoint = 768) => {
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < breakpoint);
@@ -38,6 +39,7 @@ const HomePage = () => {
   const isMobileView = useIsMobileViewport();
 
   useEffect(() => {
+    recordFunnelEvent({ event: 'landing_view', meta: { page: 'home' } });
     axios.get(`${API_URL}/public/site-content`).then(r => {
       setFooterInfo({ line1: r.data.footer_address_line1, line2: r.data.footer_address_line2, phone: r.data.footer_phone });
       if (r.data.homepage_video_id) setLandscapeVideoId(r.data.homepage_video_id);
@@ -204,6 +206,7 @@ const HomePage = () => {
         navigateWithFade={navigateWithFade}
         footerInfo={footerInfo}
         testIdSuffix="-home"
+        collapseDetails
         beforeAbout={
           <section className="relative z-10">
             <div className="py-16 lg:py-24 relative overflow-hidden">
@@ -248,6 +251,8 @@ const HomePage = () => {
                     </div>
                   </div>
                 )}
+                {/* Who is behind the company — right where the video is (audit, Sep 2026). */}
+                <div className="max-w-[560px] mx-auto mt-8 text-left"><FounderCard compact testIdSuffix="-video-home" /></div>
               </RevealSection>
             </div>
           </section>
