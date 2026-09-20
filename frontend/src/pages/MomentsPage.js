@@ -8,7 +8,7 @@ import { BenefactorNav, CtaButton, HEADING } from '../components/benefactor/Bene
 import { BenefactorMessages, BenefactorTrust } from '../components/benefactor/BenefactorStory';
 import { BenefactorFooter } from '../components/benefactor/BenefactorClose';
 import { useAcquisition } from '../components/benefactor/useAcquisition';
-import { FounderCard, useFounder } from '../components/landing/FounderCard';
+import { useFounder } from '../components/landing/FounderCard';
 
 const STEP_ICONS = [Mic, CalendarHeart, Send];
 const CARD = { background: 'rgba(15,26,46,0.6)', border: '1px solid rgba(183,148,246,0.25)' };
@@ -43,7 +43,6 @@ export default function MomentsPage() {
             <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(212,175,55,0.25)', boxShadow: '0 20px 60px rgba(0,0,0,0.4)', aspectRatio: '16 / 9', background: '#0b1322' }}>
               <iframe src={`https://www.youtube.com/embed/${founder.video_id}?rel=0&modestbranding=1`} title={`${founder.name} on why he built CarryOn`} className="w-full h-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen data-testid="moments-founder-video" />
             </div>
-            <div className="max-w-[560px] mx-auto mt-6"><FounderCard compact testIdSuffix="-moments" /></div>
           </RevealSection>
         </section>
       )}

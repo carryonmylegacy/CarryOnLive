@@ -47,13 +47,19 @@ export const rememberEntryPath = () => {
   } catch {}
 };
 export const entryLandingPage = () => {
+  if (detectPlatform() === 'capacitor') return 'app';
   let p = '';
   try { p = sessionStorage.getItem(ENTRY_KEY) || ''; } catch {}
   const seg = p.replace(/^\//, '').split('/')[0].slice(0, 40);
   return !seg || seg === 'home' ? 'home' : seg;
 };
 
+// Build-time prerender (HeadlessChrome) and browser automation must not count as visitors.
+const isAutomation = () =>
+  typeof navigator !== 'undefined' && (navigator.webdriver === true || /HeadlessChrome|bot|crawler|spider|Prerender/i.test(navigator.userAgent || ''));
+
 export const recordFunnelEvent = ({ event, meta }) => {
+  if (isAutomation()) return;
   if (!event) return;
   try {
     const token = typeof localStorage !== 'undefined' ? localStorage.getItem('carryon_token') : null;

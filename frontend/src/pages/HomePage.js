@@ -11,7 +11,7 @@ import { MobileNav, MARKETING_LINKS } from '../components/landing/MobileNav';
 import { HeroCtas } from '../components/landing/HeroCtas';
 import { HeroShot } from '../components/landing/HeroShot';
 import { LiveCountBadge } from '../components/landing/LiveStats';
-import { FOUNDER_LINKEDIN_DEFAULT, FounderCard } from '../components/landing/FounderCard';
+import { FOUNDER_LINKEDIN_DEFAULT } from '../components/landing/FounderCard';
 import { recordFunnelEvent } from '../utils/funnelTelemetry';
 
 const useIsMobileViewport = (breakpoint = 768) => {
@@ -251,8 +251,6 @@ const HomePage = () => {
                     </div>
                   </div>
                 )}
-                {/* Who is behind the company — right where the video is (audit, Sep 2026). */}
-                <div className="max-w-[560px] mx-auto mt-8 text-left"><FounderCard compact testIdSuffix="-video-home" /></div>
               </RevealSection>
             </div>
           </section>
