@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { LayoutDashboard, FolderLock, PhoneCall, ListChecks, Lock, Camera, MessageSquareHeart } from 'lucide-react';
 import { RevealSection } from './RevealSection';
 import { SHOTS_VERSION } from './shotsVersion';
@@ -48,19 +48,45 @@ const DesktopFrame = ({ active, url, testIdSuffix }) => (
   </div>
 );
 
-const PhoneFrame = ({ active, testIdSuffix }) => (
-  <div className="md:hidden mx-auto" style={{ maxWidth: '300px' }} data-testid={`preview-phone-frame${testIdSuffix}`}>
-    <div className="relative rounded-[2.6rem] p-2.5" style={{ background: 'linear-gradient(160deg, #1c2a44, #0b1322)', border: '1px solid rgba(255,255,255,0.14)', boxShadow: '0 30px 80px rgba(0,0,0,0.6), 0 0 50px rgba(212,175,55,0.08), inset 0 1px 0 rgba(255,255,255,0.08)' }}>
-      <div className="relative rounded-[2.1rem] overflow-hidden" style={{ aspectRatio: '390 / 664', background: '#0b1322' }}>
-        <Shots active={active} prefix="m-" suffix="-mobile" />
+const SWIPE_PX = 40;
+
+// Phone: swipe left/right steps through the tabs; the dots below mirror the position.
+const PhoneFrame = ({ active, onStep, testIdSuffix }) => {
+  const startX = useRef(null);
+  return (
+    <div className="md:hidden mx-auto" style={{ maxWidth: '300px', touchAction: 'pan-y' }} data-testid={`preview-phone-frame${testIdSuffix}`}
+      onTouchStart={e => { startX.current = e.touches[0].clientX; }}
+      onTouchEnd={e => {
+        if (startX.current === null) return;
+        const dx = e.changedTouches[0].clientX - startX.current;
+        startX.current = null;
+        if (Math.abs(dx) > SWIPE_PX) onStep(dx < 0 ? 1 : -1);
+      }}>
+      <div className="relative rounded-[2.6rem] p-2.5" style={{ background: 'linear-gradient(160deg, #1c2a44, #0b1322)', border: '1px solid rgba(255,255,255,0.14)', boxShadow: '0 30px 80px rgba(0,0,0,0.6), 0 0 50px rgba(212,175,55,0.08), inset 0 1px 0 rgba(255,255,255,0.08)' }}>
+        <div className="relative rounded-[2.1rem] overflow-hidden" style={{ aspectRatio: '390 / 664', background: '#0b1322' }}>
+          <Shots active={active} prefix="m-" suffix="-mobile" />
+        </div>
       </div>
     </div>
+  );
+};
+
+const Dots = ({ active, onSelect, testIdSuffix }) => (
+  <div className="md:hidden flex items-center justify-center mt-4" role="tablist" aria-label="Screenshots" data-testid={`preview-dots${testIdSuffix}`}>
+    {TABS.map(t => (
+      <button key={t.id} type="button" role="tab" aria-selected={active === t.id} aria-label={t.label} onClick={() => onSelect(t.id)}
+        className="p-2" data-testid={`preview-dot-${t.id}${testIdSuffix}`}>
+        <span className="block h-2 rounded-full transition-all duration-300"
+          style={active === t.id ? { width: 22, background: '#d4af37' } : { width: 8, background: 'rgba(255,255,255,0.25)' }} />
+      </button>
+    ))}
   </div>
 );
 
 export const ProductPreview = ({ testIdSuffix = '' }) => {
   const [active, setActive] = useState('checklist');
   const tab = TABS.find(t => t.id === active);
+  const step = dir => setActive(a => TABS[(TABS.findIndex(t => t.id === a) + dir + TABS.length) % TABS.length].id);
   return (
     <section id="preview" className="relative z-[5]" data-testid={`product-preview${testIdSuffix}`}>
       <div className="py-20 lg:py-28 relative overflow-hidden" style={{ background: '#0E1829' }}>
@@ -86,7 +112,8 @@ export const ProductPreview = ({ testIdSuffix = '' }) => {
               ))}
             </div>
             <DesktopFrame active={active} url={tab.url} testIdSuffix={testIdSuffix} />
-            <PhoneFrame active={active} testIdSuffix={testIdSuffix} />
+            <PhoneFrame active={active} onStep={step} testIdSuffix={testIdSuffix} />
+            <Dots active={active} onSelect={setActive} testIdSuffix={testIdSuffix} />
             <p className="text-center text-[#a0aec0] text-sm lg:text-base mt-6 max-w-[680px] mx-auto leading-relaxed" data-testid={`preview-caption${testIdSuffix}`}>{tab.caption}</p>
           </RevealSection>
           <RevealSection delay={0.3}>

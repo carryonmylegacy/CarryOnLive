@@ -1,6 +1,13 @@
 # CarryOn — Changelog
 
 
+## Sep 20, 2026 — Phone preview: swipe + dots (`ProductPreview`) — VERIFIED, NOT PUSHED
+
+- On phones, the "See inside CarryOn" frame now steps through the five screenshots with a **left/right swipe** (40 px threshold, vertical scroll untouched via `touch-action: pan-y`, wraps around) and shows **five dots** under the phone — gold pill for the active shot, tap any dot to jump. Desktop unchanged (dots/swipe are `md:hidden`). Shared component, so `/`, `/home`, `/benefactor`, `/customers` all get it. Test ids: `preview-dots{suffix}`, `preview-dot-<id>{suffix}`.
+- Verified on preview at 390 px: swipe-left checklist → messages (caption follows), tapping the 5th dot selects "Who to call first". check.sh ALL CLEAR.
+- **Founder next**: push → phone → homepage → swipe the phone frame.
+
+
 ## Sep 20, 2026 — `/start` "Choose a Plan" preselects Premium — VERIFIED, NOT PUSHED
 
 - `StartPage.js` fell back to **Standard** when no catalog plan carried `is_default` (none does), so "Choose a Plan" opened with Standard highlighted. Fallback is now **Premium**; `?plan=` (used by `/benefactor`) and an admin `is_default` flag still take precedence. Verified on preview: Premium card has the gold border + filled Subscribe, Standard/Base plain. check.sh ALL CLEAR.

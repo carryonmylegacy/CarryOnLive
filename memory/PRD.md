@@ -574,6 +574,8 @@ bug — fix it in the preview DB immediately (snippet in
 - Hardcoded `rgba(212,175,55,…)` → `var(--gold-rgb)` sweep.
 
 ### Last verified end-to-end working item
+**Sep 20 2026 — Phone preview swipe + dots (NOT PUSHED).** `ProductPreview.js`: swipe left/right on the phone frame steps through the 5 screenshots; 5 dots below (gold pill = active, tap to jump). Desktop unchanged. Verified on preview at 390 px; check.sh ALL CLEAR. **Founder next**: push → phone → homepage → swipe.
+
 **Sep 20 2026 — `/start` Choose a Plan preselects Premium (NOT PUSHED).** `StartPage.js` fallback changed Standard → Premium (`?plan=` and admin `is_default` still win). Verified on preview (gold border + filled Subscribe on Premium); check.sh ALL CLEAR. **Founder next**: push → carryon.us/start → Choose a Plan.
 
 **Sep 20 2026 — Real logo upper-left on every public page, tap → homepage (NOT PUSHED).** Shared `components/landing/LogoHome.js` replaced the shield icon on `/start` + `/pricing` and added/fixed the logo on 17 more public pages (login, signup, legal, security, a11y, wind-down, our-promise, get-started, partner-brief, quickstart, speak-with-us, partner login, founder gate, accept-invitation). In-app header logo still goes to the portal dashboard. iteration_211 24/24 routes pass at phone + desktop; check.sh ALL CLEAR. **Founder next**: push → carryon.us/start on the phone → logo top-left → tap → homepage.
