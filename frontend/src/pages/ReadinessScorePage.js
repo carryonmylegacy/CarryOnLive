@@ -77,6 +77,7 @@ const ReadinessScorePage = () => {
           <p className="text-[#d4af37] text-xs font-bold uppercase tracking-[0.2em] mb-4">{t('readiness.hero.eyebrow')}</p>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-[1.08] mb-5" style={{ ...OUTFIT, textWrap: 'balance' }} data-testid="readiness-h1">{t('readiness.hero.title')}</h1>
           <p className="text-[#a0aec0] text-base lg:text-lg leading-relaxed" data-testid="readiness-intro">{renderCopy(t('readiness.hero.intro'), 'text-white font-semibold')}</p>
+          <p className="text-[#d4af37] text-base lg:text-lg italic mt-4" data-testid="readiness-principle">{t('readiness.hero.line')}</p>
           <p className="inline-flex items-center gap-2 text-xs text-[#64748b] mt-6" data-testid="readiness-updated"><CalendarDays className="w-3.5 h-3.5" /> {t('readiness.updated_prefix')}: <span className="text-[#a0aec0]">{t('readiness.updated')}</span></p>
         </RevealSection>
       </section>

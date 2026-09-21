@@ -30,6 +30,7 @@ export const PAGES_READINESS = [
         f('readiness.hero.eyebrow', 'Eyebrow', 'Readiness Score policy'),
         f('readiness.hero.title', 'Headline', 'How your readiness score is calculated.'),
         ML('readiness.hero.intro', 'Intro paragraph', 'The number on your dashboard is not a grade on your family or your wealth. It measures one thing: if something happened to you tonight, how much of what your family needs is already in place. This page explains every part of it in plain English, so nothing about the score is a mystery.'),
+        f('readiness.hero.line', 'One-line principle under the intro (italic)', 'Readiness isn’t about how much you own. It’s whether the people you love can find what matters.'),
         f('readiness.updated', 'Formula last changed (date shown on the page)', 'September 18, 2026'),
         f('readiness.updated_prefix', 'Label before the date', 'Formula last changed'),
       ] },

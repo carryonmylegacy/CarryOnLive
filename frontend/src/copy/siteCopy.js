@@ -33,7 +33,7 @@ const TOOLS = [
     'Name a trustee and choose what they can do. They work inside your plan under their own login, and you can see every change they make and when they made it. Helpful when a parent needs a hand today, not just someday.'],
   ['sdv', 'Secure Document Vault', 'Every important document, in one place',
     'Wills, trusts, insurance policies, deeds — encrypted, organized, and shared only with the people you choose.',
-    'Upload the paperwork your family would otherwise tear the house apart looking for. Your files are scrambled before they’re stored, with a separate lock for every family, and our support team can’t open them from their screens. Your loved ones see exactly what you allow — nothing more.'],
+    'Upload the paperwork your family would otherwise tear the house apart looking for. Your files are scrambled before they’re stored, with a separate lock for every family. They aren’t casually accessible to CarryOn staff — privileged access is limited to defined support tasks and every open is logged. Your loved ones see exactly what you allow — nothing more.'],
   ['dav', 'Digital Access Vault', 'Passwords and accounts',
     'Logins, subscriptions, crypto keys, and account numbers — saved, encrypted, and assigned to the right person.',
     'The average family has dozens of accounts nobody else can get into. Store them here, decide who gets what, and nothing gets locked away forever or forgotten.'],
@@ -118,7 +118,7 @@ const PAGES_PHASE1 = [
         f('footer.sources', 'Footer: Sources & Methodology', 'Sources & Methodology'),
         f('footer.guides', 'Footer: Guides (shown once the Guides section is launched)', 'Guides'),
         f('footer.founder', 'Footer: Founder story (shown while the Founder story is public)', 'Founder story'),
-        f('footer.copyright', 'Footer: copyright line (year is added automatically)', 'CarryOn Technologies LLC. All rights reserved.'),
+        f('footer.copyright', 'Footer: copyright line (year is added automatically)', 'CarryOn Enterprises Inc. All rights reserved.'),
       ] },
       { key: 'hero', label: 'Hero (top of /home page)', fields: [
         f('home.hero.eyebrow', 'Small gold line above the headline', 'Every American Family. Ready.'),
@@ -161,7 +161,7 @@ const PAGES_PHASE1 = [
         f('home.problem.p2', 'Paragraph 2', 'CarryOn™ is that place. One secure spot to get your affairs in order — your documents, your passwords, the people to call, the messages you want to leave, and a clear plan your loved ones can actually follow — so they can handle what comes next instead of trying to figure it out alone.', { multiline: true }),
         f('home.problem.cta', 'Button', 'Get Started'),
         f('home.problem.italic', 'Italic gold line', 'Useful today — finding the deed, sharing a policy with your spouse — and essential on the day your family needs it most.'),
-        f('home.problem.stat', 'Statistic line', 'Settling an estate without organized records takes an average of **570 hours**. Writing it all down in one place is how that number comes down.'),
+        f('home.problem.stat', 'Statistic line', 'Settling an estate takes the average executor about **570 hours**, spread over roughly 16 months. Writing it all down in one place is how that number comes down.'),
         f('home.problem.for_label', '“Built for” label', 'Built for'),
         f('home.problem.for_text', '“Built for” text', 'Everyday American families — a house, a phone full of accounts, a few policies, and people who\'d have to sort it all out. No estate attorney on retainer required.', { multiline: true }),
         f('home.problem.notfor_label', '“Probably not for” label', 'Probably not for'),
@@ -228,9 +228,9 @@ const PAGES_PHASE1 = [
       ] },
       { key: 'security', label: 'Security section', fields: [
         f('home.security.title', 'Heading', 'Your Family\'s Privacy Is Non-Negotiable.'),
-        f('home.security.sub', 'Sub-heading', 'The most important things your family will ever share live here. So we don\'t say “bank-grade.” We say exactly what we do: a separate encryption key for every family, support staff who cannot open your files, two-step sign-in, real people who verify before anything unlocks, a record of every access, and your right to export or delete everything — any time.', { multiline: true }),
+        f('home.security.sub', 'Sub-heading', 'The most important things your family will ever share live here. So we don\'t use broad labels. We say exactly what we do: a separate encryption key for every family, support staff who cannot open your files, two-step sign-in, real people who verify before anything unlocks, a record of every access, and your right to export or delete everything — any time.', { multiline: true }),
         ...[
-          'Your files are scrambled before they’re stored, with a separate lock for every family — our support team can’t open them from their screens',
+          'Your files are scrambled before they’re stored, with a separate lock for every family — privileged staff access is restricted to defined administrative tasks, controlled and audited',
           'Estate Guardian™ AI only reads your documents when you ask it to. It uses a trusted AI service under contract, and your documents are never used to teach it',
           'Two-step sign-in, on by default, with trusted-device options for your family',
           'Real people — not algorithms — confirm a death or incapacity before anything unlocks',
@@ -247,7 +247,7 @@ const PAGES_PHASE1 = [
         f('home.trust.reviews.read', 'Independent reviews card — read link', 'Read the reviews'),
         f('home.trust.reviews.write', 'Independent reviews card — write link', 'Write a review'),
         ...[
-          ['1', 'Your files stay yours to open', 'Scrambled before they’re stored, with a separate lock for every family. Our support team can’t open them from their screens, and every time a file is opened, we write down who did it and when.'],
+          ['1', 'Your files, locked per family', 'Scrambled before they’re stored, with a separate lock for every family. They aren’t casually accessible to CarryOn staff — privileged access is limited to defined administrative functions, controlled and audited — and every time a file is opened, we write down who did it and when.'],
           ['2', 'Your data is yours. Leave anytime.', 'Export everything whenever you want and cancel from your account. No hoops, no phone calls.'],
           ['3', 'Try it before you pay', 'Every plan starts with an exploration period — no credit card needed. Set up your vault, invite one person, and see if it fits.'],
           ['4', 'Built in Arlington, Virginia since 2024', 'A registered U.S. company with a real address, a real phone number, and a founder who answers to his name.'],
@@ -266,7 +266,7 @@ const PAGES_PHASE1 = [
       ] },
       { key: 'hospice', label: 'Hospice, military & new adult', fields: [
         f('home.hospice.title', 'Heading', 'Free for Every American in Hospice Care.'),
-        f('home.hospice.p1', 'Paragraph', 'At any given time, over 300,000 Americans are in hospice — and the vast majority have no plan in place for their families. CarryOn™ is offered at no cost to all U.S. citizens and resident aliens enrolled in certified hospice care. Full platform access. No exceptions.', { multiline: true }),
+        f('home.hospice.p1', 'Paragraph', 'At any given time, over 300,000 Americans are in hospice — and their families are about to carry a great deal at once. CarryOn™ is offered at no cost to all U.S. citizens and resident aliens enrolled in certified hospice care. Full platform access. No exceptions.', { multiline: true }),
         f('home.hospice.p2', 'Italic line', 'No one should be denied the ability to get their affairs in order and prepare their family — simply because of their circumstances.'),
         f('home.hospice.mil_title', 'Military card title', 'Military & Veteran Families'),
         f('home.hospice.mil_text', 'Military card text', 'Reduced pricing for active-duty service members, veterans, and their families. Your service prepared you for everything — let CarryOn help prepare your family for anything else.', { multiline: true }),
@@ -294,7 +294,7 @@ const PAGES_PHASE1 = [
       { key: 'every', label: '“Built for Every Family. Period.”', fields: [
         f('about.every.title', 'Heading', 'Built for Every Family. Period.'),
         f('about.every.p1', 'Paragraph 1', 'You know the scenario. Someone you love is gone — and suddenly you\'re standing in their kitchen, opening drawers, looking for a will that might not exist, calling numbers you\'re not sure are right, trying to figure out what they wanted while barely holding yourself together.', { multiline: true }),
-        f('about.every.p2', 'Paragraph 2', '76% of American families will face exactly this. Not because they didn\'t care — but because no one gave them a simple, secure, affordable way to get ready.', { multiline: true }),
+        f('about.every.p2', 'Paragraph 2', '76% of U.S. adults reported not having a will in a 2025 survey. And even having a will doesn\'t necessarily mean your family knows where everything is, who to call, or what to do first. Not because people don\'t care — but because no one gave them a simple, secure, affordable way to get ready.', { multiline: true }),
         f('about.every.why', 'Sub-heading', 'That\'s why CarryOn exists.'),
         f('about.every.p3', 'Paragraph 3 (the word **every** is bolded)', 'Not only for the wealthy families who already have estate attorneys on retainer. Not only for the tech-savvy early adopters who track everything in spreadsheets. For **every** family — the single parent working two jobs who needs a checklist their kids can follow, the young couple who just bought their first home and realized they have no plan, the grandparent who wants their voice heard at a graduation they might not make, the blended family navigating who gets what and who needs to know.', { multiline: true }),
         f('about.every.p4', 'Paragraph 4', 'CarryOn is the platform that meets all of them where they are — with security they can trust, simplicity they can use, and a price they can afford.', { multiline: true }),
@@ -310,7 +310,7 @@ const PAGES_PHASE1 = [
         f('about.values.title', 'Heading', 'Our Values'),
         ...[
           ['1', 'Readiness Over Reaction.', 'We don\'t wait for crisis. We prepare for it.'],
-          ['2', 'Security Without Compromise.', 'Your files are scrambled before they’re stored, with a separate lock for every family. Our AI only reads your documents when you ask it to. No backdoors. No exceptions.'],
+          ['2', 'Security you can inspect.', 'Your files are scrambled before they’re stored, with a separate lock for every family. Our AI only reads your documents when you ask it to. Privileged access is restricted to defined administrative functions and is controlled and audited — our Security page documents exactly how.'],
           ['3', 'Accessible to Every Family.', 'Not just the wealthy. Not just the tech-savvy. Not just the married, the traditional, or the conventional. Every family — however you define yours.'],
           ['4', 'Lean by Design.', 'Every dollar earns its keep. Every feature ships because families need it — not because investors want it.'],
           ['5', 'People First. Always.', 'Behind every document in our vault is a person someone loves. Behind every checklist item is a task someone will face on the worst day of their life. We never forget that. Our platform is secure and automated, but our operational teams are real people — trained, empathetic, and personally invested in getting this right for your family.'],
@@ -321,7 +321,7 @@ const PAGES_PHASE1 = [
       ] },
       { key: 'who', label: 'Who We Are', fields: [
         f('about.who.title', 'Heading', 'Who We Are'),
-        f('about.who.p1', 'Paragraph 1', 'CarryOn is led by a small, focused team that believes this work matters. Our leadership brings deep experience across operations, legal, finance, and technology — but what unites us isn\'t our résumés. It\'s the shared conviction that 76% is an unacceptable number, and that every family — regardless of who they are, where they live, or what they look like — deserves to be ready.', { multiline: true }),
+        f('about.who.p1', 'Paragraph 1', 'CarryOn is led by a small, focused team that believes this work matters. Our leadership brings deep experience across operations, legal, finance, and technology — but what unites us isn\'t our résumés. It\'s the shared conviction that three out of four adults without a will is an unacceptable number, and that every family — regardless of who they are, where they live, or what they look like — deserves to be ready.', { multiline: true }),
         f('about.who.p2', 'Paragraph 2', 'The people behind CarryOn are trained for empathy, precision, and the kind of care this work demands. Today that starts with the founder, who personally answers support and reviews every verification.', { multiline: true }),
         f('about.who.linkedin', 'Founder LinkedIn link text', 'LinkedIn Profile'),
         ...[
@@ -417,7 +417,7 @@ const PAGES_PHASE1 = [
       ] },
       { key: 'story_why', label: 'Story — Why Now?', fields: [
         f('founder.story.why.title', 'Heading', 'Why Now?'),
-        f('founder.story.why.p1', 'Paragraph 1', '76% of Americans are unprepared. Modern lives are digitally fragmented and procedurally fragile. The average family juggles dozens of accounts, policies, cloud drives, passwords, properties, and platforms—with no plan for what happens when the person who manages it all is gone.', { multiline: true }),
+        f('founder.story.why.p1', 'Paragraph 1', '76% of U.S. adults reported not having a will in a 2025 survey. Modern lives are digitally fragmented and procedurally fragile. The average family juggles dozens of accounts, policies, cloud drives, passwords, properties, and platforms—with no plan for what happens when the person who manages it all is gone.', { multiline: true }),
         f('founder.story.why.p2', 'Paragraph 2', 'In aviation, we don\'t leave emergencies to improvisation; we brief, rehearse, and checklist. Families deserve the same rigor—delivered with compassion.', { multiline: true }),
         f('founder.story.why.p3', 'Paragraph 3', 'And at the foundation of that rigor sits the same truth my grandfather lived by: clarity, honesty, and simplicity make everything easier to carry forward. CarryOn is built on that truth—designed so nothing essential is ever lost, forgotten, or left to chance.', { multiline: true }),
       ] },
@@ -461,9 +461,9 @@ const PAGES_PHASE1 = [
       ] },
       { key: 'hero', label: 'Hero', fields: [
         f('security.hero.pill', 'Small pill label', 'Trust & Security'),
-        f('security.hero.h1a', 'Headline — before the italic word', 'Your family\'s most private moments deserve'),
-        f('security.hero.h1b', 'Headline — italic gold words', 'military-grade'),
-        f('security.hero.h1c', 'Headline — after the italic word', 'protection.'),
+        f('security.hero.h1a', 'Headline — before the italic words', 'Your family\'s most private information deserves'),
+        f('security.hero.h1b', 'Headline — italic gold words', 'security you can inspect.'),
+        f('security.hero.h1c', 'Headline — after the italic words (leave blank if not needed)', ''),
         f('security.hero.intro', 'Intro paragraph', 'We built CarryOn for families like ours. The same encryption, key handling, and operational controls we\'d want guarding our own wills, our own messages, our own kids\' inheritance. This page documents — honestly — exactly what those controls are today.', { multiline: true }),
       ] },
       { key: 'sections', label: 'Section titles', fields: [
@@ -560,8 +560,11 @@ const PAGES_PHASE1 = [
         f('pricing.stripe_note', 'Note under every plan button (all pages)', 'Secure checkout by **Stripe** · your card never touches our servers'),
       ] },
       { key: 'misc', label: 'Other headings', fields: [
-        f('pricing.anchor', 'Value anchor — small line', 'Settling an estate without organized records takes an average of 570 hours.'),
+        f('pricing.anchor', 'Value anchor — small line', 'Settling an estate takes the average executor about 570 hours.'),
         f('pricing.reduced.q', 'Reduced pricing — question', 'Do you qualify for reduced pricing?'),
+        f('pricing.reduced.note', 'Reduced pricing — one-line summary under the question', 'Reduced pricing is available for seniors, military/first responders, veterans, and young adults. Certified hospice families receive full access free.'),
+        f('pricing.winddown.q', 'Wind-Down Promise nudge — question (shown under the plans and on /start)', 'Worried about trusting a new company with long-term family information?'),
+        f('pricing.winddown.cta', 'Wind-Down Promise nudge — link text', 'Read our Wind-Down Promise.'),
         f('pricing.which.title', 'Which plan is right — heading', 'Which plan is right for you?'),
         f('pricing.why.title', 'Why monthly — heading', 'Why monthly, and why more than three prices?'),
         f('pricing.why.p1', 'Why monthly — paragraph 1', 'Most tools in this category charge $49–$150 a year up front, usually with a free tier that caps how much you can store. We chose a different model on purpose:'),
@@ -583,7 +586,7 @@ const PAGES_PHASE1 = [
         f('start.seo.title', 'Page title', 'Get Started with CarryOn - Family Preparedness Platform'),
       ] },
       { key: 'hero', label: 'Headline', fields: [
-        f('start.hero.title', 'Headline', 'Protect what matters most'),
+        f('start.hero.title', 'Headline', 'Get your family\'s affairs in order'),
         f('start.hero.sub', 'Sub-headline', 'Choose how you\'d like to get started with CarryOn'),
       ] },
       { key: 'doors', label: 'The two doors', fields: [

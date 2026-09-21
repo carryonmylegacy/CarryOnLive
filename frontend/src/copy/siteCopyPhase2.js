@@ -198,7 +198,7 @@ export const PAGES_PHASE2 = [
       ] },
       { key: 'footer', label: 'Small footer (Customers, Compare, What’s New pages)', fields: [
         f('footer.home', 'Footer: Home', 'Home'),
-        f('footer.short_copyright', 'Copyright line (year is added automatically)', 'CarryOn Technologies LLC'),
+        f('footer.short_copyright', 'Copyright line (year is added automatically)', 'CarryOn Enterprises Inc.'),
       ] },
     ],
   },
@@ -384,7 +384,7 @@ export const PAGES_PHASE2 = [
           'You can opt out of SMS messages at any time by replying STOP to any message or by updating your preferences in your account settings. For help, reply HELP or contact us at the information provided below.',
           'We do not sell, rent, or share your phone number or SMS opt-in data with third parties for marketing purposes. Your information is shared only with service providers who assist in delivering messages (e.g., Twilio).',
         ].join('\n')),
-        ...legalSection('privacy', 5, '5. Data Security', 'In plain language: your files are scrambled before they’re stored, with a separate lock for every family. Our support team can’t open them from their screens, and every time a file is opened, we write down who did it and when. Technically, we implement industry-standard security measures, including AES-256 encryption with per-estate keys and two-factor authentication. Your sensitive documents are encrypted at rest and in transit. Conversations with our AI features are retained as chat transcripts until you delete them and may quote documents you flag for AI analysis. AI requests are processed by xAI under a zero-data-retention configuration — xAI does not store your content after the response is returned. Under xAI’s published API policy, content sent through the API is also not used to train their models.'),
+        ...legalSection('privacy', 5, '5. Data Security', 'In plain language: your files are scrambled before they’re stored, with a separate lock for every family. They aren’t casually accessible to CarryOn staff — privileged access is restricted to defined administrative functions and is controlled and audited — and every time a file is opened, we write down who did it and when. Technically, we implement industry-standard security measures, including AES-256 encryption with per-estate keys and two-factor authentication. Your sensitive documents are encrypted at rest and in transit. Conversations with our AI features are retained as chat transcripts until you delete them and may quote documents you flag for AI analysis. AI requests are processed by xAI under a zero-data-retention configuration — xAI does not store your content after the response is returned. Under xAI’s published API policy, content sent through the API is also not used to train their models.'),
         ...legalSection('privacy', 6, '6. Data Sharing and Disclosure', [
           'We may share your information only in the following circumstances:',
           '- With your designated beneficiaries, as configured by you',

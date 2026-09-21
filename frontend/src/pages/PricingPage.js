@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { SEO } from '../components/SEO';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import {
@@ -16,7 +16,8 @@ import { SourceRef } from '../components/landing/SourceRef';
 
 const CYCLE_LABELS = { monthly: 'Monthly', quarterly: 'Quarterly', annual: 'Annual' };
 const CYCLE_SAVINGS = { monthly: null, quarterly: 'Save 10%', annual: 'Save 20%' };
-const ATTORNEY_HOUR_LOW = 250;
+// Low end of the sourced range (LeanLaw 2025: $200–$400/hr, up to $500 for complex matters) — see /sources#attorney.
+const ATTORNEY_HOUR_LOW = 200;
 const SPECIAL_ORDER = ['seniors', 'military', 'veteran', 'new_adult'];
 const money = (n) => `$${Number(n).toFixed(2)}`;
 
@@ -145,7 +146,7 @@ const PricingPage = () => {
         }
       }))
     },
-    "provider": { "@type": "Organization", "name": "CarryOn Technologies", "url": "https://carryon.us" }
+    "provider": { "@type": "Organization", "name": "CarryOn", "legalName": "CarryOn Enterprises Inc.", "url": "https://www.carryon.us" }
   }) : null;
 
   const card = { background: 'var(--s)', border: '1px solid var(--b)' };
@@ -287,10 +288,16 @@ const PricingPage = () => {
           </ol>
         </div>
 
+        {/* Wind-Down Promise nudge — for the hesitant, secondary to the plan CTAs */}
+        <p className="text-center text-xs text-[var(--t5)] mb-6" data-testid="pricing-winddown-nudge">
+          {t('pricing.winddown.q')}{' '}
+          <Link to="/wind-down-promise" className="text-[#d4af37] hover:text-[#fcd34d] underline underline-offset-4" data-testid="pricing-winddown-link">{t('pricing.winddown.cta')}</Link>
+        </p>
+
         {/* Value anchor integrated with the price grid (D4.3) */}
         <div className="rounded-xl p-4 mb-12 text-center" style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.15)' }} data-testid="pricing-value-anchor">
           <p className="text-sm text-[var(--t3)] leading-relaxed">
-            For comparison: one hour with an estate attorney typically runs $250&ndash;$500. On annual billing, <strong className="text-[var(--t)]">a full year of any plan above costs less than {attorneyHours === 1 ? 'one hour' : `${attorneyHours} hours`}</strong> &mdash; and your family stays ready every month, not just once.
+            For comparison: one hour with an estate attorney typically runs $200&ndash;$400, up to $500 for complex matters<SourceRef id="attorney" n={5} testIdSuffix="-pricing" />. On annual billing, <strong className="text-[var(--t)]">a full year of any plan above costs less than {attorneyHours === 1 ? 'one hour' : `${attorneyHours} hours`}</strong> &mdash; and your family stays ready every month, not just once.
             <span className="block text-xs text-[var(--t5)] mt-1">{t('pricing.anchor')}<SourceRef id="hours" n={1} testIdSuffix="-pricing" /></span>
           </p>
         </div>
@@ -302,9 +309,7 @@ const PricingPage = () => {
               className="w-full rounded-xl p-5 flex items-center justify-between gap-4 text-left transition-colors hover:border-[#d4af37]/40" style={card}>
               <div>
                 <p className="text-base font-bold text-[var(--t)]" style={{ fontFamily: 'Outfit, sans-serif' }}>{t('pricing.reduced.q')}</p>
-                <p className="text-xs text-[var(--t4)] mt-1">
-                  {specialTiers.map(p => p.name).join(' \u00b7 ')} &middot; Hospice families: free. Same full platform, verified once.
-                </p>
+                <p className="text-xs text-[var(--t4)] mt-1" data-testid="pricing-reduced-note">{t('pricing.reduced.note')}</p>
               </div>
               <ChevronDown className={`w-5 h-5 text-[#d4af37] flex-shrink-0 transition-transform ${showSpecial ? 'rotate-180' : ''}`} />
             </button>

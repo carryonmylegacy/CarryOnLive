@@ -7,6 +7,7 @@ import { MobileNav } from '../components/landing/MobileNav';
 import { founderPhotoUrl, FOUNDER_LINKEDIN_DEFAULT } from '../components/landing/FounderCard';
 import { useCopy, renderCopy } from '../copy/CopyContext';
 import { SourceRef } from '../components/landing/SourceRef';
+import { COMPANY } from '../config/company';
 
 /* ─── scroll-reveal hook ─── */
 const useReveal = (threshold = 0.15) => {
@@ -87,7 +88,7 @@ const AboutPage = () => {
           "url": "https://carryon.us/about",
           ...(founder.photo_url ? { "image": founder.photo_url } : {}),
           ...(founder.linkedin_url ? { "sameAs": [founder.linkedin_url] } : {}),
-          "worksFor": { "@type": "Organization", "name": "CarryOn Technologies LLC", "url": "https://carryon.us" }
+          "worksFor": { "@type": "Organization", "name": "CarryOn", "legalName": "CarryOn Enterprises Inc.", "url": "https://www.carryon.us" }
         }) }} />
       )}
 
@@ -321,12 +322,13 @@ const AboutPage = () => {
               <span className="text-[#3a4a63] text-xs">{t('footer.accessibility')}</span>
             </div>
             <div className="text-right text-[#3a4a63] text-xs leading-relaxed">
-              <p>1550 Wilson Boulevard 7th Floor</p>
-              <p>Arlington, VA 22209 U.S.A.</p>
-              <p>(703) 884-1527</p>
+              <p>{COMPANY.addressLine1}</p>
+              <p>{COMPANY.addressLine2} U.S.A.</p>
+              <p data-testid="about-footer-phone">{COMPANY.phone}</p>
             </div>
           </div>
           <p className="text-center text-[#2d3d55] text-xs mt-6">&copy; {new Date().getFullYear()} {t('footer.copyright')}</p>
+          <p className="text-center text-[#2d3d55] text-xs mt-1" data-testid="about-corporate-disclosure">CarryOn is operated by {COMPANY.disclosure}.</p>
         </div>
       </footer>
     </div>

@@ -116,7 +116,7 @@ const LandingPage = () => {
 
   return (
     <div className="min-h-screen overflow-x-hidden" style={{ background: 'var(--bg)', color: 'var(--t)' }}>
-      <SEO title="Total Estate Readiness — CarryOn" description="One system for your family's documents, finances, people, and plan — ready for any disruption." path="/landing-consumer" />
+      <SEO title="Total Estate Readiness — CarryOn" description="One system for your family's documents, finances, people, and plan — ready for any disruption." path="/landing-consumer" noindex />
       {/* Top nav */}
       <header
         className="fixed top-0 inset-x-0 z-40 transition-all duration-200"

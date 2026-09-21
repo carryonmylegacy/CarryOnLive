@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { SEO } from '../components/SEO';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import {
@@ -133,7 +133,8 @@ const StartPage = () => {
     return ok;
   };
 
-  const specialTiers = plans.filter(p => ['military', 'veteran', 'new_adult'].includes(p.id));
+  // Same reduced tiers the pricing page shows — seniors included (was missing here, Sep 20 2026).
+  const specialTiers = plans.filter(p => ['military', 'veteran', 'seniors', 'new_adult'].includes(p.id));
   const mainTiers = plans.filter(p => !['military', 'veteran', 'new_adult'].includes(p.id));
 
   if (loading || resuming) {
@@ -184,8 +185,9 @@ const StartPage = () => {
     },
     "provider": {
       "@type": "Organization",
-      "name": "CarryOn Technologies",
-      "url": "https://carryon.us"
+      "name": "CarryOn",
+      "legalName": "CarryOn Enterprises Inc.",
+      "url": "https://www.carryon.us"
     }
   }) : null;
 
@@ -374,7 +376,7 @@ const StartPage = () => {
           {specialTiers.length > 0 && (
             <div className="mb-8">
               <h3 className="text-lg font-bold text-[var(--t)] mb-4 text-center">{t('start.plans.special')}</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 {specialTiers.map(plan => {
                   const price = getPrice(plan, selectedCycle);
                   return (
@@ -408,6 +410,12 @@ const StartPage = () => {
               {familyDiscount > 0 && ` Family plan members save an additional ${familyDiscount}%.`}
             </p>
           </div>
+
+          {/* Wind-Down Promise nudge — for the hesitant, secondary to the doors */}
+          <p className="text-center text-xs text-[var(--t5)] mb-4" data-testid="start-winddown-nudge">
+            {t('pricing.winddown.q')}{' '}
+            <Link to="/wind-down-promise" className="text-[#d4af37] hover:text-[#fcd34d] underline underline-offset-4" data-testid="start-winddown-link">{t('pricing.winddown.cta')}</Link>
+          </p>
 
           {/* Hospice link */}
           <div className="text-center mb-8">

@@ -94,7 +94,7 @@ const SecurityPage = () => {
           className="text-4xl sm:text-5xl font-semibold leading-[1.1] mb-5"
           style={{ fontFamily: 'var(--serif)' }}
         >
-          {t('security.hero.h1a')} <span className="italic" style={{ color: 'var(--gold)' }}>{t('security.hero.h1b')}</span> {t('security.hero.h1c')}
+          {t('security.hero.h1a')} <span className="italic" style={{ color: 'var(--gold)' }}>{t('security.hero.h1b')}</span>{t('security.hero.h1c') ? ` ${t('security.hero.h1c')}` : ''}
         </h1>
         <p className="text-base leading-relaxed" style={{ color: 'var(--t3)' }}>
           {renderCopy(t('security.hero.intro'))}

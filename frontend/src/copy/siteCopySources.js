@@ -7,7 +7,7 @@ const f = (k, label, d, extra = {}) => ({ k, label, d, ...extra });
 const ML = (k, label, d) => f(k, label, d, { multiline: true });
 
 // Anchor ids used by <SourceRef id=…/> across the site — keep in sync with the entries below.
-export const SOURCE_IDS = ['hours', 'will', 'hospice', 'live'];
+export const SOURCE_IDS = ['hours', 'will', 'hospice', 'live', 'attorney'];
 
 const entry = (id, n, claim, measures, source, url, checked) => [
   f(`sources.${id}.claim`, `[${n}] Claim as used on the site`, claim),
@@ -32,18 +32,18 @@ export const PAGES_SOURCES = [
         f('sources.back', 'Back link', 'Back to homepage'),
       ] },
       { key: 'hours', label: '[1] 570 hours to settle an estate', fields: entry('hours', 1,
-        'Settling an estate without organized records takes an average of 570 hours.',
-        'Executor effort, averaged across U.S. estates settled through EstateExec — roughly 570 hours per estate, with about 80% of estates finished in under 800 hours and an average settlement time of almost 16 months. The figure covers all estates, organized or not; CarryOn’s premise is that organized records remove a large share of that time.',
+        'Settling an estate takes the average executor about 570 hours, spread over roughly 16 months.',
+        'Executor effort, averaged across U.S. estates settled through EstateExec — roughly 570 hours per estate, with about 80% of estates finished in under 800 hours and an average settlement time of almost 16 months. The figure covers all estates, organized or not — the source does not break out organized versus unorganized records, so we no longer phrase it that way. CarryOn’s premise is that organized records remove a share of that time.',
         'EstateExec, “General Statistics” (first nationwide statistics on after-death practices, 2018; page maintained since)',
         'https://www.estateexec.com/Docs/General_Statistics', 'September 2026') },
       { key: 'will', label: '[2] 76% of Americans', fields: entry('will', 2,
-        '76% of American families will face exactly this.',
+        '76% of U.S. adults reported not having a will in a 2025 survey.',
         'The share of U.S. adults who report they do not have a will — 24% said they had one in Caring.com’s 2025 survey, so 76% did not. It is a measure of missing wills, not of every kind of unpreparedness; some of those adults have other estate documents, and having a will does not by itself mean a family knows where things are.',
         'Caring.com, “2025 Wills and Estate Planning Survey”',
         'https://www.caring.com/resources/wills-survey', 'September 2026') },
       { key: 'hospice', label: '[3] 300,000 Americans in hospice', fields: entry('hospice', 3,
         'At any given time, over 300,000 Americans are in hospice.',
-        'A conservative point-in-time estimate. NHPCO reports about 1.7 million Medicare beneficiaries receive hospice care each year with an average length of stay near 90 days; that implies well over 300,000 people enrolled on any given day, before counting patients outside Medicare.',
+        'A conservative point-in-time estimate. NHPCO reports about 1.7 million Medicare beneficiaries receive hospice care each year with an average length of stay near 90 days; that implies well over 300,000 people enrolled on any given day, before counting patients outside Medicare. It says nothing about how many of those families have a plan in place — so we don’t claim that.',
         'NHPCO (National Hospice and Palliative Care Organization), “Facts and Figures” report',
         'https://www.nhpco.org/hospice-care-overview/hospice-facts-figures/', 'September 2026') },
       { key: 'live', label: '[4] Live numbers on the homepage', fields: entry('live', 4,
@@ -51,6 +51,11 @@ export const PAGES_SOURCES = [
         'Counted live from CarryOn’s production database and refreshed every ten minutes: estates created, documents in their vaults, milestone messages recorded, checklist items, and people invited. The counts include our own demonstration account — the one the product screenshots come from. Nothing is estimated, rounded up, or seeded; when the numbers are small it is because we are new.',
         'CarryOn production data, counted live',
         '/security', 'Live') },
+      { key: 'attorney', label: '[5] Estate attorney hourly rate', fields: entry('attorney', 5,
+        'One hour with an estate attorney typically runs $200–$400, up to $500 for complex matters.',
+        'Average hourly billing for estate-law attorneys in the United States, as reported in a 2025 billing-rate guide: $200–$400 nationally, with some attorneys charging up to $500 for complex matters. Rates vary widely by state and experience (the same guide cites $201 in Indiana and $448 in Washington, D.C.), and most firms now quote flat fees for standard documents — we use the hourly figure only as a point of comparison.',
+        'LeanLaw, “The Complete Guide to Estate Law Billing Rates” (2025)',
+        'https://www.leanlaw.co/blog/the-complete-guide-to-estate-law-billing-rates-how-mid-sized-firms-can-price-for-profit-in-2025/', 'September 2026') },
     ],
   },
 ];

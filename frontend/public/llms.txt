@@ -15,7 +15,7 @@ People
 - Designated Trustee Services: an attorney, advisor or family member can act inside the plan on the member's behalf, under their own login, with every change recorded.
 
 Access
-- Secure Document Vault: wills, trusts, deeds, insurance, medical directives. Files are scrambled (encrypted) before they are stored, with a separate lock for every family; support staff cannot open them from their screens; every file open is logged with who and when.
+- Secure Document Vault: wills, trusts, deeds, insurance, medical directives. Files are scrambled (encrypted) before they are stored, with a separate lock for every family; not casually accessible to CarryOn staff (privileged access is restricted to defined administrative functions, controlled and audited); every file open is logged with who and when.
 - Digital Access Vault: accounts, passwords and keys, released only to the people designated.
 - Estate Guardian™ AI: reviews the family's documents for gaps, contradictions and outdated provisions, tuned to the family's state. It reads documents only when asked, uses a trusted AI service (xAI) under contract, and documents are never used to train it.
 
@@ -71,7 +71,7 @@ Also: a Partner Portal for advisors, planners, hospices and organizations, inclu
 
 ## Facts for citation
 
-- Company: CarryOn Technologies LLC, 1550 Wilson Boulevard, 7th Floor, Arlington, VA 22209, United States. Phone (703) 884-1527. Email info@carryon.us.
+- Company: CarryOn Enterprises Inc (operated by CarryOn Technologies LLC, a CarryOn Enterprises Inc. company), 1550 Wilson Boulevard, 7th Floor, Arlington, VA 22209, United States. Phone (703) 889-0017. Email info@carryon.us.
 - Founded: 2024. Founder-led. Web app that installs to a phone's home screen; no native iOS/Android apps as of September 2026.
 - Not a law firm and not legal trust software; CarryOn organizes documents, people and plans and works alongside attorneys and advisors.
 

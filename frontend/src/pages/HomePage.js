@@ -13,6 +13,7 @@ import { HeroShot } from '../components/landing/HeroShot';
 import { LiveCountBadge } from '../components/landing/LiveStats';
 import { FOUNDER_LINKEDIN_DEFAULT } from '../components/landing/FounderCard';
 import { recordFunnelEvent } from '../utils/funnelTelemetry';
+import { COMPANY } from '../config/company';
 
 const useIsMobileViewport = (breakpoint = 768) => {
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < breakpoint);
@@ -30,7 +31,7 @@ const HomePage = () => {
   const navigate = useNavigate();
   const [flagOpacity, setFlagOpacity] = useState(1);
   const [exiting, setExiting] = useState(false);
-  const [footerInfo, setFooterInfo] = useState({ line1: '1550 Wilson Boulevard 7th Floor', line2: 'Arlington, VA 22209 U.S.A.', phone: '(703) 884-1527' });
+  const [footerInfo, setFooterInfo] = useState({ line1: COMPANY.addressLine1, line2: `${COMPANY.addressLine2} U.S.A.`, phone: COMPANY.phone });
   const [landscapeVideoId, setLandscapeVideoId] = useState('EhU-jojs1jk');
   const [verticalVideoId, setVerticalVideoId] = useState('');
   const [founderLinkedin, setFounderLinkedin] = useState(FOUNDER_LINKEDIN_DEFAULT);
@@ -80,7 +81,7 @@ const HomePage = () => {
           "@type": "WebApplication",
           "name": "CarryOn",
           "alternateName": "CarryOn Family Preparedness Platform",
-          "url": "https://carryon.us",
+          "url": "https://www.carryon.us",
           "description": "CarryOn helps American families get their affairs in order in one secure place — documents, passwords, who to call first, and what to do next — so loved ones can handle what comes next.",
           "applicationCategory": "LifestyleApplication",
           "operatingSystem": "Web, iOS",
@@ -105,15 +106,17 @@ const HomePage = () => {
           ],
           "provider": {
             "@type": "Organization",
-            "name": "CarryOn Technologies LLC",
-            "url": "https://carryon.us"
+            "name": "CarryOn",
+            "legalName": "CarryOn Enterprises Inc.",
+            "url": "https://www.carryon.us"
           }
         },
         {
           "@context": "https://schema.org",
           "@type": "Organization",
-          "name": "CarryOn Technologies LLC",
-          "url": "https://carryon.us",
+          "name": "CarryOn",
+          "legalName": "CarryOn Enterprises Inc.",
+          "url": "https://www.carryon.us",
           "logo": "https://carryon.us/carryon-icon.jpg",
           "description": "CarryOn helps American families get their affairs in order in one secure place — documents, passwords, who to call first, and what to do next.",
           "address": {

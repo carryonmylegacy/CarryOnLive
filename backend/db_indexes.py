@@ -5,6 +5,7 @@ All MongoDB index definitions and one-time data migrations live here.
 """
 
 import random
+from datetime import datetime, timezone
 
 
 async def run_migrations(db, logger):
@@ -72,6 +73,59 @@ async def run_migrations(db, logger):
             )
     except Exception as e:
         logger.warning(f"CFP fail-closed migration warning: {e}")
+
+    # ── Public-site identity & claims cleanup (Sep 20, 2026) ───────────────────
+    # 1) The Site Content footer phone still carried the retired number on prod.
+    # 2) Site Copy overrides that repeat a phrase the public-site audit retired
+    #    (absolute "staff can't open" wording, "military-grade", the family-level
+    #    76% claim, the unsourced hospice "vast majority" line, the ambiguous
+    #    "Hospice families: free" tag) are removed so the corrected defaults show.
+    #    Only overrides containing one of these exact phrases are touched.
+    try:
+        if not await db.migrations.find_one({"_id": "public_claims_cleanup_v1"}):
+            r = await db.platform_settings.update_one(
+                {"_id": "global", "footer_phone": "(703) 884-1527"}, {"$set": {"footer_phone": "(703) 889-0017"}}
+            )
+            retired = [
+                "can’t open them from their screens",
+                "can't open them from their screens",
+                "cannot open them from their screens",
+                "No backdoors",
+                "military-grade",
+                "banks and government systems",
+                "76% of American families",
+                "76% of Americans are unprepared",
+                "vast majority have no plan",
+                "Hospice families: free",
+                "(703) 884-1527",
+                "CarryOn Technologies LLC. All rights reserved",
+            ]
+            removed = []
+            async for doc in db.site_copy.find({}, {"_id": 1, "value": 1}):
+                val = str(doc.get("value") or "")
+                if any(p in val for p in retired):
+                    await db.site_copy_history.insert_one(
+                        {
+                            "key": doc["_id"],
+                            "before": val,
+                            "after": None,
+                            "by": "migration:public_claims_cleanup_v1",
+                            "at": datetime.now(timezone.utc).isoformat(),
+                            "reason": "public-site claims audit, Sep 20 2026",
+                        }
+                    )
+                    await db.site_copy.delete_one({"_id": doc["_id"]})
+                    removed.append(doc["_id"])
+            await db.migrations.insert_one(
+                {
+                    "_id": "public_claims_cleanup_v1",
+                    "footer_phone_fixed": r.modified_count,
+                    "overrides_removed": removed,
+                }
+            )
+            logger.info(f"Public claims cleanup: footer_phone fixed={r.modified_count}, overrides removed={removed}")
+    except Exception as e:
+        logger.warning(f"Public claims cleanup warning: {e}")
 
     # ── DAV legacy plaintext additional_access sweep (audit #1798 P2) ─────────
     # Older DAV rows stored 2FA/PIN/backup-code context in PLAINTEXT

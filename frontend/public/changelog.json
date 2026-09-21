@@ -1,6 +1,20 @@
 {
   "entries": [
     {
+      "date": "2026-09-20",
+      "title": "Trust, sourcing and consistency cleanup across the public site",
+      "items": [
+        "New Sources & Methodology page: every statistic on the site now carries a small [n] citation that shows what the number measures and who published it",
+        "Statistics re-worded to match their sources exactly (the 570-hour executor figure, the 76% figure, hospice numbers)",
+        "Security wording made precise everywhere: what is encrypted, how privileged access is restricted and audited, and what CarryOn staff can and cannot do — no broad labels",
+        "One company identity and one phone number on every page; the About page now states who operates CarryOn",
+        "Reduced-pricing summary on the pricing page now says exactly which groups get reduced prices and that certified hospice families get full access free; Seniors tier added to the /start special pricing row",
+        "Wind-Down Promise linked from the pricing and start pages for families weighing a new company",
+        "Homepage detail sections (tools, five steps, security, FAQ, hospice) now sit behind one \"See everything CarryOn includes\" expander; nav links still open them directly",
+        "Phone screenshots and swipe/dots on the homepage product preview; Milestone Messages tab added"
+      ]
+    },
+    {
       "date": "2026-09-16",
       "title": "Readiness quiz, real screenshots, plainer language",
       "items": [

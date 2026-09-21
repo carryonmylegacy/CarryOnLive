@@ -12,6 +12,7 @@ import { TestimonialsBlock } from './TestimonialsBlock';
 import { TrustBadges, LastUpdated } from './TrustBadges';
 import { ReviewsCard } from './ReviewsCard';
 import { useCopy, renderCopy, linkVisible } from '../../copy/CopyContext';
+import { COMPANY } from '../../config/company';
 
 /* ── layout data: the twelve tools, grouped by pillar (People → Access → Money → Action).
    Order + names are platform law: config/benefactorSections.js and
@@ -104,7 +105,7 @@ const ToolCard = ({ num, icon: Icon, title, product, bold, desc, accent = '#d4af
  * @param {string}  [testIdSuffix='']  — appended to data-testid values (e.g. '-home')
  * @param {React.ReactNode} [beforeAbout]  — optional slot rendered before the About section (e.g. video)
  */
-const DEFAULT_FOOTER = { line1: '1550 Wilson Boulevard 7th Floor', line2: 'Arlington, VA 22209 U.S.A.', phone: '(703) 884-1527' };
+const DEFAULT_FOOTER = { line1: COMPANY.addressLine1, line2: `${COMPANY.addressLine2} U.S.A.`, phone: COMPANY.phone };
 
 const LandingContent = ({ navigateWithFade, footerInfo = DEFAULT_FOOTER, testIdSuffix = '', beforeAbout, skipToRealFamilies = false, ctaOverride, collapseDetails = false }) => {
   const [openFaq, setOpenFaq] = useState(null);
