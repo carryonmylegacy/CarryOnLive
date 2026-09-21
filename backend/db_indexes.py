@@ -89,7 +89,8 @@ async def run_migrations(db, logger):
             retired = [
                 "can’t open them from their screens",
                 "can't open them from their screens",
-                "cannot open them from their screens", "support staff who cannot open your files",
+                "cannot open them from their screens",
+                "support staff who cannot open your files",
                 "No backdoors",
                 "military-grade",
                 "banks and government systems",

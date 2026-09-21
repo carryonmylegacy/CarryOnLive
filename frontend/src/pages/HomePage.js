@@ -107,7 +107,8 @@ const HomePage = () => {
           "provider": {
             "@type": "Organization",
             "name": "CarryOn",
-            "legalName": "CarryOn Enterprises Inc",
+            "legalName": "CarryOn Technologies LLC",
+            "parentOrganization": { "@type": "Organization", "name": "CarryOn Enterprises Inc" },
             "url": "https://www.carryon.us"
           }
         },
@@ -115,7 +116,8 @@ const HomePage = () => {
           "@context": "https://schema.org",
           "@type": "Organization",
           "name": "CarryOn",
-          "legalName": "CarryOn Enterprises Inc",
+          "legalName": "CarryOn Technologies LLC",
+          "parentOrganization": { "@type": "Organization", "name": "CarryOn Enterprises Inc" },
           "url": "https://www.carryon.us",
           "logo": "https://carryon.us/carryon-icon.jpg",
           "description": "CarryOn helps American families get their affairs in order in one secure place — documents, passwords, who to call first, and what to do next.",

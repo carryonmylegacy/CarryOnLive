@@ -71,7 +71,7 @@ Also: a Partner Portal for advisors, planners, hospices and organizations, inclu
 
 ## Facts for citation
 
-- Company: CarryOn Enterprises Inc (operated by CarryOn Technologies LLC, a CarryOn Enterprises Inc company), 1550 Wilson Boulevard, 7th Floor, Arlington, VA 22209, United States. Phone (703) 889-0017. Email info@carryon.us.
+- Company: CarryOn Technologies LLC, a CarryOn Enterprises Inc company (operator of the CarryOn platform; copyright held by CarryOn Enterprises Inc), 1550 Wilson Boulevard, 7th Floor, Arlington, VA 22209, United States. Phone (703) 889-0017. Email info@carryon.us.
 - Founded: 2024. Founder-led. Web app that installs to a phone's home screen; no native iOS/Android apps as of September 2026.
 - Not a law firm and not legal trust software; CarryOn organizes documents, people and plans and works alongside attorneys and advisors.
 

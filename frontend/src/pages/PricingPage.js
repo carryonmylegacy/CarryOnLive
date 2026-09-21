@@ -146,7 +146,7 @@ const PricingPage = () => {
         }
       }))
     },
-    "provider": { "@type": "Organization", "name": "CarryOn", "legalName": "CarryOn Enterprises Inc", "url": "https://www.carryon.us" }
+    "provider": { "@type": "Organization", "name": "CarryOn", "legalName": "CarryOn Technologies LLC", "parentOrganization": { "@type": "Organization", "name": "CarryOn Enterprises Inc" }, "url": "https://www.carryon.us" }
   }) : null;
 
   const card = { background: 'var(--s)', border: '1px solid var(--b)' };

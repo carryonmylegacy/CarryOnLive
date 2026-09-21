@@ -56,7 +56,7 @@ export const PublicFooter = () => {
             ))}
           </nav>
           <div className="text-center sm:text-right text-[#94a3b8] text-xs leading-relaxed" data-testid="footer-entity-block">
-            <p>{COMPANY.entity}</p>
+            <p>{COMPANY.disclosure}</p>
             <p>{info.line1}</p>
             <p>{info.line2}</p>
             <p><a href={`tel:+1${info.phone.replace(/\D/g, '')}`} className="hover:text-[#cbd5e1] transition-colors">{info.phone}</a></p>

@@ -597,7 +597,7 @@ bug — fix it in the preview DB immediately (snippet in
 - Hardcoded `rgba(212,175,55,…)` → `var(--gold-rgb)` sweep.
 
 ### Last verified end-to-end working item
-**⚠ Awaiting founder: which entity operates the platform?** About footer (Technologies LLC operates, a CarryOn Enterprises Inc company) vs Terms §1 (CarryOn Enterprises Inc operates). Do not change Terms until told; then align About, Terms, Privacy, footer, JSON-LD.
+**Sep 21 2026 — Entity structure confirmed (option B) and aligned (NOT PUSHED).** CarryOn Technologies LLC operates the platform (Terms/Privacy contracting party, footer entity block, About disclosure, JSON-LD legalName); CarryOn Enterprises Inc is the parent (copyright line, `parentOrganization`, "Powered by"). Terms + Privacy last-updated Sep 21 2026. check.sh ALL CLEAR.
 
 **Sep 21 2026 — Public-site consistency / trust / claims / SEO cleanup (iteration_213, NOT PUSHED).** One identity (CarryOn Enterprises Inc — no period, (703) 889-0017, `config/company.js` single source; About footer discloses the operating LLC), security wording matched to the Security page everywhere (no "No backdoors"/"military-grade"/"can't open from their screens"; Security H1 "…deserves security you can inspect."), 76 % / 570 h / hospice / attorney-rate claims reworded to what their sources measure (+ `/sources#attorney`), pricing reduced-tier line fixed, Seniors tier added to `/start`, Wind-Down nudges on `/pricing` + `/start`, `/partner` out of sitemap, `/landing-consumer` noindex, startup migration `public_claims_cleanup_v1` fixes prod footer phone + stale Site Copy overrides. 27 routes × 3 viewports clean; check.sh ALL CLEAR. **Founder next**: push → counsel glance at Privacy §5 sentence → confirm `/sources` entries → GSC resubmit sitemap.
 

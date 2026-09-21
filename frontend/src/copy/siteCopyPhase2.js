@@ -357,10 +357,10 @@ export const PAGES_PHASE2 = [
       { key: 'top', label: 'Top of page', fields: [
         f('legal.back', 'Back link (Privacy & Terms)', 'Back'),
         f('privacy.title', 'Page heading', 'Privacy Policy'),
-        f('privacy.updated', 'Last-updated line', 'Last updated: September 7, 2026'),
+        f('privacy.updated', 'Last-updated line', 'Last updated: September 21, 2026'),
       ] },
       { key: 'sections', label: 'Policy sections (a line starting with “- ” becomes a bullet)', fields: [
-        ...legalSection('privacy', 1, '1. Introduction', 'CarryOn™ (“we,” “us,” or “our”) is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our estate planning platform, including our website and related services (collectively, the “Service”).'),
+        ...legalSection('privacy', 1, '1. Introduction', 'CarryOn Technologies LLC, a CarryOn Enterprises Inc company (“CarryOn,” “we,” “us,” or “our”), is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our estate planning platform, including our website and related services (collectively, the “Service”).'),
         ...legalSection('privacy', 2, '2. Information We Collect', [
           'We collect information you provide directly to us, including:',
           '- Personal identification information (name, email address, phone number)',
@@ -416,10 +416,10 @@ export const PAGES_PHASE2 = [
       ] },
       { key: 'top', label: 'Top of page', fields: [
         f('terms.title', 'Page heading', 'Terms of Service'),
-        f('terms.updated', 'Last-updated line', 'Last updated: September 7, 2026'),
+        f('terms.updated', 'Last-updated line', 'Last updated: September 21, 2026'),
       ] },
       { key: 'sections', label: 'Terms sections (a line starting with “- ” becomes a bullet)', fields: [
-        ...legalSection('terms', 1, '1. Acceptance of Terms', 'These Terms of Service (“Terms”) are an agreement between you and CarryOn Enterprises Inc (“CarryOn,” “we,” or “us”), the company that operates the CarryOn™ platform (the “Service”). By accessing or using the Service, you agree to be bound by these Terms. If you do not agree to these Terms, do not use the Service. We reserve the right to modify these Terms at any time, and your continued use of the Service constitutes acceptance of any changes.'),
+        ...legalSection('terms', 1, '1. Acceptance of Terms', 'These Terms of Service (“Terms”) are an agreement between you and CarryOn Technologies LLC, a CarryOn Enterprises Inc company (“CarryOn,” “we,” or “us”), the company that operates the CarryOn™ platform (the “Service”). By accessing or using the Service, you agree to be bound by these Terms. If you do not agree to these Terms, do not use the Service. We reserve the right to modify these Terms at any time, and your continued use of the Service constitutes acceptance of any changes.'),
         ...legalSection('terms', 2, '2. Description of Service', 'CarryOn™ is an estate planning and estate plan management platform that enables users to organize, secure, and communicate their estate plans to designated beneficiaries. The Service includes document storage, beneficiary management, checklist tools, AI-powered estate analysis, and related features.'),
         ...legalSection('terms', 3, '3. Account Registration', [
           'To use the Service, you must create an account and provide accurate, complete, and current information. You are responsible for maintaining the confidentiality of your account credentials and for all activities that occur under your account.',
@@ -442,14 +442,14 @@ export const PAGES_PHASE2 = [
           '- Impersonate any person or misrepresent your affiliation',
           '- Use automated means to access the Service without permission',
         ].join('\n')),
-        ...legalSection('terms', 6, '6. Intellectual Property', 'The Service, including its design, features, content, and underlying technology, is owned by CarryOn Enterprises Inc and protected by intellectual property laws. You retain ownership of the content you upload. By using the Service, you grant us a limited license to store, process, and display your content solely for the purpose of providing the Service.'),
+        ...legalSection('terms', 6, '6. Intellectual Property', 'The Service, including its design, features, content, and underlying technology, is owned by CarryOn Technologies LLC or its parent company, CarryOn Enterprises Inc, and protected by intellectual property laws. You retain ownership of the content you upload. By using the Service, you grant us a limited license to store, process, and display your content solely for the purpose of providing the Service.'),
         ...legalSection('terms', 7, '7. Payment Terms', 'Certain features of the Service may require a paid subscription. All payments are processed securely through our payment provider (Stripe). Subscription fees are billed in advance on a recurring basis. You may cancel your subscription at any time through your account settings.'),
         ...legalSection('terms', 8, '8. Disclaimer of Warranties', 'THE SERVICE IS PROVIDED “AS IS” AND “AS AVAILABLE” WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED. CARRYON™ DOES NOT PROVIDE LEGAL, FINANCIAL, OR TAX ADVICE. THE SERVICE IS A TOOL FOR ORGANIZING ESTATE PLANNING INFORMATION AND IS NOT A SUBSTITUTE FOR PROFESSIONAL LEGAL COUNSEL.'),
         ...legalSection('terms', 9, '9. Limitation of Liability', 'TO THE FULLEST EXTENT PERMITTED BY LAW, CARRYON™ SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING BUT NOT LIMITED TO LOSS OF DATA, PROFITS, OR GOODWILL, ARISING OUT OF OR IN CONNECTION WITH YOUR USE OF THE SERVICE.'),
         ...legalSection('terms', 10, '10. Termination', 'We reserve the right to suspend or terminate your account at our discretion if you violate these Terms. Upon termination, your right to use the Service will immediately cease. You may request export of your data prior to account deletion.'),
         ...legalSection('terms', 11, '11. Governing Law', 'These Terms shall be governed by and construed in accordance with the laws of the United States, without regard to conflict of law principles.'),
         f('terms.s12.title', 'Section 12 — heading', '12. Contact Us'),
-        f('terms.s12.contact', 'Section 12 — line before support@carryon.us', 'If you have questions about these Terms, please contact CarryOn Enterprises Inc at:'),
+        f('terms.s12.contact', 'Section 12 — line before support@carryon.us', 'If you have questions about these Terms, please contact CarryOn Technologies LLC at:'),
       ] },
     ],
   },

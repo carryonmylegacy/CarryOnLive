@@ -88,7 +88,7 @@ const AboutPage = () => {
           "url": "https://carryon.us/about",
           ...(founder.photo_url ? { "image": founder.photo_url } : {}),
           ...(founder.linkedin_url ? { "sameAs": [founder.linkedin_url] } : {}),
-          "worksFor": { "@type": "Organization", "name": "CarryOn", "legalName": "CarryOn Enterprises Inc", "url": "https://www.carryon.us" }
+          "worksFor": { "@type": "Organization", "name": "CarryOn", "legalName": "CarryOn Technologies LLC", "parentOrganization": { "@type": "Organization", "name": "CarryOn Enterprises Inc" }, "url": "https://www.carryon.us" }
         }) }} />
       )}
 
