@@ -10542,3 +10542,6 @@ Audit + full findings saved at `memory/audits/heycatch_2026-09-18.md`. Applied e
 - Founder request: while the Founder Story is **Public**, the homepage founder tile (`FounderCard`, also rendered on /customers and the benefactor story) shows a gold pulsating pill beneath the LinkedIn link, inside the box, → `/founder-about`. Hidden while invite-only.
 - `FounderCard.js`: `flags.founder_story_public && <a className="founder-story-pill" …>Meet the Founder</a>`; `index.css`: `@keyframes founder-pill-pulse` (breathing gold glow ring, 2 s) + `prefers-reduced-motion` still. Unchanged: "Read his story" already flips to `/founder-about` when public.
 - Verified on preview both states, 390 px + 1280 px (pill inside the card, below LinkedIn, animating, click lands on the story). Flag restored to invite-only.
+
+## Sep 21 2026 — Founder-page approval e-mail: Brian → Barnet (NOT PUSHED)
+- `backend/routes/founder_invites.py` line 236: "approved by Barnet, the founder of CarryOn™". No other "Brian" anywhere in backend/frontend source.

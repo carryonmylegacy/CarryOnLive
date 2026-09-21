@@ -597,6 +597,8 @@ bug — fix it in the preview DB immediately (snippet in
 - Hardcoded `rgba(212,175,55,…)` → `var(--gold-rgb)` sweep.
 
 ### Last verified end-to-end working item
+**Sep 21 2026 (latest) — Approval e-mail Brian → Barnet (NOT PUSHED).** `founder_invites.py` L236; zero "Brian" left in source. check.sh ALL CLEAR.
+
 **Sep 21 2026 (latest) — "Meet the Founder" pill on the founder tile (NOT PUSHED).** While the Founder Story is Public, `FounderCard` shows a gold pulsating pill (beneath LinkedIn, inside the box) → `/founder-about`; hidden while invite-only. `founder-pill-pulse` keyframe in index.css, reduced-motion safe. Verified both states at 390/1280 px; check.sh ALL CLEAR. **Founder next**: Save to GitHub → Vercel → Site Content → Founder Story = Public → homepage tile.
 
 **Sep 21 2026 (latest) — About always lands on "Who We Are" (NOT PUSHED).** The default-on "Remember scroll position" restore was putting `/about` back at the last-left offset. About → `/about#who`; `<section id="who">` on the About page gets `scroll-margin-top` + a hash-scroll effect. Verified from `/`, `/customers` and the PWA `/login` dropdown at 390 px; check.sh ALL CLEAR. **Founder next**: Save to GitHub → Vercel → PWA → hamburger → About.

@@ -233,7 +233,7 @@ async def approve_request(request_id: str, body: ApproveRequestBody, current_use
             <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;background:#0d1b2a;color:#e2e8f0;border-radius:12px;">
                 <h2 style="color:#d4af37;margin-top:0;">Access Approved</h2>
                 <p>Hi {req.get("name", "there")},</p>
-                <p>Your request to view the <strong>About the Founder</strong> page has been approved by Brian, the founder of CarryOn&trade;.</p>
+                <p>Your request to view the <strong>About the Founder</strong> page has been approved by Barnet, the founder of CarryOn&trade;.</p>
                 <p>Use the credentials below to sign in:</p>
                 <table style="width:100%;border-collapse:collapse;margin:16px 0;background:rgba(255,255,255,0.04);border-radius:8px;padding:8px;">
                     <tr><td style="padding:10px 14px;color:#94a3b8;width:90px;">Email</td><td style="padding:10px 14px;color:#fff;font-weight:600;">{req["email"]}</td></tr>
