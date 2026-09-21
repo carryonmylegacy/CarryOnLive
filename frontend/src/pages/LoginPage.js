@@ -18,7 +18,7 @@ import { API_URL } from '../config';
 import { RevealSection } from '../components/landing/RevealSection';
 import { FreeModeBanner } from '../components/FreeModeBanner';
 import LandingContent from '../components/landing/LandingContent';
-import { MARKETING_LINKS } from '../components/landing/MobileNav';
+import { MARKETING_LINKS, resolveLinks } from '../components/landing/MobileNav';
 import { useCopy, renderCopy } from '../copy/CopyContext';
 import ForgotPasswordModal from '../components/auth/ForgotPasswordModal';
 import { isPWA as isStandalonePWA } from '../utils/isPWA';
@@ -242,7 +242,8 @@ const LoginPage = () => {
   const [homepageVideoId, setHomepageVideoId] = useState('KlZ8egF_Nyw');
   const [verticalVideoId, setVerticalVideoId] = useState('5fDJ9e7bEUo');
   const [footerInfo, setFooterInfo] = useState({ line1: COMPANY.addressLine1, line2: `${COMPANY.addressLine2} U.S.A.`, phone: COMPANY.phone });
-  const { t } = useCopy();
+  const { t, flags } = useCopy();
+  const navLinks = resolveLinks(MARKETING_LINKS, flags);
   const isMobileView = useIsMobileViewport();
   useEffect(() => {
     apiClient.get(`${API_URL}/public/site-content`).then(r => {
@@ -886,7 +887,7 @@ const LoginPage = () => {
         <div className="max-w-[1400px] mx-auto px-6 lg:px-10 h-16 flex items-center justify-between">
           <LogoHome testId="login-logo" />
           <div className="hidden lg:flex items-center gap-7">
-            {MARKETING_LINKS.map(item => (
+            {navLinks.map(item => (
               <a key={item.label} href={item.href} className="text-[#6b7a90] text-sm font-medium hover:text-[#d4af37] transition-colors duration-300">{t(`nav.${item.k}`)}</a>
             ))}
           </div>
@@ -919,7 +920,7 @@ const LoginPage = () => {
             data-testid="nav-mobile-dropdown"
           >
             <div className="max-w-[1400px] mx-auto px-6 py-3 flex flex-col gap-1">
-              {MARKETING_LINKS.filter(item => item.href.startsWith('#')).map(item => (
+              {navLinks.filter(item => item.href.startsWith('#')).map(item => (
                 <a
                   key={item.label}
                   href={item.href}
@@ -930,7 +931,7 @@ const LoginPage = () => {
                   {t(`nav.${item.k}`)}
                 </a>
               ))}
-              {MARKETING_LINKS.filter(item => !item.href.startsWith('#')).map(item => (
+              {navLinks.filter(item => !item.href.startsWith('#')).map(item => (
                 <button
                   key={item.label}
                   onClick={() => { setMobileNavOpen(false); navigateWithFade(item.href); }}

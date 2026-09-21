@@ -597,6 +597,8 @@ bug — fix it in the preview DB immediately (snippet in
 - Hardcoded `rgba(212,175,55,…)` → `var(--gold-rgb)` sweep.
 
 ### Last verified end-to-end working item
+**Sep 21 2026 (latest) — "About" follows the Founder Story switch (NOT PUSHED).** Founder Story **Public** → the About link (hamburger + desktop, every public page) opens `/founder-about`; **Invite-only** → `/about`. `MobileNav.js::aboutHref/resolveLinks`, wired into MobileNav, MarketingNav, HomePage, LoginPage and the `/about` desktop nav. Verified on preview in both states; check.sh ALL CLEAR. **Founder next**: Save to GitHub → Vercel → flip the switch in Site Content → phone → hamburger → About.
+
 **Sep 21 2026 (later) — One hamburger menu on every public page (NOT PUSHED).** `/about` had its own mobile list (no Compare/About, added Founder), so the menu appeared to change after tapping About. Now every public page shows the same 8 items via `STANDALONE_LINKS`, and the current page is gold (`aria-current`). Verified on preview at 390 px; check.sh ALL CLEAR. **Founder next**: Save to GitHub → Vercel → phone → hamburger → About → hamburger.
 
 **Sep 21 2026 (later) — Entity cleanup closed out (NOT PUSHED).** Founder confirmed the remaining parent-entity uses (copyright, "Powered by", JSON-LD `parentOrganization`, Twilio SMS-consent sentence) stay on CarryOn Enterprises Inc; quiz-results e-mail footer now discloses the operating LLC. Grep sweep + rendered /terms, /privacy, /home verified; preview Site Copy overrides clean; check.sh ALL CLEAR. **Founder next**: Save to GitHub → Vercel/Render.

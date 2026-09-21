@@ -7,7 +7,7 @@ import { API_URL } from '../config';
 import { RevealSection } from '../components/landing/RevealSection';
 import LandingContent from '../components/landing/LandingContent';
 import { useCopy, renderCopy } from '../copy/CopyContext';
-import { MobileNav, MARKETING_LINKS } from '../components/landing/MobileNav';
+import { MobileNav, MARKETING_LINKS, resolveLinks } from '../components/landing/MobileNav';
 import { HeroCtas } from '../components/landing/HeroCtas';
 import { HeroShot } from '../components/landing/HeroShot';
 import { LiveCountBadge } from '../components/landing/LiveStats';
@@ -35,7 +35,7 @@ const HomePage = () => {
   const [landscapeVideoId, setLandscapeVideoId] = useState('EhU-jojs1jk');
   const [verticalVideoId, setVerticalVideoId] = useState('');
   const [founderLinkedin, setFounderLinkedin] = useState(FOUNDER_LINKEDIN_DEFAULT);
-  const { t } = useCopy();
+  const { t, flags } = useCopy();
 
   const isMobileView = useIsMobileViewport();
 
@@ -152,7 +152,7 @@ const HomePage = () => {
         <div className="max-w-[1400px] mx-auto px-6 lg:px-10 h-16 flex items-center justify-between">
           <img src="/carryon-logo.png" alt="CarryOn" className="h-12 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} data-testid="home-logo" />
           <div className="hidden lg:flex items-center gap-7">
-            {MARKETING_LINKS.map(item => (
+            {resolveLinks(MARKETING_LINKS, flags).map(item => (
               <a key={item.label} href={item.href} className="text-[#6b7a90] text-sm font-medium hover:text-[#d4af37] transition-colors duration-300">{t(`nav.${item.k}`)}</a>
             ))}
           </div>

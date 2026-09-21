@@ -3,7 +3,7 @@ import { SEO } from '../components/SEO';
 import { ChevronRight, ChevronLeft, Linkedin } from 'lucide-react';
 import axios from 'axios';
 import { API_URL } from '../config';
-import { MobileNav, STANDALONE_LINKS } from '../components/landing/MobileNav';
+import { MobileNav, STANDALONE_LINKS, aboutHref } from '../components/landing/MobileNav';
 import { founderPhotoUrl, FOUNDER_LINKEDIN_DEFAULT } from '../components/landing/FounderCard';
 import { useCopy, renderCopy } from '../copy/CopyContext';
 import { SourceRef } from '../components/landing/SourceRef';
@@ -38,7 +38,8 @@ const RevealSection = ({ children, className = '', delay = 0, direction = 'up', 
 };
 
 const AboutPage = () => {
-  const { t } = useCopy();
+  const { t, flags } = useCopy();
+  const storyPublic = flags.founder_story_public;
   const [founder, setFounder] = useState({ name: '', title: '', bio: '', photo_url: '', linkedin_url: FOUNDER_LINKEDIN_DEFAULT });
 
   useEffect(() => {
@@ -92,8 +93,10 @@ const AboutPage = () => {
             <a href="/#features" className="text-[#6b7a90] text-sm font-medium hover:text-[#d4af37] transition-colors">{t('nav.features')}</a>
             <a href="/#security" className="text-[#6b7a90] text-sm font-medium hover:text-[#d4af37] transition-colors">{t('nav.security')}</a>
             <a href="/#steps" className="text-[#6b7a90] text-sm font-medium hover:text-[#d4af37] transition-colors">{t('nav.steps')}</a>
-            <span className="text-[#d4af37] text-sm font-medium">{t('nav.about')}</span>
-            <a href="/founder-about" className="text-[#6b7a90] text-sm font-medium hover:text-[#d4af37] transition-colors">{t('nav.founder')}</a>
+            {storyPublic
+              ? <a href={aboutHref(flags)} className="text-[#6b7a90] text-sm font-medium hover:text-[#d4af37] transition-colors" data-testid="about-nav-about">{t('nav.about')}</a>
+              : <span className="text-[#d4af37] text-sm font-medium" aria-current="page">{t('nav.about')}</span>}
+            {!storyPublic && <a href="/founder-about" className="text-[#6b7a90] text-sm font-medium hover:text-[#d4af37] transition-colors">{t('nav.founder')}</a>}
           </div>
           <div className="flex items-center gap-3">
             <a href="/login" className="text-[#d4af37] text-sm font-semibold hover:text-[#fcd34d] transition-colors flex items-center gap-1">
