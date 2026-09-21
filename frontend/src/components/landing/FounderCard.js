@@ -47,6 +47,11 @@ export const FounderCard = ({ testIdSuffix = '', compact = false }) => {
             <a href={f.linkedin_url} target="_blank" rel="noopener noreferrer" className="text-[#8b97ab] hover:text-white inline-flex items-center gap-1.5" data-testid={`founder-linkedin${testIdSuffix}`}><Linkedin className="w-4 h-4" /> LinkedIn</a>
           )}
         </div>
+        {flags.founder_story_public && (
+          <a href="/founder-about" className="founder-story-pill mt-3 inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold hover:brightness-110 active:scale-95 transition-[filter,transform]" style={{ background: '#d4af37', color: '#0B1221' }} data-testid={`founder-story-pill${testIdSuffix}`}>
+            Meet the Founder <ArrowRight className="w-3.5 h-3.5" />
+          </a>
+        )}
       </div>
     </div>
   );

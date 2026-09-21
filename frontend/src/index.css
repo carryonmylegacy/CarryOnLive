@@ -1912,6 +1912,16 @@ input[type="number"].allow-number-spinner {
   100% { box-shadow: 0 0 0 0   rgba(var(--gold-rgb), 0.00), 0 0 12px rgba(var(--gold-rgb), 0.20); }
 }
 
+/* Homepage founder tile: gold pill shown only while the Founder Story is public.
+   Breathing glow ring; stills under prefers-reduced-motion. */
+@keyframes founder-pill-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(var(--gold-rgb), 0.55), 0 0 0 rgba(var(--gold-rgb), 0); }
+  50%      { box-shadow: 0 0 0 6px rgba(var(--gold-rgb), 0), 0 0 18px rgba(var(--gold-rgb), 0.55); }
+}
+.founder-story-pill { animation: founder-pill-pulse 2s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .founder-story-pill { animation: none; } }
+
+
 
 
 /* ── iOS Safe Area: Platform-wide protection ────────────────── */

@@ -10537,3 +10537,8 @@ Audit + full findings saved at `memory/audits/heycatch_2026-09-18.md`. Applied e
 - Cause: the "Remember scroll position" preference (default ON, `ScrollRestorationProvider`) restores `/about` to wherever it was last left, so About landed at a "derivative of where I was". Its `restore()` skips hash URLs.
 - Fix: About menu item → `/about#who` (`MARKETING_LINKS`); the About page's Who-We-Are `<section id="who">` carries `scroll-margin-top = nav height` and a mount/hashchange effect scrolls to the hash (covers SPA `navigateWithFade` in the PWA and full loads). `isCurrentLink` now compares the path part so About stays gold on `/about`.
 - Verified on preview at 390 px with a poisoned saved offset (3000/3200): from `/` (MobileNav), `/customers` (MarketingNav) and `/login` (PWA inline dropdown) the section top sits flush under the nav (64 px).
+
+## Sep 21 2026 — "Meet the Founder" pill on the founder tile (NOT PUSHED)
+- Founder request: while the Founder Story is **Public**, the homepage founder tile (`FounderCard`, also rendered on /customers and the benefactor story) shows a gold pulsating pill beneath the LinkedIn link, inside the box, → `/founder-about`. Hidden while invite-only.
+- `FounderCard.js`: `flags.founder_story_public && <a className="founder-story-pill" …>Meet the Founder</a>`; `index.css`: `@keyframes founder-pill-pulse` (breathing gold glow ring, 2 s) + `prefers-reduced-motion` still. Unchanged: "Read his story" already flips to `/founder-about` when public.
+- Verified on preview both states, 390 px + 1280 px (pill inside the card, below LinkedIn, animating, click lands on the story). Flag restored to invite-only.
