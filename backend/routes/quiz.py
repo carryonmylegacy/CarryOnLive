@@ -112,7 +112,7 @@ def build_quiz_email(score: int, tier_title: str, fixes: list[str]) -> tuple[str
       </div>
       <div style="padding: 20px 32px; text-align: center; border-top: 1px solid rgba(255,255,255,0.07);">
         <p style="color: #525C72; font-size: 11px; margin: 0;">You asked for this score on carryon.us. We may send occasional CarryOn\u2122 updates \u2014 reply "unsubscribe" to opt out anytime.</p>
-        <p style="color: #525C72; font-size: 11px; margin: 4px 0 0;">CarryOn Enterprises Inc \u00b7 1550 Wilson Boulevard, 7th Floor, Arlington, VA 22209</p>
+        <p style="color: #525C72; font-size: 11px; margin: 4px 0 0;">CarryOn Technologies LLC, a CarryOn Enterprises Inc company \u00b7 1550 Wilson Boulevard, 7th Floor, Arlington, VA 22209</p>
       </div>
     </div>
     """
