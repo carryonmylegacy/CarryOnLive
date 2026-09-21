@@ -12,14 +12,12 @@ export const MARKETING_LINKS = [
   { k: 'compare', label: 'Compare', href: '/vs' },
   { k: 'customers', label: 'Customers', href: '/customers' },
   { k: 'about', label: 'About', href: '/about' },
+  // Founder → request-access / sign-in gate while the story is invite-only, the story itself once public.
+  { k: 'founder', label: 'Founder', href: '/founder-about' },
 ];
 
 // Same menu on standalone pages (/about, /customers, /vs, …): hash links resolve to the homepage.
 export const STANDALONE_LINKS = MARKETING_LINKS.map(l => ({ ...l, href: l.href.startsWith('#') ? `/${l.href}` : l.href }));
-
-// "About" opens the founder story when Admin → Site Content has made it public; otherwise the generic About page.
-export const aboutHref = (flags) => (flags.founder_story_public ? '/founder-about' : '/about');
-export const resolveLinks = (links, flags) => links.map(l => (l.k === 'about' ? { ...l, href: aboutHref(flags) } : l));
 
 export const isCurrentLink = (href, here) => !href.includes('#') && (here === href || here.startsWith(`${href}/`));
 
@@ -27,9 +25,8 @@ const slug = (s) => s.toLowerCase().replace(/[^a-z]+/g, '-');
 
 export const MobileNav = ({ links = MARKETING_LINKS, navigateWithFade, current, testIdSuffix = '' }) => {
   const [open, setOpen] = useState(false);
-  const { t, flags } = useCopy();
+  const { t } = useCopy();
   const here = current || window.location.pathname;
-  const items = resolveLinks(links, flags);
   const go = (path) => { setOpen(false); navigateWithFade(path); };
   return (
     <div className="lg:hidden">
@@ -41,7 +38,7 @@ export const MobileNav = ({ links = MARKETING_LINKS, navigateWithFade, current, 
         <div className="fixed inset-x-0 z-[99] px-6 pt-2 pb-6 animate-in fade-in slide-in-from-top-2 duration-200" data-testid={`mobile-menu${testIdSuffix}`}
           style={{ top: 'calc(4rem + env(safe-area-inset-top, 0px))', background: 'rgba(11,18,33,0.98)', borderBottom: '1px solid rgba(212,175,55,0.25)', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }}>
           <nav className="flex flex-col" aria-label="Mobile">
-            {items.map(l => {
+            {links.map(l => {
               const active = isCurrentLink(l.href, here);
               return (
                 <a key={l.label} href={l.href} onClick={() => setOpen(false)} aria-current={active ? 'page' : undefined} data-testid={`mobile-menu-link-${slug(l.label)}${testIdSuffix}`}

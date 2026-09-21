@@ -597,7 +597,7 @@ bug — fix it in the preview DB immediately (snippet in
 - Hardcoded `rgba(212,175,55,…)` → `var(--gold-rgb)` sweep.
 
 ### Last verified end-to-end working item
-**Sep 21 2026 (latest) — "About" follows the Founder Story switch (NOT PUSHED).** Founder Story **Public** → the About link (hamburger + desktop, every public page) opens `/founder-about`; **Invite-only** → `/about`. `MobileNav.js::aboutHref/resolveLinks`, wired into MobileNav, MarketingNav, HomePage, LoginPage and the `/about` desktop nav. Verified on preview in both states; check.sh ALL CLEAR. **Founder next**: Save to GitHub → Vercel → flip the switch in Site Content → phone → hamburger → About.
+**Sep 21 2026 (latest) — Founder is its own menu item everywhere (NOT PUSHED).** About → `/about` always; **Founder** (9th item in every hamburger + desktop nav, `MARKETING_LINKS`) → `/founder-about`: the request-access / sign-in gate while invite-only, the story once public. The earlier "About follows the switch" pass was reverted. Verified on preview in both flag states at 390/1280 px; check.sh ALL CLEAR. **Founder next**: Save to GitHub → Vercel → phone → hamburger → Founder.
 
 **Sep 21 2026 (later) — One hamburger menu on every public page (NOT PUSHED).** `/about` had its own mobile list (no Compare/About, added Founder), so the menu appeared to change after tapping About. Now every public page shows the same 8 items via `STANDALONE_LINKS`, and the current page is gold (`aria-current`). Verified on preview at 390 px; check.sh ALL CLEAR. **Founder next**: Save to GitHub → Vercel → phone → hamburger → About → hamburger.
 

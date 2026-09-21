@@ -18,7 +18,7 @@ import { API_URL } from '../config';
 import { RevealSection } from '../components/landing/RevealSection';
 import { FreeModeBanner } from '../components/FreeModeBanner';
 import LandingContent from '../components/landing/LandingContent';
-import { MARKETING_LINKS, resolveLinks } from '../components/landing/MobileNav';
+import { MARKETING_LINKS } from '../components/landing/MobileNav';
 import { useCopy, renderCopy } from '../copy/CopyContext';
 import ForgotPasswordModal from '../components/auth/ForgotPasswordModal';
 import { isPWA as isStandalonePWA } from '../utils/isPWA';
@@ -242,8 +242,8 @@ const LoginPage = () => {
   const [homepageVideoId, setHomepageVideoId] = useState('KlZ8egF_Nyw');
   const [verticalVideoId, setVerticalVideoId] = useState('5fDJ9e7bEUo');
   const [footerInfo, setFooterInfo] = useState({ line1: COMPANY.addressLine1, line2: `${COMPANY.addressLine2} U.S.A.`, phone: COMPANY.phone });
-  const { t, flags } = useCopy();
-  const navLinks = resolveLinks(MARKETING_LINKS, flags);
+  const { t } = useCopy();
+  const navLinks = MARKETING_LINKS;
   const isMobileView = useIsMobileViewport();
   useEffect(() => {
     apiClient.get(`${API_URL}/public/site-content`).then(r => {

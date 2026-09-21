@@ -1,12 +1,12 @@
 import React from 'react';
 import { ChevronRight } from 'lucide-react';
-import { MobileNav, STANDALONE_LINKS, isCurrentLink, resolveLinks } from './MobileNav';
+import { MobileNav, STANDALONE_LINKS, isCurrentLink } from './MobileNav';
 import { useCopy } from '../../copy/CopyContext';
 
 // Marketing nav for standalone pages (/about, /customers, /changelog). Hash links resolve to the homepage.
 export const MarketingNav = ({ navigateWithFade, current, testIdSuffix = '' }) => {
-  const { t, flags } = useCopy();
-  const links = resolveLinks(STANDALONE_LINKS, flags);
+  const { t } = useCopy();
+  const links = STANDALONE_LINKS;
   const here = current || window.location.pathname;
   const go = navigateWithFade || ((p) => { window.location.href = p; });
   return (
