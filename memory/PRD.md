@@ -597,6 +597,8 @@ bug — fix it in the preview DB immediately (snippet in
 - Hardcoded `rgba(212,175,55,…)` → `var(--gold-rgb)` sweep.
 
 ### Last verified end-to-end working item
+**Sep 21 2026 (latest) — Pill also in the About page founder box (NOT PUSHED).** Founder's screenshot was `/about` "Who We Are", not the homepage tile; same public-only pill added beneath "LinkedIn Profile" there (`about-founder-story-pill`). Verified both states; check.sh ALL CLEAR. **Founder next**: Save to GitHub → Vercel (none of today's work is live yet) → Site Content → Founder Story = Public → About.
+
 **Sep 21 2026 (latest) — Approval e-mail Brian → Barnet (NOT PUSHED).** `founder_invites.py` L236; zero "Brian" left in source. check.sh ALL CLEAR.
 
 **Sep 21 2026 (latest) — "Meet the Founder" pill on the founder tile (NOT PUSHED).** While the Founder Story is Public, `FounderCard` shows a gold pulsating pill (beneath LinkedIn, inside the box) → `/founder-about`; hidden while invite-only. `founder-pill-pulse` keyframe in index.css, reduced-motion safe. Verified both states at 390/1280 px; check.sh ALL CLEAR. **Founder next**: Save to GitHub → Vercel → Site Content → Founder Story = Public → homepage tile.

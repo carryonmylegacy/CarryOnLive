@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { SEO } from '../components/SEO';
-import { ChevronRight, ChevronLeft, Linkedin } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Linkedin, ArrowRight } from 'lucide-react';
 import axios from 'axios';
 import { API_URL } from '../config';
 import { MobileNav, STANDALONE_LINKS } from '../components/landing/MobileNav';
@@ -38,7 +38,7 @@ const RevealSection = ({ children, className = '', delay = 0, direction = 'up', 
 };
 
 const AboutPage = () => {
-  const { t } = useCopy();
+  const { t, flags } = useCopy();
   const [founder, setFounder] = useState({ name: '', title: '', bio: '', photo_url: '', linkedin_url: FOUNDER_LINKEDIN_DEFAULT });
 
   useEffect(() => {
@@ -277,6 +277,13 @@ const AboutPage = () => {
                       className="inline-flex items-center gap-1.5 mt-3 text-xs font-semibold text-[#0A66C2] hover:text-[#004182] transition-colors" data-testid="founder-linkedin-link">
                       <Linkedin className="w-4 h-4" /> {t('about.who.linkedin')}
                     </a>
+                  )}
+                  {flags.founder_story_public && (
+                    <div className="mt-4">
+                      <a href="/founder-about" className="founder-story-pill inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold hover:brightness-110 active:scale-95 transition-[filter,transform]" style={{ background: '#d4af37', color: '#0B1221' }} data-testid="about-founder-story-pill">
+                        Meet the Founder <ArrowRight className="w-3.5 h-3.5" />
+                      </a>
+                    </div>
                   )}
                 </div>
               </div>

@@ -10545,3 +10545,7 @@ Audit + full findings saved at `memory/audits/heycatch_2026-09-18.md`. Applied e
 
 ## Sep 21 2026 — Founder-page approval e-mail: Brian → Barnet (NOT PUSHED)
 - `backend/routes/founder_invites.py` line 236: "approved by Barnet, the founder of CarryOn™". No other "Brian" anywhere in backend/frontend source.
+
+## Sep 21 2026 — "Meet the Founder" pill also in the About page founder box (NOT PUSHED)
+- Founder's screenshot was the `/about` "Who We Are" founder box (photo · name · title · bio · LinkedIn Profile), not the homepage tile. Same public-only gold pulsating pill added beneath "LinkedIn Profile", inside the box (`AboutPage.js`, `about-founder-story-pill`), → `/founder-about`. Hidden while invite-only.
+- Verified both states on preview at 390 px; flag restored to invite-only.
