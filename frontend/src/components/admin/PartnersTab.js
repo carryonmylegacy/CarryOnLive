@@ -106,7 +106,7 @@ pillars listed above — exactly the package we negotiated.
 Let me know when you'd like the first batch invited.
 
 — The CarryOn team
-  Powered by CarryOn Enterprises Inc.
+  Powered by CarryOn Enterprises Inc
 `;
   return `${subject}\n\n${body}`;
 };

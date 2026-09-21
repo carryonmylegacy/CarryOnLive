@@ -355,7 +355,7 @@ app = FastAPI(
         "email": "founder@carryon.us",
     },
     license_info={
-        "name": "Proprietary — © 2026 CarryOn Enterprises Inc.",
+        "name": "Proprietary — © 2026 CarryOn Enterprises Inc",
     },
     servers=[
         {"url": "https://carryon-api-kacr.onrender.com", "description": "Production"},

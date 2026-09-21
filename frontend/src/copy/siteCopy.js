@@ -118,7 +118,7 @@ const PAGES_PHASE1 = [
         f('footer.sources', 'Footer: Sources & Methodology', 'Sources & Methodology'),
         f('footer.guides', 'Footer: Guides (shown once the Guides section is launched)', 'Guides'),
         f('footer.founder', 'Footer: Founder story (shown while the Founder story is public)', 'Founder story'),
-        f('footer.copyright', 'Footer: copyright line (year is added automatically)', 'CarryOn Enterprises Inc. All rights reserved.'),
+        f('footer.copyright', 'Footer: copyright line (year is added automatically)', 'CarryOn Enterprises Inc — All rights reserved.'),
       ] },
       { key: 'hero', label: 'Hero (top of /home page)', fields: [
         f('home.hero.eyebrow', 'Small gold line above the headline', 'Every American Family. Ready.'),

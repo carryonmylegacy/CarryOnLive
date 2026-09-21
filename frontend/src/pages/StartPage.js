@@ -186,7 +186,7 @@ const StartPage = () => {
     "provider": {
       "@type": "Organization",
       "name": "CarryOn",
-      "legalName": "CarryOn Enterprises Inc.",
+      "legalName": "CarryOn Enterprises Inc",
       "url": "https://www.carryon.us"
     }
   }) : null;

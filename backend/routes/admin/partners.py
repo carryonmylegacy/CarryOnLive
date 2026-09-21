@@ -421,7 +421,7 @@ def _build_welcome_email(partner: dict, base_url: str) -> tuple[str, str]:
         — The CarryOn team
       </td></tr>
       <tr><td style="padding:14px 36px;background:#0f172a;color:#cbd5e1;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;text-align:center;font-weight:700;">
-        Powered by CarryOn Enterprises Inc.
+        Powered by CarryOn Enterprises Inc
       </td></tr>
     </table>
   </td></tr>

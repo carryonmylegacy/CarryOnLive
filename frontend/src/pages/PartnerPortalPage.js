@@ -281,7 +281,7 @@ const PartnerPortalPage = () => {
             <span className="text-white/70 text-xs font-semibold tracking-wide flex items-center gap-1.5"
               data-testid="partner-portal-powered-by">
               <Sparkles className="w-3 h-3 text-[#d4af37]" />
-              Powered by CarryOn Enterprises Inc.
+              Powered by CarryOn Enterprises Inc
             </span>
           </div>
         </div>
@@ -334,7 +334,7 @@ function PartnerNotFoundTile({ slug, reason }) {
         </div>
         <div className="mt-6 pt-5 border-t flex items-center justify-center gap-2" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
           <img src="/carryon-logo.png" alt="CarryOn" className="h-6 w-auto opacity-80" />
-          <span className="text-white/70 text-xs font-semibold">Powered by CarryOn Enterprises Inc.</span>
+          <span className="text-white/70 text-xs font-semibold">Powered by CarryOn Enterprises Inc</span>
         </div>
       </div>
     </div>

@@ -180,7 +180,7 @@ export default function ManagerLoginPage() {
 
         <div className="mt-6 pt-5 border-t flex items-center justify-center gap-2" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
           <img src="/carryon-logo.png" alt="CarryOn" className="h-6 w-auto opacity-80" />
-          <span className="text-white/70 text-xs font-semibold">Powered by CarryOn Enterprises Inc.</span>
+          <span className="text-white/70 text-xs font-semibold">Powered by CarryOn Enterprises Inc</span>
         </div>
       </div>
     </div>

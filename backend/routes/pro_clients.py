@@ -348,7 +348,7 @@ def _claim_email_html(client_name: str, rep_name: str, company: str, claim_url: 
         This personal link expires in {CLAIM_TOKEN_TTL_DAYS} days and can only be used once.
         If you weren't expecting this email, you can safely ignore it.
       </p>
-      <p style="font-size:13px;line-height:1.5;color:#475569;">Powered by CarryOn Enterprises Inc.</p>
+      <p style="font-size:13px;line-height:1.5;color:#475569;">Powered by CarryOn Enterprises Inc</p>
     </div>
     """
 

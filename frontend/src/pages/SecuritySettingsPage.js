@@ -294,7 +294,7 @@ const SecuritySettingsPage = () => {
                         {smsConsent && <svg className="w-3 h-3 text-[#0B1221]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
                       </button>
                       <span className="text-[var(--t5)] text-xs leading-relaxed">
-                        I consent to receive SMS verification codes from CarryOn Enterprises Inc. Msg & data rates may apply. Reply STOP to opt out. See our{' '}
+                        I consent to receive SMS verification codes from CarryOn Enterprises Inc; msg & data rates may apply. Reply STOP to opt out. See our{' '}
                         <a href="/privacy" className="text-[var(--gold)] underline">Privacy Policy</a> and{' '}
                         <a href="/terms" className="text-[var(--gold)] underline">Terms of Service</a>.
                       </span>
