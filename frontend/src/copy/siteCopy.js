@@ -228,7 +228,7 @@ const PAGES_PHASE1 = [
       ] },
       { key: 'security', label: 'Security section', fields: [
         f('home.security.title', 'Heading', 'Your Family\'s Privacy Is Non-Negotiable.'),
-        f('home.security.sub', 'Sub-heading', 'The most important things your family will ever share live here. So we don\'t use broad labels. We say exactly what we do: a separate encryption key for every family, support staff who cannot open your files, two-step sign-in, real people who verify before anything unlocks, a record of every access, and your right to export or delete everything — any time.', { multiline: true }),
+        f('home.security.sub', 'Sub-heading', 'The most important things your family will ever share live here. So we don\'t use broad labels. We say exactly what we do: a separate encryption key for every family, privileged staff access restricted to defined administrative tasks — controlled and audited, two-step sign-in, real people who verify before anything unlocks, a record of every access, and your right to export or delete everything — any time.', { multiline: true }),
         ...[
           'Your files are scrambled before they’re stored, with a separate lock for every family — privileged staff access is restricted to defined administrative tasks, controlled and audited',
           'Estate Guardian™ AI only reads your documents when you ask it to. It uses a trusted AI service under contract, and your documents are never used to teach it',
