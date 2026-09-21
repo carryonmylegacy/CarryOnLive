@@ -375,6 +375,16 @@ Page** (`GET /admin/funnel-analytics/landing-pages?days=`), activated = 1+ docum
 Precise statistics carry a `SourceRef` superscript to `/sources` (registry `siteCopySources.js`).
 The homepage encyclopedia is collapsed behind `MoreDetails` (`collapseDetails` prop, homepage only).
 
+### Public identity & claims discipline (Sep 2026)
+
+`frontend/src/config/company.js` is the single source for entity/phone/address (`entity` = CarryOn
+Enterprises Inc.; `disclosure` = "CarryOn Technologies LLC, a CarryOn Enterprises Inc. company",
+used only where corporate-parent disclosure fits). Every precise statistic carries a `SourceRef`
+to `/sources` (`siteCopySources.js`); the marketing wording must say exactly what the source
+measured. Security language must match `/security` (not zero-knowledge: privileged access is
+restricted, controlled and audited — never "can't open" / "no backdoors" / "military-grade").
+Startup migration `public_claims_cleanup_v1` retires Site Copy overrides carrying old phrases.
+
 ### Public copy is founder-editable (Site Copy, Sep 2026)
 
 Every string on the Phase-1 marketing surfaces (`/`, `/home`, `/about`,
@@ -587,6 +597,8 @@ bug — fix it in the preview DB immediately (snippet in
 - Hardcoded `rgba(212,175,55,…)` → `var(--gold-rgb)` sweep.
 
 ### Last verified end-to-end working item
+**Sep 21 2026 — Public-site consistency / trust / claims / SEO cleanup (iteration_213, NOT PUSHED).** One identity (CarryOn Enterprises Inc., (703) 889-0017, `config/company.js` single source; About footer discloses the operating LLC), security wording matched to the Security page everywhere (no "No backdoors"/"military-grade"/"can't open from their screens"; Security H1 "…deserves security you can inspect."), 76 % / 570 h / hospice / attorney-rate claims reworded to what their sources measure (+ `/sources#attorney`), pricing reduced-tier line fixed, Seniors tier added to `/start`, Wind-Down nudges on `/pricing` + `/start`, `/partner` out of sitemap, `/landing-consumer` noindex, startup migration `public_claims_cleanup_v1` fixes prod footer phone + stale Site Copy overrides. 27 routes × 3 viewports clean; check.sh ALL CLEAR. **Founder next**: push → counsel glance at Privacy §5 sentence → confirm `/sources` entries → GSC resubmit sitemap.
+
 **Sep 20 2026 — Marketing audit executed (iteration_212, NOT PUSHED).** (4) Admin → Marketing → Funnel "By Landing Page" card + `GET /admin/funnel-analytics/landing-pages` (visitors → CTA → signups → activated [1+ doc or 1+ message] → paid, per `landing_page`; every signup now tagged — acquisition page or first path of the visit). (2) `/ready` quiz-first landing page, (3) `/moments` Milestone Messages page (both Site Copy-editable, noindex, shared `useAcquisition` hook). (5) `/sources` Sources & Methodology + `[n]` superscripts (570 h → EstateExec, 76 % → Caring.com 2025, 300 k hospice → NHPCO, live numbers → counted live incl. demo account) — founder to confirm entries. (6) `home.security.sub` default rewritten to specific controls (check prod Site Copy override). (1) Homepage encyclopedia collapsed behind "See everything CarryOn includes" (`MoreDetails`), trust moved up, anchors auto-open. (7) compact founder card under the homepage video + founder video on `/moments`. Backend 8/8, frontend all flows; check.sh ALL CLEAR. **Founder next**: push → confirm sources + security override → point ads at `/benefactor`, `/ready`, `/moments` with UTMs → read the By Landing Page card after a week.
 
 **Sep 20 2026 — Phone preview swipe + dots (NOT PUSHED).** `ProductPreview.js`: swipe left/right on the phone frame steps through the 5 screenshots; 5 dots below (gold pill = active, tap to jump). Desktop unchanged. Verified on preview at 390 px; check.sh ALL CLEAR. **Founder next**: push → phone → homepage → swipe.
