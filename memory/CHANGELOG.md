@@ -10522,3 +10522,8 @@ Audit + full findings saved at `memory/audits/heycatch_2026-09-18.md`. Applied e
 ## Sep 21 2026 — Entity cleanup closed out (NOT PUSHED)
 - Founder decisions: SMS-consent sentence stays "CarryOn Enterprises Inc" (Twilio-registered brand); quiz-results e-mail footer → "CarryOn Technologies LLC, a CarryOn Enterprises Inc company · address" (`backend/routes/quiz.py`); copyright / "Powered by" / JSON-LD `parentOrganization` stay on the parent (option B).
 - Verified on preview: Terms §1/§6/§12 + Privacy §1 name the LLC as operator; footers show LLC disclosure + (703) 889-0017; no "cannot/can't open", "no backdoors", "military-grade", "Inc.", or 884-1527 on /terms, /privacy, /home; preview Site Copy overrides carry none of the retired phrases. check.sh ALL CLEAR.
+
+## Sep 21 2026 — One hamburger menu on every public page (NOT PUSHED)
+- Bug (reproduced on carryon.us at 390 px): `/about` had its own hand-made mobile list (`ABOUT_NAV`: no Compare/About, added Founder), so after tapping About the menu "changed"; the About hero also mirrors the homepage, so the navigation read as a scroll.
+- Fix: `MobileNav.js` exports `STANDALONE_LINKS` (the 8 marketing links with hash links resolved to `/#…`) + `isCurrentLink`; `AboutPage` and `MarketingNav` use it. The item for the current page renders gold with `aria-current="page"` (mobile + desktop MarketingNav, path defaults to `window.location.pathname`). Founder link stays in the About desktop nav + footer.
+- Verified on preview: `/`, `/about`, `/customers`, `/vs` all show Features · Readiness Quiz · Security · How It Works · Pricing · Compare · Customers · About; highlight = About / Customers / Compare respectively; Security from `/vs` lands on `/#security`.

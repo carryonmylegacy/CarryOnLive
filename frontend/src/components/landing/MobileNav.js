@@ -14,11 +14,17 @@ export const MARKETING_LINKS = [
   { k: 'about', label: 'About', href: '/about' },
 ];
 
+// Same menu on standalone pages (/about, /customers, /vs, …): hash links resolve to the homepage.
+export const STANDALONE_LINKS = MARKETING_LINKS.map(l => ({ ...l, href: l.href.startsWith('#') ? `/${l.href}` : l.href }));
+
+export const isCurrentLink = (href, here) => !href.includes('#') && (here === href || here.startsWith(`${href}/`));
+
 const slug = (s) => s.toLowerCase().replace(/[^a-z]+/g, '-');
 
-export const MobileNav = ({ links = MARKETING_LINKS, navigateWithFade, testIdSuffix = '' }) => {
+export const MobileNav = ({ links = MARKETING_LINKS, navigateWithFade, current, testIdSuffix = '' }) => {
   const [open, setOpen] = useState(false);
   const { t } = useCopy();
+  const here = current || window.location.pathname;
   const go = (path) => { setOpen(false); navigateWithFade(path); };
   return (
     <div className="lg:hidden">
@@ -30,12 +36,15 @@ export const MobileNav = ({ links = MARKETING_LINKS, navigateWithFade, testIdSuf
         <div className="fixed inset-x-0 z-[99] px-6 pt-2 pb-6 animate-in fade-in slide-in-from-top-2 duration-200" data-testid={`mobile-menu${testIdSuffix}`}
           style={{ top: 'calc(4rem + env(safe-area-inset-top, 0px))', background: 'rgba(11,18,33,0.98)', borderBottom: '1px solid rgba(212,175,55,0.25)', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }}>
           <nav className="flex flex-col" aria-label="Mobile">
-            {links.map(l => (
-              <a key={l.label} href={l.href} onClick={() => setOpen(false)} data-testid={`mobile-menu-link-${slug(l.label)}${testIdSuffix}`}
-                className="flex items-center justify-between py-3.5 text-base font-medium text-[#e2e8f0] border-b border-white/5 hover:text-[#d4af37] transition-colors">
-                {l.k ? t(`nav.${l.k}`) : l.label} <ChevronRight className="w-4 h-4 text-[#4a5568]" />
-              </a>
-            ))}
+            {links.map(l => {
+              const active = isCurrentLink(l.href, here);
+              return (
+                <a key={l.label} href={l.href} onClick={() => setOpen(false)} aria-current={active ? 'page' : undefined} data-testid={`mobile-menu-link-${slug(l.label)}${testIdSuffix}`}
+                  className={`flex items-center justify-between py-3.5 text-base font-medium border-b border-white/5 transition-colors ${active ? 'text-[#d4af37]' : 'text-[#e2e8f0] hover:text-[#d4af37]'}`}>
+                  {l.k ? t(`nav.${l.k}`) : l.label} <ChevronRight className={`w-4 h-4 ${active ? 'text-[#d4af37]' : 'text-[#4a5568]'}`} />
+                </a>
+              );
+            })}
           </nav>
           <div className="flex gap-3 mt-5">
             <button onClick={() => go('/start')} className="flex-1 py-3 rounded-lg font-bold text-sm active:scale-95 transition-transform" style={{ background: '#d4af37', color: '#0B1221' }} data-testid={`mobile-menu-start${testIdSuffix}`}>{t('nav.start')}</button>

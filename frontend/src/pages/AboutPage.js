@@ -3,7 +3,7 @@ import { SEO } from '../components/SEO';
 import { ChevronRight, ChevronLeft, Linkedin } from 'lucide-react';
 import axios from 'axios';
 import { API_URL } from '../config';
-import { MobileNav } from '../components/landing/MobileNav';
+import { MobileNav, STANDALONE_LINKS } from '../components/landing/MobileNav';
 import { founderPhotoUrl, FOUNDER_LINKEDIN_DEFAULT } from '../components/landing/FounderCard';
 import { useCopy, renderCopy } from '../copy/CopyContext';
 import { SourceRef } from '../components/landing/SourceRef';
@@ -36,16 +36,6 @@ const RevealSection = ({ children, className = '', delay = 0, direction = 'up', 
     </div>
   );
 };
-
-const ABOUT_NAV = [
-  { k: 'features', label: 'Features', href: '/#features' },
-  { k: 'quiz', label: 'Readiness Quiz', href: '/#quiz' },
-  { k: 'security', label: 'Security', href: '/#security' },
-  { k: 'steps', label: 'How It Works', href: '/#steps' },
-  { k: 'pricing', label: 'Pricing', href: '/pricing' },
-  { k: 'customers', label: 'Customer Stories', href: '/customers' },
-  { k: 'founder', label: 'Founder', href: '/founder-about' },
-];
 
 const AboutPage = () => {
   const { t } = useCopy();
@@ -109,7 +99,7 @@ const AboutPage = () => {
             <a href="/login" className="text-[#d4af37] text-sm font-semibold hover:text-[#fcd34d] transition-colors flex items-center gap-1">
               <ChevronLeft className="w-3.5 h-3.5" /> {t('nav.signin')}
             </a>
-            <MobileNav links={ABOUT_NAV} navigateWithFade={(p) => { window.location.href = p; }} testIdSuffix="-about" />
+            <MobileNav links={STANDALONE_LINKS} current="/about" navigateWithFade={(p) => { window.location.href = p; }} testIdSuffix="-about" />
           </div>
         </div>
       </nav>
