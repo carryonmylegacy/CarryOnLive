@@ -11,7 +11,7 @@ export const MARKETING_LINKS = [
   { k: 'pricing', label: 'Pricing', href: '/pricing' },
   { k: 'compare', label: 'Compare', href: '/vs' },
   { k: 'customers', label: 'Customers', href: '/customers' },
-  { k: 'about', label: 'About', href: '/about' },
+  { k: 'about', label: 'About', href: '/about#who' },
   // Founder → request-access / sign-in gate while the story is invite-only, the story itself once public.
   { k: 'founder', label: 'Founder', href: '/founder-about' },
 ];
@@ -19,7 +19,10 @@ export const MARKETING_LINKS = [
 // Same menu on standalone pages (/about, /customers, /vs, …): hash links resolve to the homepage.
 export const STANDALONE_LINKS = MARKETING_LINKS.map(l => ({ ...l, href: l.href.startsWith('#') ? `/${l.href}` : l.href }));
 
-export const isCurrentLink = (href, here) => !href.includes('#') && (here === href || here.startsWith(`${href}/`));
+export const isCurrentLink = (href, here) => {
+  const path = href.split('#')[0];
+  return path.length > 1 && (here === path || here.startsWith(`${path}/`));
+};
 
 const slug = (s) => s.toLowerCase().replace(/[^a-z]+/g, '-');
 

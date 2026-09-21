@@ -54,6 +54,19 @@ const AboutPage = () => {
     }).catch(() => {});
   }, []);
 
+  // Land on the hash target (About menu → /about#who) on SPA navigation and full loads alike; the
+  // "Remember scroll position" restore skips hash URLs, so this is the single source of the landing spot.
+  useEffect(() => {
+    const jump = () => {
+      const id = window.location.hash.slice(1);
+      if (!id) return;
+      setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: 'auto', block: 'start' }), 120);
+    };
+    jump();
+    window.addEventListener('hashchange', jump);
+    return () => window.removeEventListener('hashchange', jump);
+  }, []);
+
   const values = [1, 2, 3, 4, 5].map(n => ({ title: t(`about.values.${n}.title`), desc: t(`about.values.${n}.desc`) }));
   const teams = [1, 2, 3].map(n => ({ title: t(`about.team.${n}.title`), desc: t(`about.team.${n}.desc`) }));
   const valueCard = (v, i, delay, direction) => (
@@ -223,8 +236,8 @@ const AboutPage = () => {
         </div>
       </section>
 
-      {/* WHO WE ARE — layered */}
-      <section className="relative z-40 -mt-1">
+      {/* WHO WE ARE — layered. `#who` is where the About menu item lands (scroll-margin clears the fixed nav). */}
+      <section id="who" className="relative z-40 -mt-1" style={{ scrollMarginTop: 'calc(4rem + env(safe-area-inset-top, 0px))' }} data-testid="about-who-section">
         <div className="rounded-t-[2rem] py-16 lg:py-24 relative overflow-hidden" style={{ background: '#0d1b2a', boxShadow: '0 -16px 50px rgba(0,0,0,0.4)' }}>
           <div className="absolute inset-0 opacity-[0.25]" style={{ backgroundImage: 'url(/texture-family.png)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
           <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(13,27,42,0.45) 0%, rgba(13,27,42,0.88) 100%)' }} />
