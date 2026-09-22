@@ -169,7 +169,7 @@ DEFAULT_PLANS = [
         "adjustable": True,
         "features": [
             "Everything in Standard",
-            "Unlimited beneficiaries",
+            "Every CarryOn tool — Financial Picture, Digital Access Vault, Comms Tool and more",
             "Priority human support from our Customer Service Team (CST)",
         ],
     },
@@ -199,7 +199,7 @@ DEFAULT_PLANS = [
             "Immediate Action Checklist",
             "Basic Secure Document Vault",
             "Milestone Messages",
-            "Beneficiary management (up to 3)",
+            "Unlimited beneficiaries",
         ],
     },
     {
