@@ -28,6 +28,12 @@ const fmtCheckedAt = (iso) => {
   return `${Math.floor(m / 60)}h ago`;
 };
 
+const fmtDate = (iso) => {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? iso : d.toISOString().slice(0, 10);
+};
+
 export const AuditIntegrityCard = ({ getAuthHeaders }) => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -192,6 +198,30 @@ export const AuditIntegrityCard = ({ getAuthHeaders }) => {
             {data.first_break_id && (
               <span className="font-mono opacity-70 ml-2">_id={data.first_break_id}</span>
             )}
+          </div>
+        )}
+
+        {/* Pre-CAS era census — rows written before the atomic head pointer existed */}
+        {data.link_enforced_from && (data.pre_cas_rows ?? 0) > 0 && (
+          <div
+            className="mt-3 p-3 rounded-lg text-xs text-[var(--t3)]"
+            style={{ background: 'var(--s)', border: '1px solid var(--b)' }}
+            data-testid="audit-integrity-precas"
+          >
+            <strong className="text-[var(--t)]">Links enforced from</strong>{' '}
+            <span className="font-mono">{fmtDate(data.link_enforced_from)}</span>
+            {' '}(atomic head pointer). {(data.pre_cas_rows ?? 0).toLocaleString()} earlier chained
+            {' '}{data.pre_cas_rows === 1 ? 'row' : 'rows'} hash-verified
+            {(data.historical_forks ?? 0) > 0 && (
+              <>
+                {' '}· <span className="text-[#F0C95C]" data-testid="audit-integrity-forks">
+                  {data.historical_forks} historical {data.historical_forks === 1 ? 'fork' : 'forks'}
+                </span>
+                {data.first_fork_at && <> (first {fmtDate(data.first_fork_at)})</>}
+                {' '}— pre-CAS write race, no content changed
+              </>
+            )}
+            .
           </div>
         )}
 

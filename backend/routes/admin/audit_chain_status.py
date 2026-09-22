@@ -70,4 +70,9 @@ async def get_audit_chain_status(_admin: dict = Depends(require_admin)):
         "window_size": result.get("window_size", result["entries_checked"]),
         "limit": 10000,
         "genesis_created_now": genesis["created"],
+        # Pre-CAS era (before the atomic head existed): hashes verified, links not enforced.
+        "link_enforced_from": result.get("link_enforced_from"),
+        "pre_cas_rows": result.get("pre_cas_rows", 0),
+        "historical_forks": result.get("historical_forks", 0),
+        "first_fork_at": result.get("first_fork_at"),
     }

@@ -207,6 +207,15 @@ async def verify_audit_chain(limit: int = 10000, latest_window: bool = False) ->
         exceeds `limit` — the old oldest-first+limit walk silently verified only
         the OLDEST `limit` and could report a false green (audit #1798 P1).
 
+    Pre-CAS era (founder decision, Sep 22 2026): rows stored BEFORE the atomic
+    head pointer existed (`audit_chain_state.created_at`, June 5 2026 in prod)
+    were appended with a read-latest-then-insert race, so two concurrent writes
+    could claim the same predecessor (a fork — production holds one from
+    May 20 2026). Those rows still get their own SHA-256 recomputed (any edit is
+    a break), but LINKS are only enforced from the first row written under the
+    atomic head onward; forks in the pre-CAS era are counted and reported as
+    `historical_forks`, never as tampering. Nothing is rewritten — append-only.
+
     Implementation note: filters to entries with a `prev_hash` field so legacy
     pre-chain entries don't crowd out the chain window. `skipped_legacy` is
     counted out-of-band via a single count_documents.
@@ -221,6 +230,7 @@ async def verify_audit_chain(limit: int = 10000, latest_window: bool = False) ->
         "_id": 1,
         "integrity_hash": 1,
         "prev_hash": 1,
+        "stored_at": 1,
         "timestamp": 1,
         "actor_id": 1,
         "actor_email": 1,
@@ -256,25 +266,58 @@ async def verify_audit_chain(limit: int = 10000, latest_window: bool = False) ->
         windowed = False
         expected_prev = _GENESIS_HASH
 
+    head_doc = await db.audit_chain_state.find_one({"key": _HEAD_KEY}, {"_id": 0, "hash": 1, "created_at": 1})
+    anchor_at = (head_doc or {}).get("created_at")
+    anchor_iso = None
+    if anchor_at is not None:
+        anchor_iso = (anchor_at if anchor_at.tzinfo else anchor_at.replace(tzinfo=timezone.utc)).isoformat()
+
     checked = 0
     first_break_at: str | None = None
     first_break_id: str | None = None
+    pre_cas_rows = 0
+    historical_forks = 0
+    first_fork_at: str | None = None
+    used_prev: set[str] = set()
+    entered_cas = False
 
     for entry in rows:
         # Recompute the integrity_hash from a canonical copy of the entry
-        # (excluding _id and integrity_hash themselves).
-        canonical_entry = {k: v for k, v in entry.items() if k not in ("_id", "integrity_hash")}
+        # (excluding _id, integrity_hash and stored_at — stored_at is set after hashing).
+        canonical_entry = {k: v for k, v in entry.items() if k not in ("_id", "integrity_hash", "stored_at")}
         canonical = json.dumps(canonical_entry, sort_keys=True)
         recomputed = hashlib.sha256(canonical.encode()).hexdigest()
+        hash_ok = recomputed == entry.get("integrity_hash")
+        stored_at = entry.get("stored_at")
+        pre_cas = anchor_at is not None and stored_at is not None and stored_at < anchor_at
 
-        if entry.get("prev_hash") != expected_prev or recomputed != entry.get("integrity_hash"):
-            if first_break_at is None:
+        if pre_cas:
+            pre_cas_rows += 1
+            if not hash_ok and first_break_at is None:
                 first_break_at = entry.get("timestamp", "")
                 first_break_id = str(entry.get("_id", ""))
-            # Continue scanning so we count entries checked, but don't update
-            # expected_prev — chain is already broken from this point.
+            prev = entry.get("prev_hash")
+            if prev in used_prev:
+                historical_forks += 1
+                if first_fork_at is None:
+                    first_fork_at = entry.get("timestamp", "")
+            used_prev.add(prev)
+            if hash_ok:
+                expected_prev = entry["integrity_hash"]
         else:
-            expected_prev = entry["integrity_hash"]
+            if not entered_cas:
+                entered_cas = True
+                if pre_cas_rows:
+                    # First row written under the atomic head: its declared predecessor is the anchor link.
+                    expected_prev = entry.get("prev_hash")
+            if entry.get("prev_hash") != expected_prev or not hash_ok:
+                if first_break_at is None:
+                    first_break_at = entry.get("timestamp", "")
+                    first_break_id = str(entry.get("_id", ""))
+                # Continue scanning so we count entries checked, but don't update
+                # expected_prev — chain is already broken from this point.
+            else:
+                expected_prev = entry["integrity_hash"]
         checked += 1
 
     # SOC2 evidence completeness: a nonzero repair-queue backlog means some
@@ -286,7 +329,6 @@ async def verify_audit_chain(limit: int = 10000, latest_window: bool = False) ->
     # to be authoritative the head must (a) exist and (b) equal the integrity_hash
     # of the most recently inserted chained event — otherwise the head advanced
     # past a row that never durably landed (audit fa1ad83 #8).
-    head_doc = await db.audit_chain_state.find_one({"key": "chain_head"}, {"_id": 0, "hash": 1})
     chain_head_present = bool(head_doc and head_doc.get("hash"))
     last_event = await db.audit_trail.find_one(
         {"prev_hash": {"$exists": True}, "integrity_hash": {"$exists": True}},
@@ -314,6 +356,11 @@ async def verify_audit_chain(limit: int = 10000, latest_window: bool = False) ->
         "chain_head_matches_last_event": chain_head_matches_last_event,
         "windowed": windowed,
         "window_size": len(rows),
+        # Pre-CAS era census (links enforced from `link_enforced_from` onward).
+        "link_enforced_from": anchor_iso,
+        "pre_cas_rows": pre_cas_rows,
+        "historical_forks": historical_forks,
+        "first_fork_at": first_fork_at,
     }
 
 

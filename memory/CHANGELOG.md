@@ -10609,3 +10609,9 @@ Verified false/stale and NOT acted on: "zero-knowledge" homepage chips (live bun
 
 ## Sep 22 2026 — Beneficiary line moved above the Subscribe button
 - `PlanTile.js`: "Unlimited beneficiary enrollment — free for your lifetime" is out of the feature `<ul>`; it now sits directly above the CTA, separated from the list by a hairline (`borderTop: var(--b)`), pinned to the bottom on every tile. Verified all 8 tiles on preview.
+
+## Sep 22 2026 — Audit hash chain: pre-CAS era re-anchor
+- Root cause of prod "Chain broken @ 2026-05-20": fork from the May 18–Jun 5 read-latest-then-insert writer (no CAS). Confirmed via git history (`40734e3e` writer; `1a639b3e` CAS head) and the June 5 db_indexes note "production audit_trail held a historical fork".
+- `services/audit.py::verify_audit_chain`: `stored_at` projected (excluded from canonical); anchor = `audit_chain_state.created_at`; pre-CAS rows → hash-only + fork census (`prev_hash` already claimed); links enforced from first CAS row (seeded from its own `prev_hash` when pre-CAS rows exist; genesis/window seed otherwise). New fields `link_enforced_from`, `pre_cas_rows`, `historical_forks`, `first_fork_at`. `ok` unchanged in meaning; forks never flip it.
+- `routes/admin/audit_chain_status.py` passes the new fields; `AuditIntegrityCard.js` renders `audit-integrity-precas` (+ `audit-integrity-forks`).
+- `tests/regression/test_audit_chain_precas.py` — 4 tests on scratch DB `carryon_audit_chain_test` (dropped after).
