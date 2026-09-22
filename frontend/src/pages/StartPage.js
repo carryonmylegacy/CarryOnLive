@@ -343,7 +343,7 @@ const StartPage = () => {
                     </div>
                   )}
                   <ul className="space-y-1.5 mb-5">
-                    {(plan.features || []).slice(0, 4).map((f, i) => (
+                    {(plan.features || []).map((f, i) => (
                       <li key={i} className="flex items-start gap-2 text-xs text-[var(--t3)]">
                         <Check className="w-3.5 h-3.5 text-[#10b981] flex-shrink-0 mt-0.5" />
                         {f}

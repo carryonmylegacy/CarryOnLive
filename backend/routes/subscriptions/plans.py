@@ -280,9 +280,10 @@ DEFAULT_PLANS = [
         ],
         "features": [
             "Everything in Standard",
-            "Milestone Messages",
-            "Estate Guardian analysis",
-            "Expanded vault storage",
+            "Digital Access Vault",
+            "Designated Trustee Services",
+            "Estate Plan Timeline",
+            "Reduced rate for ages 65+",
         ],
     },
     {

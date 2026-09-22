@@ -597,6 +597,8 @@ bug — fix it in the preview DB immediately (snippet in
 - Hardcoded `rgba(212,175,55,…)` → `var(--gold-rgb)` sweep.
 
 ### Last verified end-to-end working item
+**Sep 22 2026 (latest) — Seniors card trimmed to what it adds beyond Standard (NOT PUSHED).** Stored bullets repeated Base/Standard items; per the live feature gates Seniors adds DAV, DTS and the Estate Plan Timeline. New bullets: "Everything in Standard" · "Digital Access Vault" · "Designated Trustee Services" · "Estate Plan Timeline" · "Reduced rate for ages 65+" (defaults + migration 0007, exact-match on the old four). `/start` no longer caps cards at 4 bullets (matches `/pricing` + paywall). Verified on preview; check.sh ALL CLEAR. **Tabled by founder**: Google Search Console service-account setup guide — deliver when asked.
+
 **Sep 22 2026 — Beneficiary cap wording removed (NOT PUSHED).** Base "Beneficiary management (up to 3)" → "Unlimited beneficiaries"; Premium "Unlimited beneficiaries" → "Every CarryOn tool — Financial Picture, Digital Access Vault, Comms Tool and more" (migration 0006 + defaults; the cap was never enforced). Founder's live screenshot confirms the earlier batch is deployed on prod. check.sh ALL CLEAR.
 
 **Sep 22 2026 — Sub-processor list · contrast pass · Search Console tab (NOT PUSHED).** Privacy §6 now names every provider that touches data (founder to approve wording); Firebase/GA on /get-started consent-gated too. 25 public routes pass 4.5:1 (theme vars + literal grays lifted; /our-promise invisible H1 fixed). Marketing → Search Console tab + `GET/POST /api/admin/seo/index-status[/refresh]` — shows Google's verdict per page once `GSC_SITE_URL` + `GSC_SERVICE_ACCOUNT_JSON_B64` are on Render (5-step setup shown in the tab). check.sh ALL CLEAR.

@@ -10587,3 +10587,9 @@ Verified false/stale and NOT acted on: "zero-knowledge" homepage chips (live bun
 ## Sep 22 2026 — Beneficiary cap wording removed (NOT PUSHED)
 - Founder: all tiers have unlimited beneficiaries. The bullets "Beneficiary management (up to 3)" (Base) and "Unlimited beneficiaries" (Premium, sold as an upgrade) came from the original March 2 2026 plan defaults (commit 2813ffc0); no code ever enforced a cap. Base now reads "Unlimited beneficiaries" (inherited upward); Premium's bullet is its real differentiator per the gates: "Every CarryOn tool — Financial Picture, Digital Access Vault, Comms Tool and more". Migration `0006_unlimited_beneficiaries.py` (exact-match) + DEFAULT_PLANS. Applied on preview; runs on prod at next Render deploy.
 - Observed from the founder's live screenshot: migration 0005 + the earlier batch ARE live on carryon.us (CST sentence, MM on Base) — prod deploy happened.
+
+## Sep 22 2026 — Seniors card cleanup
+- `plans.py` DEFAULT_PLANS seniors features → Everything in Standard · Digital Access Vault · Designated Trustee Services · Estate Plan Timeline · Reduced rate for ages 65+ (gate-driven; founder picked options a + c).
+- `migrations/0007_seniors_card_copy.py` — exact-match replace of the stored four-bullet list; founder-edited cards untouched. Applied on preview; runs on Render at deploy.
+- `StartPage.js` — removed `.slice(0, 4)` on plan bullets so the 5th bullet shows; `/pricing` reduced-tier tiles never listed bullets (unchanged).
+- check.sh ALL CLEAR. GSC setup guide tabled by founder.
