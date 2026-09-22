@@ -69,6 +69,12 @@ fi
 
 echo "Building production bundle..."
 
+# Build stamp shown in the browser console ([CarryOn] Build: …): short git SHA + UTC build time.
+# VERCEL_GIT_COMMIT_SHA is exposed by Vercel when "Automatically expose System Environment
+# Variables" is on (Project → Settings → Environment Variables). Falls back to the date alone.
+export REACT_APP_BUILD_ID="${VERCEL_GIT_COMMIT_SHA:0:7}${VERCEL_GIT_COMMIT_SHA:+@}$(date -u +%Y-%m-%dT%H:%MZ)"
+echo "Build stamp: $REACT_APP_BUILD_ID"
+
 # Run the build (use yarn if available, fall back to npm)
 if command -v yarn >/dev/null 2>&1; then
     yarn build

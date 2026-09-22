@@ -6,7 +6,7 @@ import { useCopy } from '../../copy/CopyContext';
 export const MARKETING_LINKS = [
   { k: 'features', label: 'Features', href: '#features' },
   { k: 'quiz', label: 'Readiness Quiz', href: '#quiz' },
-  { k: 'security', label: 'Security', href: '#security' },
+  { k: 'security', label: 'Security', href: '/security' },
   { k: 'steps', label: 'How It Works', href: '#steps' },
   { k: 'pricing', label: 'Pricing', href: '/pricing' },
   { k: 'compare', label: 'Compare', href: '/vs' },
@@ -19,6 +19,11 @@ export const MARKETING_LINKS = [
 // Same menu on standalone pages (/about, /customers, /vs, …): hash links resolve to the homepage.
 export const STANDALONE_LINKS = MARKETING_LINKS.map(l => ({ ...l, href: l.href.startsWith('#') ? `/${l.href}` : l.href }));
 
+// "Customers" joins the top menu only once 3+ approved stories exist (the footer link always stays).
+export const CUSTOMERS_NAV_MIN_STORIES = 3;
+export const visibleLinks = (links, flags) =>
+  links.filter(l => l.k !== 'customers' || (flags?.published_stories ?? 0) >= CUSTOMERS_NAV_MIN_STORIES);
+
 export const isCurrentLink = (href, here) => {
   const path = href.split('#')[0];
   return path.length > 1 && (here === path || here.startsWith(`${path}/`));
@@ -28,20 +33,21 @@ const slug = (s) => s.toLowerCase().replace(/[^a-z]+/g, '-');
 
 export const MobileNav = ({ links = MARKETING_LINKS, navigateWithFade, current, testIdSuffix = '' }) => {
   const [open, setOpen] = useState(false);
-  const { t } = useCopy();
+  const { t, flags } = useCopy();
   const here = current || window.location.pathname;
+  const items = visibleLinks(links, flags);
   const go = (path) => { setOpen(false); navigateWithFade(path); };
   return (
     <div className="lg:hidden">
       <button type="button" aria-label={open ? 'Close menu' : 'Open menu'} aria-expanded={open} onClick={() => setOpen(o => !o)} data-testid={`mobile-menu-toggle${testIdSuffix}`}
-        className="w-10 h-10 -mr-2 flex items-center justify-center rounded-lg text-[#d4af37] active:scale-95 transition-transform">
+        className="w-11 h-11 -mr-2 flex items-center justify-center rounded-lg text-[#d4af37] active:scale-95 transition-transform">
         {open ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
       </button>
       {open && (
         <div className="fixed inset-x-0 z-[99] px-6 pt-2 pb-6 animate-in fade-in slide-in-from-top-2 duration-200" data-testid={`mobile-menu${testIdSuffix}`}
           style={{ top: 'calc(4rem + env(safe-area-inset-top, 0px))', background: 'rgba(11,18,33,0.98)', borderBottom: '1px solid rgba(212,175,55,0.25)', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }}>
           <nav className="flex flex-col" aria-label="Mobile">
-            {links.map(l => {
+            {items.map(l => {
               const active = isCurrentLink(l.href, here);
               return (
                 <a key={l.label} href={l.href} onClick={() => setOpen(false)} aria-current={active ? 'page' : undefined} data-testid={`mobile-menu-link-${slug(l.label)}${testIdSuffix}`}

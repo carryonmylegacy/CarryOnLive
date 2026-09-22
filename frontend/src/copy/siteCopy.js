@@ -76,7 +76,7 @@ const toolFields = TOOLS.flatMap(([key, product, title, bold, desc]) => [
 
 const FAQ = [
   ['Does CarryOn replace my estate attorney?', 'No. CarryOn organizes everything your attorney creates — wills, trusts, powers of attorney, insurance policies — and flags gaps or contradictions your attorney should review. Think of it as the place your estate plan lives, not a replacement for legal counsel.'],
-  ['CarryOn is new. How do I know it will be around?', 'Fair question. CarryOn was founded in 2024 and is founder-led. Your documents never depend on us: you can export everything at any time, and our written Wind-Down Promise guarantees at least 90 days’ notice and open export paths if the company ever closes. We would rather earn your trust with those guarantees than with numbers we can\'t back up.'],
+  ['CarryOn is new. How do I know it will be around?', 'Fair question. CarryOn was founded in 2025, became generally available in 2026, and is founder-led. Your documents never depend on us: you can export everything at any time, and our written Wind-Down Promise guarantees at least 90 days’ notice and open export paths if the company ever closes. We would rather earn your trust with those guarantees than with numbers we can\'t back up.'],
   ['What happens to my family\'s documents if CarryOn closes?', 'Your data is yours. You can export everything at any time. Our written Wind-Down Promise commits us to at least 90 days’ advance notice, open export paths the entire time, and files you can read on your own computer forever. Your family\'s preparedness never depends on a single company.'],
   ['Is hospice access really free?', 'Yes — full platform access, no exceptions, for all U.S. citizens and resident aliens enrolled in certified hospice care. No credit card, no timer, no reduced features. This is a core part of our mission.'],
   ['How does military and veteran pricing verification work?', 'Select the Military or Veteran tier during signup. We verify service status through a simple document upload — a military ID, DD214, or VA Benefits Letter. Verification is typically completed within 24 hours.'],
@@ -250,7 +250,7 @@ const PAGES_PHASE1 = [
           ['1', 'Your files, locked per family', 'Scrambled before they’re stored, with a separate lock for every family. They aren’t casually accessible to CarryOn staff — privileged access is limited to defined administrative functions, controlled and audited — and every time a file is opened, we write down who did it and when.'],
           ['2', 'Your data is yours. Leave anytime.', 'Export everything whenever you want and cancel from your account. No hoops, no phone calls.'],
           ['3', 'Try it before you pay', 'Every plan starts with an exploration period — no credit card needed. Set up your vault, invite one person, and see if it fits.'],
-          ['4', 'Built in Arlington, Virginia since 2024', 'A registered U.S. company with a real address, a real phone number, and a founder who answers to his name.'],
+          ['4', 'Built in Arlington, Virginia since 2025', 'A registered U.S. company with a real address, a real phone number, and a founder who answers to his name.'],
         ].flatMap(([n, title, desc]) => [
           f(`home.trust.${n}.title`, `Card ${n} title`, title),
           f(`home.trust.${n}.desc`, `Card ${n} text`, desc),
@@ -480,7 +480,7 @@ const PAGES_PHASE1 = [
         f('security.encryption.1', 'Bullet 1', '**Scrambled before it’s stored** — every document, message, and vault item is encrypted (AES-256-GCM).'),
         f('security.encryption.2', 'Bullet 2', '**Per-estate encryption salt** generated at estate creation. No two families share a key.'),
         f('security.encryption.3', 'Bullet 3', '**PBKDF2-HMAC-SHA256, 600,000 iterations** for password-derived keys (NIST recommends ≥600k).'),
-        f('security.encryption.4', 'Bullet 4', '**TLS 1.3** with HSTS preload (max-age 1 year, includeSubDomains, preload).'),
+        f('security.encryption.4', 'Bullet 4', '**TLS 1.3** with HSTS (max-age 2 years, includeSubDomains, preload flag set; submitted to the browser preload list).'),
         f('security.encryption.5', 'Bullet 5', '**Encrypted with per-estate keys; access controlled and audited.** Documents are stored AES-256-GCM encrypted with keys derived per estate from key material CarryOn operates. Because we hold that key material, this is not a zero-knowledge system: CarryOn staff access to stored content is restricted to administrator roles, limited to defined support and verification tasks, and every document download and vault view is written to an append-only audit trail — access is controlled and audited, not impossible. AI chat transcripts, which can quote documents you flagged for AI analysis, are encrypted at rest with the same per-estate keys and are deleted with the estate or account they belong to.', { multiline: true }),
       ] },
       { key: 'auth', label: 'Authentication bullets', fields: [
@@ -505,7 +505,7 @@ const PAGES_PHASE1 = [
       ] },
       { key: 'headers', label: 'Browser hardening bullets', fields: [
         f('security.headers.1', 'Bullet 1', 'Content Security Policy (default-src \'self\', tight allow-list for Stripe and fonts).'),
-        f('security.headers.2', 'Bullet 2', 'HSTS with preload + includeSubDomains.'),
+        f('security.headers.2', 'Bullet 2', 'HSTS (2 years) with includeSubDomains and the preload flag.'),
         f('security.headers.3', 'Bullet 3', 'X-Frame-Options: DENY (no clickjacking).'),
         f('security.headers.4', 'Bullet 4', 'X-Content-Type-Options: nosniff.'),
         f('security.headers.5', 'Bullet 5', 'Referrer-Policy: strict-origin-when-cross-origin.'),

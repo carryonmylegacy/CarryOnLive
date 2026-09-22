@@ -588,7 +588,7 @@ const LandingContent = ({ navigateWithFade, footerInfo = DEFAULT_FOOTER, testIdS
             {FOOTER_LINKS.filter(([key]) => linkVisible(key, flags)).map(([key, href]) => (
               <a key={key} href={href} className="text-[#334155] text-xs hover:text-[#7b879e] transition-colors" data-testid={`landing-footer-${key}-link${testIdSuffix}`}>{t(`footer.${key}`)}</a>
             ))}
-            <span className="text-[#334155] text-xs">{t('footer.accessibility')}</span>
+            <a href="/accessibility" className="text-[#334155] text-xs hover:text-[#7b879e] transition-colors" data-testid={`landing-footer-accessibility-link${testIdSuffix}`}>{t('footer.accessibility')}</a>
           </div>
           <div className="text-right text-[#334155] text-xs leading-relaxed">
             <p>{footerInfo.line1}</p>

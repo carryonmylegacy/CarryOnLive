@@ -59,7 +59,7 @@ If your grace period expires, your account will become dormant. You will retain 
 
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:32px;padding-top:24px;border-top:1px solid #1e293b;">
 <tr><td style="text-align:center;color:#64748b;font-size:12px;">
-<p style="margin:0 0 4px 0;">AES-256 Encrypted &middot; Zero-Knowledge &middot; 2FA Protected</p>
+<p style="margin:0 0 4px 0;">AES-256 Encrypted &middot; Access controlled and audited &middot; 2FA Protected</p>
 <p style="margin:0;">CarryOn &mdash; Every American Family. Ready.</p>
 </td></tr>
 </table>

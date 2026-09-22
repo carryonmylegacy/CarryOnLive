@@ -18,7 +18,7 @@ import { API_URL } from '../config';
 import { RevealSection } from '../components/landing/RevealSection';
 import { FreeModeBanner } from '../components/FreeModeBanner';
 import LandingContent from '../components/landing/LandingContent';
-import { MARKETING_LINKS } from '../components/landing/MobileNav';
+import { MARKETING_LINKS, visibleLinks } from '../components/landing/MobileNav';
 import { useCopy, renderCopy } from '../copy/CopyContext';
 import ForgotPasswordModal from '../components/auth/ForgotPasswordModal';
 import { isPWA as isStandalonePWA } from '../utils/isPWA';
@@ -28,6 +28,7 @@ import {
 } from '../offline/offlineCredentialCache';
 import { LogoHome } from '../components/landing/LogoHome';
 import { COMPANY } from '../config/company';
+import { getPublic } from '../utils/publicCache';
 
 /**
  * Offline notice + recovery tip rendered above the sign-in form when
@@ -177,8 +178,8 @@ const LoginPage = () => {
   const [platformFreeMode, setPlatformFreeMode] = useState(false);
 
   useEffect(() => {
-    apiClient.get(`${API_URL}/public/site-content`).then(r => {
-      setPlatformFreeMode(!!r.data.platform_free_mode);
+    getPublic('/public/site-content').then(d => {
+      setPlatformFreeMode(!!d.platform_free_mode);
     }).catch(() => {});
   }, []);
 
@@ -242,14 +243,14 @@ const LoginPage = () => {
   const [homepageVideoId, setHomepageVideoId] = useState('KlZ8egF_Nyw');
   const [verticalVideoId, setVerticalVideoId] = useState('5fDJ9e7bEUo');
   const [footerInfo, setFooterInfo] = useState({ line1: COMPANY.addressLine1, line2: `${COMPANY.addressLine2} U.S.A.`, phone: COMPANY.phone });
-  const { t } = useCopy();
-  const navLinks = MARKETING_LINKS;
+  const { t, flags } = useCopy();
+  const navLinks = visibleLinks(MARKETING_LINKS, flags);
   const isMobileView = useIsMobileViewport();
   useEffect(() => {
-    apiClient.get(`${API_URL}/public/site-content`).then(r => {
-      if (r.data?.homepage_video_id) setHomepageVideoId(r.data.homepage_video_id);
-      if (r.data?.homepage_video_id_vertical) setVerticalVideoId(r.data.homepage_video_id_vertical);
-      if (r.data?.footer_address_line1) setFooterInfo({ line1: r.data.footer_address_line1, line2: r.data.footer_address_line2, phone: r.data.footer_phone });
+    getPublic('/public/site-content').then(d => {
+      if (d?.homepage_video_id) setHomepageVideoId(d.homepage_video_id);
+      if (d?.homepage_video_id_vertical) setVerticalVideoId(d.homepage_video_id_vertical);
+      if (d?.footer_address_line1) setFooterInfo({ line1: d.footer_address_line1, line2: d.footer_address_line2, phone: d.footer_phone });
     }).catch(() => {});
   }, []);
 
@@ -898,14 +899,14 @@ const LoginPage = () => {
                 It Works / About from phone visitors. */}
             <button
               onClick={() => setMobileNavOpen(v => !v)}
-              className="lg:hidden flex items-center justify-center w-9 h-9 rounded-lg text-[#9aa5b4] hover:text-[#d4af37] transition-colors"
+              className="lg:hidden flex items-center justify-center w-11 h-11 rounded-lg text-[#9aa5b4] hover:text-[#d4af37] transition-colors"
               aria-label={mobileNavOpen ? 'Close menu' : 'Open menu'}
               aria-expanded={mobileNavOpen}
               data-testid="nav-mobile-toggle"
             >
               {mobileNavOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
-            <button onClick={() => navigateWithFade('/signup')} className="text-[#d4af37] text-sm font-semibold hover:text-[#fcd34d] transition-colors flex items-center gap-1">
+            <button onClick={() => navigateWithFade('/signup')} className="text-[#d4af37] text-sm font-semibold hover:text-[#fcd34d] transition-colors flex items-center gap-1 min-h-[44px] px-2">
               {t('nav.start_plan')} <ChevronRight className="w-3.5 h-3.5" />
             </button>
           </div>

@@ -1,3 +1,4 @@
+import { YouTubeFacade } from '../components/YouTubeFacade';
 import React, { useState } from 'react';
 import { SEO } from '../components/SEO';
 import { useNavigate } from 'react-router-dom';
@@ -70,8 +71,8 @@ const CustomersPage = () => {
           <div className="grid lg:grid-cols-[1fr_360px] gap-8 items-start">
             <RevealSection>
               {founder.video_id ? (
-                <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(212,175,55,0.25)', boxShadow: '0 20px 60px rgba(0,0,0,0.4)', aspectRatio: '16 / 9', background: '#0b1322' }}>
-                  <iframe src={`https://www.youtube.com/embed/${founder.video_id}?rel=0&modestbranding=1`} title={`${founder.name} on why he built CarryOn`} className="w-full h-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen data-testid="customers-founder-video" />
+                <div className="relative rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(212,175,55,0.25)', boxShadow: '0 20px 60px rgba(0,0,0,0.4)', aspectRatio: '16 / 9', background: '#0b1322' }}>
+                  <YouTubeFacade videoId={founder.video_id} title="See CarryOn in action" testId="customers-founder-video" />
                 </div>
               ) : null}
             </RevealSection>

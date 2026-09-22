@@ -520,6 +520,15 @@ ROUTE_POLICIES: dict = {
         "auth": "public",
         "notes": "Marketing text overrides only — no PII; defaults live in frontend/src/copy/siteCopy.js",
     },
+    "POST /api/public/csp-report": {
+        "auth": "public",
+        "notes": "Browser CSP violation sink for the frontend's Report-Only policy; trimmed, 30-day TTL, no PII",
+    },
+    "GET /api/admin/csp-reports": {
+        "auth": "required",
+        "roles": ["admin"],
+        "notes": "Grouped CSP violations for Compliance → SOC2 Readiness",
+    },
     "PUT /api/admin/site-copy": {
         "auth": "required",
         "roles": ["admin"],

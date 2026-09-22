@@ -136,7 +136,11 @@
           impact, full crash fix.
         -->
         <script>
-            (function () {
+            // Consent-gated: fbevents.js loads ONLY after the visitor taps "Allow" on the
+            // analytics notice (localStorage carryon_consent_analytics === 'granted').
+            // window.__carryonLoadPixel() is called by the notice on Allow; on later visits
+            // the stored choice loads it here. Declined / undecided → nothing is loaded.
+            window.__carryonLoadPixel = function () {
               try {
                 var isIosPWA = (typeof navigator !== 'undefined') && navigator.standalone === true;
                 var isStandalone = (typeof window !== 'undefined') && window.matchMedia
@@ -146,6 +150,8 @@
                   // no replaceState storm, no boundary crash.
                   return;
                 }
+                var id = '%REACT_APP_META_PIXEL_ID%';
+                if (!id || id.indexOf('%') === 0 || window.fbq) return;
                 !function(f,b,e,v,n,t,s)
                 {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
                 n.callMethod.apply(n,arguments):n.queue.push(arguments)};
@@ -154,15 +160,17 @@
                 t.src=v;s=b.getElementsByTagName(e)[0];
                 s.parentNode.insertBefore(t,s)}(window, document,'script',
                 'https://connect.facebook.net/en_US/fbevents.js');
-                fbq('init', '%REACT_APP_META_PIXEL_ID%');
+                fbq('init', id);
                 fbq('track', 'PageView');
               } catch (e) { /* pixel never breaks the app */ }
+            };
+            (function () {
+              try {
+                if (window.localStorage.getItem('carryon_consent_analytics') === 'granted') window.__carryonLoadPixel();
+              } catch (e) { /* storage blocked → treat as not granted */ }
             })();
         </script>
-        <noscript><img height="1" width="1" style="display:none"
-        src="https://www.facebook.com/tr?id=%REACT_APP_META_PIXEL_ID%&ev=PageView&noscript=1"
-        /></noscript>
-        <!-- End Meta Pixel Code -->
+        <!-- End Meta Pixel Code (no <noscript> beacon: nothing fires without consent) -->
         <!-- Boot-splash CSS — placed in <head> so it applies during HTML
              parse, BEFORE #carryon-boot-splash paints. The splash ALWAYS
              draws the flag-hero scene (flag bg + floating logo + caption

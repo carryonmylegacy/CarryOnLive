@@ -10555,3 +10555,14 @@ Audit + full findings saved at `memory/audits/heycatch_2026-09-18.md`. Applied e
 - Rule now applied everywhere: **Founder link always present** (nav, hamburger, all three footers: LandingContent, MarketingFooter, PublicFooter) → `/founder-about` = request-access gate while invite-only, story once public. **Gold "Meet the Founder" pill only while public** (homepage/customers tile via `FounderCard`, About page founder box). No other story links.
 - Removed: `FounderCard` "Read his story" (and its flag-based href). Un-gated: `CopyContext.LINK_FLAGS.founder`, `PublicFooter` founder `flag`. Updated: `footer.founder` registry label; Admin → Site Content → Founder Story help text (no more "Read his story" wording).
 - Verified both states on preview at 390 px: tile = name/title/LinkedIn (+ pill when public); footers show "Founder story" in both states; /about box pill only when public. Flag restored to invite-only.
+
+## Sep 22 2026 — Claude-audit fixes, batch 1 (8 founder-approved items) (NOT PUSHED)
+1. Compare table vs cards: Base DOES get Milestone Messages (gates) → bullet moved Standard → Base. Plan `features` are founder-owned once stored, so shipped as versioned migration `backend/migrations/0005_plan_card_copy.py` (exact-match, idempotent) + DEFAULT_PLANS aligned.
+2. Who-to-notify (FFN) opened to Base + Standard: migration `0004_ffn_base_standard.py` flips `feature_gates.ffn.{base,standard}` once; founder can still change it in Feature Gates.
+3. `/pricing` now uses the fixed `MarketingNav` (9 links + hamburger, Pricing gold); content padded `pt-28 sm:pt-36`. Thin logo/Start/Sign-In header removed.
+4. Same video, two headings: `/customers` heading → "Product video / See CarryOn in Action." (registry defaults `customers.founder.*`); iframe title "See CarryOn in action". Homepage unchanged.
+5. "Priority human support (CST)" → "…from our Customer Service Team (CST)" (migration 0005 + defaults).
+6. Founder tile photo: `onError` → initials fallback (`FounderCard`). Proxying through www rejected (all API traffic already hits Render directly; same cold start).
+7. Homepage footer "Accessibility" is now a link → `/accessibility`.
+8. Security menu item → `/security` everywhere (`MARKETING_LINKS`), matching the footers.
+Verified on preview: /pricing 1280 + 390 (nav, gold Pricing, Security href), plans API bullets, footer link, hamburger href, customers heading. Migrations applied on preview (runner log).

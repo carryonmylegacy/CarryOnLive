@@ -1,13 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { SEO } from '../components/SEO';
 import { ChevronRight, ChevronLeft, Linkedin, ArrowRight } from 'lucide-react';
-import axios from 'axios';
-import { API_URL } from '../config';
 import { MobileNav, STANDALONE_LINKS } from '../components/landing/MobileNav';
 import { founderPhotoUrl, FOUNDER_LINKEDIN_DEFAULT } from '../components/landing/FounderCard';
 import { useCopy, renderCopy } from '../copy/CopyContext';
 import { SourceRef } from '../components/landing/SourceRef';
 import { COMPANY } from '../config/company';
+import { getPublic } from '../utils/publicCache';
 
 /* ─── scroll-reveal hook ─── */
 const useReveal = (threshold = 0.15) => {
@@ -42,8 +41,8 @@ const AboutPage = () => {
   const [founder, setFounder] = useState({ name: '', title: '', bio: '', photo_url: '', linkedin_url: FOUNDER_LINKEDIN_DEFAULT });
 
   useEffect(() => {
-    axios.get(`${API_URL}/public/site-content`).then(res => {
-      const d = res.data || {};
+    getPublic('/public/site-content').then(res => {
+      const d = res || {};
       setFounder({
         name: d.founder_name || 'Barnet Harris',
         title: d.founder_title || 'Founder & CEO \u00b7 24-Year U.S. Military Veteran',
@@ -109,7 +108,7 @@ const AboutPage = () => {
             <a href="/founder-about" className="text-[#6b7a90] text-sm font-medium hover:text-[#d4af37] transition-colors" data-testid="about-nav-founder">{t('nav.founder')}</a>
           </div>
           <div className="flex items-center gap-3">
-            <a href="/login" className="text-[#d4af37] text-sm font-semibold hover:text-[#fcd34d] transition-colors flex items-center gap-1">
+            <a href="/login" className="text-[#d4af37] text-sm font-semibold hover:text-[#fcd34d] transition-colors flex items-center gap-1 min-h-[44px] px-2">
               <ChevronLeft className="w-3.5 h-3.5" /> {t('nav.signin')}
             </a>
             <MobileNav links={STANDALONE_LINKS} current="/about" navigateWithFade={(p) => { window.location.href = p; }} testIdSuffix="-about" />

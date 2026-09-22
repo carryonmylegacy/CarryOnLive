@@ -7,6 +7,7 @@ import {
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { toast } from '../../utils/toast';
+import { CspReportsCard } from './CspReportsCard';
 
 const CONTROL_LABELS = {
   REDACT_PII: 'PII redaction (REDACT_PII=1)',
@@ -140,6 +141,7 @@ export const Soc2ReadinessTab = ({ getAuthHeaders }) => {
           Unable to load readiness report.
         </div>
       )}
+      <CspReportsCard getAuthHeaders={getAuthHeaders} />
     </div>
   );
 };

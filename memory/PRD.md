@@ -597,6 +597,8 @@ bug — fix it in the preview DB immediately (snippet in
 - Hardcoded `rgba(212,175,55,…)` → `var(--gold-rgb)` sweep.
 
 ### Last verified end-to-end working item
+**Sep 22 2026 — Claude-audit batch 1 shipped (NOT PUSHED).** 8 founder-approved fixes: MM bullet → Base card + FFN opened to Base/Standard (migrations 0004/0005, run on deploy), `/pricing` gets the shared MarketingNav, customers video heading → product framing, CST spelled out, tile photo fallback, footer Accessibility link, Security menu → `/security`. check.sh ALL CLEAR. Second (large) audit awaiting founder decisions — see chat.
+
 **Sep 22 2026 — One rule for every founder-story entry point (NOT PUSHED).** "Read his story" removed from the founder tile. Founder link (nav + all footers) always present → gate when invite-only, story when public; gold "Meet the Founder" pill (tile + About box) only when public. Admin Site Content help text updated. Verified both states; check.sh ALL CLEAR. **Founder next**: Save to GitHub → Vercel (none of Sep 21–22 is live yet).
 
 **Sep 21 2026 (latest) — Pill also in the About page founder box (NOT PUSHED).** Founder's screenshot was `/about` "Who We Are", not the homepage tile; same public-only pill added beneath "LinkedIn Profile" there (`about-founder-story-pill`). Verified both states; check.sh ALL CLEAR. **Founder next**: Save to GitHub → Vercel (none of today's work is live yet) → Site Content → Founder Story = Public → About.

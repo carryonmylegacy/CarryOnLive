@@ -1,19 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { SEO } from '../components/SEO';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import { ChevronRight } from 'lucide-react';
-import { API_URL } from '../config';
 import { RevealSection } from '../components/landing/RevealSection';
 import LandingContent from '../components/landing/LandingContent';
 import { useCopy, renderCopy } from '../copy/CopyContext';
-import { MobileNav, MARKETING_LINKS } from '../components/landing/MobileNav';
+import { MobileNav, MARKETING_LINKS, visibleLinks } from '../components/landing/MobileNav';
+import { YouTubeFacade } from '../components/YouTubeFacade';
 import { HeroCtas } from '../components/landing/HeroCtas';
 import { HeroShot } from '../components/landing/HeroShot';
 import { LiveCountBadge } from '../components/landing/LiveStats';
 import { FOUNDER_LINKEDIN_DEFAULT } from '../components/landing/FounderCard';
 import { recordFunnelEvent } from '../utils/funnelTelemetry';
 import { COMPANY } from '../config/company';
+import { getPublic } from '../utils/publicCache';
 
 const useIsMobileViewport = (breakpoint = 768) => {
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < breakpoint);
@@ -35,17 +35,17 @@ const HomePage = () => {
   const [landscapeVideoId, setLandscapeVideoId] = useState('EhU-jojs1jk');
   const [verticalVideoId, setVerticalVideoId] = useState('');
   const [founderLinkedin, setFounderLinkedin] = useState(FOUNDER_LINKEDIN_DEFAULT);
-  const { t } = useCopy();
+  const { t, flags } = useCopy();
 
   const isMobileView = useIsMobileViewport();
 
   useEffect(() => {
     recordFunnelEvent({ event: 'landing_view', meta: { page: 'home' } });
-    axios.get(`${API_URL}/public/site-content`).then(r => {
-      setFooterInfo({ line1: r.data.footer_address_line1, line2: r.data.footer_address_line2, phone: r.data.footer_phone });
-      if (r.data.homepage_video_id) setLandscapeVideoId(r.data.homepage_video_id);
-      if (r.data.homepage_video_id_vertical) setVerticalVideoId(r.data.homepage_video_id_vertical);
-      if (r.data.founder_linkedin_url) setFounderLinkedin(r.data.founder_linkedin_url);
+    getPublic('/public/site-content').then(d => {
+      setFooterInfo({ line1: d.footer_address_line1, line2: d.footer_address_line2, phone: d.footer_phone });
+      if (d.homepage_video_id) setLandscapeVideoId(d.homepage_video_id);
+      if (d.homepage_video_id_vertical) setVerticalVideoId(d.homepage_video_id_vertical);
+      if (d.founder_linkedin_url) setFounderLinkedin(d.founder_linkedin_url);
     }).catch(() => {});
   }, []);
 
@@ -135,7 +135,7 @@ const HomePage = () => {
             "email": "info@carryon.us",
             "contactType": "customer service"
           },
-          "foundingDate": "2024",
+          "foundingDate": "2025",
           "founder": {
             "@type": "Person",
             "name": "Barnet Harris",
@@ -152,7 +152,7 @@ const HomePage = () => {
         <div className="max-w-[1400px] mx-auto px-6 lg:px-10 h-16 flex items-center justify-between">
           <img src="/carryon-logo.png" alt="CarryOn" className="h-12 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} data-testid="home-logo" />
           <div className="hidden lg:flex items-center gap-7">
-            {MARKETING_LINKS.map(item => (
+            {visibleLinks(MARKETING_LINKS, flags).map(item => (
               <a key={item.label} href={item.href} className="text-[#6b7a90] text-sm font-medium hover:text-[#d4af37] transition-colors duration-300">{t(`nav.${item.k}`)}</a>
             ))}
           </div>
@@ -160,7 +160,7 @@ const HomePage = () => {
             <button onClick={() => navigateWithFade('/start')} className="hidden sm:inline-flex items-center gap-1 px-5 py-2 rounded-lg text-sm font-bold transition-all active:scale-95" style={{ background: '#d4af37', color: '#0B1221' }} data-testid="home-nav-get-started">
               {t('nav.start')}
             </button>
-            <button onClick={() => navigateWithFade('/login')} className="text-[#d4af37] text-sm font-semibold hover:text-[#fcd34d] transition-colors flex items-center gap-1" data-testid="home-sign-in-nav">
+            <button onClick={() => navigateWithFade('/login')} className="text-[#d4af37] text-sm font-semibold hover:text-[#fcd34d] transition-colors flex items-center gap-1 min-h-[44px] px-2" data-testid="home-sign-in-nav">
               {t('nav.signin')} <ChevronRight className="w-3.5 h-3.5" />
             </button>
             <MobileNav navigateWithFade={navigateWithFade} testIdSuffix="-home" />
@@ -231,28 +231,14 @@ const HomePage = () => {
                   /* Vertical (portrait) video for mobile PWA */
                   <div className="relative rounded-2xl overflow-hidden mx-auto" style={{ border: '1px solid rgba(212,175,55,0.15)', boxShadow: '0 8px 60px rgba(0,0,0,0.4), 0 0 40px rgba(212,175,55,0.05)', maxWidth: '360px' }}>
                     <div style={{ position: 'relative', paddingBottom: '177.78%', height: 0 }}>
-                      <iframe
-                        src={`https://www.youtube.com/embed/${activeVideoId}?rel=0&modestbranding=1&color=white`}
-                        title="CarryOn — Family Preparedness"
-                        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0 }}
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                        data-testid="homepage-video-home"
-                      />
+                      <YouTubeFacade videoId={activeVideoId} title="CarryOn — Family Preparedness" testId="homepage-video-home" />
                     </div>
                   </div>
                 ) : (
                   /* Landscape (16:9) video for desktop */
                   <div className="relative rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(212,175,55,0.15)', boxShadow: '0 8px 60px rgba(0,0,0,0.4), 0 0 40px rgba(212,175,55,0.05)' }}>
                     <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0 }}>
-                      <iframe
-                        src={`https://www.youtube.com/embed/${activeVideoId}?rel=0&modestbranding=1&color=white`}
-                        title="CarryOn — Estate Planning Made Simple"
-                        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0 }}
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                        data-testid="homepage-video-home"
-                      />
+                      <YouTubeFacade videoId={activeVideoId} title="CarryOn — Estate Planning Made Simple" testId="homepage-video-home" />
                     </div>
                   </div>
                 )}

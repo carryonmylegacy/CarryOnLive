@@ -17,11 +17,10 @@
  * server yet — the conservative default for a feature that ships ON.
  */
 
-import apiClient from './apiClient';
+import { getPublic } from './publicCache';
 
 const KEY = 'carryon_platform_subs_flag_v1';
 const EVENT = 'carryon:platform-subscriptions-flag-changed';
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 /** Synchronous read — returns 'on' | 'off'. Defaults to 'on' (visible). */
 export function getPlatformSubscriptionsFlag() {
@@ -50,8 +49,8 @@ export function setPlatformSubscriptionsFlag(mode) {
 /** Fetch the public flag from the server and update local cache. */
 export async function refreshPlatformSubscriptionsFlag() {
   try {
-    const res = await apiClient.get(`${API_URL}/public/site-content`);
-    const mode = res?.data?.subscriptions_enabled === false ? 'off' : 'on';
+    const data = await getPublic('/public/site-content');
+    const mode = data?.subscriptions_enabled === false ? 'off' : 'on';
     if (getPlatformSubscriptionsFlag() !== mode) {
       setPlatformSubscriptionsFlag(mode);
     }

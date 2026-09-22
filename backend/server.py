@@ -465,7 +465,7 @@ api_router.include_router(trustee_access_router)
 BUILD_HASH = "2026-04-28T00:00:00Z-pre-launch-refactor"
 
 
-@api_router.get("/health")
+@api_router.api_route("/health", methods=["GET", "HEAD"])
 async def health_check():
     """Check API, database, and background scheduler health."""
     from middleware import get_scheduler_health

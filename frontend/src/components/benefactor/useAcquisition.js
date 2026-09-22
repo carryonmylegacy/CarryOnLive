@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import axios from 'axios';
-import { API_URL } from '../../config';
 import { useAuth } from '../../contexts/AuthContext';
 import { recordFunnelEvent } from '../../utils/funnelTelemetry';
+import { getPublic } from '../../utils/publicCache';
 
 /* Shared plumbing for the paid-traffic landing pages (/ready, /moments): stash the ad's UTM params,
  * record the landing view, read the live trial length, and route every CTA to the no-card door with
@@ -19,7 +18,7 @@ export const useAcquisition = (page) => {
     for (const [k, v] of searchParams.entries()) if (k.startsWith('utm_') || k === 'ref') utm[k] = v;
     if (Object.keys(utm).length) sessionStorage.setItem('carryon_utm', JSON.stringify(utm));
     recordFunnelEvent({ event: 'landing_view', meta: { page } });
-    axios.get(`${API_URL}/public/site-content`).then(r => { if (r.data?.trial_days) setDays(r.data.trial_days); }).catch(() => {});
+    getPublic('/public/site-content').then(d => { if (d?.trial_days) setDays(d.trial_days); }).catch(() => {});
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const go = (location, extraMeta = {}) => {

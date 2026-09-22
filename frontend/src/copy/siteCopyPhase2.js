@@ -176,15 +176,15 @@ export const PAGES_PHASE2 = [
         f('customers.hero.eyebrow', 'Small gold line above the headline', 'Customer stories'),
         f('customers.hero.h1a', 'Headline — white part', 'Real families. Real words.'),
         f('customers.hero.h1b', 'Headline — gold part', 'Nothing invented.'),
-        ML('customers.hero.intro', 'Intro paragraph (**Verified member** is shown in green)', 'CarryOn launched in 2024. We don’t buy reviews, we don’t write our own, and we don’t publish a quote we can’t stand behind. Every story on this page comes from an actual member, is reviewed by the founder, and is marked **Verified member** when the email matches a CarryOn account.'),
+        ML('customers.hero.intro', 'Intro paragraph (**Verified member** is shown in green)', 'CarryOn became generally available in 2026. We don’t buy reviews, we don’t write our own, and we don’t publish a quote we can’t stand behind. Every story on this page comes from an actual member, is reviewed by the founder, and is marked **Verified member** when the email matches a CarryOn account.'),
       ] },
       { key: 'empty', label: 'When no stories are published yet', fields: [
         f('customers.empty.title', 'Heading', 'No published stories yet — on purpose.'),
         ML('customers.empty.text', 'Text', 'Our first families are still building their plans. We’d rather show you an empty page than a made-up one. When a member shares their words and the founder approves them, they appear here — and on the homepage — automatically.'),
       ] },
-      { key: 'founder', label: 'A word from the founder', fields: [
-        f('customers.founder.eyebrow', 'Small gold line', 'A word from the founder'),
-        f('customers.founder.title', 'Heading', 'Why a 24-year veteran built this.'),
+      { key: 'founder', label: 'Product video', fields: [
+        f('customers.founder.eyebrow', 'Small gold line', 'Product video'),
+        f('customers.founder.title', 'Heading', 'See CarryOn in Action.'),
       ] },
       { key: 'share', label: 'Share your story', fields: [
         f('customers.share.eyebrow', 'Small gold line', 'Already a member?'),
@@ -249,12 +249,12 @@ export const PAGES_PHASE2 = [
     sections: [
       { key: 'seo', label: 'Search result (title & description)', fields: [
         f('changelog.seo.title', 'Page title', 'What’s New - CarryOn Product Updates'),
-        ML('changelog.seo.description', 'Meta description', 'Every real CarryOn product update, dated. Founded 2024 in Arlington, Virginia.'),
+        ML('changelog.seo.description', 'Meta description', 'Every real CarryOn product update, dated. Founded 2025 in Arlington, Virginia.'),
       ] },
       { key: 'hero', label: 'Hero', fields: [
         f('changelog.hero.eyebrow', 'Small gold line', 'Built in the open'),
         f('changelog.hero.title', 'Headline', 'What’s new in CarryOn'),
-        ML('changelog.hero.intro', 'Intro paragraph', 'Every real update, dated. No press releases, no awards we haven’t won. Founded 2024 · Arlington, Virginia.'),
+        ML('changelog.hero.intro', 'Intro paragraph', 'Every real update, dated. No press releases, no awards we haven’t won. Founded 2025 · Arlington, Virginia.'),
         f('changelog.foundation', 'Label on the undated first entry', 'Foundation'),
       ] },
       { key: 'cta', label: 'Closing call to action', fields: [
@@ -389,6 +389,7 @@ export const PAGES_PHASE2 = [
           'We may share your information only in the following circumstances:',
           '- With your designated beneficiaries, as configured by you',
           '- With service providers who perform services on our behalf (e.g., payment processing, email delivery, SMS messaging)',
+          '- With Meta (Facebook) only if you click “Allow” on our analytics notice: a single Meta Pixel cookie tells us which ads bring families to the site. Nothing you store in CarryOn™ is ever shared, and declining changes nothing about the service.',
           '- To comply with applicable laws, regulations, or legal processes',
           '- To protect the rights, property, and safety of CarryOn™, our users, or others',
         ].join('\n')),

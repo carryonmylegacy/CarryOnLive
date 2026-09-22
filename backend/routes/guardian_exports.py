@@ -270,7 +270,7 @@ async def export_checklist_pdf(
     pdf.cell(
         0,
         5,
-        "AES-256-GCM Encrypted  |  Zero-Knowledge Architecture  |  2FA Protected",
+        "AES-256-GCM Encrypted  |  Access Controlled & Audited  |  2FA Protected",
         new_x="LMARGIN",
         new_y="NEXT",
     )
@@ -416,7 +416,7 @@ async def export_todo_pdf(
     pdf.cell(
         0,
         5,
-        "AES-256-GCM Encrypted  |  Zero-Knowledge Architecture  |  2FA Protected",
+        "AES-256-GCM Encrypted  |  Access Controlled & Audited  |  2FA Protected",
         new_x="LMARGIN",
         new_y="NEXT",
     )
@@ -623,7 +623,7 @@ async def export_iac_report_pdf(
     pdf.cell(
         0,
         5,
-        "AES-256-GCM Encrypted  |  Zero-Knowledge Architecture  |  2FA Protected",
+        "AES-256-GCM Encrypted  |  Access Controlled & Audited  |  2FA Protected",
         new_x="LMARGIN",
         new_y="NEXT",
     )
@@ -797,7 +797,7 @@ async def export_conversation_pdf(
     pdf.cell(
         0,
         5,
-        "AES-256-GCM Encrypted  |  Zero-Knowledge Architecture  |  2FA Protected",
+        "AES-256-GCM Encrypted  |  Access Controlled & Audited  |  2FA Protected",
         new_x="LMARGIN",
         new_y="NEXT",
     )
@@ -1017,7 +1017,7 @@ CONVERSATION:
     pdf.cell(
         0,
         5,
-        "AES-256-GCM Encrypted  |  Zero-Knowledge Architecture  |  2FA Protected",
+        "AES-256-GCM Encrypted  |  Access Controlled & Audited  |  2FA Protected",
         new_x="LMARGIN",
         new_y="NEXT",
     )
@@ -1172,7 +1172,7 @@ async def beneficiary_export_checklist_pdf(
     pdf.set_font("Helvetica", "", 8)
     pdf.set_text_color(100, 100, 100)
     pdf.cell(
-        0, 5, "AES-256-GCM Encrypted  |  Zero-Knowledge Architecture  |  2FA Protected", new_x="LMARGIN", new_y="NEXT"
+        0, 5, "AES-256-GCM Encrypted  |  Access Controlled & Audited  |  2FA Protected", new_x="LMARGIN", new_y="NEXT"
     )
     pdf.cell(
         0,

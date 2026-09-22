@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
 import { Linkedin, ArrowRight, Medal } from 'lucide-react';
 import { API_URL } from '../../config';
 import { useCopy } from '../../copy/CopyContext';
+import { getPublic } from '../../utils/publicCache';
 
 const DEFAULTS = { name: 'Barnet Harris', title: 'Founder & CEO \u00b7 24-Year U.S. Military Veteran' };
 // Built-in founder LinkedIn (D3.3) — Admin → Marketing → Site Content overrides it when set.
@@ -16,8 +16,8 @@ export const founderPhotoUrl = (d = {}) =>
 export const useFounder = () => {
   const [founder, setFounder] = useState({ ...DEFAULTS, photo_url: '', linkedin_url: FOUNDER_LINKEDIN_DEFAULT, video_id: '', trustpilot_url: '' });
   useEffect(() => {
-    axios.get(`${API_URL}/public/site-content`).then(r => {
-      const d = r.data || {};
+    getPublic('/public/site-content').then(r => {
+      const d = r || {};
       setFounder({ name: d.founder_name || DEFAULTS.name, title: d.founder_title || DEFAULTS.title, photo_url: founderPhotoUrl(d), linkedin_url: d.founder_linkedin_url || FOUNDER_LINKEDIN_DEFAULT, video_id: d.homepage_video_id || '', trustpilot_url: d.trustpilot_url || '' });
     }).catch(() => {});
   }, []);
@@ -27,11 +27,12 @@ export const useFounder = () => {
 export const FounderCard = ({ testIdSuffix = '', compact = false }) => {
   const f = useFounder();
   const { flags } = useCopy();
+  const [photoFailed, setPhotoFailed] = useState(false);
   const initials = f.name.split(' ').map(w => w[0]).join('').slice(0, 2);
   return (
     <div className={`rounded-xl ${compact ? 'p-5' : 'p-6'} flex gap-5 items-center`} style={{ background: 'rgba(15,26,46,0.6)', border: '1px solid rgba(212,175,55,0.25)' }} data-testid={`founder-card${testIdSuffix}`}>
-      {f.photo_url ? (
-        <img src={f.photo_url} alt={`${f.name}, ${f.title}`} className="w-20 h-20 rounded-full object-cover flex-shrink-0" style={{ border: '2px solid rgba(212,175,55,0.5)' }} data-testid={`founder-photo${testIdSuffix}`} />
+      {f.photo_url && !photoFailed ? (
+        <img src={f.photo_url} alt={`${f.name}, ${f.title}`} onError={() => setPhotoFailed(true)} className="w-20 h-20 rounded-full object-cover flex-shrink-0" style={{ border: '2px solid rgba(212,175,55,0.5)' }} data-testid={`founder-photo${testIdSuffix}`} />
       ) : (
         <div className="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-bold flex-shrink-0" style={{ background: 'rgba(212,175,55,0.14)', color: '#d4af37', border: '2px solid rgba(212,175,55,0.4)', fontFamily: 'Outfit, sans-serif' }} data-testid={`founder-initials${testIdSuffix}`}>{initials}</div>
       )}

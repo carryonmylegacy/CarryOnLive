@@ -23,11 +23,10 @@
  * ships OFF and we'll flip it on later".
  */
 
-import apiClient from './apiClient';
+import { getPublic } from './publicCache';
 
 const KEY = 'carryon_platform_offline_flag_v1';
 const EVENT = 'carryon:platform-offline-flag-changed';
-const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 /** Synchronous read — returns 'on' | 'off'. Defaults to 'off' (hide). */
 export function getPlatformOfflineFlag() {
@@ -57,8 +56,8 @@ export function setPlatformOfflineFlag(mode) {
 /** Fetch the public flag from the server and update local cache. */
 export async function refreshPlatformOfflineFlag() {
   try {
-    const res = await apiClient.get(`${API_URL}/public/site-content`);
-    const mode = res?.data?.offline_mode === 'on' ? 'on' : 'off';
+    const data = await getPublic('/public/site-content');
+    const mode = data?.offline_mode === 'on' ? 'on' : 'off';
     const current = getPlatformOfflineFlag();
     if (current !== mode) {
       setPlatformOfflineFlag(mode);

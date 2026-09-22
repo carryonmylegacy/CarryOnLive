@@ -170,7 +170,7 @@ DEFAULT_PLANS = [
         "features": [
             "Everything in Standard",
             "Unlimited beneficiaries",
-            "Priority human support (CST)",
+            "Priority human support from our Customer Service Team (CST)",
         ],
     },
     {
@@ -183,7 +183,6 @@ DEFAULT_PLANS = [
         "adjustable": True,
         "features": [
             "Everything in Base",
-            "Milestone Messages",
             "Estate Guardian analysis",
             "Expanded vault storage",
         ],
@@ -199,6 +198,7 @@ DEFAULT_PLANS = [
         "features": [
             "Immediate Action Checklist",
             "Basic Secure Document Vault",
+            "Milestone Messages",
             "Beneficiary management (up to 3)",
         ],
     },

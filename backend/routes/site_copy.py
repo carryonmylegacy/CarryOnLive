@@ -186,6 +186,8 @@ async def get_public_site_copy():
         "guides_launched": guides["launched"],
         "guides_launched_at": guides["launched_at"],
         "founder_story_public": bool((settings or {}).get("founder_story_public", False)),
+        # Top-nav "Customers" appears only once there are 3+ approved stories (footer link always stays).
+        "published_stories": await db.testimonials.count_documents({"status": "approved"}),
     }
     return result
 

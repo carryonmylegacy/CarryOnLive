@@ -9,6 +9,7 @@ import { SpeedInsights } from '@vercel/speed-insights/react';
 import { CapacitorUpdater } from '@capgo/capacitor-updater';
 import { isNative } from './services/native';
 import { isPWA } from './utils/pwaDetect';
+import { AnalyticsConsent } from './components/AnalyticsConsent';
 import { rememberEntryPath } from './utils/funnelTelemetry';
 import SubscriptionPaywall from './components/SubscriptionPaywall';
 import DashboardLayout from './components/layout/DashboardLayout';
@@ -49,7 +50,8 @@ import TransitionGate from './components/TransitionGate';
 import UsernameReviewModal from './components/UsernameReviewModal';
 import FeatureGate from './components/FeatureGate';
 
-const CARRYON_BUILD = '2026-04-28T00:00:00Z-pre-launch-refactor';
+// Set by build-prod.sh from the Vercel git SHA + build time; 'dev' in the preview / local dev.
+const CARRYON_BUILD = process.env.REACT_APP_BUILD_ID || 'dev';
 if (typeof window !== 'undefined' && !window.__CARRYON_BUILD_LOGGED) {
   window.__CARRYON_BUILD = CARRYON_BUILD;
   window.__CARRYON_BUILD_LOGGED = true;
@@ -1015,6 +1017,7 @@ function App() {
           <Suspense fallback={null}>
             <PWAInstallPrompt />
           </Suspense>
+          <AnalyticsConsent />
         </BrowserRouter>
         <SpeedInsights />
         </SectionLockProvider>

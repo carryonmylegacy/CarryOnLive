@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import apiClient from '../utils/apiClient';
-import { API_URL } from '../config';
 import { COMPANY, copyrightLine } from '../config/company';
 import { useCopy } from '../copy/CopyContext';
+import { getPublic } from '../utils/publicCache';
 
 let cachedInfo = null;
 
@@ -27,11 +26,11 @@ export const PublicFooter = () => {
   useEffect(() => {
     if (cachedInfo) return undefined;
     let live = true;
-    apiClient.get(`${API_URL}/public/site-content`).then(r => {
+    getPublic('/public/site-content').then(d => {
       cachedInfo = {
-        line1: r.data.footer_address_line1 || COMPANY.addressLine1,
-        line2: r.data.footer_address_line2 || COMPANY.addressLine2,
-        phone: r.data.footer_phone || COMPANY.phone,
+        line1: d.footer_address_line1 || COMPANY.addressLine1,
+        line2: d.footer_address_line2 || COMPANY.addressLine2,
+        phone: d.footer_phone || COMPANY.phone,
       };
       if (live) setInfo(cachedInfo);
     }).catch(() => {});

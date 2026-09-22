@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
 import { Activity } from 'lucide-react';
-import { API_URL } from '../../config';
 import { useCopy } from '../../copy/CopyContext';
+import { getPublic } from '../../utils/publicCache';
 
 const METRICS = [
   ['families', 'families set up'],
@@ -15,7 +14,7 @@ const METRICS = [
 export const usePlatformStats = () => {
   const [stats, setStats] = useState(null);
   useEffect(() => {
-    axios.get(`${API_URL}/public/platform-stats`).then(r => setStats(r.data)).catch(() => {});
+    getPublic('/public/platform-stats').then(setStats).catch(() => {});
   }, []);
   return stats;
 };

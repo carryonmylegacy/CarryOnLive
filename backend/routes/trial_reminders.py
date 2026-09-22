@@ -94,7 +94,7 @@ def build_trial_reminder_email(user_name, days_remaining, app_url, trial_days, s
 
       <div style="padding: 20px 32px; text-align: center; border-top: 1px solid rgba(255,255,255,0.07);">
         <p style="color: #525C72; font-size: 11px; margin: 0;">
-          AES-256 Encrypted · Zero-Knowledge Architecture · Cancel anytime
+          AES-256 Encrypted · Access controlled and audited · Cancel anytime
         </p>
         <p style="color: #525C72; font-size: 11px; margin: 4px 0 0;">
           CarryOn™ · Secure Your Estate Plan

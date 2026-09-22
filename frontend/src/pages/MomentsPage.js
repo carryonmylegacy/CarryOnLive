@@ -1,6 +1,7 @@
 import React from 'react';
 import { Mic, CalendarHeart, Send } from 'lucide-react';
 import { SEO } from '../components/SEO';
+import { YouTubeFacade } from '../components/YouTubeFacade';
 import { useCopy, renderCopy } from '../copy/CopyContext';
 import { ProductPreview } from '../components/landing/ProductPreview';
 import { RevealSection } from '../components/landing/RevealSection';
@@ -40,8 +41,8 @@ export default function MomentsPage() {
       {founder.video_id && (
         <section className="px-6 pb-12" data-testid="moments-video">
           <RevealSection className="max-w-[900px] mx-auto">
-            <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(212,175,55,0.25)', boxShadow: '0 20px 60px rgba(0,0,0,0.4)', aspectRatio: '16 / 9', background: '#0b1322' }}>
-              <iframe src={`https://www.youtube.com/embed/${founder.video_id}?rel=0&modestbranding=1`} title={`${founder.name} on why he built CarryOn`} className="w-full h-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen data-testid="moments-founder-video" />
+            <div className="relative rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(212,175,55,0.25)', boxShadow: '0 20px 60px rgba(0,0,0,0.4)', aspectRatio: '16 / 9', background: '#0b1322' }}>
+              <YouTubeFacade videoId={founder.video_id} title="See CarryOn in action" testId="moments-founder-video" />
             </div>
           </RevealSection>
         </section>

@@ -11,7 +11,7 @@ import { TrustBadges, StripeNote } from '../components/landing/TrustBadges';
 import { startPlanCheckout } from '../utils/stripeRedirect';
 import { toast } from 'sonner';
 import { useCopy, renderCopy } from '../copy/CopyContext';
-import { LogoHome } from '../components/landing/LogoHome';
+import { MarketingNav } from '../components/landing/MarketingNav';
 import { SourceRef } from '../components/landing/SourceRef';
 
 const CYCLE_LABELS = { monthly: 'Monthly', quarterly: 'Quarterly', annual: 'Annual' };
@@ -156,16 +156,10 @@ const PricingPage = () => {
       <SEO title={t('pricing.seo.title')} description={`One plan for you, from $${lowestPrice} to $${highestPrice} per month. The people you invite pay nothing while you're alive. Explore first for ${trialDays} days with no card. Reduced pricing for seniors, military, veterans and young adults; free for hospice families.`} path="/pricing" />
       {pricingJsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: pricingJsonLd }} />}
 
-      {/* Header */}
-      <header className="flex items-center justify-between px-4 sm:px-8 pb-4" style={{ borderBottom: '1px solid var(--b)', paddingTop: 'calc(1rem + env(safe-area-inset-top, 0px))' }}>
-        <LogoHome testId="pricing-logo" />
-        <div className="flex items-center gap-4">
-          <button onClick={() => navigate('/start')} className="text-sm text-[#d4af37] font-medium hover:underline" data-testid="pricing-nav-start">{t('nav.start')}</button>
-          <button onClick={() => navigate('/login')} className="text-sm text-[var(--t4)] hover:text-[var(--t)]">{t('nav.signin')}</button>
-        </div>
-      </header>
+      {/* Same fixed marketing nav as /customers, /vs, /sources — Pricing highlighted. */}
+      <MarketingNav navigateWithFade={navigate} testIdSuffix="-pricing" />
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-8 py-12 sm:py-20">
+      <div className="max-w-5xl mx-auto px-4 sm:px-8 pt-28 pb-12 sm:pt-36 sm:pb-20">
         {/* Hero */}
         <div className="text-center mb-10">
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-[var(--t)] mb-3" style={{ fontFamily: 'Outfit, sans-serif' }} data-testid="pricing-h1">

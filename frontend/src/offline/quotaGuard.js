@@ -89,7 +89,8 @@ export async function pruneExpiredImageBlobs() {
       .where('_updatedAt').below(cutoff)
       .delete();
   } catch (err) {
-    console.warn('[quotaGuard] imageBlob prune failed:', err);
+    // Marketing pages have no imageBlob store; only surface real errors, and only outside production.
+    if (err && err.message && process.env.NODE_ENV !== 'production') console.warn('[quotaGuard] imageBlob prune failed:', err.message);
     return 0;
   }
 }

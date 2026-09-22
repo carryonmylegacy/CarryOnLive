@@ -294,7 +294,7 @@ async def send_otp_email(email: str, otp: str, name: str = "User"):
 
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:32px;padding-top:24px;border-top:1px solid #1e293b;">
 <tr><td style="text-align:center;color:#64748b;font-size:12px;">
-<p style="margin:0 0 4px 0;">AES-256 Encrypted - Zero-Knowledge - 2FA Protected</p>
+<p style="margin:0 0 4px 0;">AES-256 Encrypted - Access controlled and audited - 2FA Protected</p>
 <p style="margin:0;">2025 CarryOn - Every American Family. Ready.</p>
 </td></tr>
 </table>

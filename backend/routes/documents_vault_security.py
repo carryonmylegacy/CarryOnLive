@@ -76,7 +76,7 @@ async def get_vault_security_info(estate_id: str, current_user: dict = Depends(g
             "total_size_bytes": total_size,
             "audit_entries": audit_count,
         },
-        "zero_knowledge": {
+        "access_model": {
             "description": "Per-estate derived encryption keys ensure data isolation between users",
             "server_access": "Server decrypts only during authorized user sessions",
             "data_at_rest": "All document content encrypted — plaintext never stored",

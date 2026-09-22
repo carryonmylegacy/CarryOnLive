@@ -8,12 +8,98 @@ unauthenticated — otherwise visitors get 401 and the page falls back to a stal
 hardcoded default video.
 """
 
-from fastapi import APIRouter, HTTPException, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from config import db
+from guards import require_admin
 from routes.admin.trial_policy import get_trial_days
 
 router = APIRouter()
+
+CSP_REPORT_MAX_BYTES = 16_384
+CSP_REPORT_TTL_SECONDS = 30 * 24 * 3600
+
+
+@router.post(
+    "/public/csp-report", status_code=204
+)  # pre-push-invariants: allow-public-mutation (browser CSP violation sink, no auth by spec)
+async def receive_csp_report(request: Request):
+    """Browsers POST here for the frontend's Content-Security-Policy-Report-Only header
+    (report-uri). Stores a trimmed copy for 30 days so the founder can see what an
+    enforced CSP would block before it is switched on. Never errors toward the browser."""
+    body = await request.body()
+    if not body or len(body) > CSP_REPORT_MAX_BYTES:
+        return Response(status_code=204)
+    import json
+    from datetime import datetime, timezone
+
+    try:
+        payload = json.loads(body)
+    except ValueError:
+        return Response(status_code=204)
+    # Legacy report-uri wraps in {"csp-report": {...}}; the Reporting API sends a list of {"body": {...}}.
+    reports = payload if isinstance(payload, list) else [payload]
+    docs = []
+    for r in reports[:10]:
+        inner = (
+            r.get("csp-report")
+            if isinstance(r, dict) and "csp-report" in r
+            else (r.get("body") if isinstance(r, dict) else None) or r
+        )
+        if not isinstance(inner, dict):
+            continue
+        docs.append(
+            {
+                "created_at": datetime.now(timezone.utc),
+                "document_uri": str(inner.get("document-uri") or inner.get("documentURL") or "")[:300],
+                "directive": str(
+                    inner.get("effective-directive")
+                    or inner.get("effectiveDirective")
+                    or inner.get("violated-directive")
+                    or ""
+                )[:80],
+                "blocked_uri": str(inner.get("blocked-uri") or inner.get("blockedURL") or "")[:300],
+                "source_file": str(inner.get("source-file") or inner.get("sourceFile") or "")[:300],
+                "line": inner.get("line-number") or inner.get("lineNumber"),
+                "ua": (request.headers.get("user-agent") or "")[:200],
+            }
+        )
+    if docs:
+        await db.csp_reports.create_index("created_at", expireAfterSeconds=CSP_REPORT_TTL_SECONDS)
+        await db.csp_reports.insert_many(docs)
+    return Response(status_code=204)
+
+
+@router.get("/admin/csp-reports")
+async def list_csp_reports(current_user: dict = Depends(require_admin)):
+    """Founder Portal → Compliance → SOC2 Readiness: what the report-only CSP would have blocked, grouped."""
+    pipeline = [
+        {
+            "$group": {
+                "_id": {"directive": "$directive", "blocked_uri": "$blocked_uri"},
+                "count": {"$sum": 1},
+                "last_seen": {"$max": "$created_at"},
+                "sample_page": {"$last": "$document_uri"},
+            }
+        },
+        {"$sort": {"count": -1}},
+        {"$limit": 100},
+    ]
+    rows = await db.csp_reports.aggregate(pipeline).to_list(100)
+    total = await db.csp_reports.count_documents({})
+    return {
+        "total": total,
+        "groups": [
+            {
+                "directive": r["_id"]["directive"],
+                "blocked_uri": r["_id"]["blocked_uri"],
+                "count": r["count"],
+                "last_seen": r["last_seen"].isoformat() if r.get("last_seen") else None,
+                "sample_page": r.get("sample_page", ""),
+            }
+            for r in rows
+        ],
+    }
 
 
 @router.get("/public/founder-headshot")
