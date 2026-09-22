@@ -171,7 +171,7 @@ const FounderAboutPage = () => {
 
       <div className="relative z-10 w-full max-w-sm">
         {/* Back link */}
-        <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-[#6b7a90] text-xs hover:text-[#d4af37] transition-colors mb-4 py-1" data-testid="founder-back-btn">
+        <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-[#8b97ab] text-xs hover:text-[#d4af37] transition-colors mb-4 py-1" data-testid="founder-back-btn">
           <ArrowLeft className="w-3.5 h-3.5" /> Back
         </button>
 
@@ -192,11 +192,11 @@ const FounderAboutPage = () => {
               </div>
               <form onSubmit={handleRequest} className="space-y-3" autoComplete="off" data-form-type="other">
                 <input type="text" value={reqName} onChange={e => setReqName(e.target.value)} placeholder="Your name" required autoComplete="one-time-code" name="founder_visitor_name"
-                  className="w-full px-3 py-2.5 rounded-lg text-sm text-white placeholder-[#4a5568]" style={{ background: 'rgba(11,18,33,0.6)', border: '1px solid rgba(14,165,233,0.1)', fontSize: '16px' }} data-testid="founder-req-name" />
+                  className="w-full px-3 py-2.5 rounded-lg text-sm text-white placeholder-[#8492a8]" style={{ background: 'rgba(11,18,33,0.6)', border: '1px solid rgba(14,165,233,0.1)', fontSize: '16px' }} data-testid="founder-req-name" />
                 <input type="text" inputMode="email" value={reqEmail} onChange={e => setReqEmail(e.target.value)} placeholder="Your email" required autoComplete="one-time-code" name="founder_visitor_contact"
-                  className="w-full px-3 py-2.5 rounded-lg text-sm text-white placeholder-[#4a5568]" style={{ background: 'rgba(11,18,33,0.6)', border: '1px solid rgba(14,165,233,0.1)', fontSize: '16px' }} data-testid="founder-req-email" />
+                  className="w-full px-3 py-2.5 rounded-lg text-sm text-white placeholder-[#8492a8]" style={{ background: 'rgba(11,18,33,0.6)', border: '1px solid rgba(14,165,233,0.1)', fontSize: '16px' }} data-testid="founder-req-email" />
                 <textarea value={reqMsg} onChange={e => setReqMsg(e.target.value)} placeholder="Why are you interested? (optional)" rows={3} autoComplete="one-time-code" name="founder_visitor_note"
-                  className="w-full px-3 py-2.5 rounded-lg text-sm text-white placeholder-[#4a5568] resize-none" style={{ background: 'rgba(11,18,33,0.6)', border: '1px solid rgba(14,165,233,0.1)', fontSize: '16px' }} data-testid="founder-req-message" />
+                  className="w-full px-3 py-2.5 rounded-lg text-sm text-white placeholder-[#8492a8] resize-none" style={{ background: 'rgba(11,18,33,0.6)', border: '1px solid rgba(14,165,233,0.1)', fontSize: '16px' }} data-testid="founder-req-message" />
                 <button type="submit" disabled={reqLoading}
                   className="gold-keep-dark w-full py-3 rounded-lg font-semibold text-sm transition-all hover:brightness-110 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
                   style={{ background: '#d4af37', color: '#0d1b2a' }} data-testid="founder-req-submit">
@@ -204,7 +204,7 @@ const FounderAboutPage = () => {
                 </button>
               </form>
               <div className="mt-4 pt-3 text-center" style={{ borderTop: '1px solid rgba(14,165,233,0.06)' }}>
-                <button onClick={() => setGateMode('login')} className="text-[#6b7a90] text-xs hover:text-[#d4af37] transition-colors py-1" data-testid="founder-switch-login">
+                <button onClick={() => setGateMode('login')} className="text-[#8b97ab] text-xs hover:text-[#d4af37] transition-colors py-1" data-testid="founder-switch-login">
                   {t('founder.gate.switch_login')}
                 </button>
               </div>
@@ -259,14 +259,14 @@ const FounderAboutPage = () => {
                 <div>
                   <label className="text-[#9aa5b4] text-xs font-medium block mb-1.5">Email</label>
                   <input type="text" inputMode="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com" required autoComplete="one-time-code" name="founder_access_contact"
-                    className="w-full px-3 py-2.5 rounded-lg text-sm text-white placeholder-[#4a5568]" style={{ background: 'rgba(11,18,33,0.6)', border: '1px solid rgba(14,165,233,0.1)', fontSize: '16px' }} data-testid="founder-login-email" />
+                    className="w-full px-3 py-2.5 rounded-lg text-sm text-white placeholder-[#8492a8]" style={{ background: 'rgba(11,18,33,0.6)', border: '1px solid rgba(14,165,233,0.1)', fontSize: '16px' }} data-testid="founder-login-email" />
                 </div>
                 <div>
                   <label className="text-[#9aa5b4] text-xs font-medium block mb-1.5">Password</label>
                   <div className="relative">
                     <input type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} placeholder="Enter password" required autoComplete="new-password" name="founder_access_key"
-                      className="w-full px-3 py-2.5 rounded-lg text-sm text-white placeholder-[#4a5568] pr-10" style={{ background: 'rgba(11,18,33,0.6)', border: '1px solid rgba(14,165,233,0.1)', fontSize: '16px' }} data-testid="founder-login-password" />
-                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6b7a90] hover:text-white transition-colors p-1">
+                      className="w-full px-3 py-2.5 rounded-lg text-sm text-white placeholder-[#8492a8] pr-10" style={{ background: 'rgba(11,18,33,0.6)', border: '1px solid rgba(14,165,233,0.1)', fontSize: '16px' }} data-testid="founder-login-password" />
+                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8b97ab] hover:text-white transition-colors p-1">
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
@@ -279,7 +279,7 @@ const FounderAboutPage = () => {
                 </button>
               </form>
               <div className="mt-4 pt-3 text-center" style={{ borderTop: '1px solid rgba(14,165,233,0.06)' }}>
-                <button onClick={() => setGateMode('request')} className="text-[#6b7a90] text-xs hover:text-[#d4af37] transition-colors py-1" data-testid="founder-switch-request">
+                <button onClick={() => setGateMode('request')} className="text-[#8b97ab] text-xs hover:text-[#d4af37] transition-colors py-1" data-testid="founder-switch-request">
                   {t('founder.login.switch_request')}
                 </button>
               </div>

@@ -5,7 +5,7 @@ import { API_URL } from '../../config';
 import { ROLE_LABELS } from './TestimonialsBlock';
 
 const input = { background: 'rgba(11,19,34,0.8)', border: '1px solid rgba(255,255,255,0.12)' };
-const cls = 'w-full h-11 px-4 rounded-lg text-base text-white placeholder:text-[#4a5568] focus:outline-none focus:border-[#d4af37]';
+const cls = 'w-full h-11 px-4 rounded-lg text-base text-white placeholder:text-[#8492a8] focus:outline-none focus:border-[#d4af37]';
 
 export const TestimonialForm = () => {
   const [form, setForm] = useState({ name: '', location: '', role: 'benefactor', member_since: '', quote: '', email: '', consent: false });
@@ -59,11 +59,11 @@ export const TestimonialForm = () => {
         </div>
       </div>
       <div>
-        <label className="text-[#8b97ab] text-xs font-semibold block mb-1.5" htmlFor="t-quote">Your story <span className="text-[#4a5568] font-normal">({form.quote.length}/600 &middot; at least 40 characters)</span></label>
-        <textarea id="t-quote" required minLength={40} maxLength={600} rows={5} value={form.quote} onChange={set('quote')} placeholder="What made you set this up? What changed for your family?" className="w-full px-4 py-3 rounded-lg text-base text-white placeholder:text-[#4a5568] focus:outline-none focus:border-[#d4af37]" style={{ ...input, fontSize: "16px" }} data-testid="testimonial-quote" />
+        <label className="text-[#8b97ab] text-xs font-semibold block mb-1.5" htmlFor="t-quote">Your story <span className="text-[#8492a8] font-normal">({form.quote.length}/600 &middot; at least 40 characters)</span></label>
+        <textarea id="t-quote" required minLength={40} maxLength={600} rows={5} value={form.quote} onChange={set('quote')} placeholder="What made you set this up? What changed for your family?" className="w-full px-4 py-3 rounded-lg text-base text-white placeholder:text-[#8492a8] focus:outline-none focus:border-[#d4af37]" style={{ ...input, fontSize: "16px" }} data-testid="testimonial-quote" />
       </div>
       <div>
-        <label className="text-[#8b97ab] text-xs font-semibold block mb-1.5" htmlFor="t-email">Email <span className="text-[#4a5568] font-normal">(never published; used to mark you as a verified member)</span></label>
+        <label className="text-[#8b97ab] text-xs font-semibold block mb-1.5" htmlFor="t-email">Email <span className="text-[#8492a8] font-normal">(never published; used to mark you as a verified member)</span></label>
         <input id="t-email" type="email" required value={form.email} onChange={set('email')} placeholder="you@example.com" className={`${cls} text-base`} style={input} data-testid="testimonial-email" />
       </div>
       <label className="flex items-start gap-3 text-[#a0aec0] text-sm cursor-pointer">

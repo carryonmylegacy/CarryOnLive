@@ -242,7 +242,7 @@ const PartnerPortalPage = () => {
                         className="h-11 pl-10 pr-10 bg-[#0B1627] border-[#1A2D48] text-white placeholder:text-[#2A3C55] focus:border-[#d4af37] focus:ring-[#d4af37]/20 rounded-lg"
                         data-testid="partner-portal-password" />
                       <button type="button" onMouseDown={e => e.preventDefault()} onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#334155] hover:text-[#7b879e] transition-colors">
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#334155] hover:text-[#c9d2e0] transition-colors">
                         {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
                     </div>

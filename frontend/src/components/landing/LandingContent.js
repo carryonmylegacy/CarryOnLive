@@ -410,7 +410,7 @@ const LandingContent = ({ navigateWithFade, footerInfo = DEFAULT_FOOTER, testIdS
                     <Icon className="w-4 h-4 text-[#d4af37]" />
                   </div>
                   <h4 className="text-white text-sm font-semibold mb-1.5">{title}</h4>
-                  <p className="text-[#6b7a90] text-xs leading-relaxed">{desc}</p>
+                  <p className="text-[#8b97ab] text-xs leading-relaxed">{desc}</p>
                 </div>
               </RevealSection>
             ))}
@@ -586,11 +586,11 @@ const LandingContent = ({ navigateWithFade, footerInfo = DEFAULT_FOOTER, testIdS
           <img src="/carryon-logo.png" alt="CarryOn" className="h-8 opacity-60" />
           <div className="flex items-center justify-center gap-x-6 gap-y-2 flex-wrap">
             {FOOTER_LINKS.filter(([key]) => linkVisible(key, flags)).map(([key, href]) => (
-              <a key={key} href={href} className="text-[#334155] text-xs hover:text-[#7b879e] transition-colors" data-testid={`landing-footer-${key}-link${testIdSuffix}`}>{t(`footer.${key}`)}</a>
+              <a key={key} href={href} className="text-[#8492a8] text-xs hover:text-[#c9d2e0] transition-colors" data-testid={`landing-footer-${key}-link${testIdSuffix}`}>{t(`footer.${key}`)}</a>
             ))}
-            <a href="/accessibility" className="text-[#334155] text-xs hover:text-[#7b879e] transition-colors" data-testid={`landing-footer-accessibility-link${testIdSuffix}`}>{t('footer.accessibility')}</a>
+            <a href="/accessibility" className="text-[#8492a8] text-xs hover:text-[#c9d2e0] transition-colors" data-testid={`landing-footer-accessibility-link${testIdSuffix}`}>{t('footer.accessibility')}</a>
           </div>
-          <div className="text-right text-[#334155] text-xs leading-relaxed">
+          <div className="text-right text-[#8492a8] text-xs leading-relaxed">
             <p>{footerInfo.line1}</p>
             <p>{footerInfo.line2}</p>
             <p>{footerInfo.phone}</p>

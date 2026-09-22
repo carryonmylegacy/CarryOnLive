@@ -963,7 +963,7 @@ const SignupPage = () => {
                                 onChange={(e) => setPassword(e.target.value)} placeholder="Min 8 characters"
                                 className={`${inputClass} pl-12 pr-12`} data-testid="signup-password-input" />
                               <button type="button" onMouseDown={e => e.preventDefault()} onClick={() => setShowPassword(!showPassword)}
-                                className="absolute right-4 top-1/2 -translate-y-1/2 text-[#3a4a63] hover:text-[#7b879e] transition-colors">
+                                className="absolute right-4 top-1/2 -translate-y-1/2 text-[#3a4a63] hover:text-[#c9d2e0] transition-colors">
                                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                               </button>
                             </div>

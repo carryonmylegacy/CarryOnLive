@@ -101,11 +101,11 @@ const AboutPage = () => {
             <img src="/carryon-logo.png" alt="CarryOn" className="h-12 cursor-pointer" />
           </a>
           <div className="hidden md:flex items-center gap-8">
-            <a href="/#features" className="text-[#6b7a90] text-sm font-medium hover:text-[#d4af37] transition-colors">{t('nav.features')}</a>
-            <a href="/#security" className="text-[#6b7a90] text-sm font-medium hover:text-[#d4af37] transition-colors">{t('nav.security')}</a>
-            <a href="/#steps" className="text-[#6b7a90] text-sm font-medium hover:text-[#d4af37] transition-colors">{t('nav.steps')}</a>
+            <a href="/#features" className="text-[#8b97ab] text-sm font-medium hover:text-[#d4af37] transition-colors">{t('nav.features')}</a>
+            <a href="/#security" className="text-[#8b97ab] text-sm font-medium hover:text-[#d4af37] transition-colors">{t('nav.security')}</a>
+            <a href="/#steps" className="text-[#8b97ab] text-sm font-medium hover:text-[#d4af37] transition-colors">{t('nav.steps')}</a>
             <span className="text-[#d4af37] text-sm font-medium" aria-current="page">{t('nav.about')}</span>
-            <a href="/founder-about" className="text-[#6b7a90] text-sm font-medium hover:text-[#d4af37] transition-colors" data-testid="about-nav-founder">{t('nav.founder')}</a>
+            <a href="/founder-about" className="text-[#8b97ab] text-sm font-medium hover:text-[#d4af37] transition-colors" data-testid="about-nav-founder">{t('nav.founder')}</a>
           </div>
           <div className="flex items-center gap-3">
             <a href="/login" className="text-[#d4af37] text-sm font-semibold hover:text-[#fcd34d] transition-colors flex items-center gap-1 min-h-[44px] px-2">
@@ -326,18 +326,18 @@ const AboutPage = () => {
           <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
             <a href="/login"><img src="/carryon-logo.png" alt="CarryOn" className="h-8 opacity-60" /></a>
             <div className="flex items-center gap-6">
-              <a href="/privacy" className="text-[#3a4a63] text-xs hover:text-[#7b879e] transition-colors">{t('footer.privacy')}</a>
-              <a href="/terms" className="text-[#3a4a63] text-xs hover:text-[#7b879e] transition-colors">{t('footer.terms')}</a>
-              <span className="text-[#3a4a63] text-xs">{t('footer.accessibility')}</span>
+              <a href="/privacy" className="text-[#8492a8] text-xs hover:text-[#c9d2e0] transition-colors">{t('footer.privacy')}</a>
+              <a href="/terms" className="text-[#8492a8] text-xs hover:text-[#c9d2e0] transition-colors">{t('footer.terms')}</a>
+              <span className="text-[#8492a8] text-xs">{t('footer.accessibility')}</span>
             </div>
-            <div className="text-right text-[#3a4a63] text-xs leading-relaxed">
+            <div className="text-right text-[#8492a8] text-xs leading-relaxed">
               <p>{COMPANY.addressLine1}</p>
               <p>{COMPANY.addressLine2} U.S.A.</p>
               <p data-testid="about-footer-phone">{COMPANY.phone}</p>
             </div>
           </div>
-          <p className="text-center text-[#2d3d55] text-xs mt-6">&copy; {new Date().getFullYear()} {t('footer.copyright')}</p>
-          <p className="text-center text-[#2d3d55] text-xs mt-1" data-testid="about-corporate-disclosure">CarryOn is operated by {COMPANY.disclosure}.</p>
+          <p className="text-center text-[#8492a8] text-xs mt-6">&copy; {new Date().getFullYear()} {t('footer.copyright')}</p>
+          <p className="text-center text-[#8492a8] text-xs mt-1" data-testid="about-corporate-disclosure">CarryOn is operated by {COMPANY.disclosure}.</p>
         </div>
       </footer>
     </div>

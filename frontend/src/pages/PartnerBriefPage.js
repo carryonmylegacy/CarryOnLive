@@ -185,7 +185,7 @@ export default function PartnerBriefPage() {
                     {c.quickstart.sample_caption}
                   </p>
                 )}
-                <p style={{ fontSize: 12, color: '#64748B', margin: 0, lineHeight: 1.5, maxWidth: 560 }}>
+                <p style={{ fontSize: 12, color: '#8492a8', margin: 0, lineHeight: 1.5, maxWidth: 560 }}>
                   The trial uses the same AI engine the live platform uses, takes about 2 minutes,
                   and emails the guide to the address you provide. No sign-up required.
                 </p>
@@ -203,7 +203,7 @@ export default function PartnerBriefPage() {
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 6 }}>
                   <span style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 22, color: '#d4af37', fontWeight: 600 }}>{p.n}</span>
                   <h3 style={{ fontSize: 17, fontWeight: 700, color: '#F8FAFC', margin: 0 }}>{p.name}</h3>
-                  <span style={{ fontSize: 11, color: '#64748B', letterSpacing: '0.1em' }}>{p.abbr}</span>
+                  <span style={{ fontSize: 11, color: '#8492a8', letterSpacing: '0.1em' }}>{p.abbr}</span>
                 </div>
                 <p style={{ fontSize: 14, color: '#CBD5E1', lineHeight: 1.6, margin: 0 }}>{p.desc}</p>
               </div>
@@ -299,7 +299,7 @@ export default function PartnerBriefPage() {
         </Section>
 
         {/* Footer */}
-        <footer style={{ marginTop: 60, paddingTop: 24, borderTop: '1px solid rgba(255,255,255,0.08)', fontSize: 12, color: '#64748B', textAlign: 'center' }}>
+        <footer style={{ marginTop: 60, paddingTop: 24, borderTop: '1px solid rgba(255,255,255,0.08)', fontSize: 12, color: '#8492a8', textAlign: 'center' }}>
           {c.footer?.line1 && <p style={{ margin: 0 }}>{c.footer.line1}</p>}
           {c.footer?.line2 && <p style={{ margin: '8px 0 0 0' }}>{c.footer.line2}</p>}
         </footer>

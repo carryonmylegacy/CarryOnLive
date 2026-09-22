@@ -29,7 +29,7 @@ const SourceEntry = ({ id, n, t }) => {
               <a href={url} target={external ? '_blank' : undefined} rel={external ? 'noopener noreferrer' : undefined} className="inline-flex items-center gap-1.5 text-[#d4af37] hover:text-[#fcd34d] underline underline-offset-4 break-all" data-testid={`source-${id}-link`}>
                 {external ? url.replace(/^https?:\/\//, '') : 'How we protect this data'} <ExternalLink className="w-3.5 h-3.5 flex-shrink-0" />
               </a>
-              <span className="inline-flex items-center gap-1.5 text-[#64748b]"><CalendarCheck className="w-3.5 h-3.5" /> Checked: {t(`sources.${id}.checked`)}</span>
+              <span className="inline-flex items-center gap-1.5 text-[#8492a8]"><CalendarCheck className="w-3.5 h-3.5" /> Checked: {t(`sources.${id}.checked`)}</span>
             </div>
           </div>
         </div>
@@ -57,7 +57,7 @@ const SourcesPage = () => {
       <section className="relative overflow-hidden" style={{ paddingTop: 'calc(8rem + env(safe-area-inset-top, 0px))' }}>
         <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 70% 50% at 50% 0%, rgba(212,175,55,0.08) 0%, transparent 60%)' }} />
         <RevealSection className="max-w-[760px] mx-auto px-6 relative z-10 pb-12">
-          <a href="/" className="inline-flex items-center gap-1.5 text-sm text-[#64748b] hover:text-[#d4af37] transition-colors mb-8" data-testid="sources-back-home"><ArrowLeft className="w-4 h-4" /> {t('sources.back')}</a>
+          <a href="/" className="inline-flex items-center gap-1.5 text-sm text-[#8492a8] hover:text-[#d4af37] transition-colors mb-8" data-testid="sources-back-home"><ArrowLeft className="w-4 h-4" /> {t('sources.back')}</a>
           <p className="text-[#d4af37] text-xs font-bold uppercase tracking-[0.2em] mb-4">{t('sources.hero.eyebrow')}</p>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-[1.08] mb-5" style={{ ...OUTFIT, textWrap: 'balance' }} data-testid="sources-h1">{t('sources.hero.title')}</h1>
           <p className="text-[#a0aec0] text-base lg:text-lg leading-relaxed" data-testid="sources-intro">{renderCopy(t('sources.hero.intro'), 'text-white font-semibold')}</p>

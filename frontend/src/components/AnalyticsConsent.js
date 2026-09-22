@@ -7,8 +7,9 @@ export const CONSENT_KEY = 'carryon_consent_analytics';
 
 const read = () => { try { return localStorage.getItem(CONSENT_KEY); } catch { return 'declined'; } };
 
-/* One-line analytics notice for public visitors. The Meta Pixel (our only third-party tracker)
-   loads only after "Allow" — see the consent-gated loader in public/index.html. Never shown inside
+/* One-line analytics notice for public visitors. Our only third-party trackers — the Meta Pixel
+   (loader in public/index.html) and Google Analytics on the sign-up funnel (services/firebase.js) —
+   run only after "Allow". Never shown inside
    the installed app (the pixel never loads there) or to signed-in users. */
 export const AnalyticsConsent = () => {
   const { isAuthenticated } = useAuth();
@@ -19,7 +20,10 @@ export const AnalyticsConsent = () => {
   const decide = (value) => {
     try { localStorage.setItem(CONSENT_KEY, value); } catch { /* storage blocked → session-only */ }
     setChoice(value);
-    if (value === 'granted' && typeof window.__carryonLoadPixel === 'function') window.__carryonLoadPixel();
+    if (value === 'granted') {
+      if (typeof window.__carryonLoadPixel === 'function') window.__carryonLoadPixel();
+      window.dispatchEvent(new Event('carryon:consent-granted'));
+    }
   };
 
   return (
@@ -29,7 +33,7 @@ export const AnalyticsConsent = () => {
       data-testid="analytics-consent">
       <div className="max-w-[1100px] mx-auto flex flex-col sm:flex-row sm:items-center gap-3">
         <p className="text-[#c9d2e0] text-sm leading-snug flex-1">
-          We use one analytics cookie (Meta Pixel) to learn which ads bring families here. Nothing you store in CarryOn™ is ever shared, and declining changes nothing.{' '}
+          We use analytics cookies (Meta Pixel, and Google Analytics on our sign-up steps) to learn which ads bring families here. Nothing you store in CarryOn™ is ever shared, and declining changes nothing.{' '}
           <a href="/privacy" className="text-[#d4af37] underline underline-offset-4">Privacy Policy</a>
         </p>
         <div className="flex items-center gap-2 shrink-0">

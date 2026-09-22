@@ -13,7 +13,16 @@ const firebaseConfig = {
 
 let analytics = null;
 
+const consentGranted = () => { try { return localStorage.getItem('carryon_consent_analytics') === 'granted'; } catch { return false; } };
+
+// Google Analytics (via Firebase) is consent-gated like the Meta Pixel: nothing initialises until
+// the visitor taps "Allow" on the analytics notice (AnalyticsConsent dispatches carryon:consent-granted).
 export function initFirebase() {
+  if (analytics) return analytics;
+  if (!consentGranted()) {
+    window.addEventListener('carryon:consent-granted', () => initFirebase(), { once: true });
+    return null;
+  }
   try {
     const app = initializeApp(firebaseConfig);
     analytics = getAnalytics(app);

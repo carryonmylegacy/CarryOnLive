@@ -529,6 +529,16 @@ ROUTE_POLICIES: dict = {
         "roles": ["admin"],
         "notes": "Grouped CSP violations for Compliance → SOC2 Readiness",
     },
+    "GET /api/admin/seo/index-status": {
+        "auth": "required",
+        "roles": ["admin"],
+        "notes": "Marketing → Search Console: last Google index snapshot per public page (or setup steps)",
+    },
+    "POST /api/admin/seo/index-status/refresh": {
+        "auth": "required",
+        "roles": ["admin"],
+        "notes": "Marketing → Search Console: pull fresh URL Inspection + 28-day analytics from Google",
+    },
     "PUT /api/admin/site-copy": {
         "auth": "required",
         "roles": ["admin"],

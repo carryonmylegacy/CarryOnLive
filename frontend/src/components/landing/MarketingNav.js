@@ -15,7 +15,7 @@ export const MarketingNav = ({ navigateWithFade, current, testIdSuffix = '' }) =
         <a href="/" className="flex items-center" data-testid={`marketing-nav-logo${testIdSuffix}`}><img src="/carryon-logo.png" alt="CarryOn" className="h-12" /></a>
         <div className="hidden lg:flex items-center gap-7">
           {links.map(item => (
-            <a key={item.label} href={item.href} aria-current={isCurrentLink(item.href, here) ? 'page' : undefined} className={`text-sm font-medium transition-colors duration-300 ${isCurrentLink(item.href, here) ? 'text-[#d4af37]' : 'text-[#6b7a90] hover:text-[#d4af37]'}`}>{t(`nav.${item.k}`)}</a>
+            <a key={item.label} href={item.href} aria-current={isCurrentLink(item.href, here) ? 'page' : undefined} className={`text-sm font-medium transition-colors duration-300 ${isCurrentLink(item.href, here) ? 'text-[#d4af37]' : 'text-[#8b97ab] hover:text-[#d4af37]'}`}>{t(`nav.${item.k}`)}</a>
           ))}
         </div>
         <div className="flex items-center gap-4">

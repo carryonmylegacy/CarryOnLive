@@ -589,21 +589,21 @@ const LoginPage = () => {
         }}>
           <div className="absolute top-0 left-7 right-7 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, #d4af37, transparent)' }} />
           <h2 className="text-white text-xl font-semibold mb-1" style={{ fontFamily: 'var(--sans)' }}>Sign In</h2>
-          <p className="text-[#475569] text-sm mb-6">Access your CarryOn account</p>
+          <p className="text-[#8492a8] text-sm mb-6">Access your CarryOn account</p>
           <LoginOfflineBanner isOffline={isOffline} hasOfflineCredential={hasOfflineCredential} />
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="relative">
-              <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#3a4a63]" />
+              <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8492a8]" />
               <Input type="text" placeholder="Username or Email" value={email} onChange={(e) => setEmail(e.target.value)}
-                className="h-12 bg-[#0b1322] border-[#1a2a42] text-white placeholder:text-[#2d3d55] focus:border-[#d4af37] focus:ring-[#d4af37]/20 rounded-xl pl-10"
+                className="h-12 bg-[#0b1322] border-[#1a2a42] text-white placeholder:text-[#8492a8] focus:border-[#d4af37] focus:ring-[#d4af37]/20 rounded-xl pl-10"
                 autoComplete="username" autoCapitalize="none" autoCorrect="off" spellCheck={false} name="email" data-testid="login-email" aria-label="Username or Email" />
             </div>
             <div className="relative">
-              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#3a4a63]" />
+              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8492a8]" />
               <Input type={showPassword ? 'text' : 'password'} placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)}
-                className="h-12 bg-[#0b1322] border-[#1a2a42] text-white placeholder:text-[#2d3d55] focus:border-[#d4af37] focus:ring-[#d4af37]/20 rounded-xl pl-10 pr-10"
+                className="h-12 bg-[#0b1322] border-[#1a2a42] text-white placeholder:text-[#8492a8] focus:border-[#d4af37] focus:ring-[#d4af37]/20 rounded-xl pl-10 pr-10"
                 autoComplete="current-password" autoCapitalize="none" autoCorrect="off" spellCheck={false} name="password" data-testid="login-password" aria-label="Password" />
-              <button type="button" aria-label={showPassword ? 'Hide password' : 'Show password'} onMouseDown={e => e.preventDefault()} onClick={() => setShowPassword(!showPassword)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#3a4a63]">
+              <button type="button" aria-label={showPassword ? 'Hide password' : 'Show password'} onMouseDown={e => e.preventDefault()} onClick={() => setShowPassword(!showPassword)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#8492a8]">
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
@@ -634,7 +634,7 @@ const LoginPage = () => {
             <>
               <div className="flex items-center gap-3 my-4">
                 <div className="flex-1 h-px bg-[#1a2a42]" />
-                <span className="text-[#334155] text-[11px] uppercase tracking-widest font-medium">or</span>
+                <span className="text-[#8492a8] text-[11px] uppercase tracking-widest font-medium">or</span>
                 <div className="flex-1 h-px bg-[#1a2a42]" />
               </div>
               <button onClick={handlePasskeyLogin} disabled={passkeyLoading}
@@ -652,7 +652,7 @@ const LoginPage = () => {
               <span className="text-[#94A3B8] text-sm font-bold cursor-pointer hover:text-[#d4af37] transition-colors"
                 data-testid="forgot-password-link"
                 onClick={() => { setForgotMode(true); setForgotEmail(email); setForgotStep(1); setForgotMsg(''); setForgotError(false); }}>Forgot Password?</span>
-              <span className="text-[#6b7a90] text-xs cursor-pointer hover:text-[#d4af37] transition-colors"
+              <span className="text-[#8b97ab] text-xs cursor-pointer hover:text-[#d4af37] transition-colors"
                 data-testid="forgot-username-link"
                 onClick={() => {
                   const usernameEmail = prompt('Enter the email associated with your account:');
@@ -727,7 +727,7 @@ const LoginPage = () => {
               <div>
                 <label className="text-white/80 text-sm font-bold mb-1 block">Username or Email</label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#334155]" />
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8492a8]" />
                   <Input type="text" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Username or Email" required autoComplete="username"
                     autoCapitalize="none" autoCorrect="off" spellCheck={false} name="email"
                     className="h-10 pl-10 bg-[#0B1627] border-[#1A2D48] text-white placeholder:text-[#2A3C55] focus:border-[#d4af37] focus:ring-[#d4af37]/20 rounded-lg text-sm" data-testid="login-email-pwa" aria-label="Username or Email" />
@@ -736,11 +736,11 @@ const LoginPage = () => {
             <div>
               <label className="text-white/80 text-sm font-bold mb-1 block">Password</label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#334155]" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8492a8]" />
                 <Input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter password" required autoComplete="current-password"
                   autoCapitalize="none" autoCorrect="off" spellCheck={false} name="password"
                   className="h-10 pl-10 pr-10 bg-[#0B1627] border-[#1A2D48] text-white placeholder:text-[#2A3C55] focus:border-[#d4af37] focus:ring-[#d4af37]/20 rounded-lg text-sm" data-testid="login-password-pwa" aria-label="Password" />
-                <button type="button" aria-label={showPassword ? 'Hide password' : 'Show password'} onMouseDown={e => e.preventDefault()} onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#334155] hover:text-[#7b879e] transition-colors">
+                <button type="button" aria-label={showPassword ? 'Hide password' : 'Show password'} onMouseDown={e => e.preventDefault()} onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8492a8] hover:text-[#c9d2e0] transition-colors">
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
@@ -772,7 +772,7 @@ const LoginPage = () => {
             <>
               <div className="flex items-center gap-3 my-3">
                 <div className="flex-1 h-px" style={{ background: 'var(--s)' }} />
-                <span className="text-[#334155] text-[11px] uppercase tracking-widest font-medium">or</span>
+                <span className="text-[#8492a8] text-[11px] uppercase tracking-widest font-medium">or</span>
                 <div className="flex-1 h-px" style={{ background: 'var(--s)' }} />
               </div>
               <button onClick={handlePasskeyLogin} disabled={passkeyLoading}
@@ -790,7 +790,7 @@ const LoginPage = () => {
               <span className="text-[#94A3B8] text-sm font-bold cursor-pointer hover:text-[#d4af37] transition-colors"
                 data-testid="forgot-password-pwa"
                 onClick={() => { setForgotMode(true); setForgotEmail(email); setForgotStep(1); setForgotMsg(''); setForgotError(false); }}>Forgot Password?</span>
-              <span className="text-[#6b7a90] text-xs cursor-pointer hover:text-[#d4af37] transition-colors"
+              <span className="text-[#8b97ab] text-xs cursor-pointer hover:text-[#d4af37] transition-colors"
                 data-testid="forgot-username-pwa"
                 onClick={() => {
                   const usernameEmail = prompt('Enter the email associated with your account:');
@@ -834,18 +834,18 @@ const LoginPage = () => {
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
             <div className="w-full max-w-md rounded-2xl p-7" style={{ background: 'linear-gradient(145deg, rgba(20,30,52,0.98), rgba(15,22,41,1))', border: '1px solid rgba(var(--gold-rgb), 0.15)' }}>
               <h3 className="text-white text-lg font-semibold mb-2" style={{ fontFamily: 'var(--sans)' }}>Two-Factor Authentication</h3>
-              <p className="text-[#6b7a90] text-sm mb-5">
+              <p className="text-[#8b97ab] text-sm mb-5">
                 {otpMethod === 'sms' ? `Enter the 6-digit code sent to ${maskedPhone || 'your phone'}` : 'Enter the 6-digit code sent to your email'}
               </p>
               <Input type="text" inputMode="numeric" maxLength={6} value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
                 placeholder="000000" className="ios-fs-exempt h-14 text-center text-2xl tracking-[0.4em] font-mono bg-[#0D1829] border-[#1E3048] text-white focus:border-[#d4af37] rounded-lg mb-4" data-testid="otp-input-pwa" autoFocus />
               {hasSmsOtp && (
                 <div className="flex items-center gap-2 mb-4 p-2 rounded-lg" style={{ background: 'rgba(var(--gold-rgb), 0.06)', border: '1px solid rgba(var(--gold-rgb), 0.1)' }}>
-                  <span className="text-[#6b7a90] text-xs">Send code via:</span>
+                  <span className="text-[#8b97ab] text-xs">Send code via:</span>
                   <button onClick={() => handleResendOtp('sms')} disabled={resendCooldown > 0}
-                    className={`text-xs px-3 py-1 rounded-full transition-all ${otpMethod === 'sms' ? 'bg-[#d4af37] text-[#0B1221] font-semibold' : 'text-[#6b7a90] hover:text-white'}`}>SMS {maskedPhone ? `(${maskedPhone})` : ''}</button>
+                    className={`text-xs px-3 py-1 rounded-full transition-all ${otpMethod === 'sms' ? 'bg-[#d4af37] text-[#0B1221] font-semibold' : 'text-[#8b97ab] hover:text-white'}`}>SMS {maskedPhone ? `(${maskedPhone})` : ''}</button>
                   <button onClick={() => handleResendOtp('email')} disabled={resendCooldown > 0}
-                    className={`text-xs px-3 py-1 rounded-full transition-all ${otpMethod === 'email' ? 'bg-[#d4af37] text-[#0B1221] font-semibold' : 'text-[#6b7a90] hover:text-white'}`}>Email</button>
+                    className={`text-xs px-3 py-1 rounded-full transition-all ${otpMethod === 'email' ? 'bg-[#d4af37] text-[#0B1221] font-semibold' : 'text-[#8b97ab] hover:text-white'}`}>Email</button>
                 </div>
               )}
               <label className="flex items-center gap-3 mb-4 cursor-pointer select-none group">
@@ -853,16 +853,16 @@ const LoginPage = () => {
                   className={`flex-shrink-0 w-5 h-5 rounded border-2 transition-all flex items-center justify-center ${trustToday ? 'bg-[#d4af37] border-[#d4af37]' : 'border-[#334155] group-hover:border-[#7b879e]'}`}>
                   {trustToday && <svg className="w-3 h-3 text-[#0B1221]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
                 </button>
-                <span className="text-[#7b879e] text-sm leading-snug">Skip OTP for the rest of today<span className="block text-[#475569] text-xs mt-0.5">Resets at midnight Eastern Time</span></span>
+                <span className="text-[#7b879e] text-sm leading-snug">Skip OTP for the rest of today<span className="block text-[#8492a8] text-xs mt-0.5">Resets at midnight Eastern Time</span></span>
               </label>
               <Button onClick={handleVerifyOtp} disabled={loading || otp.length !== 6} className="w-full h-11 rounded-lg font-semibold" data-testid="otp-verify-pwa"
                 style={{ background: 'linear-gradient(135deg, #d4af37, #b8962e)', color: '#0B1221' }}>
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Verify & Sign In'}
               </Button>
               <div className="flex items-center justify-between mt-3">
-                <button onClick={() => setShowOtpModal(false)} className="text-[#6b7a90] text-sm hover:text-white transition-colors">Cancel</button>
+                <button onClick={() => setShowOtpModal(false)} className="text-[#8b97ab] text-sm hover:text-white transition-colors">Cancel</button>
                 <button onClick={() => handleResendOtp()} disabled={resendCooldown > 0}
-                  className={`text-sm transition-colors ${resendCooldown > 0 ? 'text-[#334155]' : 'text-[#d4af37] hover:text-[#e8c54a]'}`}>
+                  className={`text-sm transition-colors ${resendCooldown > 0 ? 'text-[#8492a8]' : 'text-[#d4af37] hover:text-[#e8c54a]'}`}>
                   {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend Code'}
                 </button>
               </div>
@@ -889,7 +889,7 @@ const LoginPage = () => {
           <LogoHome testId="login-logo" />
           <div className="hidden lg:flex items-center gap-7">
             {navLinks.map(item => (
-              <a key={item.label} href={item.href} className="text-[#6b7a90] text-sm font-medium hover:text-[#d4af37] transition-colors duration-300">{t(`nav.${item.k}`)}</a>
+              <a key={item.label} href={item.href} className="text-[#8b97ab] text-sm font-medium hover:text-[#d4af37] transition-colors duration-300">{t(`nav.${item.k}`)}</a>
             ))}
           </div>
           <div className="flex items-center gap-3 sm:gap-4">
@@ -1024,7 +1024,7 @@ const LoginPage = () => {
                     <div>
                       <label className="text-white/80 text-sm font-bold mb-1.5 block">Username or Email</label>
                       <div className="relative">
-                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#334155]" />
+                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8492a8]" />
                         <Input type="text" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Username or Email" required autoComplete="username"
                           autoCapitalize="none" autoCorrect="off" spellCheck={false} name="email"
                           className="h-11 pl-10 bg-[#0B1627] border-[#1A2D48] text-white placeholder:text-[#2A3C55] focus:border-[#d4af37] focus:ring-[#d4af37]/20 rounded-lg" data-testid="login-email-input" aria-label="Username or Email" />
@@ -1033,11 +1033,11 @@ const LoginPage = () => {
                     <div>
                       <label className="text-white/80 text-sm font-bold mb-1.5 block">Password</label>
                       <div className="relative">
-                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#334155]" />
+                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8492a8]" />
                         <Input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter password" required autoComplete="current-password"
                           autoCapitalize="none" autoCorrect="off" spellCheck={false} name="password"
                           className="h-11 pl-10 pr-10 bg-[#0B1627] border-[#1A2D48] text-white placeholder:text-[#2A3C55] focus:border-[#d4af37] focus:ring-[#d4af37]/20 rounded-lg" data-testid="login-password-input" aria-label="Password" />
-                        <button type="button" aria-label={showPassword ? 'Hide password' : 'Show password'} onMouseDown={e => e.preventDefault()} onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#334155] hover:text-[#7b879e] transition-colors">
+                        <button type="button" aria-label={showPassword ? 'Hide password' : 'Show password'} onMouseDown={e => e.preventDefault()} onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8492a8] hover:text-[#c9d2e0] transition-colors">
                           {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </button>
                       </div>
@@ -1069,7 +1069,7 @@ const LoginPage = () => {
                     <>
                       <div className="flex items-center gap-3 my-4">
                         <div className="flex-1 h-px" style={{ background: 'var(--s)' }} />
-                        <span className="text-[#334155] text-[11px] uppercase tracking-widest font-medium">or</span>
+                        <span className="text-[#8492a8] text-[11px] uppercase tracking-widest font-medium">or</span>
                         <div className="flex-1 h-px" style={{ background: 'var(--s)' }} />
                       </div>
                       <button onClick={handlePasskeyLogin} disabled={passkeyLoading}
@@ -1087,7 +1087,7 @@ const LoginPage = () => {
                       <span className="text-[#94A3B8] text-sm font-bold cursor-pointer hover:text-[#d4af37] transition-colors"
                         data-testid="forgot-password-link-web"
                         onClick={() => { setForgotMode(true); setForgotEmail(email); setForgotStep(1); setForgotMsg(''); setForgotError(false); }}>Forgot Password?</span>
-                      <span className="text-[#6b7a90] text-xs cursor-pointer hover:text-[#d4af37] transition-colors"
+                      <span className="text-[#8b97ab] text-xs cursor-pointer hover:text-[#d4af37] transition-colors"
                         data-testid="forgot-username-link-web"
                         onClick={() => {
                           const usernameEmail = prompt('Enter the email associated with your account:');
@@ -1202,13 +1202,13 @@ const LoginPage = () => {
             <img src="/carryon-logo.png" alt="" className="w-8 h-8 flex-shrink-0" />
             <div className="flex-1 min-w-0">
               <p className="text-white text-sm font-semibold leading-tight">Get the CarryOn App</p>
-              <p className="text-[#6b7a90] text-[11px]">Add to your home screen &mdash; no download needed</p>
+              <p className="text-[#8b97ab] text-[11px]">Add to your home screen &mdash; no download needed</p>
             </div>
             <button onClick={() => setShowInstallGuide(true)} className="gold-keep-dark flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold transition-all active:scale-95"
               style={{ background: '#d4af37', color: '#0B1221' }} data-testid="install-banner-cta">
               Install
             </button>
-            <button onClick={() => { localStorage.setItem('carryon_install_dismissed', '1'); setInstallBannerDismissed(true); }} className="flex-shrink-0 text-[#475569] hover:text-white p-1" data-testid="install-banner-dismiss">
+            <button onClick={() => { localStorage.setItem('carryon_install_dismissed', '1'); setInstallBannerDismissed(true); }} className="flex-shrink-0 text-[#8492a8] hover:text-white p-1" data-testid="install-banner-dismiss">
               <span className="text-lg leading-none">&times;</span>
             </button>
           </div>
@@ -1223,7 +1223,7 @@ const LoginPage = () => {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
           <div className="w-full max-w-md rounded-2xl p-8" style={{ background: 'linear-gradient(145deg, rgba(20,30,52,0.98), rgba(15,22,41,1))', border: '1px solid rgba(var(--gold-rgb), 0.15)' }}>
             <h3 className="text-white text-xl font-semibold mb-2" style={{ fontFamily: 'var(--sans)' }}>Two-Factor Authentication</h3>
-            <p className="text-[#6b7a90] text-sm mb-6">
+            <p className="text-[#8b97ab] text-sm mb-6">
               {otpMethod === 'sms'
                 ? `Enter the 6-digit code sent to ${maskedPhone || 'your phone'}`
                 : 'Enter the 6-digit code sent to your email'}
@@ -1234,18 +1234,18 @@ const LoginPage = () => {
             {/* SMS/Email toggle when user has both options */}
             {hasSmsOtp && (
               <div className="flex items-center gap-2 mb-4 p-2 rounded-lg" style={{ background: 'rgba(var(--gold-rgb), 0.06)', border: '1px solid rgba(var(--gold-rgb), 0.1)' }}>
-                <span className="text-[#6b7a90] text-xs">Send code via:</span>
+                <span className="text-[#8b97ab] text-xs">Send code via:</span>
                 <button
                   onClick={() => handleResendOtp('sms')}
                   disabled={resendCooldown > 0}
-                  className={`text-xs px-3 py-1 rounded-full transition-all ${otpMethod === 'sms' ? 'bg-[#d4af37] text-[#0B1221] font-semibold' : 'text-[#6b7a90] hover:text-white'}`}
+                  className={`text-xs px-3 py-1 rounded-full transition-all ${otpMethod === 'sms' ? 'bg-[#d4af37] text-[#0B1221] font-semibold' : 'text-[#8b97ab] hover:text-white'}`}
                   data-testid="otp-method-sms">
                   SMS {maskedPhone ? `(${maskedPhone})` : ''}
                 </button>
                 <button
                   onClick={() => handleResendOtp('email')}
                   disabled={resendCooldown > 0}
-                  className={`text-xs px-3 py-1 rounded-full transition-all ${otpMethod === 'email' ? 'bg-[#d4af37] text-[#0B1221] font-semibold' : 'text-[#6b7a90] hover:text-white'}`}
+                  className={`text-xs px-3 py-1 rounded-full transition-all ${otpMethod === 'email' ? 'bg-[#d4af37] text-[#0B1221] font-semibold' : 'text-[#8b97ab] hover:text-white'}`}
                   data-testid="otp-method-email">
                   Email
                 </button>
@@ -1262,7 +1262,7 @@ const LoginPage = () => {
               </button>
               <span className="text-[#7b879e] text-sm leading-snug">
                 Skip OTP for the rest of today
-                <span className="block text-[#475569] text-xs mt-0.5">Resets at midnight Eastern Time</span>
+                <span className="block text-[#8492a8] text-xs mt-0.5">Resets at midnight Eastern Time</span>
               </span>
             </label>
 
@@ -1271,9 +1271,9 @@ const LoginPage = () => {
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Verify & Sign In'}
             </Button>
             <div className="flex items-center justify-between mt-3">
-              <button onClick={() => setShowOtpModal(false)} className="text-[#6b7a90] text-sm hover:text-white transition-colors" data-testid="otp-cancel-button">Cancel</button>
+              <button onClick={() => setShowOtpModal(false)} className="text-[#8b97ab] text-sm hover:text-white transition-colors" data-testid="otp-cancel-button">Cancel</button>
               <button onClick={() => handleResendOtp()} disabled={resendCooldown > 0}
-                className={`text-sm transition-colors ${resendCooldown > 0 ? 'text-[#334155] cursor-not-allowed' : 'text-[#d4af37] hover:text-[#e8c54a]'}`}
+                className={`text-sm transition-colors ${resendCooldown > 0 ? 'text-[#8492a8] cursor-not-allowed' : 'text-[#d4af37] hover:text-[#e8c54a]'}`}
                 data-testid="otp-resend-button">
                 {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend Code'}
               </button>
@@ -1290,7 +1290,7 @@ const LoginPage = () => {
               <Shield className="w-10 h-10 text-[#0EA5E9]" />
             </div>
             <h3 className="text-white text-xl font-bold mb-2" style={{ fontFamily: 'var(--sans)' }}>Enable Face ID?</h3>
-            <p className="text-[#6b7a90] text-sm mb-6 leading-relaxed">
+            <p className="text-[#8b97ab] text-sm mb-6 leading-relaxed">
               Sign in instantly with Face ID next time you open CarryOn. You can change this anytime in Settings.
             </p>
             <button
@@ -1314,7 +1314,7 @@ const LoginPage = () => {
             </button>
             <button
               onClick={() => { localStorage.setItem('carryon_biometric_declined', 'true'); setShowBiometricPrompt(false); if (pendingLoginResult) navigateToHome(pendingLoginResult); }}
-              className="text-[#475569] text-sm font-medium hover:text-[#94a3b8] transition-colors"
+              className="text-[#8492a8] text-sm font-medium hover:text-[#94a3b8] transition-colors"
               data-testid="skip-biometric-btn"
             >
               Not Now

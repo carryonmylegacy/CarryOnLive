@@ -23,8 +23,8 @@
     --t: #EDF2F7;
     --t2: #CBD5E1;
     --t3: #94A3B8;
-    --t4: #6B7A90;
-    --t5: #475569;
+    --t4: #8B97AB;
+    --t5: #8492A8;
     
     /* Primary — calming teal-blue */
     --bl: #0EA5E9;
@@ -174,8 +174,8 @@
     --t: #0F172A;
     --t2: #1E293B;
     --t3: #334155;
-    --t4: #64748B;
-    --t5: #94A3B8;
+    --t4: #5B6B82;
+    --t5: #64748B;
     
     /* Accent colors — darker for readable contrast on light backgrounds */
     --bl: #0284C7;
@@ -1914,6 +1914,9 @@ input[type="number"].allow-number-spinner {
 
 /* Homepage founder tile: gold pill shown only while the Founder Story is public.
    Breathing glow ring; stills under prefers-reduced-motion. */
+/* /our-promise is a fixed cream page (not theme-driven): navy band under the shared dark footer. */
+.our-promise-footer-band { background: #0B1221; }
+
 @keyframes founder-pill-pulse {
   0%, 100% { box-shadow: 0 0 0 0 rgba(var(--gold-rgb), 0.55), 0 0 0 rgba(var(--gold-rgb), 0); }
   50%      { box-shadow: 0 0 0 6px rgba(var(--gold-rgb), 0), 0 0 18px rgba(var(--gold-rgb), 0.55); }

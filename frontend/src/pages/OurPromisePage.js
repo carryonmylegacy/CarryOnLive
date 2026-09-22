@@ -80,6 +80,7 @@ const OurPromisePage = () => {
             fontWeight: 800,
             letterSpacing: '-0.02em',
             margin: '0 0 16px 0',
+            color: '#0F1629',
           }}
         >
           Our Promise to Every Family on CarryOn™
@@ -253,7 +254,8 @@ const OurPromisePage = () => {
           </a>
         </div>
       </div>
-      <PublicFooter />
+      {/* The shared footer is dark-on-dark by design; this cream page gives it the same navy band the rest of the site has. */}
+      <div className="our-promise-footer-band" style={{ margin: '64px -24px -96px', padding: '8px 24px 0' }}><PublicFooter /></div>
     </div>
   );
 };

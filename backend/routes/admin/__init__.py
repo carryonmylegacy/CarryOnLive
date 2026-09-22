@@ -37,6 +37,7 @@ from .scoped_roles import router as scoped_roles_router
 from .security_scan import router as security_scan_router
 from .session_policy import router as session_policy_router
 from .soc2_readiness import router as soc2_readiness_router
+from .search_console import router as search_console_router
 from .task_management import router as task_management_router
 from .trial_policy import router as trial_policy_router
 from .users import router as users_router
@@ -69,6 +70,7 @@ router.include_router(task_management_router, dependencies=[Depends(require_scop
 router.include_router(launch_war_room_router, dependencies=[Depends(require_scope("marketing", "ops_manager"))])
 router.include_router(download_diagnostics_router, dependencies=[Depends(require_scope("platform_health"))])
 router.include_router(funnel_analytics_router, dependencies=[Depends(require_scope("marketing"))])
+router.include_router(search_console_router, dependencies=[Depends(require_scope("marketing"))])
 router.include_router(email_health_router, dependencies=[Depends(require_scope("platform_health"))])
 router.include_router(trial_policy_router, dependencies=[Depends(require_scope("finance"))])
 router.include_router(llm_cost_router, dependencies=[Depends(require_scope("platform_health"))])

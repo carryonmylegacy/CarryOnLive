@@ -7,9 +7,9 @@ const LINKS = [['home', '/'], ['pricing', '/pricing'], ['customers', '/customers
 export const MarketingFooter = ({ hide = '', testIdSuffix = '' }) => {
   const { t, flags } = useCopy();
   return (
-    <footer className="py-8 text-center text-[#334155] text-xs" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }} data-testid={`marketing-footer${testIdSuffix}`}>
+    <footer className="py-8 text-center text-[#8492a8] text-xs" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }} data-testid={`marketing-footer${testIdSuffix}`}>
       {LINKS.filter(([k]) => k !== hide && linkVisible(k, flags)).map(([k, href], i, arr) => (
-        <a key={k} href={href} className={`hover:text-[#7b879e] ${i < arr.length - 1 ? 'mr-5' : ''}`} data-testid={`marketing-footer-${k}${testIdSuffix}`}>{t(`footer.${k}`)}</a>
+        <a key={k} href={href} className={`hover:text-[#c9d2e0] ${i < arr.length - 1 ? 'mr-5' : ''}`} data-testid={`marketing-footer-${k}${testIdSuffix}`}>{t(`footer.${k}`)}</a>
       ))}
       <p className="mt-3">&copy; {new Date().getFullYear()} {t('footer.short_copyright')}</p>
     </footer>

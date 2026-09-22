@@ -153,7 +153,7 @@ const HomePage = () => {
           <img src="/carryon-logo.png" alt="CarryOn" className="h-12 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} data-testid="home-logo" />
           <div className="hidden lg:flex items-center gap-7">
             {visibleLinks(MARKETING_LINKS, flags).map(item => (
-              <a key={item.label} href={item.href} className="text-[#6b7a90] text-sm font-medium hover:text-[#d4af37] transition-colors duration-300">{t(`nav.${item.k}`)}</a>
+              <a key={item.label} href={item.href} className="text-[#8b97ab] text-sm font-medium hover:text-[#d4af37] transition-colors duration-300">{t(`nav.${item.k}`)}</a>
             ))}
           </div>
           <div className="flex items-center gap-4">

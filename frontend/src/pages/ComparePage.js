@@ -23,9 +23,9 @@ const ORIGIN = 'https://www.carryon.us';
 
 const Cell = ({ value, highlight, t }) => {
   if (value === true) return <span className="inline-flex items-center gap-1.5 text-[#10b981] font-semibold"><Check className="w-4 h-4" /> {t('compare.table.included')}</span>;
-  if (value === false) return <span className="inline-flex items-center gap-1.5 text-[#64748b]"><Minus className="w-4 h-4" /> {t('compare.table.not_offered')}</span>;
+  if (value === false) return <span className="inline-flex items-center gap-1.5 text-[#8492a8]"><Minus className="w-4 h-4" /> {t('compare.table.not_offered')}</span>;
   const notListed = typeof value === 'string' && value.startsWith('Not listed');
-  return <span className={notListed ? 'text-[#64748b]' : highlight ? 'text-[#e2e8f0]' : 'text-[#a0aec0]'}>{renderCopy(value)}</span>;
+  return <span className={notListed ? 'text-[#8492a8]' : highlight ? 'text-[#e2e8f0]' : 'text-[#a0aec0]'}>{renderCopy(value)}</span>;
 };
 
 const ComparisonTable = ({ competitor, carryonRows, t }) => (
@@ -137,12 +137,12 @@ const CompareDetail = ({ competitor, navigateWithFade, t }) => {
       <section className="relative overflow-hidden" style={{ paddingTop: 'calc(8rem + env(safe-area-inset-top, 0px))' }}>
         <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 70% 50% at 50% 0%, rgba(212,175,55,0.08) 0%, transparent 60%)' }} />
         <RevealSection className="max-w-[860px] mx-auto px-6 text-center relative z-10 pb-12">
-          <nav className="text-xs text-[#64748b] mb-4" aria-label="Breadcrumb"><a href="/" className="hover:text-[#d4af37]">{t('footer.home')}</a> <span className="mx-1">/</span> <a href="/vs" className="hover:text-[#d4af37]">{t('footer.compare')}</a> <span className="mx-1">/</span> <span className="text-[#a0aec0]">{competitor.name}</span></nav>
+          <nav className="text-xs text-[#8492a8] mb-4" aria-label="Breadcrumb"><a href="/" className="hover:text-[#d4af37]">{t('footer.home')}</a> <span className="mx-1">/</span> <a href="/vs" className="hover:text-[#d4af37]">{t('footer.compare')}</a> <span className="mx-1">/</span> <span className="text-[#a0aec0]">{competitor.name}</span></nav>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-[1.08] mb-5" style={{ fontFamily: 'Outfit, sans-serif', textWrap: 'balance' }} data-testid="compare-h1">
             {t('compare.vs_word')} <span className="text-[#d4af37]">{competitor.name}</span>
           </h1>
           <p className="text-[#a0aec0] text-base lg:text-lg leading-relaxed max-w-[680px] mx-auto">{renderCopy(t(`compare.${competitor.slug}.positioning`))}</p>
-          <p className="text-xs text-[#64748b] mt-5" data-testid="compare-checked">
+          <p className="text-xs text-[#8492a8] mt-5" data-testid="compare-checked">
             {t('compare.detail.facts_before', vars)} <a href={competitor.pricingUrl} target="_blank" rel="noopener noreferrer" className="underline hover:text-[#d4af37]">{t('compare.detail.facts_link')}<ExternalLink className="inline w-3 h-3 ml-0.5" /></a> {t('compare.detail.facts_after', vars)}
           </p>
         </RevealSection>
@@ -199,7 +199,7 @@ const CompareDetail = ({ competitor, navigateWithFade, t }) => {
             <button type="button" onClick={() => navigateWithFade('/pricing')} className="inline-flex items-center justify-center gap-2 px-10 py-4 rounded-lg font-semibold text-base transition-colors" style={{ border: '1px solid rgba(212,175,55,0.4)', color: '#d4af37' }} data-testid="compare-see-pricing">{t('compare.detail.cta_pricing')}</button>
           </div>
           <TrustBadges className="mt-8" testIdSuffix={`-vs-${competitor.slug}`} />
-          <p className="text-xs text-[#64748b] mt-8" data-testid="compare-corrections">
+          <p className="text-xs text-[#8492a8] mt-8" data-testid="compare-corrections">
             {t('compare.detail.corrections_before', vars)} <a href="mailto:info@carryon.us" className="underline hover:text-[#d4af37]">info@carryon.us</a> {t('compare.detail.corrections_after')}
           </p>
         </RevealSection>

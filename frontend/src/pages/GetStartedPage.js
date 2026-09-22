@@ -343,12 +343,12 @@ export default function GetStartedPage() {
                 <ArrowLeft className="w-5 h-5 text-[#334155]" />
               </button>
             )}
-            <span style={{ background: 'rgba(255,255,255,0.6)', backdropFilter: 'blur(12px)', borderRadius: '2rem', padding: '0.375rem 1rem', border: '1px solid rgba(255,255,255,0.5)', boxShadow: '0 2px 6px rgba(0,0,0,0.06)', fontWeight: 700, fontSize: '0.8125rem', color: 'var(--t5)' }}>
+            <span style={{ background: 'rgba(255,255,255,0.6)', backdropFilter: 'blur(12px)', borderRadius: '2rem', padding: '0.375rem 1rem', border: '1px solid rgba(255,255,255,0.5)', boxShadow: '0 2px 6px rgba(0,0,0,0.06)', fontWeight: 700, fontSize: '0.8125rem', color: '#1e293b' }}>
               Step {step} of 5
             </span>
           </div>
           <button onClick={() => navigate('/login')} data-testid="funnel-login-link"
-            style={{ background: 'rgba(255,255,255,0.6)', backdropFilter: 'blur(12px)', borderRadius: '2rem', padding: '0.375rem 1rem', border: '1px solid rgba(255,255,255,0.5)', boxShadow: '0 2px 6px rgba(0,0,0,0.06)', fontWeight: 700, fontSize: '0.8125rem', color: 'var(--t5)', transition: 'all 0.2s' }}
+            style={{ background: 'rgba(255,255,255,0.6)', backdropFilter: 'blur(12px)', borderRadius: '2rem', padding: '0.375rem 1rem', border: '1px solid rgba(255,255,255,0.5)', boxShadow: '0 2px 6px rgba(0,0,0,0.06)', fontWeight: 700, fontSize: '0.8125rem', color: '#1e293b', transition: 'all 0.2s' }}
             className="hover:bg-white/80">
             Already have an account?
           </button>
@@ -376,7 +376,7 @@ export default function GetStartedPage() {
                   <h1 style={{ fontWeight: 900, fontSize: '1.625rem', color: '#1e293b', letterSpacing: '-0.01em', lineHeight: 1.2 }}>
                     What matters most to you?
                   </h1>
-                  <p style={{ fontWeight: 600, fontSize: '0.9375rem', color: '#64748b' }}>
+                  <p style={{ fontWeight: 600, fontSize: '0.9375rem', color: '#475569' }}>
                     Select everything that applies. We'll personalize your experience.
                   </p>
                 </div>
@@ -417,7 +417,7 @@ export default function GetStartedPage() {
                   <h1 style={{ fontWeight: 900, fontSize: '1.625rem', color: '#1e293b', letterSpacing: '-0.01em' }}>
                     Tell us about your family
                   </h1>
-                  <p style={{ fontWeight: 600, fontSize: '0.9375rem', color: '#64748b' }}>
+                  <p style={{ fontWeight: 600, fontSize: '0.9375rem', color: '#475569' }}>
                     This helps us tailor your estate readiness plan.
                   </p>
                 </div>
@@ -479,7 +479,7 @@ export default function GetStartedPage() {
                   <h1 style={{ fontWeight: 900, fontSize: '1.625rem', color: '#1e293b' }}>
                     Your Estate Readiness Plan
                   </h1>
-                  <p style={{ fontWeight: 600, fontSize: '0.9375rem', color: '#64748b' }}>
+                  <p style={{ fontWeight: 600, fontSize: '0.9375rem', color: '#475569' }}>
                     {currentFeatureIdx < featuresToShow.length
                       ? `Feature ${currentFeatureIdx + 1} of ${featuresToShow.length} — interested?`
                       : 'Review complete!'}
@@ -512,7 +512,7 @@ export default function GetStartedPage() {
                         </button>
                       )}
                       <h3 style={{ fontWeight: 800, fontSize: '1.25rem', color: '#1e293b' }}>{featuresToShow[currentFeatureIdx].title}</h3>
-                      <p style={{ fontWeight: 600, fontSize: '0.9375rem', color: '#64748b', lineHeight: 1.6 }}>{featuresToShow[currentFeatureIdx].desc}</p>
+                      <p style={{ fontWeight: 600, fontSize: '0.9375rem', color: '#475569', lineHeight: 1.6 }}>{featuresToShow[currentFeatureIdx].desc}</p>
                       <div className="flex gap-3 pt-2">
                         <button
                           onClick={() => handleFeatureDecision(featuresToShow[currentFeatureIdx].id, false)}
@@ -520,7 +520,7 @@ export default function GetStartedPage() {
                           style={{
                             flex: 1, height: '2.75rem', borderRadius: '0.875rem',
                             background: '#ffffff', border: '1.5px solid rgba(0,0,0,0.08)',
-                            color: '#64748b', fontWeight: 700, fontSize: '0.875rem',
+                            color: '#475569', fontWeight: 700, fontSize: '0.875rem',
                             boxShadow: '0 4px 6px rgba(0,0,0,0.07), 0 1px 3px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.9)',
                             transition: 'transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease',
                           }}
@@ -596,7 +596,7 @@ export default function GetStartedPage() {
                                 <div style={{ width: '1.25rem', height: '1.25rem', borderRadius: '50%', background: 'rgba(148,163,184,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                                   <Check className="w-3 h-3" style={{ color: '#94a3b8' }} />
                                 </div>
-                                <span style={{ fontWeight: 600, fontSize: '0.8125rem', color: '#64748b' }}>{f.title}</span>
+                                <span style={{ fontWeight: 600, fontSize: '0.8125rem', color: '#475569' }}>{f.title}</span>
                               </div>
                             ))}
                           </div>
@@ -628,7 +628,7 @@ export default function GetStartedPage() {
                     <br />
                     <span style={{ color: '#b8962e' }}>Ready.</span>
                   </h1>
-                  <p style={{ fontWeight: 600, fontSize: '0.9375rem', color: '#64748b', maxWidth: '28rem', margin: '0 auto' }}>
+                  <p style={{ fontWeight: 600, fontSize: '0.9375rem', color: '#475569', maxWidth: '28rem', margin: '0 auto' }}>
                     Get your affairs in order in one secure place.
                     Start your {trialDays}-day exploration period today &mdash; cancel anytime.
                   </p>
@@ -651,7 +651,7 @@ export default function GetStartedPage() {
                   ))}
                 </div>
 
-                <p className="text-center mb-6" style={{ fontSize: '0.8125rem', color: '#64748b', fontWeight: 600, lineHeight: 1.6 }} data-testid="get-started-trust-line">
+                <p className="text-center mb-6" style={{ fontSize: '0.8125rem', color: '#475569', fontWeight: 600, lineHeight: 1.6 }} data-testid="get-started-trust-line">
                   Built by a 24-year military veteran. Bootstrapped and independent. Backed by a{' '}
                   <a href="/wind-down-promise" style={{ color: '#b8962e', textDecoration: 'underline' }} data-testid="trust-line-winddown-link">binding wind-down promise</a>.
                 </p>
@@ -716,7 +716,7 @@ export default function GetStartedPage() {
                   <h1 style={{ fontWeight: 900, fontSize: '1.625rem', color: '#1e293b' }}>
                     Bring Your Family Along
                   </h1>
-                  <p style={{ fontWeight: 600, fontSize: '0.9375rem', color: '#64748b', maxWidth: '28rem', margin: '0 auto' }}>
+                  <p style={{ fontWeight: 600, fontSize: '0.9375rem', color: '#475569', maxWidth: '28rem', margin: '0 auto' }}>
                     Invite a family member and you'll <span style={{ color: '#1e293b', fontWeight: 800 }}>both</span> get
                     <span style={{ color: '#b8962e', fontWeight: 800 }}> +7 bonus days</span> on your trial.
                   </p>

@@ -117,7 +117,7 @@ export const ProductPreview = ({ testIdSuffix = '', defaultTab = 'checklist' }) 
             <p className="text-center text-[#a0aec0] text-sm lg:text-base mt-6 max-w-[680px] mx-auto leading-relaxed" data-testid={`preview-caption${testIdSuffix}`}>{tab.caption}</p>
           </RevealSection>
           <RevealSection delay={0.3}>
-            <p className="flex items-center justify-center gap-2 mt-6 text-xs text-[#6b7a90] text-center px-4">
+            <p className="flex items-center justify-center gap-2 mt-6 text-xs text-[#8b97ab] text-center px-4">
               <Camera className="w-3.5 h-3.5 text-[#d4af37] flex-shrink-0" /> Actual screenshots of CarryOn, taken from a live demonstration account. Nothing mocked up.
             </p>
           </RevealSection>

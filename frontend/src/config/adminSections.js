@@ -17,7 +17,7 @@ import {
   Users, FileKey, Shield, Headphones, CheckSquare, AlertTriangle, Clock,
   TrendingUp, Activity, MessageSquare, BarChart3, Download, Radio,
   BookOpen, Gift, Zap, Puzzle, Mail, Film, Hourglass, Globe, Power, Settings,
-  Calendar, GraduationCap, Bell, Sparkles, MessageSquareQuote, FileText, Type,
+  Calendar, GraduationCap, Bell, Sparkles, MessageSquareQuote, FileText, Type, Search,
 } from 'lucide-react';
 
 export const ADMIN_SECTIONS = [
@@ -95,6 +95,7 @@ export const ADMIN_SECTIONS = [
     scopes: ['founder', 'marketing'],
     tabs: [
       { key: 'funnel', label: 'Funnel', icon: TrendingUp, path: '/admin/funnel' },
+      { key: 'search-console', label: 'Search Console', icon: Search, path: '/admin/search-console' },
       { key: 'quiz', label: 'Readiness Quiz', icon: CheckSquare, path: '/admin/quiz' },
       { key: 'testimonials', label: 'Testimonials', icon: MessageSquareQuote, path: '/admin/testimonials' },
       { key: 'sales-brief', label: 'Sales Brief', icon: FileText, path: '/admin/sales-brief' },

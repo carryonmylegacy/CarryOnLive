@@ -23,7 +23,7 @@ const readMinutes = (text) => Math.max(1, Math.round(text.split(/\s+/).filter(Bo
 const JsonLd = ({ data }) => <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }} />;
 
 const Byline = ({ t, publishedAt, minutes, testId }) => (
-  <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[#64748b]" data-testid={testId}>
+  <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[#8492a8]" data-testid={testId}>
     <a href={t('guides.index.byline_url')} className="text-[#a0aec0] font-semibold hover:text-[#d4af37]">{t('guides.index.byline')}</a>
     {publishedAt && <span>{t('guides.index.published_prefix')} <time dateTime={publishedAt}>{fmtDate(publishedAt)}</time></span>}
     <span className="inline-flex items-center gap-1"><Clock className="w-3 h-3" /> {t('guides.index.read_time', { minutes })}</span>
@@ -101,7 +101,7 @@ const GuideArticle = ({ a, t, publishedAt, navigateWithFade }) => {
         <div className="absolute inset-0 h-[520px]" style={{ background: 'radial-gradient(ellipse 70% 50% at 50% 0%, rgba(212,175,55,0.08) 0%, transparent 60%)' }} />
         <div className="max-w-[720px] mx-auto px-6 relative z-10">
           <RevealSection>
-            <a href="/guides" className="inline-flex items-center gap-1.5 text-sm text-[#64748b] hover:text-[#d4af37] transition-colors mb-8" data-testid="guide-back"><ArrowLeft className="w-4 h-4" /> {t('guides.index.back')}</a>
+            <a href="/guides" className="inline-flex items-center gap-1.5 text-sm text-[#8492a8] hover:text-[#d4af37] transition-colors mb-8" data-testid="guide-back"><ArrowLeft className="w-4 h-4" /> {t('guides.index.back')}</a>
             <p className="text-[#d4af37] text-xs font-bold uppercase tracking-[0.2em] mb-4">{t('guides.index.eyebrow')}</p>
             <h1 className="text-4xl sm:text-5xl font-bold text-white leading-[1.1] mb-5" style={{ ...OUTFIT, textWrap: 'balance' }} data-testid="guide-h1">{title}</h1>
             <p className="text-[#a0aec0] text-lg lg:text-xl leading-relaxed mb-6" data-testid="guide-dek">{renderCopy(t(k('dek')))}</p>
@@ -123,7 +123,7 @@ const GuideArticle = ({ a, t, publishedAt, navigateWithFade }) => {
               ))}
             </ol>
           </RevealSection>
-          <p className="mt-8 text-sm text-[#64748b] leading-relaxed" data-testid="guide-disclaimer">{renderCopy(t('guides.index.disclaimer'))}</p>
+          <p className="mt-8 text-sm text-[#8492a8] leading-relaxed" data-testid="guide-disclaimer">{renderCopy(t('guides.index.disclaimer'))}</p>
         </div>
       </article>
 

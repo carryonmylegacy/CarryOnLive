@@ -45,7 +45,7 @@ export const BenefactorFooter = () => {
   return (
     <footer className="py-8 text-center text-[#334155] text-xs" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }} data-testid="benefactor-footer">
       {[['privacy', '/privacy'], ['terms', '/terms'], ['security', '/security'], ['winddown', '/wind-down-promise']].map(([k, href], i, arr) => (
-        <a key={k} href={href} className={`hover:text-[#7b879e] ${i < arr.length - 1 ? 'mr-5' : ''}`} data-testid={`benefactor-footer-${k}`}>{t(`footer.${k}`)}</a>
+        <a key={k} href={href} className={`hover:text-[#c9d2e0] ${i < arr.length - 1 ? 'mr-5' : ''}`} data-testid={`benefactor-footer-${k}`}>{t(`footer.${k}`)}</a>
       ))}
       <p className="mt-3">&copy; {new Date().getFullYear()} {t('footer.short_copyright')}</p>
     </footer>

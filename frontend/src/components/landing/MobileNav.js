@@ -52,7 +52,7 @@ export const MobileNav = ({ links = MARKETING_LINKS, navigateWithFade, current, 
               return (
                 <a key={l.label} href={l.href} onClick={() => setOpen(false)} aria-current={active ? 'page' : undefined} data-testid={`mobile-menu-link-${slug(l.label)}${testIdSuffix}`}
                   className={`flex items-center justify-between py-3.5 text-base font-medium border-b border-white/5 transition-colors ${active ? 'text-[#d4af37]' : 'text-[#e2e8f0] hover:text-[#d4af37]'}`}>
-                  {l.k ? t(`nav.${l.k}`) : l.label} <ChevronRight className={`w-4 h-4 ${active ? 'text-[#d4af37]' : 'text-[#4a5568]'}`} />
+                  {l.k ? t(`nav.${l.k}`) : l.label} <ChevronRight className={`w-4 h-4 ${active ? 'text-[#d4af37]' : 'text-[#8492a8]'}`} />
                 </a>
               );
             })}

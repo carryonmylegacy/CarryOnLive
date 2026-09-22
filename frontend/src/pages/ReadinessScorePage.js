@@ -73,12 +73,12 @@ const ReadinessScorePage = () => {
       <section className="relative overflow-hidden" style={{ paddingTop: 'calc(8rem + env(safe-area-inset-top, 0px))' }}>
         <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 70% 50% at 50% 0%, rgba(212,175,55,0.08) 0%, transparent 60%)' }} />
         <RevealSection className="max-w-[760px] mx-auto px-6 relative z-10 pb-12">
-          <a href="/" className="inline-flex items-center gap-1.5 text-sm text-[#64748b] hover:text-[#d4af37] transition-colors mb-8" data-testid="readiness-back-home"><ArrowLeft className="w-4 h-4" /> {t('readiness.back')}</a>
+          <a href="/" className="inline-flex items-center gap-1.5 text-sm text-[#8492a8] hover:text-[#d4af37] transition-colors mb-8" data-testid="readiness-back-home"><ArrowLeft className="w-4 h-4" /> {t('readiness.back')}</a>
           <p className="text-[#d4af37] text-xs font-bold uppercase tracking-[0.2em] mb-4">{t('readiness.hero.eyebrow')}</p>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-[1.08] mb-5" style={{ ...OUTFIT, textWrap: 'balance' }} data-testid="readiness-h1">{t('readiness.hero.title')}</h1>
           <p className="text-[#a0aec0] text-base lg:text-lg leading-relaxed" data-testid="readiness-intro">{renderCopy(t('readiness.hero.intro'), 'text-white font-semibold')}</p>
           <p className="text-[#d4af37] text-base lg:text-lg italic mt-4" data-testid="readiness-principle">{t('readiness.hero.line')}</p>
-          <p className="inline-flex items-center gap-2 text-xs text-[#64748b] mt-6" data-testid="readiness-updated"><CalendarDays className="w-3.5 h-3.5" /> {t('readiness.updated_prefix')}: <span className="text-[#a0aec0]">{t('readiness.updated')}</span></p>
+          <p className="inline-flex items-center gap-2 text-xs text-[#8492a8] mt-6" data-testid="readiness-updated"><CalendarDays className="w-3.5 h-3.5" /> {t('readiness.updated_prefix')}: <span className="text-[#a0aec0]">{t('readiness.updated')}</span></p>
         </RevealSection>
       </section>
 
@@ -132,7 +132,7 @@ const ReadinessScorePage = () => {
             </div>
             <p className="text-[#a0aec0] text-base leading-relaxed mb-5">{renderCopy(t('readiness.ccp.intro'), 'text-white font-semibold')}</p>
             <Bullets k="readiness.ccp.items" t={t} />
-            <p className="text-sm text-[#64748b] mt-5">{t('readiness.ccp.labels')}</p>
+            <p className="text-sm text-[#8492a8] mt-5">{t('readiness.ccp.labels')}</p>
           </div>
         </RevealSection>
       </section>

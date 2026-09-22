@@ -169,7 +169,7 @@ export default function ProClaimPage() {
                 className="h-11 pl-10 pr-10 bg-[#0B1627] border-[#1A2D48] text-white rounded-lg"
                 data-testid="pro-claim-password" />
               <button type="button" onMouseDown={e => e.preventDefault()} onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#334155] hover:text-[#7b879e]">
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#334155] hover:text-[#c9d2e0]">
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>

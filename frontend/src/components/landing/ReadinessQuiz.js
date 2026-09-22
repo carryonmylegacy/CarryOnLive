@@ -59,7 +59,7 @@ const Intro = ({ onStart }) => (
     <button onClick={onStart} className="inline-flex items-center gap-2 px-8 py-3.5 rounded-lg font-bold text-base transition-transform duration-150 active:scale-95" style={{ background: '#d4af37', color: '#0B1221' }} data-testid="quiz-start-btn">
       Start the quiz <ChevronRight className="w-4 h-4" />
     </button>
-    <p className="flex items-center justify-center gap-1.5 text-[#6b7a90] text-xs mt-4"><Timer className="w-3.5 h-3.5" /> About 60 seconds</p>
+    <p className="flex items-center justify-center gap-1.5 text-[#8b97ab] text-xs mt-4"><Timer className="w-3.5 h-3.5" /> About 60 seconds</p>
   </div>
 );
 
@@ -114,7 +114,7 @@ const EmailCapture = ({ resultId }) => {
       <p className="text-[#8b97ab] text-xs mb-3">We&apos;ll email your score and the fixes above so you can come back to them.</p>
       <div className="flex flex-col sm:flex-row gap-2">
         <input type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" data-testid="quiz-email-input"
-          className="flex-1 h-11 px-4 rounded-lg text-base text-white placeholder:text-[#4a5568] focus:outline-none focus:border-[#d4af37]"
+          className="flex-1 h-11 px-4 rounded-lg text-base text-white placeholder:text-[#8492a8] focus:outline-none focus:border-[#d4af37]"
           style={{ background: 'rgba(11,19,34,0.8)', border: '1px solid rgba(255,255,255,0.12)' }} />
         <button type="submit" disabled={status === 'sending'} data-testid="quiz-email-submit"
           className="h-11 px-5 rounded-lg text-sm font-bold inline-flex items-center justify-center gap-2 transition-transform active:scale-95 disabled:opacity-60"
@@ -123,7 +123,7 @@ const EmailCapture = ({ resultId }) => {
         </button>
       </div>
       {error && <p className="text-[#f87171] text-xs mt-2" data-testid="quiz-email-error">{error}</p>}
-      <p className="text-[#6b7a90] text-[11px] mt-2">One email with your results, plus occasional CarryOn updates. Unsubscribe anytime.</p>
+      <p className="text-[#8b97ab] text-[11px] mt-2">One email with your results, plus occasional CarryOn updates. Unsubscribe anytime.</p>
     </form>
   );
 };
@@ -159,7 +159,7 @@ const Result = ({ answers, resultId, onRetake, onStart }) => {
         </button>
         <button onClick={onRetake} className="inline-flex items-center gap-1.5 text-[#8b97ab] text-sm hover:text-white transition-colors" data-testid="quiz-retake-btn"><RotateCcw className="w-3.5 h-3.5" /> Retake</button>
       </div>
-      <p className="text-center text-[#6b7a90] text-xs mt-4">Every plan starts with an exploration period. Cancel anytime.</p>
+      <p className="text-center text-[#8b97ab] text-xs mt-4">Every plan starts with an exploration period. Cancel anytime.</p>
     </div>
   );
 };
