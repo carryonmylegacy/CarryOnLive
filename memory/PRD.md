@@ -597,6 +597,8 @@ bug — fix it in the preview DB immediately (snippet in
 - Hardcoded `rgba(212,175,55,…)` → `var(--gold-rgb)` sweep.
 
 ### Last verified end-to-end working item
+**Sep 22 2026 — Site-wide hardening pass shipped (NOT PUSHED; iteration_70 PASS).** Vercel security headers + CSP report-only (sink `/api/public/csp-report`, viewer in Compliance → SOC2 Readiness), real 404s (route-list rewrites + branded 404.html), consent-gated Meta Pixel + notice bar, Customers hidden from top nav until 3 stories, founded-2025/GA-2026 copy, retired "Zero-Knowledge" from PDFs/e-mails, YouTube facades (nocookie), public-fetch dedupe, build stamp from git SHA, HEAD /api/health, 44 px tap targets. **Founder next (click-by-click in chat)**: Save to GitHub → Vercel + Render deploy → hstspreload.org → change demo-estate address on prod → tell agent to re-capture screenshots.
+
 **Sep 22 2026 — Claude-audit batch 1 shipped (NOT PUSHED).** 8 founder-approved fixes: MM bullet → Base card + FFN opened to Base/Standard (migrations 0004/0005, run on deploy), `/pricing` gets the shared MarketingNav, customers video heading → product framing, CST spelled out, tile photo fallback, footer Accessibility link, Security menu → `/security`. check.sh ALL CLEAR. Second (large) audit awaiting founder decisions — see chat.
 
 **Sep 22 2026 — One rule for every founder-story entry point (NOT PUSHED).** "Read his story" removed from the founder tile. Founder link (nav + all footers) always present → gate when invite-only, story when public; gold "Meet the Founder" pill (tile + About box) only when public. Admin Site Content help text updated. Verified both states; check.sh ALL CLEAR. **Founder next**: Save to GitHub → Vercel (none of Sep 21–22 is live yet).
