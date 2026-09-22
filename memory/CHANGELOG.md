@@ -10606,3 +10606,6 @@ Verified false/stale and NOT acted on: "zero-knowledge" homepage chips (live bun
 - `PlanTile.js`: existing features plain text (spacer keeps alignment, no green check); `StartPage.tileFeatures` returns existing first, then `added` (gold check) — order inside each group unchanged.
 - `feature_gates.py::ladder_order(gates)` + `TIER_LADDER`; `/admin/feature-gates.features` and `/subscriptions/plans.tier_features` iterate it. Today's live gates → beneficiaries, mm, sdv, iac, ffn, tma, ega, cfp, dav, ccp, ect, bec, ces, dts, timeline.
 - `FeatureGatesCard.js` explainer names the ordering rule. check.sh ALL CLEAR.
+
+## Sep 22 2026 — Beneficiary line moved above the Subscribe button
+- `PlanTile.js`: "Unlimited beneficiary enrollment — free for your lifetime" is out of the feature `<ul>`; it now sits directly above the CTA, separated from the list by a hairline (`borderTop: var(--b)`), pinned to the bottom on every tile. Verified all 8 tiles on preview.

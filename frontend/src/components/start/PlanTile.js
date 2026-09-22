@@ -36,13 +36,14 @@ export const PlanTile = ({ plan, price, total, cycle, selected, onSelect, onChec
             {f.name}
           </li>
         ))}
-        {invitedLine && (
-          <li className="flex items-start gap-2 text-xs text-[var(--t3)]" data-testid={`start-invited-${plan.id}`}>
-            <Users className="w-3.5 h-3.5 text-[#3b82f6] flex-shrink-0 mt-0.5" />
-            <span>{invitedLine}</span>
-          </li>
-        )}
       </ul>
+      {invitedLine && (
+        <p className="flex items-start gap-2 text-xs text-[var(--t3)] mb-3 pt-3" style={{ borderTop: '1px solid var(--b)' }}
+          data-testid={`start-invited-${plan.id}`}>
+          <Users className="w-3.5 h-3.5 text-[#3b82f6] flex-shrink-0 mt-0.5" />
+          <span>{invitedLine}</span>
+        </p>
+      )}
       <button
         onClick={(e) => { e.stopPropagation(); onCheckout(); }}
         disabled={disabled}
