@@ -10601,3 +10601,8 @@ Verified false/stale and NOT acted on: "zero-knowledge" homepage chips (live bun
 - Special Pricing framed box (`start-special-box`), tiles `w-[calc(33.333%-0.67rem)]` md / 50% sm / full phone, `justify-center`. Hospice = $0.00 tile, CTA "Start at no cost"/"Activate at no cost", no StripeNote, no "Billed" line. `start.hospice` field + link removed.
 - Copy: `start.plans.invited` "Unlimited beneficiary enrollment — free for your lifetime"; `start.family.text` default reworded (no "while you're alive"); `start.plans.special.sub`. Migration `0008_start_family_text.py` removes a `start.family.text` override still carrying the old phrase (journaled).
 - JSON-LD product descriptions now use the gate-driven names. check.sh ALL CLEAR. Not touched: /pricing (founder: /start only).
+
+## Sep 22 2026 — /start tiles regrouped · Feature Gates rows in ladder order
+- `PlanTile.js`: existing features plain text (spacer keeps alignment, no green check); `StartPage.tileFeatures` returns existing first, then `added` (gold check) — order inside each group unchanged.
+- `feature_gates.py::ladder_order(gates)` + `TIER_LADDER`; `/admin/feature-gates.features` and `/subscriptions/plans.tier_features` iterate it. Today's live gates → beneficiaries, mm, sdv, iac, ffn, tma, ega, cfp, dav, ccp, ect, bec, ces, dts, timeline.
+- `FeatureGatesCard.js` explainer names the ordering rule. check.sh ALL CLEAR.

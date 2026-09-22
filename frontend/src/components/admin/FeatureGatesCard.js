@@ -146,6 +146,8 @@ export const FeatureGatesCard = ({ getAuthHeaders }) => {
         <p className="text-xs text-[var(--t5)] mb-4">
           Control which platform features are visible per subscription tier. Toggling a feature OFF
           hides it from navigation, dashboard, and blocks API access for users on that tier.
+          Rows are ordered the way the plan tiles list them: what Base includes, then what Standard adds,
+          then Premium, then special-tier-only features (re-sorted on the next load after you publish).
         </p>
 
         {/* Free Mode column explainer */}

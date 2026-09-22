@@ -152,9 +152,11 @@ const StartPage = () => {
     if (gates.length === 0) return (plan.features || []).map((name, i) => ({ key: String(i), name, added: false }));
     const baseline = plan.id in HIGHLIGHT_BASELINE ? HIGHLIGHT_BASELINE[plan.id] : 'base';
     const below = new Set(baseline ? enabledKeys(baseline) : []);
-    return gates
+    const rows = gates
       .filter(f => f.enabled && f.key !== 'beneficiaries')
       .map(f => ({ key: f.key, name: featureName(f), added: !!baseline && !below.has(f.key) }));
+    // Existing features first, what this tier adds below them — tier-ladder order kept inside each group.
+    return [...rows.filter(f => !f.added), ...rows.filter(f => f.added)];
   };
   const showInvited = (plan) => (tierFeatures[plan.id] || []).length === 0 || enabledKeys(plan.id).includes('beneficiaries');
   const ctaLabel = (plan) => {

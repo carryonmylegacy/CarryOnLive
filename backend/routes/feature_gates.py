@@ -178,15 +178,35 @@ def get_enabled_features_for_tier(gates: dict, tier_id: str) -> list[str]:
     return [key for key in FEATURE_KEYS if gates.get(key, {}).get(tier_id, False)]
 
 
+TIER_LADDER = ["base", "standard", "premium"]
+
+
+def ladder_order(gates: dict) -> list[dict]:
+    """PLATFORM_FEATURES sorted the way the plan tiles read: what Base includes, then what Standard
+    adds, then Premium, then features only ON in a special tier, then features OFF everywhere.
+    Stable, so the canonical order is kept inside each band (founder, Sep 22 2026)."""
+
+    def band(feature):
+        tier_gates = gates.get(feature["key"], {})
+        for i, tid in enumerate(TIER_LADDER):
+            if tier_gates.get(tid):
+                return i
+        if any(tier_gates.get(tid) for tid in TIER_IDS if tid != "free_mode"):
+            return len(TIER_LADDER)
+        return len(TIER_LADDER) + 1
+
+    return sorted(PLATFORM_FEATURES, key=band)
+
+
 # ─── Admin API ──────────────────────────────────────────────────
 
 
 @router.get("/admin/feature-gates")
 async def get_admin_feature_gates(current_user: dict = Depends(require_admin)):
-    """Return current feature gates config plus feature metadata."""
+    """Return current feature gates config plus feature metadata (rows in tier-ladder order)."""
     gates = await get_feature_gates()
     return {
-        "features": PLATFORM_FEATURES,
+        "features": ladder_order(gates),
         "tiers": TIER_IDS,
         "gates": gates,
     }

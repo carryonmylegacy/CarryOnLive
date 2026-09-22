@@ -33,14 +33,15 @@ async def get_subscription_plans():
     settings = await get_subscription_settings()
 
     # Include feature gate data so the paywall shows real-time enabled features per tier
-    from routes.feature_gates import get_feature_gates, PLATFORM_FEATURES, TIER_IDS
+    from routes.feature_gates import get_feature_gates, ladder_order, TIER_IDS
 
     gates = await get_feature_gates()
-    # Build per-tier feature list — ALL features in consistent order, with enabled flag
+    # Build per-tier feature list — ALL features in tier-ladder order (same on every tile), with enabled flag
     tier_features = {}
+    ordered = ladder_order(gates)
     for tid in TIER_IDS:
         feature_list = []
-        for f in PLATFORM_FEATURES:
+        for f in ordered:
             tier_gates = gates.get(f["key"], {})
             feature_list.append(
                 {

@@ -5,7 +5,7 @@ import { StripeNote } from '../landing/TrustBadges';
 const CYCLE_BILLED = { quarterly: 'every 3 months', annual: 'annually' };
 
 // One plan card for /start — main and special tiers share it so every tile reads the same way.
-// `features` = [{ key, name, added }] in canonical gate order; `added` = gold check (more than the baseline tier).
+// `features` = [{ key, name, added }] — existing features first (plain), then what this tier adds (gold check).
 export const PlanTile = ({ plan, price, total, cycle, selected, onSelect, onCheckout, features, invitedLine, ctaLabel, disabled, className = '' }) => {
   const paid = parseFloat(plan.price) > 0;
   return (
@@ -30,7 +30,9 @@ export const PlanTile = ({ plan, price, total, cycle, selected, onSelect, onChec
         {features.map(f => (
           <li key={f.key} className={`flex items-start gap-2 text-xs ${f.added ? 'font-bold text-[var(--t)]' : 'text-[var(--t3)]'}`}
             data-testid={`start-feature-${plan.id}-${f.key}`} data-added={f.added ? 'true' : 'false'}>
-            <Check className={`w-3.5 h-3.5 flex-shrink-0 mt-0.5 ${f.added ? 'text-[#d4af37]' : 'text-[#10b981]'}`} />
+            {f.added
+              ? <Check className="w-3.5 h-3.5 flex-shrink-0 mt-0.5 text-[#d4af37]" />
+              : <span className="w-3.5 h-3.5 flex-shrink-0" aria-hidden="true" />}
             {f.name}
           </li>
         ))}
