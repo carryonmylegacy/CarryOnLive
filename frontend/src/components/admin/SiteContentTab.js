@@ -509,8 +509,9 @@ export const SiteContentTab = ({ getAuthHeaders }) => {
             <h3 className="text-base font-bold text-[var(--t)]">Founder Story</h3>
           </div>
           <p className="text-sm text-[var(--t4)]">
-            <strong className="text-[var(--t)]">Invite-only</strong> (default): <span className="font-mono">/founder-about</span> shows the request-access gate, invite links and approved sign-ins still work, and the homepage &ldquo;Read his story&rdquo; link goes to the About page.
-            {' '}<strong className="text-[var(--t)]">Public</strong>: anyone can read the story, search engines may index it (it joins the sitemap at the next deploy), &ldquo;Read his story&rdquo; goes straight to it, and a <strong className="text-[var(--t)]">Founder story</strong> link appears in the site footers.
+            The <strong className="text-[var(--t)]">Founder</strong> link (menus and footers) always points to <span className="font-mono">/founder-about</span>.
+            {' '}<strong className="text-[var(--t)]">Invite-only</strong> (default): that page shows the request-access gate; invite links and approved sign-ins still work.
+            {' '}<strong className="text-[var(--t)]">Public</strong>: anyone can read the story, search engines may index it (it joins the sitemap at the next deploy), and a gold <strong className="text-[var(--t)]">Meet the Founder</strong> pill appears on the homepage founder tile and in the About page&rsquo;s founder box.
             {' '}The text itself is edited in <strong className="text-[var(--t)]">Site Copy &rarr; Founder story</strong>.
           </p>
           <div className="flex items-center justify-between p-4 rounded-xl" style={{ background: 'var(--b)', border: '1px solid var(--b2)' }}>

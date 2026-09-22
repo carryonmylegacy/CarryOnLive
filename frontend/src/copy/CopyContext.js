@@ -8,8 +8,9 @@ const NO_FLAGS = { guides_launched: false, guides_launched_at: null, founder_sto
 export const PREVIEW_MSG = 'carryon:copy-preview';
 export const PREVIEW_READY_MSG = 'carryon:copy-preview-ready';
 
-/* Footer/nav links that only appear once the founder flips a switch (Admin → Marketing). */
-const LINK_FLAGS = { guides: 'guides_launched', founder: 'founder_story_public' };
+/* Footer/nav links that only appear once the founder flips a switch (Admin → Marketing).
+   The Founder link is NOT gated: it leads to the request-access gate while invite-only and to the story once public. */
+const LINK_FLAGS = { guides: 'guides_launched' };
 export const linkVisible = (key, flags) => !LINK_FLAGS[key] || Boolean(flags[LINK_FLAGS[key]]);
 
 /* Preview mode: the page is framed by the Site Copy editor (same origin) and receives unsaved edits via postMessage. */

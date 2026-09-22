@@ -10549,3 +10549,9 @@ Audit + full findings saved at `memory/audits/heycatch_2026-09-18.md`. Applied e
 ## Sep 21 2026 — "Meet the Founder" pill also in the About page founder box (NOT PUSHED)
 - Founder's screenshot was the `/about` "Who We Are" founder box (photo · name · title · bio · LinkedIn Profile), not the homepage tile. Same public-only gold pulsating pill added beneath "LinkedIn Profile", inside the box (`AboutPage.js`, `about-founder-story-pill`), → `/founder-about`. Hidden while invite-only.
 - Verified both states on preview at 390 px; flag restored to invite-only.
+
+## Sep 22 2026 — One rule for every founder-story entry point (NOT PUSHED)
+- Founder: "You don't need 'Read his story' AND Meet the Founder … ensure consistency throughout the site."
+- Rule now applied everywhere: **Founder link always present** (nav, hamburger, all three footers: LandingContent, MarketingFooter, PublicFooter) → `/founder-about` = request-access gate while invite-only, story once public. **Gold "Meet the Founder" pill only while public** (homepage/customers tile via `FounderCard`, About page founder box). No other story links.
+- Removed: `FounderCard` "Read his story" (and its flag-based href). Un-gated: `CopyContext.LINK_FLAGS.founder`, `PublicFooter` founder `flag`. Updated: `footer.founder` registry label; Admin → Site Content → Founder Story help text (no more "Read his story" wording).
+- Verified both states on preview at 390 px: tile = name/title/LinkedIn (+ pill when public); footers show "Founder story" in both states; /about box pill only when public. Flag restored to invite-only.
