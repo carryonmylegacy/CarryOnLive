@@ -4,8 +4,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import {
-  Shield, ChevronRight, Check, Users, Clock, Zap,
-  CreditCard, ArrowRight, Heart
+  Shield, ChevronRight, Check, Users, Clock, Zap, ArrowRight
 } from 'lucide-react';
 import { API_URL } from '../config';
 import { TrustBadges, StripeNote } from '../components/landing/TrustBadges';
@@ -13,11 +12,17 @@ import { startPlanCheckout } from '../utils/stripeRedirect';
 import { toast } from 'sonner';
 import { useCopy, renderCopy } from '../copy/CopyContext';
 import { LogoHome } from '../components/landing/LogoHome';
+import { PlanTile } from '../components/start/PlanTile';
 
 const CYCLE_LABELS = { monthly: 'Monthly', quarterly: 'Quarterly', annual: 'Annual' };
 const CYCLE_SAVINGS = { monthly: null, quarterly: '10% off', annual: '20% off' };
 const CYCLES = Object.keys(CYCLE_LABELS);
 const INTENT_KEY = 'carryon_checkout_intent';
+const MAIN_ORDER = ['premium', 'standard', 'base'];
+const SPECIAL_ORDER = ['military', 'veteran', 'seniors', 'new_adult', 'hospice'];
+// Gold-check baseline: Standard vs Base, Premium vs Standard, every special tier vs Base (founder, Sep 22 2026).
+const HIGHLIGHT_BASELINE = { premium: 'standard', standard: 'base', base: null };
+const TILE_W = 'w-full sm:w-[calc(50%-0.5rem)] md:w-[calc(33.333%-0.67rem)]';
 
 const readIntent = () => {
   try { return JSON.parse(sessionStorage.getItem(INTENT_KEY) || 'null'); } catch { return null; }
@@ -29,6 +34,7 @@ const StartPage = () => {
   const { t } = useCopy();
   const [searchParams] = useSearchParams();
   const [plans, setPlans] = useState([]);
+  const [tierFeatures, setTierFeatures] = useState({});
   const [trialDays, setTrialDays] = useState(30);
   const [selectedPlan, setSelectedPlan] = useState(null);
   const requestedPlan = searchParams.get('plan');
@@ -63,8 +69,9 @@ const StartPage = () => {
       const res = await axios.get(`${API_URL}/subscriptions/plans`);
       const data = res.data;
       const allPlans = data.plans || [];
-      const mainPlans = allPlans.filter(p => p.price > 0 && !['enterprise'].includes(p.id));
+      const mainPlans = allPlans.filter(p => p.id !== 'enterprise');
       setPlans(mainPlans);
+      setTierFeatures(data.tier_features || {});
       setTrialDays(data.trial_duration_days || 30);
       setFamilyDiscount(data.family_benefactor_discount_percent || 0);
       // Premium is the default pick (founder, Sep 20 2026); ?plan= and an admin is_default flag still win.
@@ -134,8 +141,35 @@ const StartPage = () => {
   };
 
   // Same reduced tiers the pricing page shows — seniors included (was missing here, Sep 20 2026).
-  const specialTiers = plans.filter(p => ['military', 'veteran', 'seniors', 'new_adult'].includes(p.id));
-  const mainTiers = plans.filter(p => !['military', 'veteran', 'new_adult'].includes(p.id));
+  const mainTiers = MAIN_ORDER.map(id => plans.find(p => p.id === id)).filter(Boolean);
+  const specialTiers = SPECIAL_ORDER.map(id => plans.find(p => p.id === id)).filter(Boolean);
+
+  // Every tile mirrors the founder's Subs toggles: ON features only, canonical order, official names.
+  const enabledKeys = (tierId) => (tierFeatures[tierId] || []).filter(f => f.enabled).map(f => f.key);
+  const featureName = (f) => t(`home.tools.${f.key}.product`) || f.label.replace(/\s*\([^)]*\)\s*$/, '');
+  const tileFeatures = (plan) => {
+    const gates = tierFeatures[plan.id] || [];
+    if (gates.length === 0) return (plan.features || []).map((name, i) => ({ key: String(i), name, added: false }));
+    const baseline = plan.id in HIGHLIGHT_BASELINE ? HIGHLIGHT_BASELINE[plan.id] : 'base';
+    const below = new Set(baseline ? enabledKeys(baseline) : []);
+    return gates
+      .filter(f => f.enabled && f.key !== 'beneficiaries')
+      .map(f => ({ key: f.key, name: featureName(f), added: !!baseline && !below.has(f.key) }));
+  };
+  const showInvited = (plan) => (tierFeatures[plan.id] || []).length === 0 || enabledKeys(plan.id).includes('beneficiaries');
+  const ctaLabel = (plan) => {
+    if (checkoutLoading) return 'Loading...';
+    if (parseFloat(plan.price) <= 0) return user ? 'Activate at no cost' : 'Start at no cost';
+    return user ? 'Continue to secure checkout' : 'Subscribe';
+  };
+  const renderTile = (plan, className) => (
+    <PlanTile key={plan.id} plan={plan} className={className}
+      price={getPrice(plan, selectedCycle)} total={getTotalPrice(plan, selectedCycle)} cycle={selectedCycle}
+      selected={selectedPlan === plan.id} onSelect={() => setSelectedPlan(plan.id)}
+      onCheckout={() => { setSelectedPlan(plan.id); handleCheckout(plan.id); }}
+      features={tileFeatures(plan)} invitedLine={showInvited(plan) ? t('start.plans.invited') : null}
+      ctaLabel={ctaLabel(plan)} disabled={checkoutLoading} />
+  );
 
   if (loading || resuming) {
     return (
@@ -166,7 +200,7 @@ const StartPage = () => {
         "item": {
           "@type": "Product",
           "name": `CarryOn ${p.name} Plan`,
-          "description": (p.features || []).join('. '),
+          "description": tileFeatures(p).map(f => f.name).join('. '),
           "offers": {
             "@type": "Offer",
             "price": p.price,
@@ -317,88 +351,29 @@ const StartPage = () => {
             ))}
           </div>
 
-          {/* Plan cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-            {mainTiers.map(plan => {
-              const isSelected = selectedPlan === plan.id;
-              const price = getPrice(plan, selectedCycle);
-              const total = getTotalPrice(plan, selectedCycle);
-              return (
-                <div key={plan.id} className="rounded-2xl p-5 sm:p-6 transition-all cursor-pointer"
-                  onClick={() => setSelectedPlan(plan.id)}
-                  style={{
-                    background: isSelected ? 'rgba(212,175,55,0.06)' : 'var(--s)',
-                    border: `2px solid ${isSelected ? 'rgba(212,175,55,0.4)' : 'var(--b)'}`,
-                    transform: isSelected ? 'scale(1.02)' : 'scale(1)',
-                  }}
-                  data-testid={`plan-${plan.id}`}>
-                  <h3 className="text-lg font-bold text-[var(--t)] mb-1">{plan.name}</h3>
-                  <div className="flex items-baseline gap-1 mb-4">
-                    <span className="text-3xl font-bold text-[var(--t)]">${parseFloat(price).toFixed(2)}</span>
-                    <span className="text-sm text-[var(--t5)]">/mo</span>
-                  </div>
-                  {selectedCycle !== 'monthly' && (
-                    <div className="text-xs text-[var(--t5)] mb-3">
-                      Billed ${total} {selectedCycle === 'quarterly' ? 'every 3 months' : 'annually'}
-                    </div>
-                  )}
-                  <ul className="space-y-1.5 mb-5">
-                    {(plan.features || []).map((f, i) => (
-                      <li key={i} className="flex items-start gap-2 text-xs text-[var(--t3)]">
-                        <Check className="w-3.5 h-3.5 text-[#10b981] flex-shrink-0 mt-0.5" />
-                        {f}
-                      </li>
-                    ))}
-                    <li className="flex items-start gap-2 text-xs text-[var(--t3)]" data-testid={`start-invited-${plan.id}`}>
-                      <Users className="w-3.5 h-3.5 text-[#3b82f6] flex-shrink-0 mt-0.5" />
-                      <span>People you invite: <strong className="text-[var(--t)]">free</strong> while you&apos;re alive</span>
-                    </li>
-                  </ul>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); handleCheckout(plan.id); }}
-                    disabled={checkoutLoading}
-                    className="w-full py-2.5 rounded-xl text-sm font-bold transition-all active:scale-[0.97]"
-                    style={{
-                      background: isSelected ? 'linear-gradient(135deg, #d4af37, #F0C95C)' : 'rgba(255,255,255,0.06)',
-                      color: isSelected ? '#080e1a' : 'var(--t3)',
-                      border: `1px solid ${isSelected ? 'transparent' : 'var(--b)'}`,
-                    }}
-                    data-testid={`checkout-${plan.id}`}>
-                    <CreditCard className="w-4 h-4 inline mr-1" />
-                    {checkoutLoading ? 'Loading...' : (user ? 'Continue to secure checkout' : 'Subscribe')}
-                  </button>
-                  <StripeNote className="w-full mt-2.5" testId={`start-stripe-note-${plan.id}`} />
-                </div>
-              );
-            })}
+          {/* Plan cards — one shared tile, features straight from the Subs toggles */}
+          <p className="flex items-center justify-center gap-1.5 text-xs text-[var(--t5)] mb-4" data-testid="start-plans-legend">
+            <Check className="w-3.5 h-3.5 text-[#d4af37]" /> {t('start.plans.legend')}
+          </p>
+          <div className="flex flex-wrap justify-center gap-4 mb-8" data-testid="start-main-tiles">
+            {mainTiers.map(plan => renderTile(plan, TILE_W))}
           </div>
 
-          {/* Special tiers */}
+          {/* Special pricing — one framed group, tiles the same size as above, orphan rows centered */}
           {specialTiers.length > 0 && (
-            <div className="mb-8">
-              <h3 className="text-lg font-bold text-[var(--t)] mb-4 text-center">{t('start.plans.special')}</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                {specialTiers.map(plan => {
-                  const price = getPrice(plan, selectedCycle);
-                  return (
-                    <div key={plan.id} className="rounded-xl p-4 flex items-center justify-between"
-                      style={{ background: 'var(--s)', border: '1px solid var(--b)' }}
-                      data-testid={`special-${plan.id}`}>
-                      <div>
-                        <div className="text-sm font-bold text-[var(--t)]">{plan.name}</div>
-                        <div className="text-xs text-[var(--t5)]">${parseFloat(price).toFixed(2)}/mo</div>
-                      </div>
-                      <button onClick={() => { setSelectedPlan(plan.id); handleCheckout(plan.id); }}
-                        className="px-4 py-2 rounded-lg text-xs font-bold"
-                        style={{ background: 'rgba(212,175,55,0.12)', color: '#d4af37', border: '1px solid rgba(212,175,55,0.3)' }}
-                        data-testid={`checkout-${plan.id}`}>
-                        Select
-                      </button>
-                    </div>
-                  );
-                })}
+            <div className="rounded-3xl p-3 sm:p-6 mb-8 sm:-mx-6"
+              style={{ background: 'rgba(212,175,55,0.03)', border: '1px solid rgba(212,175,55,0.25)' }}
+              data-testid="start-special-box">
+              <div className="text-center mb-5">
+                <h3 className="text-lg font-bold text-[var(--t)] mb-1" style={{ fontFamily: 'Outfit, sans-serif' }}>{t('start.plans.special')}</h3>
+                <p className="text-xs text-[var(--t4)]" data-testid="start-special-sub">{t('start.plans.special.sub')}</p>
+                <p className="flex items-center justify-center gap-1.5 text-xs text-[var(--t5)] mt-2" data-testid="start-special-legend">
+                  <Check className="w-3.5 h-3.5 text-[#d4af37]" /> {t('start.plans.special.legend')}
+                </p>
               </div>
-              <StripeNote className="w-full mt-3" testId="start-stripe-note-special" />
+              <div className="flex flex-wrap justify-center gap-4" data-testid="start-special-tiles">
+                {specialTiers.map(plan => renderTile(plan, TILE_W))}
+              </div>
             </div>
           )}
 
@@ -418,14 +393,6 @@ const StartPage = () => {
             <Link to="/wind-down-promise" className="text-[#d4af37] hover:text-[#fcd34d] underline underline-offset-4" data-testid="start-winddown-link">{t('pricing.winddown.cta')}</Link>
           </p>
 
-          {/* Hospice link */}
-          <div className="text-center mb-8">
-            <button onClick={() => navigate('/get-started?plan=hospice')} className="text-sm text-[var(--t5)] hover:text-[var(--t4)] transition-colors underline"
-              data-testid="hospice-link">
-              <Heart className="w-3.5 h-3.5 inline mr-1" />
-              {t('start.hospice')}
-            </button>
-          </div>
         </div>
 
         {/* Trust signals */}

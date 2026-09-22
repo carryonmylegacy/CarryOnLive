@@ -10593,3 +10593,11 @@ Verified false/stale and NOT acted on: "zero-knowledge" homepage chips (live bun
 - `migrations/0007_seniors_card_copy.py` — exact-match replace of the stored four-bullet list; founder-edited cards untouched. Applied on preview; runs on Render at deploy.
 - `StartPage.js` — removed `.slice(0, 4)` on plan bullets so the 5th bullet shows; `/pricing` reduced-tier tiles never listed bullets (unchanged).
 - check.sh ALL CLEAR. GSC setup guide tabled by founder.
+
+## Sep 22 2026 — /start tiles: gate-driven features, symmetric Special Pricing box
+- Bug: Seniors rendered twice (main grid + special row). `mainTiers` now Premium/Standard/Base only; `SPECIAL_ORDER` = military, veteran, seniors, new_adult, hospice.
+- New `components/start/PlanTile.js` shared by both groups. Features from `tier_features` (ON only, canonical order), names via `t('home.tools.<key>.product')` fallback = admin label minus "(ABBR)". `beneficiaries` gate renders as the invited line instead of a bullet.
+- Gold check/bold = added over baseline (`HIGHLIGHT_BASELINE`: premium→standard, standard→base, base→none, specials→base). Legends: `start.plans.legend`, `start.plans.special.legend`.
+- Special Pricing framed box (`start-special-box`), tiles `w-[calc(33.333%-0.67rem)]` md / 50% sm / full phone, `justify-center`. Hospice = $0.00 tile, CTA "Start at no cost"/"Activate at no cost", no StripeNote, no "Billed" line. `start.hospice` field + link removed.
+- Copy: `start.plans.invited` "Unlimited beneficiary enrollment — free for your lifetime"; `start.family.text` default reworded (no "while you're alive"); `start.plans.special.sub`. Migration `0008_start_family_text.py` removes a `start.family.text` override still carrying the old phrase (journaled).
+- JSON-LD product descriptions now use the gate-driven names. check.sh ALL CLEAR. Not touched: /pricing (founder: /start only).
