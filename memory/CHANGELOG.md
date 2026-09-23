@@ -10620,3 +10620,6 @@ Verified false/stale and NOT acted on: "zero-knowledge" homepage chips (live bun
 - `FounderCard.js` gains `withSummary` (homepage only via `LandingContent`). When `founder_story_public && !isPWA()`: right column "Why I built CarryOn" + summary + "Learn more about the Founder →" text link (`founder-summary*` testids); the gold "Meet the Founder" pill is hidden. Stacks below the identity block under `md`. Installed PWA (or flag off) keeps the pill exactly as before.
 - Site Copy (trust section): `home.trust.founder.summary.title`, `home.trust.founder.summary`, `home.trust.founder.summary.cta`.
 - Preview `founder_story_public` toggled on for the check, restored to false afterwards.
+
+## Sep 23 2026 — Login hero: "Explore CarryOn" centered under the verbiage stack
+- `LoginPage.js` desktop hero: the scroll pill (`scroll-explore-desktop`) is wrapped in `pl-[calc(200px+2rem)] xl:pl-[calc(260px+2rem)]` (logo width + gap) so `mx-auto` centers it under the text column, not the whole left column. DOM order unchanged (Free Mode banner still sits above it). Verified pill center == text-stack center at 1920px.
