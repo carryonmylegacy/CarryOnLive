@@ -10623,3 +10623,8 @@ Verified false/stale and NOT acted on: "zero-knowledge" homepage chips (live bun
 
 ## Sep 23 2026 — Login hero: "Explore CarryOn" centered under the verbiage stack
 - `LoginPage.js` desktop hero: the scroll pill (`scroll-explore-desktop`) is wrapped in `pl-[calc(200px+2rem)] xl:pl-[calc(260px+2rem)]` (logo width + gap) so `mx-auto` centers it under the text column, not the whole left column. DOM order unchanged (Free Mode banner still sits above it). Verified pill center == text-stack center at 1920px.
+
+## Sep 23 2026 — Vercel Node.js 24 upgrade (email: Node 20 builds fail after Oct 1)
+- `frontend/package.json` → `"engines": {"node": "24.x"}` (Vercel reads this; overrides the dashboard). `.node-version` 20 → 24. `.yarnrc --ignore-engines true` already present so the Node-20 preview container is unaffected.
+- The auto `yarn install` refreshed a stale `yarn.lock` (+2252/−910; capacitor v6 leftovers, eslint/babel tooling). Verified: production build on Node 24.21.0 (`npx node@24`) compiled successfully twice (before and after the lock refresh); check.sh ALL CLEAR.
+- Founder still to click Vercel → carry-on-live → Settings → Build and Deployment → Node.js Version → 24.x (belt-and-braces; the engines pin already wins).
