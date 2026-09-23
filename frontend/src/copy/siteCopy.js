@@ -246,6 +246,9 @@ const PAGES_PHASE1 = [
         f('home.trust.reviews.text', 'Independent reviews card — text', 'Reviews there are collected and shown by Trustpilot, not by us — we can\'t edit or remove them.'),
         f('home.trust.reviews.read', 'Independent reviews card — read link', 'Read the reviews'),
         f('home.trust.reviews.write', 'Independent reviews card — write link', 'Write a review'),
+        f('home.trust.founder.summary.title', 'Founder card — summary heading (web only, hidden in the installed app)', 'Why I built CarryOn'),
+        f('home.trust.founder.summary', 'Founder card — summary of the Founder page (web only)', 'Three generations of Marines, inventors and aviators. A Naval Academy graduate who flew helicopters and fixed-wing aircraft, commanded a squadron, served as Naval Attaché to Brazil and retired a Navy Captain after 24 years — then realized, on a layover, that his own family\'s operating manual didn\'t exist. The story behind the name, the callsign, and why CarryOn is built like a flight plan.', { multiline: true }),
+        f('home.trust.founder.summary.cta', 'Founder card — summary link (web only)', 'Learn more about the Founder'),
         ...[
           ['1', 'Your files, locked per family', 'Scrambled before they’re stored, with a separate lock for every family. They aren’t casually accessible to CarryOn staff — privileged access is limited to defined administrative functions, controlled and audited — and every time a file is opened, we write down who did it and when.'],
           ['2', 'Your data is yours. Leave anytime.', 'Export everything whenever you want and cancel from your account. No hoops, no phone calls.'],

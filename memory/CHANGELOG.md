@@ -10615,3 +10615,8 @@ Verified false/stale and NOT acted on: "zero-knowledge" homepage chips (live bun
 - `services/audit.py::verify_audit_chain`: `stored_at` projected (excluded from canonical); anchor = `audit_chain_state.created_at`; pre-CAS rows → hash-only + fork census (`prev_hash` already claimed); links enforced from first CAS row (seeded from its own `prev_hash` when pre-CAS rows exist; genesis/window seed otherwise). New fields `link_enforced_from`, `pre_cas_rows`, `historical_forks`, `first_fork_at`. `ok` unchanged in meaning; forks never flip it.
 - `routes/admin/audit_chain_status.py` passes the new fields; `AuditIntegrityCard.js` renders `audit-integrity-precas` (+ `audit-integrity-forks`).
 - `tests/regression/test_audit_chain_precas.py` — 4 tests on scratch DB `carryon_audit_chain_test` (dropped after).
+
+## Sep 23 2026 — Homepage founder tile: web summary + link (PWA unchanged)
+- `FounderCard.js` gains `withSummary` (homepage only via `LandingContent`). When `founder_story_public && !isPWA()`: right column "Why I built CarryOn" + summary + "Learn more about the Founder →" text link (`founder-summary*` testids); the gold "Meet the Founder" pill is hidden. Stacks below the identity block under `md`. Installed PWA (or flag off) keeps the pill exactly as before.
+- Site Copy (trust section): `home.trust.founder.summary.title`, `home.trust.founder.summary`, `home.trust.founder.summary.cta`.
+- Preview `founder_story_public` toggled on for the check, restored to false afterwards.

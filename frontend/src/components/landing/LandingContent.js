@@ -203,7 +203,7 @@ const LandingContent = ({ navigateWithFade, footerInfo = DEFAULT_FOOTER, testIdS
             </p>
           </RevealSection>
           <RevealSection delay={0.05}>
-            <div className="mb-5"><FounderCard testIdSuffix={testIdSuffix} /></div>
+            <div className="mb-5"><FounderCard testIdSuffix={testIdSuffix} withSummary /></div>
           </RevealSection>
           <RevealSection delay={0.08}>
             <div className="mb-5"><LiveStats testIdSuffix={testIdSuffix} /></div>
