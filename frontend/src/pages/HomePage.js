@@ -231,7 +231,7 @@ const HomePage = () => {
                   /* Vertical (portrait) video for mobile PWA */
                   <div className="relative rounded-2xl overflow-hidden mx-auto" style={{ border: '1px solid rgba(212,175,55,0.15)', boxShadow: '0 8px 60px rgba(0,0,0,0.4), 0 0 40px rgba(212,175,55,0.05)', maxWidth: '360px' }}>
                     <div style={{ position: 'relative', paddingBottom: '177.78%', height: 0 }}>
-                      <YouTubeFacade videoId={activeVideoId} title="CarryOn — Family Preparedness" testId="homepage-video-home" />
+                      <YouTubeFacade videoId={activeVideoId} vertical title="CarryOn — Family Preparedness" testId="homepage-video-home" />
                     </div>
                   </div>
                 ) : (

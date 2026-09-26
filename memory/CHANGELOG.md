@@ -10628,3 +10628,10 @@ Verified false/stale and NOT acted on: "zero-knowledge" homepage chips (live bun
 - `frontend/package.json` → `"engines": {"node": "24.x"}` (Vercel reads this; overrides the dashboard). `.node-version` 20 → 24. `.yarnrc --ignore-engines true` already present so the Node-20 preview container is unaffected.
 - The auto `yarn install` refreshed a stale `yarn.lock` (+2252/−910; capacitor v6 leftovers, eslint/babel tooling). Verified: production build on Node 24.21.0 (`npx node@24`) compiled successfully twice (before and after the lock refresh); check.sh ALL CLEAR.
 - Founder still to click Vercel → carry-on-live → Settings → Build and Deployment → Node.js Version → 24.x (belt-and-braces; the engines pin already wins).
+
+## Sep 26 2026 — Video facade poster: real frame instead of YouTube's grey placeholder
+- Root cause: `i.ytimg.com/vi/<id>/maxresdefault.jpg` returns a 120×90 grey placeholder *image* (HTTP 404 body) when the size is missing — browsers render it and never fire `onError`, so the old fallback was dead code; `objectFit: cover` blew the placeholder up to fill the 9:16 frame.
+- `YouTubeFacade.js`: candidate ladder + `onLoad` check (`naturalWidth <= 120` → next). New `vertical` prop → `oar2` (true 9:16 poster, 720×1280) → `oardefault` → `maxresdefault` → `sddefault` → `hqdefault`; horizontal → `maxresdefault` → `sddefault` → `hqdefault`. Optional `poster` prop for a custom image. `data-testid="<testId>-poster"` on the img.
+- `vertical` passed on the three portrait embeds (LoginPage, HomePage, SpeakWithUsPage). Verified on preview: skip path (horizontal ID → maxres after skipping oar2/oardefault) and prod vertical ID 5fDJ9e7bEUo → oar2 720×1280 (family in field).
+- Preview `homepage_video_id_vertical` set to 5fDJ9e7bEUo (= prod / code default) — was the Rick Astley placeholder.
+- Deploy check (Sep 26): prod main bundle carries founder-summary, Explore-centering class, beneficiary line; Render serves ladder order + Seniors bullets → last push deployed.

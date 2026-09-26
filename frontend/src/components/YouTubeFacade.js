@@ -2,10 +2,27 @@ import { useState } from 'react';
 import { Play } from 'lucide-react';
 
 /* Click-to-load YouTube facade — the real player (and its ~1MB of scripts)
-   loads only after the visitor presses play. */
-export const YouTubeFacade = ({ videoId, title, testId }) => {
+   loads only after the visitor presses play.
+
+   Poster: YouTube answers a missing thumbnail with a 120×90 grey placeholder
+   *image* (HTTP 404 body the browser still renders), so `onError` never fires.
+   We walk a candidate ladder and skip anything that decodes ≤120px wide.
+   Vertical videos get the true 9:16 frame (`oar2`) first — `maxresdefault`
+   is a pillarboxed 16:9 for those. */
+const posterLadder = (videoId, vertical) => {
+  const base = `https://i.ytimg.com/vi/${videoId}/`;
+  const names = vertical
+    ? ['oar2', 'oardefault', 'maxresdefault', 'sddefault', 'hqdefault']
+    : ['maxresdefault', 'sddefault', 'hqdefault'];
+  return names.map(n => `${base}${n}.jpg`);
+};
+
+export const YouTubeFacade = ({ videoId, title, testId, vertical = false, poster }) => {
   const [playing, setPlaying] = useState(false);
-  const [thumb, setThumb] = useState(`https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`);
+  const [step, setStep] = useState(0);
+  const ladder = poster ? [poster, ...posterLadder(videoId, vertical)] : posterLadder(videoId, vertical);
+  const thumb = ladder[Math.min(step, ladder.length - 1)];
+  const next = () => setStep(s => (s + 1 < ladder.length ? s + 1 : s));
 
   if (playing) {
     return (
@@ -31,10 +48,12 @@ export const YouTubeFacade = ({ videoId, title, testId }) => {
     >
       <img
         src={thumb}
-        onError={() => setThumb(`https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`)}
+        onError={next}
+        onLoad={e => { if (e.currentTarget.naturalWidth <= 120) next(); }}
         alt=""
         loading="lazy"
         decoding="async"
+        data-testid={`${testId}-poster`}
         style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }}
       />
       <span aria-hidden="true" style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(11,18,33,0.1) 0%, rgba(11,18,33,0.35) 100%)' }} />

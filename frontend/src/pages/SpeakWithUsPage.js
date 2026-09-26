@@ -113,7 +113,7 @@ const SpeakWithUsPage = () => {
                 {showVertical ? (
                   <div className="relative rounded-2xl overflow-hidden mx-auto" style={{ border: '1px solid rgba(var(--gold-rgb), 0.15)', boxShadow: '0 8px 60px rgba(0,0,0,0.4)', maxWidth: '360px' }}>
                     <div style={{ position: 'relative', paddingBottom: '177.78%', height: 0 }}>
-                      <YouTubeFacade videoId={activeVideoId} title="CarryOn - The Family Continuity Platform (vertical)" testId="speak-video" />
+                      <YouTubeFacade videoId={activeVideoId} vertical title="CarryOn - The Family Continuity Platform (vertical)" testId="speak-video" />
                     </div>
                   </div>
                 ) : (
