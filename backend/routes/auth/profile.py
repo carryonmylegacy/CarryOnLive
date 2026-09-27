@@ -71,6 +71,9 @@ _PROFILE_ALLOWED_FIELDS = frozenset(
         "is_also_beneficiary",
         "partner_slug",
         "partner_company",
+        "special_status",
+        "eligible_tier",
+        "profile_pending",
     }
 )
 
@@ -189,6 +192,8 @@ async def get_me(current_user: dict = Depends(get_current_user)):
         "partner_slug": user_doc.get("partner_slug", "") or "",
         "partner_company": user_doc.get("partner_company", "") or "",
         "partner_rep": bool(user_doc.get("partner_rep_for")),
+        # Express signup: about-you + eligibility tiles still owed (/signup/continue gate)
+        "profile_pending": bool(user_doc.get("profile_pending", False)),
         # ── Trustee Mode (TMA) ────────────────────────────────────
         # When the current session was created via a trustee login,
         # `current_user` (resolved in utils.get_current_user) carries

@@ -4,14 +4,15 @@ import asyncio
 import uuid
 from datetime import datetime, timedelta, timezone
 
-from fastapi import HTTPException
+from fastapi import Depends, HTTPException
+from pydantic import BaseModel
 
 from config import db, logger
 from models import UserCreate
 from routes.admin.trial_policy import get_trial_days
 from routes.subscriptions.plans import PLAN_ORDER, age_eligible_plan_ids, get_subscription_settings
 from services.encryption import generate_estate_salt
-from utils import generate_otp, hash_password_async, send_otp_email
+from utils import generate_otp, get_current_user, hash_password_async, send_otp_email
 
 from ._core import (
     _user_response,
@@ -20,6 +21,76 @@ from ._core import (
     router,
     validate_username,
 )
+
+
+def _special_status_tier(special_statuses: list) -> str | None:
+    if any(s in special_statuses for s in ["military", "first_responder", "federal_agent"]):
+        return "military"
+    if "veteran" in special_statuses:
+        return "veteran"
+    if "hospice" in special_statuses:
+        return "hospice"
+    if "enterprise" in special_statuses:
+        return "enterprise"
+    return None
+
+
+async def derive_eligible_tier(date_of_birth: str | None, special_statuses: list, now: datetime) -> str | None:
+    """Same rule for signup and the post-Stripe continuation: age-based tier, overridden by a declared status."""
+    eligible_tier = None
+    if date_of_birth:
+        try:
+            dob = datetime.fromisoformat(date_of_birth)
+            age = (now - dob.replace(tzinfo=timezone.utc)).days // 365
+            eligible = age_eligible_plan_ids((await get_subscription_settings()).get("plans", []), age)
+            eligible_tier = eligible[0] if eligible else None
+        except (ValueError, TypeError):
+            pass
+    return _special_status_tier(special_statuses) or eligible_tier
+
+
+async def apply_b2b_code(user_id: str, email: str, b2b_code: str | None, special_statuses: list, now: datetime) -> None:
+    """Redeem an employer / B2B code exactly as signup does (discount, verified tier, free access at 100%)."""
+    if not (b2b_code and "enterprise" in special_statuses):
+        return
+    code_str = b2b_code.strip().upper()
+    code_doc = await db.b2b_codes.find_one({"code": code_str, "active": True}, {"_id": 0})
+    if not code_doc:
+        return
+    discount = code_doc.get("discount_percent", 100)
+    if code_doc.get("max_uses", 0) != 0 and code_doc["times_used"] >= code_doc["max_uses"]:
+        return
+    await db.users.update_one(
+        {"id": user_id},
+        {
+            "$set": {
+                "b2b_code": code_str,
+                "b2b_partner": code_doc.get("partner_name", ""),
+                "b2b_discount_percent": discount,
+                "verified_tier": "enterprise",
+            }
+        },
+    )
+    await db.b2b_codes.update_one({"code": code_str}, {"$inc": {"times_used": 1}})
+    await db.tier_verifications.insert_one(
+        {
+            "id": str(uuid.uuid4()),
+            "user_id": user_id,
+            "user_email": email,
+            "tier_requested": "enterprise",
+            "status": "approved",
+            "doc_type": "B2B Partner Code",
+            "notes": f"Code: {code_str} | Partner: {code_doc.get('partner_name', '')} | Discount: {discount}%",
+            "created_at": now.isoformat(),
+            "reviewed_at": now.isoformat(),
+        }
+    )
+    if discount >= 100:
+        await db.subscription_overrides.update_one(
+            {"user_id": user_id},
+            {"$set": {"user_id": user_id, "free_access": True}},
+            upsert=True,
+        )
 
 
 @router.post("/auth/register")  # pre-push-invariants: allow-public-mutation (public signup)
@@ -62,24 +133,10 @@ async def register(data: UserCreate):
     trial_days = await get_trial_days()
     trial_ends_at = (now + timedelta(days=trial_days)).isoformat()
 
-    eligible_tier = None
     special_statuses = data.special_status or []
-    if data.date_of_birth and data.role == "benefactor":
-        try:
-            dob = datetime.fromisoformat(data.date_of_birth)
-            age = (now - dob.replace(tzinfo=timezone.utc)).days // 365
-            eligible = age_eligible_plan_ids((await get_subscription_settings()).get("plans", []), age)
-            eligible_tier = eligible[0] if eligible else None
-        except (ValueError, TypeError):
-            pass
-    if any(s in special_statuses for s in ["military", "first_responder", "federal_agent"]):
-        eligible_tier = "military"
-    elif "veteran" in special_statuses:
-        eligible_tier = "veteran"
-    elif "hospice" in special_statuses:
-        eligible_tier = "hospice"
-    elif "enterprise" in special_statuses:
-        eligible_tier = "enterprise"
+    eligible_tier = await derive_eligible_tier(
+        data.date_of_birth if data.role == "benefactor" else None, special_statuses, now
+    )
 
     password_hash = await hash_password_async(data.password)
     user = {
@@ -121,6 +178,11 @@ async def register(data: UserCreate):
         user["preferred_plan"] = data.preferred_plan
     if data.landing_page:
         user["landing_page"] = str(data.landing_page)[:40]
+    # Express signup (one tile from a /start plan pick): the personal-details and
+    # eligibility tiles run at /signup/continue after Stripe, gated by this flag.
+    if data.signup_flow == "express":
+        user["profile_pending"] = True
+        user["signup_flow"] = "express"
     await db.users.insert_one(user)
 
     if user["role"] == "benefactor":
@@ -299,43 +361,7 @@ async def register(data: UserCreate):
         ]
         await db.checklists.insert_many(default_checklist)
 
-    if data.b2b_code and "enterprise" in special_statuses:
-        code_str = data.b2b_code.strip().upper()
-        code_doc = await db.b2b_codes.find_one({"code": code_str, "active": True}, {"_id": 0})
-        if code_doc:
-            discount = code_doc.get("discount_percent", 100)
-            if code_doc.get("max_uses", 0) == 0 or code_doc["times_used"] < code_doc["max_uses"]:
-                await db.users.update_one(
-                    {"id": user_id},
-                    {
-                        "$set": {
-                            "b2b_code": code_str,
-                            "b2b_partner": code_doc.get("partner_name", ""),
-                            "b2b_discount_percent": discount,
-                            "verified_tier": "enterprise",
-                        }
-                    },
-                )
-                await db.b2b_codes.update_one({"code": code_str}, {"$inc": {"times_used": 1}})
-                await db.tier_verifications.insert_one(
-                    {
-                        "id": str(uuid.uuid4()),
-                        "user_id": user_id,
-                        "user_email": data.email,
-                        "tier_requested": "enterprise",
-                        "status": "approved",
-                        "doc_type": "B2B Partner Code",
-                        "notes": f"Code: {code_str} | Partner: {code_doc.get('partner_name', '')} | Discount: {discount}%",
-                        "created_at": now.isoformat(),
-                        "reviewed_at": now.isoformat(),
-                    }
-                )
-                if discount >= 100:
-                    await db.subscription_overrides.update_one(
-                        {"user_id": user_id},
-                        {"$set": {"user_id": user_id, "free_access": True}},
-                        upsert=True,
-                    )
+    await apply_b2b_code(user_id, str(data.email), data.b2b_code, special_statuses, now)
 
     otp = generate_otp()
     await db.otps.update_one(
@@ -433,3 +459,55 @@ async def register(data: UserCreate):
         "username": username,
         "user_id": user_id,
     }
+
+
+class CompleteSignup(BaseModel):
+    middle_name: str | None = None
+    suffix: str | None = None
+    gender: str | None = None
+    date_of_birth: str | None = None
+    special_status: list | None = None
+    b2b_code: str | None = None
+
+
+@router.post("/auth/complete-signup")
+async def complete_signup(data: CompleteSignup, current_user: dict = Depends(get_current_user)):
+    """Express signup, part two — the personal-details + eligibility tiles the visitor skipped
+    to reach Stripe. Writes exactly what /auth/register would have: assembled name, gender,
+    DOB, statuses, the derived eligible_tier and any B2B code, then clears profile_pending."""
+    if current_user.get("role") != "benefactor":
+        raise HTTPException(status_code=403, detail="Only account owners complete signup here")
+    now = datetime.now(timezone.utc)
+    if data.date_of_birth:
+        try:
+            dob = datetime.fromisoformat(data.date_of_birth).replace(tzinfo=timezone.utc)
+        except (ValueError, TypeError):
+            raise HTTPException(status_code=400, detail="Date of birth is not valid")
+        if (now - dob).days // 365 < 18:
+            raise HTTPException(
+                status_code=400,
+                detail="CarryOn accounts are for adults 18+. Under 18? Ask a family member to invite you.",
+            )
+
+    user = await db.users.find_one({"id": current_user["id"]}, {"_id": 0, "first_name": 1, "last_name": 1, "email": 1})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    special_statuses = data.special_status or []
+    middle = (data.middle_name or "").strip() or None
+    suffix = (data.suffix or "").strip() or None
+    name_parts = [user.get("first_name", ""), middle, user.get("last_name", ""), suffix]
+    update = {
+        "name": " ".join(p for p in name_parts if p),
+        "middle_name": middle,
+        "suffix": suffix,
+        "gender": (data.gender or "").strip() or None,
+        "date_of_birth": data.date_of_birth or None,
+        "special_status": special_statuses,
+        "eligible_tier": await derive_eligible_tier(data.date_of_birth, special_statuses, now),
+        "profile_pending": False,
+        "profile_completed_at": now.isoformat(),
+    }
+    await db.users.update_one({"id": current_user["id"]}, {"$set": update})
+    await apply_b2b_code(current_user["id"], str(user.get("email", "")), data.b2b_code, special_statuses, now)
+    fresh = await db.users.find_one({"id": current_user["id"]}, {"_id": 0, "password": 0})
+    return {"ok": True, "eligible_tier": update["eligible_tier"], "user": _user_response(fresh, owns_estate=True)}

@@ -128,7 +128,9 @@ const QuickStartWizard = ({ forceOpen = false, onClose = () => {} }) => {
   // it only exists outside these portals.
   const inOpsPortal = typeof window !== 'undefined'
     && /^\/(admin|ops)(\/|$)/.test(window.location.pathname);
+  // Express signup: the about-you + eligibility tiles (/signup/continue) come first.
   const shouldRender = eligible
+    && !user?.profile_pending
     && !loading
     && progress
     && !progress.complete

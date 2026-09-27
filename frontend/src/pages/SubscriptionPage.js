@@ -321,7 +321,11 @@ const SubscriptionPage = () => {
         <SubscriberCelebration
           firstName={user?.first_name || (user?.name ? user.name.split(' ')[0] : '')}
           tierName={subCelebration.tierName}
-          onDismiss={() => setSubCelebration(null)}
+          onDismiss={() => {
+            setSubCelebration(null);
+            // Express signup: pick the signup back up where it left off (about-you + eligibility).
+            if (user?.profile_pending) navigate('/signup/continue?paid=1', { replace: true });
+          }}
         />
       )}
     </div>

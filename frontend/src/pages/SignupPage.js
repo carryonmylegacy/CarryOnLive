@@ -76,10 +76,13 @@ const readIntent = () => {
 };
 const CYCLE_WORD = { monthly: 'monthly', quarterly: 'quarterly', annual: 'annually' };
 
-const SignupPage = () => {
+const SignupPage = ({ mode = 'signup' }) => {
   const navigate = useNavigate();
   const { t } = useCopy();
-  const { verifyOtp, resendOtp } = useAuth();
+  const { verifyOtp, resendOtp, user, refreshUser, subscriptionStatus } = useAuth();
+  // 'continue' = /signup/continue — the tiles an express signup skipped, run after Stripe.
+  const isContinue = mode === 'continue';
+  const paidReturn = isContinue && new URLSearchParams(window.location.search).get('paid') === '1';
 
   const [step, setStep] = useState(0);
   const [direction, setDirection] = useState('right');
@@ -89,6 +92,7 @@ const SignupPage = () => {
   const scrollRef = useRef(null);
   // Express: arrived from a plan tile — one account tile, then straight to Stripe (founder, Sep 27 2026).
   const [expressIntent] = useState(() => {
+    if (mode === 'continue') return null;
     const i = readIntent();
     return i?.planId ? i : null;
   });
@@ -197,6 +201,12 @@ const SignupPage = () => {
   // CarryOn checkout intent exists — a /start plan pick always wins.
   const computeSteps = () => {
     if (expressIntent) return [{ id: 'express', label: 'Account', icon: Lock }];
+    if (isContinue) {
+      const steps = [{ id: 'name', label: 'About You', icon: User }];
+      if (isMinor) steps.push({ id: 'minor_blocked', label: 'Invitation Required', icon: Users });
+      else steps.push({ id: 'eligibility', label: 'Eligibility', icon: Shield });
+      return steps;
+    }
     const arrivedViaPartnerLanding = !!readPartnerSlug();
 
     const steps = [
@@ -228,7 +238,13 @@ const SignupPage = () => {
   const STEPS = computeSteps();
   const currentStep = STEPS[step] || STEPS[0];
   // Progress bar: the express tile shows checkout as a virtual second step.
-  const DISPLAY_STEPS = expressIntent ? [...STEPS, { id: 'checkout', label: 'Secure checkout', virtual: true }] : STEPS;
+  const DONE_STEPS = [{ id: 'account', label: 'Account', done: true }, { id: 'checkout', label: 'Secure checkout', done: true }];
+  const DISPLAY_STEPS = expressIntent
+    ? [...STEPS, { id: 'checkout', label: 'Secure checkout', virtual: true }]
+    : isContinue ? [...DONE_STEPS, ...STEPS] : STEPS;
+  // Index of the live step inside DISPLAY_STEPS (continue mode sits after the two finished steps).
+  const stepOffset = isContinue ? DONE_STEPS.length : 0;
+  const activeIdx = step + stepOffset;
   const isCredentialsTile = currentStep?.id === 'credentials' || currentStep?.id === 'express';
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -245,6 +261,16 @@ const SignupPage = () => {
     const t = setTimeout(() => setEntered(true), 150);
     return () => clearTimeout(t);
   }, []);
+
+  useEffect(() => {
+    if (!isContinue || !user) return;
+    // Already finished (or never an express signup): nothing left to collect here.
+    if (!user.profile_pending) { navigate('/dashboard', { replace: true }); return; }
+    // The login response carries only `name`; /auth/me carries the split fields.
+    const parts = (user.name || '').trim().split(/\s+/);
+    setFirstName(user.first_name || parts[0] || '');
+    setLastName(user.last_name || (parts.length > 1 ? parts[parts.length - 1] : '') || '');
+  }, [isContinue, user, navigate]);
 
   // On mount, hydrate the partner-code tile from anything the visitor
   // stashed when they hit `/p/:slug`. We attempt up to two sources:
@@ -282,6 +308,7 @@ const SignupPage = () => {
   const canAdvance = () => {
     const sid = currentStep?.id;
     if (sid === 'name') {
+      if (isContinue) return true; // names already on the account; this tile only adds middle/suffix/gender/DOB
       if (!firstName.trim() || !lastName.trim()) return false;
       return true;
     }
@@ -340,8 +367,31 @@ const SignupPage = () => {
         return;
       }
       goTo(step + 1);
+    } else if (isContinue) {
+      handleCompleteSignup();
     } else {
       handleSignup();
+    }
+  };
+
+  // Continuation of an express signup: save the skipped tiles with the same rules /auth/register applies.
+  const handleCompleteSignup = async () => {
+    setLoading(true);
+    try {
+      await apiClient.post(`${API_URL}/auth/complete-signup`, {
+        middle_name: middleName || null,
+        suffix: suffix === 'none' ? null : suffix,
+        gender: gender === 'not_selected' ? null : gender,
+        date_of_birth: dateOfBirth || null,
+        special_status: specialStatus.length > 0 ? specialStatus : null,
+        b2b_code: specialStatus.includes('enterprise') ? b2bCodeSignup : null,
+      }, { headers: { Authorization: `Bearer ${localStorage.getItem('carryon_token')}` } });
+      if (refreshUser) await refreshUser();
+      navigate('/dashboard', { replace: true });
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Could not save your details');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -468,6 +518,7 @@ const SignupPage = () => {
         // everyone else is tagged with the first page of their visit ("home", "pricing", ...).
         landing_page: entryLandingPage(),
         ...(JSON.parse(sessionStorage.getItem('carryon_signup_intent') || '{}')),
+        ...(expressIntent ? { signup_flow: 'express' } : {}),
       });
       // Apr 27, 2026 — when admin has flipped `signup_otp_disabled` ON in the
       // founder portal, /auth/register returns an access_token + user object
@@ -655,9 +706,11 @@ const SignupPage = () => {
       <nav className="fixed top-0 w-full z-50" style={{ borderBottom: '1px solid rgba(var(--gold-rgb), 0.08)', background: 'rgba(8,14,26,0.97)', paddingTop: 'env(safe-area-inset-top, 0px)' }}>
         <div className="max-w-[1400px] mx-auto px-6 lg:px-10 h-16 flex items-center justify-between">
           <LogoHome testId="signup-logo" src={partnerLandingLogo || "/carryon-logo.png"} alt={partnerLandingCompany || "CarryOn"} />
-          <Link to="/login" className="text-[#d4af37] text-sm font-semibold hover:text-[#fcd34d] transition-colors flex items-center gap-1">
-            Sign In <ChevronRight className="w-3.5 h-3.5" />
-          </Link>
+          {!isContinue && (
+            <Link to="/login" className="text-[#d4af37] text-sm font-semibold hover:text-[#fcd34d] transition-colors flex items-center gap-1">
+              Sign In <ChevronRight className="w-3.5 h-3.5" />
+            </Link>
+          )}
         </div>
       </nav>
 
@@ -687,11 +740,11 @@ const SignupPage = () => {
                 </div>
                 <div className="flex-1 pt-2">
                   <h1 className="text-5xl font-bold text-white leading-[1.08] mb-3" style={{ fontFamily: 'var(--sans)' }}>
-                    {t('signup.hero.join', { company: partnerLandingCompany || 'CarryOn' })}
-                    <span className="block text-[#d4af37] mt-1">{t('signup.hero.h1b')}</span>
+                    {isContinue ? t('signup.continue.join', { first: firstName || user?.first_name || '' }) : t('signup.hero.join', { company: partnerLandingCompany || 'CarryOn' })}
+                    <span className="block text-[#d4af37] mt-1">{t(isContinue ? 'signup.continue.h1b' : 'signup.hero.h1b')}</span>
                   </h1>
                   <p className="text-[#7b879e] text-base max-w-sm leading-relaxed mb-6">
-                    {t('signup.hero.sub')}
+                    {t(isContinue ? 'signup.continue.sub' : 'signup.hero.sub')}
                   </p>
 
                   <div className="flex items-center gap-4">
@@ -712,9 +765,9 @@ const SignupPage = () => {
               transition: 'opacity 0.6s ease 0.1s',
             }}>
               <h1 className="text-xl sm:text-2xl font-bold text-white leading-tight mb-0.5" style={{ fontFamily: 'var(--sans)' }}>
-                {t('signup.hero.join', { company: partnerLandingCompany || 'CarryOn' })} <span className="text-[#d4af37]">{t('signup.hero.h1b')}</span>
+                {isContinue ? t('signup.continue.join', { first: firstName || user?.first_name || '' }) : t('signup.hero.join', { company: partnerLandingCompany || 'CarryOn' })} <span className="text-[#d4af37]">{t(isContinue ? 'signup.continue.h1b' : 'signup.hero.h1b')}</span>
               </h1>
-              <p className="text-[#6b7a90] text-xs">{t('signup.hero.sub')}</p>
+              <p className="text-[#6b7a90] text-xs">{t(isContinue ? 'signup.continue.sub' : 'signup.hero.sub')}</p>
             </div>
 
             {/* RIGHT — Wizard Card */}
@@ -737,17 +790,17 @@ const SignupPage = () => {
                     {DISPLAY_STEPS.map((s, i) => (
                       <div key={s.id} className="flex items-center flex-1 min-w-0">
                         <button
-                          onClick={() => { if (i < step) goTo(i); }}
+                          onClick={() => { if (i >= stepOffset && i < activeIdx) goTo(i - stepOffset); }}
                           className="flex-shrink-0"
-                          style={{ cursor: i < step ? 'pointer' : 'default' }}
+                          style={{ cursor: i >= stepOffset && i < activeIdx ? 'pointer' : 'default' }}
                           data-testid={`signup-step-${i}`}
                         >
                           <div className={`${DISPLAY_STEPS.length > 8 ? 'w-6 h-6 text-xs' : 'w-7 h-7 text-sm'} sm:w-9 sm:h-9 sm:text-base rounded-full flex items-center justify-center font-bold transition-all duration-500`} style={{
-                            background: i <= step ? 'linear-gradient(135deg, #d4af37, #b8962e)' : 'rgba(255,255,255,0.05)',
-                            color: i <= step ? '#080e1a' : '#3a4a63',
-                            boxShadow: i === step ? '0 0 16px rgba(var(--gold-rgb), 0.4)' : 'none',
+                            background: i <= activeIdx ? 'linear-gradient(135deg, #d4af37, #b8962e)' : 'rgba(255,255,255,0.05)',
+                            color: i <= activeIdx ? '#080e1a' : '#3a4a63',
+                            boxShadow: i === activeIdx ? '0 0 16px rgba(var(--gold-rgb), 0.4)' : 'none',
                           }}>
-                            {s.virtual ? <CreditCard className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : i + 1}
+                            {s.done ? <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4" strokeWidth={3} /> : s.virtual ? <CreditCard className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : i + 1}
                           </div>
                         </button>
                         {s.virtual && (
@@ -755,13 +808,21 @@ const SignupPage = () => {
                         )}
                         {i < DISPLAY_STEPS.length - 1 && (
                           <div className={`flex-1 h-[2px] ${DISPLAY_STEPS.length > 8 ? 'mx-0.5' : 'mx-1'} sm:mx-1.5 rounded-full transition-all duration-700 min-w-[4px]`} style={{
-                            background: i < step ? '#d4af37' : 'rgba(255,255,255,0.06)',
+                            background: i < activeIdx ? '#d4af37' : 'rgba(255,255,255,0.06)',
                           }} />
                         )}
                       </div>
                     ))}
                   </div>
-                  <p className="text-[#525c72] text-xs mb-3">{t('signup.step_counter', { n: step + 1, total: DISPLAY_STEPS.length })}</p>
+                  <p className="text-[#525c72] text-xs mb-3">{t('signup.step_counter', { n: activeIdx + 1, total: DISPLAY_STEPS.length })}</p>
+                  {isContinue && paidReturn && (
+                    <div className="flex items-center gap-2 rounded-xl px-3.5 py-2.5 mb-2 text-sm font-semibold text-[#34d399]"
+                      style={{ background: 'rgba(16,185,129,0.10)', border: '1px solid rgba(16,185,129,0.35)' }}
+                      data-testid="signup-continue-paid">
+                      <Check className="w-4 h-4 flex-shrink-0" strokeWidth={3} />
+                      <span>{t('signup.continue.paid', { plan: subscriptionStatus?.plan_name || 'Your plan' })}</span>
+                    </div>
+                  )}
                   {expressIntent && (
                     <div className="flex flex-col items-start gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-3 rounded-xl px-3.5 py-2.5 mb-2"
                       style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.3)' }}
@@ -783,11 +844,30 @@ const SignupPage = () => {
                   <div ref={scrollRef} className="flex-1 overflow-auto scrollbar-hide px-3 pt-2" style={getSlideStyle()}>
                     {/* STEP 0: Name */}
                     {currentStep?.id === 'name' && (
-                      <div className="space-y-4 sm:space-y-5">
+                      <div className="space-y-4 sm:space-y-5" data-testid={isContinue ? 'signup-continue-name-step' : 'signup-name-step'}>
                         <div>
-                          <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'var(--sans)' }}>{t('signup.name.title')}</h2>
+                          <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'var(--sans)' }}>{t(isContinue ? 'signup.continue.name_title' : 'signup.name.title')}</h2>
                           <p className="text-[#6b7a90] text-sm">{t('signup.name.sub')}</p>
                         </div>
+                        {isContinue && (
+                          <div className="grid grid-cols-3 gap-4">
+                            <div className="col-span-2 space-y-2">
+                              <Label htmlFor="signup-middlename" className="text-[#7b879e] text-sm font-medium">Middle Name</Label>
+                              <Input id="signup-middlename" type="text" value={middleName} onChange={(e) => setMiddleName(e.target.value)}
+                                autoComplete="additional-name" placeholder="William" className={inputClass} data-testid="signup-middlename-input" autoFocus />
+                            </div>
+                            <div className="space-y-2">
+                              <Label className="text-[#7b879e] text-sm font-medium">Suffix</Label>
+                              <Select value={suffix} onValueChange={setSuffix}>
+                                <SelectTrigger className={selectClass} data-testid="signup-suffix-select"><SelectValue placeholder="None" /></SelectTrigger>
+                                <SelectContent className="bg-[var(--bg2)] border-[var(--b)] text-[var(--t)]">
+                                  {suffixOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                        )}
+                        {!isContinue && (<>
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-2">
                             <Label htmlFor="signup-firstname" className="text-[#7b879e] text-sm font-medium">First Name <span className="text-red-400">*</span></Label>
@@ -819,6 +899,7 @@ const SignupPage = () => {
                             </Select>
                           </div>
                         </div>
+                        </>)}
                         <div className="grid grid-cols-2 gap-3">
                           <div className="space-y-1.5">
                             <Label className="text-[#7b879e] text-sm font-medium">Gender</Label>
@@ -1167,6 +1248,8 @@ const SignupPage = () => {
                       // "Back" path. Empty slot keeps the primary CTA
                       // right-aligned via flex justify-between.
                       <span />
+                    ) : isContinue && step === 0 ? (
+                      <span />
                     ) : step > 0 ? (
                       <button onClick={() => goTo(step - 1)}
                         className="flex items-center gap-2 text-[#6b7a90] text-sm font-medium hover:text-white transition-colors"
@@ -1188,7 +1271,11 @@ const SignupPage = () => {
                       data-testid="signup-next-btn"
                     >
                       {loading ? (
-                        <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Creating...</>
+                        <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> {isContinue ? 'Saving...' : 'Creating...'}</>
+                      ) : isContinue && step === STEPS.length - 1 && currentStep?.id !== 'minor_blocked' ? (
+                        currentStep?.id === 'eligibility' && specialStatus.length === 0
+                          ? <>{t('signup.continue.cta_none')} <ChevronRight className="w-4 h-4 ml-1" /></>
+                          : <>{t('signup.continue.cta')} <ChevronRight className="w-4 h-4 ml-1" /></>
                       ) : applyingPartnerCode ? (
                         <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Applying...</>
                       ) : usernameChecking && isCredentialsTile ? (

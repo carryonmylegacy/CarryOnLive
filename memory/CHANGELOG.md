@@ -1,6 +1,15 @@
 # CarryOn — Changelog
 
 
+## Sep 27, 2026 — Express signup: post-Stripe continuation verified end-to-end + 3 fixes — VERIFIED, NOT PUSHED
+
+- **Verified on preview (Playwright + API):** `/start?plan=standard` → `checkout-standard` → one express tile (plan strip "Standard · $12.79/mo · billed annually") → account → `/start?resume=checkout` → `checkout.stripe.com/c/pay/cs_live_…` (redirect only). Return: `/dashboard` and login both route to `/signup/continue` (`user.profile_pending` gate in `ProtectedRoute`); `/subscription` stays reachable (Stripe cancel/return target); `?paid=1` shows the green "Your plan is active" banner; About You (middle/suffix/gender/DOB) → Eligibility → **Finish setup** → `POST /auth/complete-signup` writes `name`, `gender`, `date_of_birth`, `special_status`, `eligible_tier` (veteran → `veteran`), clears `profile_pending`, stamps `profile_completed_at` → `/dashboard` with the QuickStart wizard — identical foundation to a standard signup. Minor DOB → 400 as in `/auth/register`. Direct `/signup` still shows the 3-step flow.
+- **Fix 1 — QuickStart waited its turn.** `QuickStartWizard` popped on `/subscription` for an express user *before* the About-You/Eligibility tiles; now `shouldRender` also requires `!user.profile_pending`, so onboarding starts only after the signup continuation is saved.
+- **Fix 2 — Login → continue was a dead end.** The login/OTP response (`UserResponse`) carries `name` but not `first_name`/`last_name`; the About-You tile in continue mode gated its Continue button on those two hidden fields → disabled button + "enter your first and last name" toast with no inputs. Continue mode now never gates on names (they are already on the account and the backend reads them from the DB) and seeds the "Welcome, {first}" heading from `name` when the split fields are absent.
+- **Fix 3 — Revisiting `/signup/continue` after completion** re-showed the tiles; now redirects to `/dashboard` when `profile_pending` is false.
+- **Founder decision owed:** an express user who reaches the DOB tile *after paying* and enters an under-18 birthday hits the same "Invitation Required" wall as a standard signup (backend rejects, `profile_pending` stays true → gated everywhere except `/subscription`). Standard signups catch this before payment; express cannot. Options: keep (refund manually), or let the tile through and flag the account for Ops review. Not changed.
+- Hygiene: all QA accounts purged via `services.erasure` (incl. three stale `qa-landing-*` leftovers); `check.sh` ALL CLEAR (376 tests).
+
 ## Sep 20–21, 2026 — Public-site consistency / trust / claims / SEO cleanup (iteration_213) — VERIFIED, NOT PUSHED
 
 - **Sep 21 follow-up (founder):** homepage security sub-heading still said "support staff who cannot open your files" → now "privileged staff access restricted to defined administrative tasks — controlled and audited". Site-wide grep: no public page says staff categorically "cannot/can't open" files (only the readiness-score note that the *score* never opens a file, which is about the algorithm). Phrase added to the `public_claims_cleanup_v1` retired list.

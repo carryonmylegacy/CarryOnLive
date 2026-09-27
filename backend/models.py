@@ -50,6 +50,8 @@ class UserCreate(BaseModel):
     # Acquisition-page tag (/benefactor): plan the visitor saw + page they came from
     preferred_plan: Optional[str] = None
     landing_page: Optional[str] = None
+    # "express" = one-tile signup from a /start plan pick; the skipped tiles run after Stripe
+    signup_flow: Optional[str] = None
 
 
 class UserLogin(BaseModel):
@@ -86,6 +88,8 @@ class UserResponse(BaseModel):
     # Empty string for direct consumer signups (no behaviour change).
     partner_slug: str = ""
     partner_company: str = ""
+    # Express signup: personal details + eligibility still to be collected (/signup/continue)
+    profile_pending: bool = False
     # Trustee Mode (TMA) — only present on the response when the
     # session was created via a trustee login. The frontend uses
     # `trustee_mode` to render the persistent banner and grey out

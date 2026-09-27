@@ -525,6 +525,13 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 
   const isOnBeneficiaryRoute = currentPath.startsWith('/beneficiary');
   const isOnCreateEstate = currentPath === '/create-estate';
+
+  // Express signup gate: until the post-Stripe continuation tiles are saved, every
+  // benefactor page routes to /signup/continue (Stripe returns to /subscription first).
+  if (user?.profile_pending && user?.role === 'benefactor'
+    && currentPath !== '/signup/continue' && !currentPath.startsWith('/subscription')) {
+    return <Navigate to="/signup/continue" replace />;
+  }
   const isOnSettings = currentPath === '/settings' || currentPath === '/security-settings';
   const needsSubscription = subscriptionStatus?.needs_subscription === true
     && subscriptionStatus?.trial?.trial_active !== true
@@ -658,6 +665,12 @@ function AppRoutes() {
         <PublicRoute>
           <SignupPage />
         </PublicRoute>
+      } />
+      {/* Express signup, part two — the tiles skipped to reach Stripe (gated by user.profile_pending). */}
+      <Route path="/signup/continue" element={
+        <ProtectedRoute allowedRoles={['benefactor']}>
+          <SignupPage mode="continue" />
+        </ProtectedRoute>
       } />
       
       {/* Legal Pages - Public */}

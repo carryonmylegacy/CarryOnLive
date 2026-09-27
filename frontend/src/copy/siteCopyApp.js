@@ -65,6 +65,15 @@ export const PAGES_APP = [
         f('signup.express.step2', 'Second step label in the progress bar', 'Secure checkout'),
         f('signup.express.cta', 'Button', 'Create account → checkout'),
       ] },
+      { key: 'continue', label: 'After Stripe — finish the express signup (/signup/continue)', fields: [
+        f('signup.continue.join', 'Headline — line 1 ({first} = first name)', 'Welcome, {first}.'),
+        f('signup.continue.h1b', 'Headline — line 2 (gold)', 'Let’s finish setting up.'),
+        f('signup.continue.sub', 'Sub-headline', 'Two quick steps — the same details every CarryOn account starts with.'),
+        f('signup.continue.paid', 'Green strip after a paid return ({plan})', '{plan} is active — thank you. Stripe has emailed your receipt.'),
+        f('signup.continue.name_title', 'About-you tile heading', 'A few details about you'),
+        f('signup.continue.cta', 'Finish button', 'Finish setup'),
+        f('signup.continue.cta_none', 'Finish button when no eligibility is selected', 'None apply — Finish setup'),
+      ] },
       { key: 'partner', label: 'Step: enterprise access code', fields: [
         f('signup.partner.badge', 'Small badge', 'Last step'),
         f('signup.partner.title', 'Heading', 'Enterprise Access Code'),
