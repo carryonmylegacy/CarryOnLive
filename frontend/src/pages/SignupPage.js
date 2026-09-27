@@ -21,6 +21,7 @@ import apiClient from '../utils/apiClient';
 import { API_URL } from '../config';
 import { LogoHome } from '../components/landing/LogoHome';
 import { entryLandingPage } from '../utils/funnelTelemetry';
+import { readPartnerSlug, readPartnerCode, clearPartnerStash } from '../utils/partnerStash';
 
 const suffixOptions = [
   { value: 'none', label: 'None' },
@@ -182,10 +183,10 @@ const SignupPage = () => {
   // We read the WL marker straight from localStorage. It's a one-shot
   // sync read — cheap on every render and avoids a useState round-trip
   // that would briefly flash the wrong step set on first paint.
+  // `readPartnerSlug` drops the marker when it is stale (>24h) or when a
+  // CarryOn checkout intent exists — a /start plan pick always wins.
   const computeSteps = () => {
-    const arrivedViaPartnerLanding = (() => {
-      try { return !!localStorage.getItem('cy_partner_slug'); } catch { return false; }
-    })();
+    const arrivedViaPartnerLanding = !!readPartnerSlug();
 
     const steps = [
       { id: 'credentials', label: 'Login', icon: Lock },
@@ -240,19 +241,16 @@ const SignupPage = () => {
   //      name so the "wrong code? confirm with X" error tile is
   //      personalized even before they enter anything.
   useEffect(() => {
-    try {
-      const stashedCode = localStorage.getItem('cy_partner_code');
-      if (stashedCode) setPartnerCodeInput(stashedCode);
-      const stashedSlug = localStorage.getItem('cy_partner_slug');
-      if (stashedSlug) {
-        apiClient.get(`${API_URL}/public/partners/${stashedSlug}`)
-          .then(r => {
-            setPartnerLandingCompany(r.data?.company_name || '');
-            setPartnerLandingLogo(r.data?.logo_data_url || '');
-          })
-          .catch(() => { /* partner deactivated since landing — silent */ });
-      }
-    } catch { /* private mode → skip */ }
+    const stashedSlug = readPartnerSlug();
+    if (!stashedSlug) return;
+    const stashedCode = readPartnerCode();
+    if (stashedCode) setPartnerCodeInput(stashedCode);
+    apiClient.get(`${API_URL}/public/partners/${stashedSlug}`)
+      .then(r => {
+        setPartnerLandingCompany(r.data?.company_name || '');
+        setPartnerLandingLogo(r.data?.logo_data_url || '');
+      })
+      .catch(() => { /* partner deactivated since landing — silent */ });
   }, []);
 
   const goTo = (nextStep) => {
@@ -373,7 +371,7 @@ const SignupPage = () => {
     // skipped the optional code tile. Awaited BEFORE the reload below
     // kills in-flight requests. Best-effort — never blocks signup.
     try {
-      const slug = localStorage.getItem('cy_partner_slug');
+      const slug = readPartnerSlug();
       if (slug && !partnerCodeApplied) {
         const token = localStorage.getItem('carryon_token');
         if (token) {
@@ -387,11 +385,9 @@ const SignupPage = () => {
     } catch { /* attribution is best-effort */ }
     // Clear partner stash so a future signup on the same device
     // doesn't accidentally inherit it.
-    try {
-      localStorage.removeItem('cy_partner_code');
-      localStorage.removeItem('cy_partner_slug');
-    } catch { /* ignore */ }
-    navigate('/dashboard');
+    clearPartnerStash();
+    // A plan picked on /start still goes straight to Stripe after the code tile.
+    navigate(postSignupPath());
     // Force a fresh hydrate so AuthContext + feature gates pick up
     // the partner overrides we just attached to the user record.
     window.location.reload();

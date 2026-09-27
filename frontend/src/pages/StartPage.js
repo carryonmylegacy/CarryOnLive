@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import { useCopy, renderCopy } from '../copy/CopyContext';
 import { LogoHome } from '../components/landing/LogoHome';
 import { PlanTile } from '../components/start/PlanTile';
+import { clearPartnerStash } from '../utils/partnerStash';
 
 const CYCLE_LABELS = { monthly: 'Monthly', quarterly: 'Quarterly', annual: 'Annual' };
 const CYCLE_SAVINGS = { monthly: null, quarterly: '10% off', annual: '20% off' };
@@ -119,6 +120,8 @@ const StartPage = () => {
   const handleCheckout = async (planId, cycle = selectedCycle) => {
     if (!user) {
       // Store intent and redirect to signup; SignupPage returns to /start?resume=checkout.
+      // A CarryOn plan pick outranks any white-label landing visited earlier on this device.
+      clearPartnerStash();
       sessionStorage.setItem(INTENT_KEY, JSON.stringify({ planId, cycle }));
       const partnerCode = sessionStorage.getItem('carryon_partner_code');
       const signupUrl = partnerCode ? `/signup?redirect=start&code=${partnerCode}` : '/signup?redirect=start';
@@ -312,6 +315,7 @@ const StartPage = () => {
             </ul>
             <button
               onClick={() => {
+                clearPartnerStash();
                 const partnerCode = sessionStorage.getItem('carryon_partner_code');
                 navigate(partnerCode ? `/signup?code=${partnerCode}` : '/signup');
               }}

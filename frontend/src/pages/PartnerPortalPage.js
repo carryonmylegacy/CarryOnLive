@@ -24,9 +24,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { toast } from '../utils/toast';
 import { haptics } from '../utils/haptics';
 import { API_URL } from '../config';
-
-const PARTNER_CODE_KEY = 'cy_partner_code';
-const PARTNER_SLUG_KEY = 'cy_partner_slug';
+import { stashPartner } from '../utils/partnerStash';
 
 const PartnerPortalPage = () => {
   const { slug } = useParams();
@@ -82,11 +80,9 @@ const PartnerPortalPage = () => {
         // so we stash the slug and let the onboarding step resolve
         // the code by re-fetching partner info post-signup OR by
         // letting the user paste the code their partner shared.
-        try {
-          localStorage.setItem(PARTNER_SLUG_KEY, data.slug);
-          // Clear any stale code from a prior partner landing.
-          localStorage.removeItem(PARTNER_CODE_KEY);
-        } catch { /* private mode → ignore */ }
+        // Time-stamped: the signup page ignores it after 24h or once a
+        // CarryOn plan is picked on /start.
+        stashPartner(data.slug);
       } catch (err) {
         if (!alive) return;
         setError(err.response?.status === 404 ? 'not_found' : 'load_failed');

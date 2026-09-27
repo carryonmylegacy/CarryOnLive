@@ -10635,3 +10635,15 @@ Verified false/stale and NOT acted on: "zero-knowledge" homepage chips (live bun
 - `vertical` passed on the three portrait embeds (LoginPage, HomePage, SpeakWithUsPage). Verified on preview: skip path (horizontal ID → maxres after skipping oar2/oardefault) and prod vertical ID 5fDJ9e7bEUo → oar2 720×1280 (family in field).
 - Preview `homepage_video_id_vertical` set to 5fDJ9e7bEUo (= prod / code default) — was the Rick Astley placeholder.
 - Deploy check (Sep 26): prod main bundle carries founder-summary, Explore-centering class, beneficiary line; Render serves ladder order + Seniors bullets → last push deployed.
+
+## Sep 27 2026 — White-label signup branding leaked into CarryOn's /start funnel
+- Root cause: `/p/:slug` stashed `cy_partner_slug` in localStorage with no expiry; only a completed signup cleared it. Any later `/start` → plan tile / Explore on the same device rendered the partner-branded signup (logo, "Join <Partner>", Enterprise Code tile instead of Eligibility) and `finishToDashboard` sent the visitor to `/dashboard`, skipping the Stripe hand-off.
+- New `utils/partnerStash.js`: `stashPartner` (stamps `cy_partner_at`), `readPartnerSlug` (null + self-clears when >24h old or a `carryon_checkout_intent` exists), `readPartnerCode`, `clearPartnerStash`.
+- `StartPage`: plan tile (logged-out) and Explore door call `clearPartnerStash()` — CarryOn entry wins. `SignupPage`: steps + logo/company hydration go through `readPartnerSlug`; `finishToDashboard` → `postSignupPath()` (Stripe resume if an intent exists). `PartnerPortalPage` → `stashPartner`.
+- Verified on preview: /p/harbor-test → /signup still Harbor-branded; /start → Explore → CarryOn; stale stash + plan tile → CarryOn + intent stored.
+
+## Sep 27 2026 — White-label signup branding leaked into CarryOn's /start funnel
+- Root cause: `/p/:slug` stashed `cy_partner_slug` in localStorage with no expiry; only a completed signup cleared it. Any later `/start` → plan tile / Explore on the same device rendered the partner-branded signup (logo, "Join <Partner>", Enterprise Code tile instead of Eligibility) and `finishToDashboard` sent the visitor to `/dashboard`, skipping the Stripe hand-off.
+- New `utils/partnerStash.js`: `stashPartner` (stamps `cy_partner_at`), `readPartnerSlug` (null + self-clears when >24h old or a `carryon_checkout_intent` exists), `readPartnerCode`, `clearPartnerStash`.
+- `StartPage`: plan tile (logged-out) and Explore door call `clearPartnerStash()` — CarryOn entry wins. `SignupPage`: steps + logo/company hydration go through `readPartnerSlug`; `finishToDashboard` → `postSignupPath()` (Stripe resume if an intent exists). `PartnerPortalPage` → `stashPartner`.
+- Verified on preview: /p/harbor-test → /signup still Harbor-branded; /start → Explore → CarryOn; stale stash + plan tile → CarryOn + intent stored.
