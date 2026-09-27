@@ -11,6 +11,7 @@ from config import db, logger
 from models import UserCreate
 from routes.admin.trial_policy import get_trial_days
 from routes.subscriptions.plans import PLAN_ORDER, age_eligible_plan_ids, get_subscription_settings
+from services.audit import log_audit_event
 from services.encryption import generate_estate_salt
 from utils import generate_otp, get_current_user, hash_password_async, send_otp_email
 
@@ -478,16 +479,15 @@ async def complete_signup(data: CompleteSignup, current_user: dict = Depends(get
     if current_user.get("role") != "benefactor":
         raise HTTPException(status_code=403, detail="Only account owners complete signup here")
     now = datetime.now(timezone.utc)
+    is_minor = False
     if data.date_of_birth:
         try:
             dob = datetime.fromisoformat(data.date_of_birth).replace(tzinfo=timezone.utc)
         except (ValueError, TypeError):
             raise HTTPException(status_code=400, detail="Date of birth is not valid")
-        if (now - dob).days // 365 < 18:
-            raise HTTPException(
-                status_code=400,
-                detail="CarryOn accounts are for adults 18+. Under 18? Ask a family member to invite you.",
-            )
+        # /auth/register blocks under-18 before payment. Here the visitor has already paid,
+        # so (founder decision, Sep 27 2026) we let them through and flag the account for Ops.
+        is_minor = (now - dob).days // 365 < 18
 
     user = await db.users.find_one({"id": current_user["id"]}, {"_id": 0, "first_name": 1, "last_name": 1, "email": 1})
     if not user:
@@ -507,7 +507,52 @@ async def complete_signup(data: CompleteSignup, current_user: dict = Depends(get
         "profile_pending": False,
         "profile_completed_at": now.isoformat(),
     }
+    if is_minor:
+        update["ops_review"] = await _flag_under18_after_payment(
+            current_user["id"], update["name"], str(user.get("email", "")), data.date_of_birth, now
+        )
     await db.users.update_one({"id": current_user["id"]}, {"$set": update})
     await apply_b2b_code(current_user["id"], str(user.get("email", "")), data.b2b_code, special_statuses, now)
     fresh = await db.users.find_one({"id": current_user["id"]}, {"_id": 0, "password": 0})
     return {"ok": True, "eligible_tier": update["eligible_tier"], "user": _user_response(fresh, owns_estate=True)}
+
+
+async def _flag_under18_after_payment(user_id: str, name: str, email: str, dob: str, now: datetime) -> dict:
+    """Open a high-priority Ops escalation for a paid express signup whose DOB says under 18."""
+    sub = await db.user_subscriptions.find_one(
+        {"user_id": user_id}, {"_id": 0, "plan_id": 1, "status": 1, "billing_cycle": 1}
+    )
+    plan_line = (
+        f"{sub.get('plan_id')} · {sub.get('billing_cycle')} · {sub.get('status')}"
+        if sub
+        else "no subscription record yet (trial)"
+    )
+    escalation = {
+        "id": str(uuid.uuid4()),
+        "subject": f"Under-18 birthday entered after checkout — {email}",
+        "description": (
+            f"{name or email} completed the express signup continuation with date of birth {dob} (under 18). "
+            f"Subscription: {plan_line}. CarryOn accounts are for adults 18+; decide whether to refund and close, "
+            f"convert to a beneficiary invitation, or clear the flag."
+        ),
+        "priority": "high",
+        "related_type": "user",
+        "related_id": user_id,
+        "status": "open",
+        "created_by": "system",
+        "created_by_name": "CarryOn (automatic)",
+        "created_at": now.isoformat(),
+    }
+    await db.escalations.insert_one(escalation)
+    await log_audit_event(
+        actor_id=user_id,
+        actor_email=email,
+        actor_role="benefactor",
+        action="signup_under18_flagged",
+        category="operations",
+        resource_type="escalation",
+        resource_id=escalation["id"],
+        details={"date_of_birth": dob, "flow": "express_continue"},
+        severity="warning",
+    )
+    return {"reason": "under_18_after_payment", "flagged_at": now.isoformat(), "escalation_id": escalation["id"]}

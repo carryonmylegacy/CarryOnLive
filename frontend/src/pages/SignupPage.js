@@ -202,10 +202,11 @@ const SignupPage = ({ mode = 'signup' }) => {
   const computeSteps = () => {
     if (expressIntent) return [{ id: 'express', label: 'Account', icon: Lock }];
     if (isContinue) {
-      const steps = [{ id: 'name', label: 'About You', icon: User }];
-      if (isMinor) steps.push({ id: 'minor_blocked', label: 'Invitation Required', icon: Users });
-      else steps.push({ id: 'eligibility', label: 'Eligibility', icon: Shield });
-      return steps;
+      // Already paid — an under-18 DOB is let through and flagged for Ops server-side.
+      return [
+        { id: 'name', label: 'About You', icon: User },
+        { id: 'eligibility', label: 'Eligibility', icon: Shield },
+      ];
     }
     const arrivedViaPartnerLanding = !!readPartnerSlug();
 
