@@ -57,6 +57,14 @@ export const PAGES_APP = [
         f('signup.account.email_hint', 'E-mail helper text', 'For verification codes and notifications. Can be shared with family members.'),
         ML('signup.account.consent', 'Consent sentence (the Terms and Privacy links follow it)', 'I agree to receive text messages from CarryOn™ for account verification. Message and data rates may apply. I also agree to the'),
       ] },
+      { key: 'express', label: 'Express step (arrived from a plan tile on /start)', fields: [
+        f('signup.express.title', 'Heading', 'Create your account'),
+        f('signup.express.sub', 'Sub-heading', 'One step here, then secure checkout. Your family details come later, at your pace.'),
+        f('signup.express.strip', 'Plan strip ({plan}, {price}, {cycle})', '{plan} · {price}/mo · billed {cycle}'),
+        f('signup.express.next', 'Plan strip — what comes next', 'Next: secure checkout'),
+        f('signup.express.step2', 'Second step label in the progress bar', 'Secure checkout'),
+        f('signup.express.cta', 'Button', 'Create account → checkout'),
+      ] },
       { key: 'partner', label: 'Step: enterprise access code', fields: [
         f('signup.partner.badge', 'Small badge', 'Last step'),
         f('signup.partner.title', 'Heading', 'Enterprise Access Code'),

@@ -10647,3 +10647,8 @@ Verified false/stale and NOT acted on: "zero-knowledge" homepage chips (live bun
 - New `utils/partnerStash.js`: `stashPartner` (stamps `cy_partner_at`), `readPartnerSlug` (null + self-clears when >24h old or a `carryon_checkout_intent` exists), `readPartnerCode`, `clearPartnerStash`.
 - `StartPage`: plan tile (logged-out) and Explore door call `clearPartnerStash()` — CarryOn entry wins. `SignupPage`: steps + logo/company hydration go through `readPartnerSlug`; `finishToDashboard` → `postSignupPath()` (Stripe resume if an intent exists). `PartnerPortalPage` → `stashPartner`.
 - Verified on preview: /p/harbor-test → /signup still Harbor-branded; /start → Explore → CarryOn; stale stash + plan tile → CarryOn + intent stored.
+
+## Sep 27 2026 — Express signup from a plan tile (one tile → Stripe)
+- `StartPage.handleCheckout` (logged-out) stores `{planId, cycle, planName, price}` in `carryon_checkout_intent`.
+- `SignupPage`: `expressIntent` (read once on mount) → `computeSteps` returns a single `express` step. Tile = First/Last name + username/email/password/confirm/consent (shared credentials JSX, `isCredentialsTile`). Plan strip above the tile (`signup-plan-strip`: "Standard · $12.79/mo · billed annually · Next: secure checkout"), progress bar shows a virtual 2nd step with a card icon ("Secure checkout", `signup-step-checkout-label`), counter "Step 1 of 2", CTA "Create account → checkout". Eligibility/DOB/middle name/suffix/gender are deferred to the in-app flow. Site Copy: `signup.express.*` (6 fields).
+- Resume screen text padded on phones. Verified e2e on preview (signup OTP bypass toggled on for the run, restored after; 3 test users deleted): tile → express → account → `/start?resume=checkout` → checkout.stripe.com.

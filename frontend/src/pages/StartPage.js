@@ -122,7 +122,8 @@ const StartPage = () => {
       // Store intent and redirect to signup; SignupPage returns to /start?resume=checkout.
       // A CarryOn plan pick outranks any white-label landing visited earlier on this device.
       clearPartnerStash();
-      sessionStorage.setItem(INTENT_KEY, JSON.stringify({ planId, cycle }));
+      const plan = plans.find(p => p.id === planId);
+      sessionStorage.setItem(INTENT_KEY, JSON.stringify({ planId, cycle, planName: plan?.name, price: plan ? getPrice(plan, cycle) : null }));
       const partnerCode = sessionStorage.getItem('carryon_partner_code');
       const signupUrl = partnerCode ? `/signup?redirect=start&code=${partnerCode}` : '/signup?redirect=start';
       navigate(signupUrl);
@@ -182,8 +183,8 @@ const StartPage = () => {
         <div className="w-8 h-8 border-2 border-[#d4af37] border-t-transparent rounded-full animate-spin" />
         {resuming && (
           <>
-            <p className="text-base font-semibold text-[var(--t)]">Your account is ready. Taking you to secure checkout&hellip;</p>
-            <StripeNote testId="start-resume-stripe-note" />
+            <p className="text-base font-semibold text-[var(--t)] text-center px-6">Your account is ready. Taking you to secure checkout&hellip;</p>
+            <StripeNote className="px-6" testId="start-resume-stripe-note" />
           </>
         )}
       </div>

@@ -7,7 +7,7 @@ import { useAuth } from '../contexts/AuthContext';
 import {
   Mail, Lock, Eye, EyeOff, Loader2, ArrowLeft, ArrowRight,
   AlertCircle, CheckSquare, Shield, ChevronRight, User,
-  Briefcase, Sparkles,
+  Briefcase, Sparkles, CreditCard,
   Users, Check, Heart, Award
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
@@ -69,7 +69,12 @@ const selectClass = "h-14 bg-[#0b1322] border-[#1a2a42] text-white text-base rou
 
 // A plan picked on /start or /pricing before signup is stored as a checkout
 // intent; StartPage consumes it and sends the new account straight to Stripe.
-const postSignupPath = () => (sessionStorage.getItem('carryon_checkout_intent') ? '/start?resume=checkout' : '/dashboard');
+const INTENT_KEY = 'carryon_checkout_intent';
+const postSignupPath = () => (sessionStorage.getItem(INTENT_KEY) ? '/start?resume=checkout' : '/dashboard');
+const readIntent = () => {
+  try { return JSON.parse(sessionStorage.getItem(INTENT_KEY) || 'null'); } catch { return null; }
+};
+const CYCLE_WORD = { monthly: 'monthly', quarterly: 'quarterly', annual: 'annually' };
 
 const SignupPage = () => {
   const navigate = useNavigate();
@@ -82,6 +87,11 @@ const SignupPage = () => {
   const [_emailErrors, setEmailErrors] = useState({});
   const [entered, setEntered] = useState(false);
   const scrollRef = useRef(null);
+  // Express: arrived from a plan tile — one account tile, then straight to Stripe (founder, Sep 27 2026).
+  const [expressIntent] = useState(() => {
+    const i = readIntent();
+    return i?.planId ? i : null;
+  });
 
   // ─── Enterprise / B2B partner code (final signup tile) ──────────
   // Stashed by `/p/:slug` partner landing page in localStorage so the
@@ -186,6 +196,7 @@ const SignupPage = () => {
   // `readPartnerSlug` drops the marker when it is stale (>24h) or when a
   // CarryOn checkout intent exists — a /start plan pick always wins.
   const computeSteps = () => {
+    if (expressIntent) return [{ id: 'express', label: 'Account', icon: Lock }];
     const arrivedViaPartnerLanding = !!readPartnerSlug();
 
     const steps = [
@@ -216,6 +227,9 @@ const SignupPage = () => {
 
   const STEPS = computeSteps();
   const currentStep = STEPS[step] || STEPS[0];
+  // Progress bar: the express tile shows checkout as a virtual second step.
+  const DISPLAY_STEPS = expressIntent ? [...STEPS, { id: 'checkout', label: 'Secure checkout', virtual: true }] : STEPS;
+  const isCredentialsTile = currentStep?.id === 'credentials' || currentStep?.id === 'express';
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -279,6 +293,7 @@ const SignupPage = () => {
       return true;
     }
     if (sid === 'credentials') return email.trim() && username.trim() && !usernameError && !usernameChecking && password.length >= 8 && password === confirmPassword && smsConsent;
+    if (sid === 'express') return firstName.trim() && lastName.trim() && email.trim() && username.trim() && !usernameError && !usernameChecking && password.length >= 8 && password === confirmPassword && smsConsent;
     if (sid === 'partner_code') {
       // Advance is always allowed — the button morphs to "Apply",
       // "Skip", or "Continue" depending on input state. The handler
@@ -298,8 +313,9 @@ const SignupPage = () => {
         toast.error('Under 18? Ask your family member to invite you from their CarryOn account.');
       }
       if (sid === 'eligibility' && specialStatus.includes('enterprise') && !b2bCodeSignup.trim()) toast.error('Please enter your partner access code');
-      if (sid === 'credentials') {
-        if (!email.trim()) toast.error('Please enter your email');
+      if (sid === 'credentials' || sid === 'express') {
+        if (sid === 'express' && (!firstName.trim() || !lastName.trim())) toast.error('Please enter your first and last name');
+        else if (!email.trim()) toast.error('Please enter your email');
         else if (!username.trim()) toast.error('Please choose a username');
         else if (usernameError) toast.error(usernameError);
         else if (password.length < 8) toast.error('Password must be at least 8 characters');
@@ -718,7 +734,7 @@ const SignupPage = () => {
                 {/* Progress Bar */}
                 <div className="px-5 sm:px-7 pt-5 sm:pt-7 pb-2">
                   <div className="flex items-center gap-0 mb-3 overflow-hidden">
-                    {STEPS.map((s, i) => (
+                    {DISPLAY_STEPS.map((s, i) => (
                       <div key={s.id} className="flex items-center flex-1 min-w-0">
                         <button
                           onClick={() => { if (i < step) goTo(i); }}
@@ -726,23 +742,40 @@ const SignupPage = () => {
                           style={{ cursor: i < step ? 'pointer' : 'default' }}
                           data-testid={`signup-step-${i}`}
                         >
-                          <div className={`${STEPS.length > 8 ? 'w-6 h-6 text-xs' : 'w-7 h-7 text-sm'} sm:w-9 sm:h-9 sm:text-base rounded-full flex items-center justify-center font-bold transition-all duration-500`} style={{
+                          <div className={`${DISPLAY_STEPS.length > 8 ? 'w-6 h-6 text-xs' : 'w-7 h-7 text-sm'} sm:w-9 sm:h-9 sm:text-base rounded-full flex items-center justify-center font-bold transition-all duration-500`} style={{
                             background: i <= step ? 'linear-gradient(135deg, #d4af37, #b8962e)' : 'rgba(255,255,255,0.05)',
                             color: i <= step ? '#080e1a' : '#3a4a63',
                             boxShadow: i === step ? '0 0 16px rgba(var(--gold-rgb), 0.4)' : 'none',
                           }}>
-                            {i + 1}
+                            {s.virtual ? <CreditCard className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : i + 1}
                           </div>
                         </button>
-                        {i < STEPS.length - 1 && (
-                          <div className={`flex-1 h-[2px] ${STEPS.length > 8 ? 'mx-0.5' : 'mx-1'} sm:mx-1.5 rounded-full transition-all duration-700 min-w-[4px]`} style={{
+                        {s.virtual && (
+                          <span className="ml-2 text-xs text-[#525c72] truncate" data-testid="signup-step-checkout-label">{t('signup.express.step2')}</span>
+                        )}
+                        {i < DISPLAY_STEPS.length - 1 && (
+                          <div className={`flex-1 h-[2px] ${DISPLAY_STEPS.length > 8 ? 'mx-0.5' : 'mx-1'} sm:mx-1.5 rounded-full transition-all duration-700 min-w-[4px]`} style={{
                             background: i < step ? '#d4af37' : 'rgba(255,255,255,0.06)',
                           }} />
                         )}
                       </div>
                     ))}
                   </div>
-                  <p className="text-[#525c72] text-xs mb-3">{t('signup.step_counter', { n: step + 1, total: STEPS.length })}</p>
+                  <p className="text-[#525c72] text-xs mb-3">{t('signup.step_counter', { n: step + 1, total: DISPLAY_STEPS.length })}</p>
+                  {expressIntent && (
+                    <div className="flex flex-col items-start gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-3 rounded-xl px-3.5 py-2.5 mb-2"
+                      style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.3)' }}
+                      data-testid="signup-plan-strip">
+                      <span className="text-sm font-semibold text-white" data-testid="signup-plan-strip-plan">
+                        {expressIntent.planName
+                          ? t('signup.express.strip', { plan: expressIntent.planName, price: `$${parseFloat(expressIntent.price || 0).toFixed(2)}`, cycle: CYCLE_WORD[expressIntent.cycle] || 'monthly' })
+                          : expressIntent.planId}
+                      </span>
+                      <span className="flex items-center gap-1 text-xs text-[#d4af37] font-semibold whitespace-nowrap">
+                        {t('signup.express.next')} <ArrowRight className="w-3.5 h-3.5" />
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Step Content */}
@@ -895,13 +928,27 @@ const SignupPage = () => {
                       </div>
                     )}
 
-                    {/* STEP: Credentials */}
-                    {currentStep?.id === 'credentials' && (
-                      <div className="space-y-4 sm:space-y-5">
+                    {/* STEP: Credentials (also the one-tile express step from a plan pick) */}
+                    {isCredentialsTile && (
+                      <div className="space-y-4 sm:space-y-5" data-testid={currentStep?.id === 'express' ? 'signup-express-step' : 'signup-credentials-step'}>
                         <div>
-                          <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'var(--sans)' }}>{t('signup.account.title')}</h2>
-                          <p className="text-[#6b7a90] text-sm">{t('signup.account.sub')}</p>
+                          <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'var(--sans)' }}>{t(currentStep?.id === 'express' ? 'signup.express.title' : 'signup.account.title')}</h2>
+                          <p className="text-[#6b7a90] text-sm">{t(currentStep?.id === 'express' ? 'signup.express.sub' : 'signup.account.sub')}</p>
                         </div>
+                        {currentStep?.id === 'express' && (
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="signup-firstname" className="text-[#7b879e] text-sm font-medium">First Name <span className="text-red-400">*</span></Label>
+                              <Input id="signup-firstname" type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)}
+                                autoComplete="given-name" placeholder="John" className={inputClass} data-testid="signup-firstname-input" autoFocus />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="signup-lastname" className="text-[#7b879e] text-sm font-medium">Last Name <span className="text-red-400">*</span></Label>
+                              <Input id="signup-lastname" type="text" value={lastName} onChange={(e) => setLastName(e.target.value)}
+                                autoComplete="family-name" placeholder="Mitchell" className={inputClass} data-testid="signup-lastname-input" />
+                            </div>
+                          </div>
+                        )}
                         <div className="space-y-2">
                           <Label htmlFor="signup-username" className="text-[#7b879e] text-sm font-medium">Username <span className="text-red-400">*</span></Label>
                           <div className="relative">
@@ -926,7 +973,7 @@ const SignupPage = () => {
                               }}
                               placeholder={`${firstName.toLowerCase().replace(/[^a-z0-9]/g, '')}${lastName.toLowerCase().replace(/[^a-z0-9]/g, '')}` || 'Choose a username'}
                               className={`${inputClass} pl-12 ${usernameError ? 'border-red-500 focus:border-red-500 focus:ring-red-500/30' : ''}`}
-                              data-testid="signup-username-input" autoFocus />
+                              data-testid="signup-username-input" autoFocus={currentStep?.id !== 'express'} />
                             {usernameChecking && <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#3a4a63] animate-spin" />}
                             {!usernameChecking && username.trim() && !usernameError && (
                               <Check className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-green-500" />
@@ -1126,7 +1173,7 @@ const SignupPage = () => {
                         data-testid="signup-back-btn">
                         <ArrowLeft className="w-4 h-4" /> {t('signup.btn.back')}</button>
                     ) : (
-                      <Link to="/login" className="flex items-center gap-2 text-[#6b7a90] text-sm font-medium hover:text-[#d4af37] transition-colors">
+                      <Link to="/login" className="flex items-center gap-2 text-[#6b7a90] text-sm font-medium hover:text-[#d4af37] transition-colors whitespace-nowrap">
                         <ArrowLeft className="w-4 h-4" /> {t('signup.btn.signin')}</Link>
                     )}
 
@@ -1144,8 +1191,10 @@ const SignupPage = () => {
                         <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Creating...</>
                       ) : applyingPartnerCode ? (
                         <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Applying...</>
-                      ) : usernameChecking && currentStep?.id === 'credentials' ? (
+                      ) : usernameChecking && isCredentialsTile ? (
                         <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Checking username...</>
+                      ) : currentStep?.id === 'express' ? (
+                        <>{t('signup.express.cta')}</>
                       ) : currentStep?.id === 'partner_code' ? (
                         partnerCodeApplied ? (
                           <>{t('signup.btn.continue')} <ArrowRight className="w-4 h-4 ml-1" /></>
