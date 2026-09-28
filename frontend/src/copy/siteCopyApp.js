@@ -86,6 +86,7 @@ export const PAGES_APP = [
       { key: 'buttons', label: 'Buttons', fields: [
         f('signup.btn.continue', 'Continue', 'Continue'),
         f('signup.btn.back', 'Back', 'Back'),
+        f('signup.scroll_more', 'Pill shown when the form continues below the fold (phones)', 'More below'),
         f('signup.btn.signin', 'Sign In (first step)', 'Sign In'),
         f('signup.btn.create', 'Create Account', 'Create Account'),
         f('signup.btn.none_create', 'No eligibility selected — create', 'None Apply — Create Account'),

@@ -22,6 +22,7 @@ import { API_URL } from '../config';
 import { LogoHome } from '../components/landing/LogoHome';
 import { entryLandingPage } from '../utils/funnelTelemetry';
 import { readPartnerSlug, readPartnerCode, clearPartnerStash } from '../utils/partnerStash';
+import { ScrollCue } from '../components/ScrollCue';
 
 const suffixOptions = [
   { value: 'none', label: 'None' },
@@ -334,6 +335,13 @@ const SignupPage = ({ mode = 'signup' }) => {
   const handleNext = () => {
     if (!canAdvance()) {
       const sid = currentStep?.id;
+      // Bring the field the toast is about into view — on phones it is usually below the fold.
+      const reveal = (testId) => {
+        const el = scrollRef.current?.querySelector(`[data-testid="${testId}"]`);
+        if (!el) return;
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setTimeout(() => el.focus?.({ preventScroll: true }), 350);
+      };
       if (sid === 'name') {
         if (!firstName.trim() || !lastName.trim()) toast.error('Please enter your first and last name');
       }
@@ -342,13 +350,13 @@ const SignupPage = ({ mode = 'signup' }) => {
       }
       if (sid === 'eligibility' && specialStatus.includes('enterprise') && !b2bCodeSignup.trim()) toast.error('Please enter your partner access code');
       if (sid === 'credentials' || sid === 'express') {
-        if (sid === 'express' && (!firstName.trim() || !lastName.trim())) toast.error('Please enter your first and last name');
-        else if (!email.trim()) toast.error('Please enter your email');
-        else if (!username.trim()) toast.error('Please choose a username');
-        else if (usernameError) toast.error(usernameError);
-        else if (password.length < 8) toast.error('Password must be at least 8 characters');
-        else if (password !== confirmPassword) toast.error('Passwords do not match');
-        else if (!smsConsent) toast.error('Please agree to the terms to continue');
+        if (sid === 'express' && (!firstName.trim() || !lastName.trim())) { toast.error('Please enter your first and last name'); reveal('signup-firstname-input'); }
+        else if (!email.trim()) { toast.error('Please enter your email'); reveal('signup-email-input'); }
+        else if (!username.trim()) { toast.error('Please choose a username'); reveal('signup-username-input'); }
+        else if (usernameError) { toast.error(usernameError); reveal('signup-username-input'); }
+        else if (password.length < 8) { toast.error('Password must be at least 8 characters'); reveal('signup-password-input'); }
+        else if (password !== confirmPassword) { toast.error('Passwords do not match'); reveal('signup-confirm-password-input'); }
+        else if (!smsConsent) { toast.error('Please agree to the terms to continue'); reveal('sms-consent-checkbox'); }
       }
       return;
     }
@@ -842,6 +850,7 @@ const SignupPage = ({ mode = 'signup' }) => {
 
                 {/* Step Content */}
                 <div className="px-4 sm:px-6 pb-5 sm:pb-7 flex flex-col" style={{ height: 540 }}>
+                  <div className="relative flex-1 min-h-0 flex flex-col">
                   <div ref={scrollRef} className="flex-1 overflow-auto scrollbar-hide px-3 pt-2" style={getSlideStyle()}>
                     {/* STEP 0: Name */}
                     {currentStep?.id === 'name' && (
@@ -1239,6 +1248,8 @@ const SignupPage = ({ mode = 'signup' }) => {
                         )}
                       </div>
                     )}
+                  </div>
+                  <ScrollCue containerRef={scrollRef} deps={[step, slidePhase, showOtpModal]} label={t('signup.scroll_more')} testId="signup-scroll" />
                   </div>
 
                   {/* Navigation Buttons — pinned to bottom */}

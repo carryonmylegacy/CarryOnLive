@@ -1886,6 +1886,13 @@ input[type="number"].allow-number-spinner {
   scrollbar-width: none;
 }
 
+/* ScrollCue "more below" pill */
+@keyframes scroll-cue-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+.scroll-cue-bounce { animation: scroll-cue-bounce 1.6s ease-in-out infinite; }
+
 
 /* ── Network Status Banner Animation ────────────────────────── */
 @keyframes slideDown {
