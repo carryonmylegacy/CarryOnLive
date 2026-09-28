@@ -312,6 +312,9 @@ const LoginPage = () => {
     if (result.user?.role === 'admin') navigate('/admin');
     else if (result.user?.role === 'operator') navigate('/ops');
     else {
+      // Picked a plan on /start or /pricing, then signed in instead of signing up → finish that checkout.
+      const ownsEstate = result.user?.role === 'benefactor' || result.user?.is_also_benefactor;
+      if (ownsEstate && sessionStorage.getItem('carryon_checkout_intent')) { navigate('/start?resume=checkout'); return; }
       // For multi-role users we no longer honor a stored last-portal
       // hint. The user's explicit mandate (Feb 2026): if an account has
       // a benefactor role at all, ALWAYS land on the Benefactor portal.

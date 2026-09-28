@@ -135,7 +135,7 @@ const StartPage = () => {
       const plan = plans.find(p => p.id === planId);
       const result = await startPlanCheckout({ planId, cycle, planName: plan?.name });
       ok = true;
-      if (result.free) navigate('/dashboard');
+      if (result.free) navigate(user?.profile_pending ? '/signup/continue' : '/dashboard');
       // Standalone PWA: Stripe opened in a separate window, so this window is still here —
       // an express signup continues its tiles now; the plan activates via webhook meanwhile.
       else if (isStandalonePWA() && user?.profile_pending) navigate('/signup/continue', { replace: true });

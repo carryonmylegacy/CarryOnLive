@@ -64,6 +64,12 @@ export const PAGES_APP = [
         f('signup.express.next', 'Plan strip — what comes next', 'Next: secure checkout'),
         f('signup.express.step2', 'Second step label in the progress bar', 'Secure checkout'),
         f('signup.express.cta', 'Button', 'Create account → checkout'),
+        f('signup.express.sub_free', 'Sub-heading when the picked plan costs nothing (hospice)', 'One step here, then your plan is activated at no cost. Your family details come later, at your pace.'),
+        f('signup.express.strip_free', 'Plan strip for a no-cost plan ({plan})', '{plan} · no cost'),
+        f('signup.express.next_free', 'Plan strip — what comes next (no-cost plan)', 'Next: activate your plan'),
+        f('signup.express.step2_free', 'Second step label in the progress bar (no-cost plan)', 'Activate'),
+        f('signup.express.cta_free', 'Button (no-cost plan)', 'Create account → activate'),
+        f('signup.continue.free', 'Green strip after a no-cost plan was activated ({plan})', '{plan} is active at no cost — thank you.'),
       ] },
       { key: 'continue', label: 'After Stripe — finish the express signup (/signup/continue)', fields: [
         f('signup.continue.join', 'Headline — line 1 ({first} = first name)', 'Welcome, {first}.'),

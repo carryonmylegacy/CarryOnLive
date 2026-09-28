@@ -1,7 +1,7 @@
 import { FlagBackdrop } from '../components/FlagBackdrop';
 import React, { useState, useEffect, useRef } from 'react';
 import SEO from '../components/SEO';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useCopy, renderCopy } from '../copy/CopyContext';
 import { useAuth } from '../contexts/AuthContext';
 import {
@@ -71,6 +71,12 @@ const selectClass = "h-14 bg-[#0b1322] border-[#1a2a42] text-white text-base rou
 // A plan picked on /start or /pricing before signup is stored as a checkout
 // intent; StartPage consumes it and sends the new account straight to Stripe.
 const INTENT_KEY = 'carryon_checkout_intent';
+const DRAFT_KEY = 'carryon_signup_draft';
+// Non-sensitive fields survive a back-swipe / reload within the tab (never the password).
+const readDraft = () => {
+  try { return JSON.parse(sessionStorage.getItem(DRAFT_KEY) || 'null') || {}; } catch { return {}; }
+};
+const clearDraft = () => { try { sessionStorage.removeItem(DRAFT_KEY); } catch {} };
 const postSignupPath = () => (sessionStorage.getItem(INTENT_KEY) ? '/start?resume=checkout' : '/dashboard');
 const readIntent = () => {
   try { return JSON.parse(sessionStorage.getItem(INTENT_KEY) || 'null'); } catch { return null; }
@@ -79,6 +85,7 @@ const CYCLE_WORD = { monthly: 'monthly', quarterly: 'quarterly', annual: 'annual
 
 const SignupPage = ({ mode = 'signup' }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useCopy();
   const { verifyOtp, resendOtp, user, refreshUser, subscriptionStatus, refreshSubscription } = useAuth();
   // 'continue' = /signup/continue — the tiles an express signup skipped, run after Stripe.
@@ -87,7 +94,11 @@ const SignupPage = ({ mode = 'signup' }) => {
   // (lost tab, PWA popup, login) — the live subscription snapshot. Pending strip while Stripe settles.
   const activeSub = subscriptionStatus?.subscription?.status === 'active' ? subscriptionStatus.subscription : null;
   const paidReturn = isContinue && (new URLSearchParams(window.location.search).get('paid') === '1' || !!activeSub);
-  const paymentPending = isContinue && !paidReturn && !!subscriptionStatus?.pending_intent;
+  const paymentPending = isContinue && !paidReturn && !!subscriptionStatus?.pending_intent
+    && new URLSearchParams(window.location.search).get('paid') !== '0'; // Stripe said "not paid" — no amber strip
+  // Plans activated at no cost (hospice) never went through Stripe — different strip wording.
+  const paidPlan = activeSub || subscriptionStatus?.pending_intent || null;
+  const paidAtNoCost = !!activeSub && (activeSub.free_plan || Number(activeSub.amount) === 0);
 
   const [step, setStep] = useState(0);
   const [direction, setDirection] = useState('right');
@@ -107,6 +118,7 @@ const SignupPage = ({ mode = 'signup' }) => {
     const i = readIntent();
     return i?.planId ? i : null;
   });
+  const expressFree = !!expressIntent && parseFloat(expressIntent.price || 0) <= 0;
 
   // ─── Enterprise / B2B partner code (final signup tile) ──────────
   // Stashed by `/p/:slug` partner landing page in localStorage so the
@@ -121,12 +133,13 @@ const SignupPage = ({ mode = 'signup' }) => {
   const [partnerCodeApplied, setPartnerCodeApplied] = useState(null);
 
   // Form state
-  const [firstName, setFirstName] = useState('');
-  const [middleName, setMiddleName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [suffix, setSuffix] = useState('none');
-  const [gender, setGender] = useState('not_selected');
-  const [dateOfBirth, setDateOfBirth] = useState('');
+  const draft = useRef(readDraft()).current;
+  const [firstName, setFirstName] = useState(draft.firstName || '');
+  const [middleName, setMiddleName] = useState(draft.middleName || '');
+  const [lastName, setLastName] = useState(draft.lastName || '');
+  const [suffix, setSuffix] = useState(draft.suffix || 'none');
+  const [gender, setGender] = useState(draft.gender || 'not_selected');
+  const [dateOfBirth, setDateOfBirth] = useState(draft.dateOfBirth || '');
   const [maritalStatus, _setMaritalStatus] = useState('not_selected');
   const [dependentsOver18, _setDependentsOver18] = useState(0);
   const [dependentsUnder18, _setDependentsUnder18] = useState(0);
@@ -135,12 +148,12 @@ const SignupPage = ({ mode = 'signup' }) => {
   const [addressState, _setAddressState] = useState('');
   const [addressZip, _setAddressZip] = useState('');
   const [_role, _setRole] = useState('benefactor'); // Always benefactor — beneficiaries join via invitation
-  const [specialStatus, setSpecialStatus] = useState([]);
-  const [b2bCodeSignup, setB2bCodeSignup] = useState('');
+  const [specialStatus, setSpecialStatus] = useState(draft.specialStatus || []);
+  const [b2bCodeSignup, setB2bCodeSignup] = useState(draft.b2bCodeSignup || '');
   const [addressLine2, _setAddressLine2] = useState('');
   const [beneficiaries, setBeneficiaries] = useState([]); // [{first_name, last_name, email, dob, same_address, address_street, address_city, address_state, address_zip}]
-  const [email, setEmail] = useState('');
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState(draft.email || '');
+  const [username, setUsername] = useState(draft.username || '');
   const [usernameError, setUsernameError] = useState('');
   const [usernameChecking, setUsernameChecking] = useState(false);
 
@@ -261,13 +274,20 @@ const SignupPage = ({ mode = 'signup' }) => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [smsConsent, setSmsConsent] = useState(false);
+  const [smsConsent, setSmsConsent] = useState(!!draft.smsConsent);
   const [loading, setLoading] = useState(false);
   const [showOtpModal, setShowOtpModal] = useState(false);
   const [otp, setOtp] = useState('');
   const [otpHint, setOtpHint] = useState('');
   const [registeredEmail, setRegisteredEmail] = useState('');
   const [resendCooldown, setResendCooldown] = useState(0);
+
+  useEffect(() => {
+    if (isContinue) return;
+    try {
+      sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ firstName, lastName, middleName, suffix, gender, dateOfBirth, specialStatus, b2bCodeSignup, email, username, smsConsent }));
+    } catch {}
+  }, [isContinue, firstName, lastName, middleName, suffix, gender, dateOfBirth, specialStatus, b2bCodeSignup, email, username, smsConsent]);
 
   useEffect(() => {
     const t = setTimeout(() => setEntered(true), 150);
@@ -294,6 +314,16 @@ const SignupPage = ({ mode = 'signup' }) => {
     return () => window.removeEventListener('focus', onFocus);
   }, [isContinue, user?.profile_pending]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Paid for the Veteran or Hospice plan → that status is pre-ticked on the eligibility tile
+  // (the Military / First Responder plan spans three statuses, so it stays untouched).
+  const preselectedRef = useRef(false);
+  useEffect(() => {
+    if (!isContinue || preselectedRef.current || !paidPlan?.plan_id) return;
+    preselectedRef.current = true;
+    const match = { veteran: 'veteran', hospice: 'hospice' }[paidPlan.plan_id];
+    if (match) setSpecialStatus(prev => (prev.length ? prev : [match]));
+  }, [isContinue, paidPlan?.plan_id]);
+
   // On mount, hydrate the partner-code tile from anything the visitor
   // stashed when they hit `/p/:slug`. We attempt up to two sources:
   //   1. `cy_partner_code` — set if the visitor explicitly typed/saw
@@ -315,7 +345,7 @@ const SignupPage = ({ mode = 'signup' }) => {
       .catch(() => { /* partner deactivated since landing — silent */ });
   }, []);
 
-  const goTo = (nextStep) => {
+  const animateTo = (nextStep) => {
     if (slidePhase !== 'idle' || nextStep === step) return;
     setDirection(nextStep > step ? 'right' : 'left');
     setSlidePhase('exit');
@@ -326,6 +356,33 @@ const SignupPage = ({ mode = 'signup' }) => {
       setTimeout(() => setSlidePhase('idle'), 350);
     }, 300);
   };
+
+  // Every tile is a history entry, so the phone back-swipe / browser back & forward move one tile
+  // instead of dumping the visitor out of the signup. `location.state.signupStep` is the truth.
+  const here = location.pathname + location.search;
+  const stepFromHistory = location.state?.signupStep ?? 0;
+  const goTo = (nextStep) => {
+    if (slidePhase !== 'idle' || nextStep === step) return;
+    if (nextStep > step) navigate(here, { state: { ...(location.state || {}), signupStep: nextStep } });
+    else navigate(-(step - nextStep));
+  };
+  const accountLockRef = useRef(null); // once the account exists (partner-code tile) there is no way back
+  useEffect(() => {
+    if (slidePhase !== 'idle') return;
+    let target = stepFromHistory;
+    if (STEPS[target]?.id === 'partner_code') accountLockRef.current = target;
+    if (accountLockRef.current != null && target < accountLockRef.current) {
+      navigate(here, { state: { ...(location.state || {}), signupStep: accountLockRef.current }, replace: true });
+      return;
+    }
+    // Fresh load deep in the flow (password never persisted): restart at the first tile.
+    const credIdx = STEPS.findIndex(s => s.id === 'credentials' || s.id === 'express');
+    if (target > 0 && credIdx >= 0 && target > credIdx && !password) {
+      navigate(here, { state: { ...(location.state || {}), signupStep: 0 }, replace: true });
+      return;
+    }
+    if (target !== step) animateTo(target);
+  }, [stepFromHistory, step, slidePhase]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const canAdvance = () => {
     const sid = currentStep?.id;
@@ -360,16 +417,17 @@ const SignupPage = ({ mode = 'signup' }) => {
     else navigate('/start');
   };
 
+  // Bring the field a toast is about into view — on phones it is usually below the fold.
+  const reveal = (testId) => {
+    const el = scrollRef.current?.querySelector(`[data-testid="${testId}"]`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setTimeout(() => el.focus?.({ preventScroll: true }), 350);
+  };
+
   const handleNext = () => {
     if (!canAdvance()) {
       const sid = currentStep?.id;
-      // Bring the field the toast is about into view — on phones it is usually below the fold.
-      const reveal = (testId) => {
-        const el = scrollRef.current?.querySelector(`[data-testid="${testId}"]`);
-        if (!el) return;
-        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        setTimeout(() => el.focus?.({ preventScroll: true }), 350);
-      };
       if (sid === 'name') {
         if (!firstName.trim() || !lastName.trim()) toast.error('Please enter your first and last name');
       }
@@ -391,6 +449,11 @@ const SignupPage = ({ mode = 'signup' }) => {
     // Partner-code step → submit or skip.
     if (currentStep?.id === 'partner_code') {
       handlePartnerCodeSubmit();
+      return;
+    }
+    // Account already created, code dialog was closed → re-open it instead of registering twice.
+    if (registeredEmail && !isContinue) {
+      setShowOtpModal(true);
       return;
     }
     // Account creation fires when the NEXT step is the auth-required
@@ -423,6 +486,7 @@ const SignupPage = ({ mode = 'signup' }) => {
         special_status: specialStatus.length > 0 ? specialStatus : null,
         b2b_code: specialStatus.includes('enterprise') ? b2bCodeSignup : null,
       }, { headers: { Authorization: `Bearer ${localStorage.getItem('carryon_token')}` } });
+      clearDraft();
       if (refreshUser) await refreshUser();
       navigate('/dashboard', { replace: true });
     } catch (error) {
@@ -557,6 +621,7 @@ const SignupPage = ({ mode = 'signup' }) => {
         ...(JSON.parse(sessionStorage.getItem('carryon_signup_intent') || '{}')),
         ...(expressIntent ? { signup_flow: 'express' } : {}),
       });
+      clearDraft();
       // Apr 27, 2026 — when admin has flipped `signup_otp_disabled` ON in the
       // founder portal, /auth/register returns an access_token + user object
       // directly. We skip the OTP modal and drop the user straight onto their
@@ -602,7 +667,11 @@ const SignupPage = ({ mode = 'signup' }) => {
       setOtpHint(response.data.otp_hint);
       setShowOtpModal(true);
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Failed to create account');
+      const detail = error.response?.data?.detail || 'Failed to create account';
+      toast.error(detail);
+      // Server-side rules the tile can't pre-check (password mix, username race) — show the field.
+      if (/password/i.test(detail)) reveal('signup-password-input');
+      else if (/username/i.test(detail)) reveal('signup-username-input');
     } finally {
       setLoading(false);
     }
@@ -852,7 +921,7 @@ const SignupPage = ({ mode = 'signup' }) => {
                           </div>
                         </button>
                         {s.virtual && (
-                          <span className="ml-2 text-xs text-[#525c72] truncate" data-testid="signup-step-checkout-label">{t('signup.express.step2')}</span>
+                          <span className="ml-2 text-xs text-[#525c72] truncate" data-testid="signup-step-checkout-label">{t(expressFree ? 'signup.express.step2_free' : 'signup.express.step2')}</span>
                         )}
                         {i < DISPLAY_STEPS.length - 1 && (
                           <div className={`flex-1 h-[2px] ${DISPLAY_STEPS.length > 8 ? 'mx-0.5' : 'mx-1'} sm:mx-1.5 rounded-full transition-all duration-700 min-w-[4px]`} style={{
@@ -868,7 +937,9 @@ const SignupPage = ({ mode = 'signup' }) => {
                       style={{ background: 'rgba(16,185,129,0.10)', border: '1px solid rgba(16,185,129,0.35)' }}
                       data-testid="signup-continue-paid">
                       <Check className="w-4 h-4 flex-shrink-0" strokeWidth={3} />
-                      <span>{t('signup.continue.paid', { plan: activeSub?.plan_name || subscriptionStatus?.pending_intent?.plan_name || 'Your plan' })}</span>
+                      <span>{paidAtNoCost
+                        ? t('signup.continue.free', { plan: paidPlan?.plan_name || 'Your plan' })
+                        : t('signup.continue.paid', { plan: paidPlan?.plan_name || 'Your plan' })}</span>
                     </div>
                   )}
                   {paymentPending && (
@@ -885,11 +956,13 @@ const SignupPage = ({ mode = 'signup' }) => {
                       data-testid="signup-plan-strip">
                       <span className="text-sm font-semibold text-white" data-testid="signup-plan-strip-plan">
                         {expressIntent.planName
-                          ? t('signup.express.strip', { plan: expressIntent.planName, price: `$${parseFloat(expressIntent.price || 0).toFixed(2)}`, cycle: CYCLE_WORD[expressIntent.cycle] || 'monthly' })
+                          ? (expressFree
+                            ? t('signup.express.strip_free', { plan: expressIntent.planName })
+                            : t('signup.express.strip', { plan: expressIntent.planName, price: `$${parseFloat(expressIntent.price || 0).toFixed(2)}`, cycle: CYCLE_WORD[expressIntent.cycle] || 'monthly' }))
                           : expressIntent.planId}
                       </span>
                       <span className="flex items-center gap-1 text-xs text-[#d4af37] font-semibold whitespace-nowrap">
-                        {t('signup.express.next')} <ArrowRight className="w-3.5 h-3.5" />
+                        {t(expressFree ? 'signup.express.next_free' : 'signup.express.next')} <ArrowRight className="w-3.5 h-3.5" />
                       </span>
                     </div>
                   )}
@@ -1071,7 +1144,7 @@ const SignupPage = ({ mode = 'signup' }) => {
                       <div className="space-y-4 sm:space-y-5" data-testid={currentStep?.id === 'express' ? 'signup-express-step' : 'signup-credentials-step'}>
                         <div>
                           <h2 className="text-white text-lg sm:text-xl font-semibold mb-1" style={{ fontFamily: 'var(--sans)' }}>{t(currentStep?.id === 'express' ? 'signup.express.title' : 'signup.account.title')}</h2>
-                          <p className="text-[#6b7a90] text-sm">{t(currentStep?.id === 'express' ? 'signup.express.sub' : 'signup.account.sub')}</p>
+                          <p className="text-[#6b7a90] text-sm">{t(currentStep?.id === 'express' ? (expressFree ? 'signup.express.sub_free' : 'signup.express.sub') : 'signup.account.sub')}</p>
                         </div>
                         {currentStep?.id === 'express' && (
                           <div className="grid grid-cols-2 gap-4">
@@ -1340,7 +1413,7 @@ const SignupPage = ({ mode = 'signup' }) => {
                       ) : usernameChecking && isCredentialsTile ? (
                         <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Checking username...</>
                       ) : currentStep?.id === 'express' ? (
-                        <>{t('signup.express.cta')}</>
+                        <>{t(expressFree ? 'signup.express.cta_free' : 'signup.express.cta')}</>
                       ) : currentStep?.id === 'partner_code' ? (
                         partnerCodeApplied ? (
                           <>{t('signup.btn.continue')} <ArrowRight className="w-4 h-4 ml-1" /></>

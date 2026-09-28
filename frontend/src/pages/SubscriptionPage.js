@@ -92,12 +92,15 @@ const SubscriptionPage = () => {
 
     setConfirmingPayment(true);
 
-    // Express signup: never leave a half-signed-up visitor parked on this page. If Stripe hasn't
-    // settled yet the webhook/reconcile will activate the plan; the continuation shows a pending strip.
-    const unsettled = (msg) => {
+    // Express signup: never leave a half-signed-up visitor parked on this page. `known` = Stripe
+    // answered "not paid" (no amber strip on the continuation); otherwise the webhook/reconcile may
+    // still activate the plan and the continuation shows a pending strip.
+    const unsettled = (msg, known = false) => {
       if (user?.profile_pending) {
-        toast.info('Payment is still processing — your plan activates automatically. Let\u2019s finish your account.');
-        navigate('/signup/continue', { replace: true });
+        toast.info(known
+          ? 'No payment has come through yet — finish your account; you can pick a plan anytime from your dashboard.'
+          : 'Payment is still processing — your plan activates automatically. Let\u2019s finish your account.');
+        navigate(known ? '/signup/continue?paid=0' : '/signup/continue', { replace: true });
         return;
       }
       toast.error(msg);
@@ -124,7 +127,7 @@ const SubscriptionPage = () => {
             setTimeout(() => setPaymentSuccess(false), 5000);
             setSubCelebration({ tierName: retry.data?.plan_name || subscriptionStatus?.plan_name || '' });
           } else {
-            unsettled('Payment is still processing. Please refresh in a moment.');
+            unsettled('Payment is still processing. Please refresh in a moment.', ['unpaid', 'open'].includes(retry.data?.payment_status) || retry.data?.status === 'expired');
           }
         }
       } catch {

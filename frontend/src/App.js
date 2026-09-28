@@ -1,5 +1,5 @@
 // Build trigger 2026-05-20: Render backend migration (carryon-api-kacr.onrender.com)
-import React, { useEffect, useState, lazy, Suspense } from 'react';
+import React, { useEffect, useRef, useState, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -564,6 +564,12 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 // Public Route (redirect if logged in)
 const PublicRoute = ({ children }) => {
   const { user, loading, isAuthenticated } = useAuth();
+  // /login and /signup route themselves after auth (Stripe hand-off, partner-code tile, checkout
+  // resume). React Router v7 renders the auth-state change before the transition-wrapped
+  // navigate(), so bouncing on `isAuthenticated` here would hijack those hand-offs (it sent OTP
+  // signups to /dashboard). Only bounce visitors who were already signed in when they arrived.
+  const arrivedSignedIn = useRef(null);
+  if (!loading && arrivedSignedIn.current === null) arrivedSignedIn.current = isAuthenticated;
 
   if (loading) {
     return (
@@ -573,7 +579,7 @@ const PublicRoute = ({ children }) => {
     );
   }
 
-  if (isAuthenticated) {
+  if (isAuthenticated && arrivedSignedIn.current) {
     if (user?.role === 'beneficiary' && user?.is_also_benefactor) {
       return <Navigate to="/dashboard" replace />;
     }
