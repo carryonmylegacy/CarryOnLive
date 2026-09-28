@@ -80,10 +80,14 @@ const CYCLE_WORD = { monthly: 'monthly', quarterly: 'quarterly', annual: 'annual
 const SignupPage = ({ mode = 'signup' }) => {
   const navigate = useNavigate();
   const { t } = useCopy();
-  const { verifyOtp, resendOtp, user, refreshUser, subscriptionStatus } = useAuth();
+  const { verifyOtp, resendOtp, user, refreshUser, subscriptionStatus, refreshSubscription } = useAuth();
   // 'continue' = /signup/continue — the tiles an express signup skipped, run after Stripe.
   const isContinue = mode === 'continue';
-  const paidReturn = isContinue && new URLSearchParams(window.location.search).get('paid') === '1';
+  // Paid strip: the ?paid=1 hand-off from /subscription, or — when the visitor arrived another way
+  // (lost tab, PWA popup, login) — the live subscription snapshot. Pending strip while Stripe settles.
+  const activeSub = subscriptionStatus?.subscription?.status === 'active' ? subscriptionStatus.subscription : null;
+  const paidReturn = isContinue && (new URLSearchParams(window.location.search).get('paid') === '1' || !!activeSub);
+  const paymentPending = isContinue && !paidReturn && !!subscriptionStatus?.pending_intent;
 
   const [step, setStep] = useState(0);
   const [direction, setDirection] = useState('right');
@@ -279,6 +283,16 @@ const SignupPage = ({ mode = 'signup' }) => {
     setFirstName(user.first_name || parts[0] || '');
     setLastName(user.last_name || (parts.length > 1 ? parts[parts.length - 1] : '') || '');
   }, [isContinue, user, navigate]);
+
+  // Keep the paid/pending strip truthful: refresh the subscription snapshot on arrival and whenever
+  // the visitor comes back to this tab (e.g. after closing a Stripe window on a standalone PWA).
+  useEffect(() => {
+    if (!isContinue || !user?.profile_pending || !refreshSubscription) return;
+    refreshSubscription().catch(() => {});
+    const onFocus = () => refreshSubscription().catch(() => {});
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  }, [isContinue, user?.profile_pending]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // On mount, hydrate the partner-code tile from anything the visitor
   // stashed when they hit `/p/:slug`. We attempt up to two sources:
@@ -854,7 +868,15 @@ const SignupPage = ({ mode = 'signup' }) => {
                       style={{ background: 'rgba(16,185,129,0.10)', border: '1px solid rgba(16,185,129,0.35)' }}
                       data-testid="signup-continue-paid">
                       <Check className="w-4 h-4 flex-shrink-0" strokeWidth={3} />
-                      <span>{t('signup.continue.paid', { plan: subscriptionStatus?.plan_name || 'Your plan' })}</span>
+                      <span>{t('signup.continue.paid', { plan: activeSub?.plan_name || subscriptionStatus?.pending_intent?.plan_name || 'Your plan' })}</span>
+                    </div>
+                  )}
+                  {paymentPending && (
+                    <div className="flex items-center gap-2 rounded-xl px-3.5 py-2.5 mb-2 text-sm font-semibold text-[#e5c558]"
+                      style={{ background: 'rgba(212,175,55,0.10)', border: '1px solid rgba(212,175,55,0.35)' }}
+                      data-testid="signup-continue-pending">
+                      <Loader2 className="w-4 h-4 flex-shrink-0 animate-spin" />
+                      <span>{t('signup.continue.pending', { plan: subscriptionStatus?.pending_intent?.plan_name || 'Your plan' })}</span>
                     </div>
                   )}
                   {expressIntent && (

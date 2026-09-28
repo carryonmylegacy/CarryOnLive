@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { API_URL } from '../config';
 import { TrustBadges, StripeNote } from '../components/landing/TrustBadges';
-import { startPlanCheckout } from '../utils/stripeRedirect';
+import { startPlanCheckout, isStandalonePWA } from '../utils/stripeRedirect';
 import { toast } from 'sonner';
 import { useCopy, renderCopy } from '../copy/CopyContext';
 import { LogoHome } from '../components/landing/LogoHome';
@@ -136,6 +136,9 @@ const StartPage = () => {
       const result = await startPlanCheckout({ planId, cycle, planName: plan?.name });
       ok = true;
       if (result.free) navigate('/dashboard');
+      // Standalone PWA: Stripe opened in a separate window, so this window is still here —
+      // an express signup continues its tiles now; the plan activates via webhook meanwhile.
+      else if (isStandalonePWA() && user?.profile_pending) navigate('/signup/continue', { replace: true });
     } catch (err) {
       console.error('Checkout error:', err);
       toast.error(err.response?.data?.detail || 'We couldn\u2019t start checkout. Please try again.');

@@ -83,9 +83,25 @@ const SubscriptionPage = () => {
     // Clear our localStorage breadcrumb so we don't loop the redirect.
     try { localStorage.removeItem('carryon_pending_stripe_session'); } catch {}
 
-    if (!sessionId) return;
+    if (!sessionId) {
+      // Express signup: Stripe's cancel/back button (cancel_url) or a stray visit — resume the
+      // signup tiles; the plan can be picked again from the dashboard once the account is complete.
+      if (user?.profile_pending && !params.get('fc_session_id')) navigate('/signup/continue', { replace: true });
+      return;
+    }
 
     setConfirmingPayment(true);
+
+    // Express signup: never leave a half-signed-up visitor parked on this page. If Stripe hasn't
+    // settled yet the webhook/reconcile will activate the plan; the continuation shows a pending strip.
+    const unsettled = (msg) => {
+      if (user?.profile_pending) {
+        toast.info('Payment is still processing — your plan activates automatically. Let\u2019s finish your account.');
+        navigate('/signup/continue', { replace: true });
+        return;
+      }
+      toast.error(msg);
+    };
 
     const confirm = async () => {
       try {
@@ -108,11 +124,11 @@ const SubscriptionPage = () => {
             setTimeout(() => setPaymentSuccess(false), 5000);
             setSubCelebration({ tierName: retry.data?.plan_name || subscriptionStatus?.plan_name || '' });
           } else {
-            toast.error('Payment is still processing. Please refresh in a moment.');
+            unsettled('Payment is still processing. Please refresh in a moment.');
           }
         }
       } catch {
-        toast.error('Could not confirm payment. Please refresh or contact support.');
+        unsettled('Could not confirm payment. Please refresh or contact support.');
       }
       setConfirmingPayment(false);
     };

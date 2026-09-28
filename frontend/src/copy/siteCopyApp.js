@@ -70,6 +70,7 @@ export const PAGES_APP = [
         f('signup.continue.h1b', 'Headline — line 2 (gold)', 'Let’s finish setting up.'),
         f('signup.continue.sub', 'Sub-headline', 'Two quick steps — the same details every CarryOn account starts with.'),
         f('signup.continue.paid', 'Green strip after a paid return ({plan})', '{plan} is active — thank you. Stripe has emailed your receipt.'),
+        f('signup.continue.pending', 'Amber strip while Stripe is still settling ({plan})', '{plan} is being activated — no action needed. Finish your account meanwhile.'),
         f('signup.continue.name_title', 'About-you tile heading', 'A few details about you'),
         f('signup.continue.cta', 'Finish button', 'Finish setup'),
         f('signup.continue.cta_none', 'Finish button when no eligibility is selected', 'None apply — Finish setup'),
