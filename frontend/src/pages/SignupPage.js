@@ -280,6 +280,8 @@ const SignupPage = ({ mode = 'signup' }) => {
   const [otp, setOtp] = useState('');
   const [otpHint, setOtpHint] = useState('');
   const [registeredEmail, setRegisteredEmail] = useState('');
+  // Two accounts may share one email (founder rule) — the code is verified against the username.
+  const [registeredIdentifier, setRegisteredIdentifier] = useState('');
   const [resendCooldown, setResendCooldown] = useState(0);
 
   useEffect(() => {
@@ -664,6 +666,8 @@ const SignupPage = ({ mode = 'signup' }) => {
         return;
       }
       setRegisteredEmail(email);
+      setRegisteredIdentifier(response.data.username || username || email);
+      setRegisteredIdentifier(response.data.username || username || email);
       setOtpHint(response.data.otp_hint);
       setShowOtpModal(true);
     } catch (error) {
@@ -681,7 +685,7 @@ const SignupPage = ({ mode = 'signup' }) => {
     if (otp.length !== 6) { toast.error('Please enter a valid 6-digit OTP'); return; }
     setLoading(true);
     try {
-      const user = await verifyOtp(registeredEmail, otp);
+      const user = await verifyOtp(registeredIdentifier || registeredEmail, otp);
       // Claim referral if a code is stashed from the landing page
       try {
         const ref = localStorage.getItem('carryon_referral_code');
@@ -722,7 +726,7 @@ const SignupPage = ({ mode = 'signup' }) => {
   const handleResendOtp = async () => {
     if (resendCooldown > 0) return;
     try {
-      const result = await resendOtp(registeredEmail);
+      const result = await resendOtp(registeredIdentifier || registeredEmail);
       if (result.email_sent === false) {
         toast.error('Failed to send code — please try again');
       } else {
