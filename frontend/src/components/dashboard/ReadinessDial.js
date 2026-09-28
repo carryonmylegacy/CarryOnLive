@@ -22,9 +22,9 @@ export function ReadinessDial({ score, labelText, labelColor, id = 'main', varia
     : <SpeedometerGauge score={score} id={id} labelText={labelText} labelColor={labelColor} />;
   if (!showPolicyLink) return dial;
   return (
-    <div className="flex flex-col items-center">
+    <div className="flex flex-col items-center w-full">
       {dial}
-      <a href="/readiness-score" target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-[var(--t4)] hover:text-[var(--gold)] underline-offset-2 hover:underline -mt-1" data-testid={`readiness-policy-link-${id}`}>
+      <a href="/readiness-score" target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-[var(--t4)] hover:text-[var(--gold)] underline-offset-2 hover:underline mt-1" data-testid={`readiness-policy-link-${id}`}>
         How is this calculated?
       </a>
     </div>

@@ -34,7 +34,9 @@ export const CircleGauge = ({ score, id = 'main', labelText, labelColor }) => {
   }, []);
 
   return (
-    <div className="flex flex-col items-center w-full max-w-[240px] lg:max-w-[380px] mx-auto">
+    // Explicit ceilings, but the width itself comes from the parent — ReadinessDial gives us a
+    // full-width column, otherwise a shrink-wrapped flex item would size this by its text.
+    <div className="flex flex-col items-center w-full max-w-[260px] lg:max-w-[440px] mx-auto">
       <div
         className="relative w-full aspect-square"
         style={{ containerType: 'inline-size' }}
@@ -96,25 +98,14 @@ export const CircleGauge = ({ score, id = 'main', labelText, labelColor }) => {
               className="mt-2 uppercase"
               style={{
                 fontFamily: 'var(--sans)',
-                // Tightened from 0.22em to 0.18em — 0.22 was pushing
-                // "GETTING STARTED" (15 characters) past the inner
-                // circle on desktop (380px container) so the label
-                // visually kissed the inside edge of the gold ring.
-                letterSpacing: '0.18em',
-                // Dropped from 5.5cqi to 4.6cqi for an extra safety
-                // margin, and capped at 18px so even an oversized
-                // container can never produce a label that overflows
-                // the inner ring. Container queries keep this scaling
-                // correctly from the 240px mobile PWA gauge all the
-                // way up to the desktop 380px width.
-                fontSize: 'min(4.6cqi, 18px)',
-                fontWeight: 600,
-                color: labelColor || 'var(--t4)',
-                // Hard horizontal ceiling — at the bottom-of-circle
-                // chord (where the label sits ~30% below center) the
-                // safe inner width is roughly 62% of the container.
-                // 58cqi leaves a clean visual gutter on both sides.
-                maxWidth: '58cqi',
+                letterSpacing: '0.14em',
+                // Scales with the ring: ~14.5px on the 260px phone gauge, 22px on the desktop
+                // ring. "GETTING STARTED" (15 chars) at this size spans ~57% of the container,
+                // inside the 66% chord available where the label sits.
+                fontSize: 'min(5.6cqi, 22px)',
+                fontWeight: 700,
+                color: labelColor || 'var(--t3, var(--t4))',
+                maxWidth: '66cqi',
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
