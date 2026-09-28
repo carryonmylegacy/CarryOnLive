@@ -1099,6 +1099,8 @@ const SignupPage = ({ mode = 'signup' }) => {
                                   background: active ? `${s.color}15` : 'rgba(255,255,255,0.03)',
                                   border: active ? `2px solid ${s.color}60` : '1px solid rgba(255,255,255,0.08)',
                                 }}
+                                aria-pressed={active}
+                                data-selected={active ? 'true' : 'false'}
                                 data-testid={`special-status-${s.id}`}
                               >
                                 <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
@@ -1106,8 +1108,8 @@ const SignupPage = ({ mode = 'signup' }) => {
                                   <SIcon className="w-4 h-4" style={{ color: active ? s.color : '#64748b' }} />
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <span className="text-sm font-bold leading-tight block"
-                                    style={{ color: active ? s.color : '#cbd5e1' }}>
+                                  <span className="text-[13px] sm:text-sm font-bold leading-tight block"
+                                    style={{ color: active ? s.color : '#cbd5e1', wordBreak: 'normal', overflowWrap: 'normal' }}>
                                     {s.label}
                                   </span>
                                   {active && s.id !== 'enterprise' && (
@@ -1374,7 +1376,7 @@ const SignupPage = ({ mode = 'signup' }) => {
 
                   {/* Navigation Buttons — pinned to bottom */}
                   <div className="flex-shrink-0">
-                    <div className="flex items-center justify-between pt-4 sm:pt-5" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                    <div className="flex items-center justify-between gap-3 pt-4 sm:pt-5" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
                     {currentStep?.id === 'partner_code' ? (
                       // Account is already created on this step — no
                       // "Back" path. Empty slot keeps the primary CTA
@@ -1384,16 +1386,16 @@ const SignupPage = ({ mode = 'signup' }) => {
                       <span />
                     ) : step > 0 ? (
                       <button onClick={() => goTo(step - 1)}
-                        className="flex items-center gap-2 text-[#6b7a90] text-sm font-medium hover:text-white transition-colors"
+                        className="flex items-center gap-2 flex-shrink-0 whitespace-nowrap text-[#6b7a90] text-sm font-medium hover:text-white transition-colors"
                         data-testid="signup-back-btn">
                         <ArrowLeft className="w-4 h-4" /> {t('signup.btn.back')}</button>
                     ) : (
-                      <Link to="/login" className="flex items-center gap-2 text-[#6b7a90] text-sm font-medium hover:text-[#d4af37] transition-colors whitespace-nowrap">
+                      <Link to="/login" className="flex items-center gap-2 flex-shrink-0 text-[#6b7a90] text-sm font-medium hover:text-[#d4af37] transition-colors whitespace-nowrap">
                         <ArrowLeft className="w-4 h-4" /> {t('signup.btn.signin')}</Link>
                     )}
 
                     <Button onClick={handleNext} disabled={loading || usernameChecking || applyingPartnerCode}
-                      className="h-11 sm:h-12 px-6 sm:px-8 rounded-xl font-semibold text-sm"
+                      className="h-auto min-h-[44px] sm:min-h-[48px] py-2 px-4 sm:px-8 rounded-xl font-semibold text-sm min-w-0 whitespace-normal leading-snug text-center"
                       style={{
                         background: canAdvance() ? 'linear-gradient(135deg, #d4af37, #b8962e)' : 'rgba(var(--gold-rgb), 0.15)',
                         color: canAdvance() ? '#080e1a' : '#d4af3780',

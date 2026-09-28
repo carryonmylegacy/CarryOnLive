@@ -532,6 +532,10 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     && currentPath !== '/signup/continue' && !currentPath.startsWith('/subscription')) {
     return <Navigate to="/signup/continue" replace />;
   }
+  // …and the continuation has nothing left to collect once the flag is cleared.
+  if (currentPath === '/signup/continue' && !user?.profile_pending) {
+    return <Navigate to="/dashboard" replace />;
+  }
   const isOnSettings = currentPath === '/settings' || currentPath === '/security-settings';
   const needsSubscription = subscriptionStatus?.needs_subscription === true
     && subscriptionStatus?.trial?.trial_active !== true
