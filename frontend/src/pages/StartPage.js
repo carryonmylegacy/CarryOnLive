@@ -317,8 +317,10 @@ const StartPage = () => {
             <button
               onClick={() => {
                 clearPartnerStash();
+                // Explore First is the no-payment door: drop any plan tile tapped earlier this session.
+                sessionStorage.removeItem(INTENT_KEY);
                 const partnerCode = sessionStorage.getItem('carryon_partner_code');
-                navigate(partnerCode ? `/signup?code=${partnerCode}` : '/signup');
+                navigate(partnerCode ? `/signup?explore=1&code=${partnerCode}` : '/signup?explore=1');
               }}
               className="w-full py-3.5 rounded-xl text-base font-bold transition-all active:scale-[0.97]"
               style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid var(--b)', color: 'var(--t)' }}

@@ -94,6 +94,12 @@ const SignupPage = ({ mode = 'signup' }) => {
   // Express: arrived from a plan tile — one account tile, then straight to Stripe (founder, Sep 27 2026).
   const [expressIntent] = useState(() => {
     if (mode === 'continue') return null;
+    // "Explore First" (or any link that says so) must never show checkout copy, even if a
+    // plan tile was tapped earlier in this session.
+    if (new URLSearchParams(window.location.search).get('explore') === '1') {
+      sessionStorage.removeItem(INTENT_KEY);
+      return null;
+    }
     const i = readIntent();
     return i?.planId ? i : null;
   });
@@ -330,6 +336,14 @@ const SignupPage = ({ mode = 'signup' }) => {
       return true;
     }
     return false;
+  };
+
+  // Top-left arrow: one tile back, or — on the first tile — back to the page that sent us
+  // here (/start, /pricing, a partner page…) instead of the roundabout via /login.
+  const handleTopBack = () => {
+    if (step > 0) { goTo(step - 1); return; }
+    if (window.history.state?.idx > 0) navigate(-1);
+    else navigate('/start');
   };
 
   const handleNext = () => {
@@ -713,8 +727,19 @@ const SignupPage = ({ mode = 'signup' }) => {
 
       {/* NAV */}
       <nav className="fixed top-0 w-full z-50" style={{ borderBottom: '1px solid rgba(var(--gold-rgb), 0.08)', background: 'rgba(8,14,26,0.97)', paddingTop: 'env(safe-area-inset-top, 0px)' }}>
-        <div className="max-w-[1400px] mx-auto px-6 lg:px-10 h-16 flex items-center justify-between">
-          <LogoHome testId="signup-logo" src={partnerLandingLogo || "/carryon-logo.png"} alt={partnerLandingCompany || "CarryOn"} />
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-10 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+            {!(isContinue && step === 0) && currentStep?.id !== 'partner_code' && (
+              <button type="button" onClick={handleTopBack} disabled={loading}
+                className="flex items-center gap-1 text-[#9aa7ba] hover:text-white text-sm font-medium transition-colors -ml-1 pr-1 disabled:opacity-40"
+                aria-label={step > 0 ? 'Back one step' : 'Back to the previous page'}
+                data-testid="signup-top-back">
+                <ArrowLeft className="w-5 h-5" />
+                <span className="hidden sm:inline">{t('signup.btn.back')}</span>
+              </button>
+            )}
+            <LogoHome testId="signup-logo" src={partnerLandingLogo || "/carryon-logo.png"} alt={partnerLandingCompany || "CarryOn"} />
+          </div>
           {!isContinue && (
             <Link to="/login" className="text-[#d4af37] text-sm font-semibold hover:text-[#fcd34d] transition-colors flex items-center gap-1">
               Sign In <ChevronRight className="w-3.5 h-3.5" />
