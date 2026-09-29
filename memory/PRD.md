@@ -597,6 +597,8 @@ bug — fix it in the preview DB immediately (snippet in
 - Hardcoded `rgba(212,175,55,…)` → `var(--gold-rgb)` sweep.
 
 ### Last verified end-to-end working item
+**Sep 29 2026 (latest) — `/start` back arrow (NOT PUSHED).** ← in the upper-left of the Start page (before the logo) returns to the home page; verified at phone + desktop widths.
+
 **Sep 28 2026 (latest) — Total Family Continuity gauge proportions (NOT PUSHED).** The dial wrapper had no width, so both gauges were sized by the "How is this calculated?" link (133 px). Circle ring now 440 px desktop / 260 px phone with a 22 px bold "GETTING STARTED" inside the ring; speedometer fills the card. Verified at 1860 px and 390 px.
 
 **Sep 28 2026 (latest) — Signup pressure test, all shapes (NOT PUSHED).** ~20 edge paths exercised on preview with the OTP gate enforced + testing agent iteration_71 (15/15 pass). Critical fix: `PublicRoute` bounced freshly-authenticated OTP signups to `/dashboard` before the page's own `navigate()` (React Router v7 transition race) — express OTP signups never reached Stripe; now only bounces visitors who arrived signed in. Also: history-synced tiles (browser/phone back-forward step through tiles), non-sensitive draft survives back/forward/reload, login-with-plan-intent resumes checkout, hospice ($0) express copy + preselect, OTP dialog re-open guard, server error → field reveal, `paid=0` no amber strip, footer/labels phone fixes. Founder decision: shared emails KEPT (new username → separate account); fixed the gap where a second account on a shared email could never verify its signup code (dialog now verifies by username). check.sh ALL CLEAR.

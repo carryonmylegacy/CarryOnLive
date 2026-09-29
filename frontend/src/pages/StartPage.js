@@ -4,7 +4,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import {
-  Shield, ChevronRight, Check, Users, Clock, Zap, ArrowRight
+  Shield, ChevronRight, Check, Users, Clock, Zap, ArrowRight, ArrowLeft
 } from 'lucide-react';
 import { API_URL } from '../config';
 import { TrustBadges, StripeNote } from '../components/landing/TrustBadges';
@@ -243,7 +243,15 @@ const StartPage = () => {
       )}
       {/* Header */}
       <header className="flex items-center justify-between px-4 sm:px-8 pb-4" style={{ borderBottom: '1px solid var(--b)', paddingTop: 'calc(1rem + env(safe-area-inset-top, 0px))' }}>
-        <LogoHome testId="start-logo" />
+        <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+          <button type="button" onClick={() => navigate('/')}
+            className="flex items-center gap-1 -ml-1 pr-1 text-sm font-medium text-[var(--t4)] hover:text-[var(--t)] transition-colors"
+            aria-label="Back to the home page" data-testid="start-back-home">
+            <ArrowLeft className="w-5 h-5" />
+            <span className="hidden sm:inline">{t('signup.btn.back')}</span>
+          </button>
+          <LogoHome testId="start-logo" />
+        </div>
         <button onClick={() => navigate('/login')} className="text-sm text-[var(--t4)] hover:text-[var(--t)]">
           {t('nav.signin')}
         </button>
