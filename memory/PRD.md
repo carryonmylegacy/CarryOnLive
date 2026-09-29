@@ -597,6 +597,8 @@ bug — fix it in the preview DB immediately (snippet in
 - Hardcoded `rgba(212,175,55,…)` → `var(--gold-rgb)` sweep.
 
 ### Last verified end-to-end working item
+**Sep 29 2026 (latest) — Homepage "Last product update" date (NOT PUSHED).** Was stuck on Sep 20 because it reads the hand-maintained `frontend/public/changelog.json`. Added Sep 27/28/29 public entries; the date now also considers the build date stamped into `/version.json` by `yarn build`; check.sh Stage 4b blocks a push when internal work is newer than the public changelog. Testing agent iteration_72 verified at phone + desktop. PyJWT bumped to 2.14.0 (new CVE), dep baseline refreshed.
+
 **Sep 29 2026 (latest) — Live Metrics master switch (NOT PUSHED).** All public live counters (homepage "N families set up" badge, trust-block numbers) **and the member-stories section ("No published member stories yet…" / approved stories grid)** now hang off one founder toggle `live_metrics_enabled` (default OFF) in the sidebar/mobile stack beneath Free Mode; the old auto/on/off selector (auto-reveal at 25 families) is gone. Verified ON → badge appears on /home, OFF → gone; check.sh ALL CLEAR.
 
 **Sep 29 2026 (latest) — `/start` back arrow (NOT PUSHED).** ← in the upper-left of the Start page (before the logo) returns to the **marketing homepage (`/home`)** — `/` renders the sign-in screen inside the app/PWA shell, which is why the first cut landed on Sign In. `LogoHome` on all public pages now also goes to `/home` when signed out (`/` when signed in). Verified at phone + desktop widths.
