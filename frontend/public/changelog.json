@@ -4,6 +4,7 @@
       "date": "2026-09-29",
       "title": "Cleaner homepage, easier way back",
       "items": [
+        "Pricing page headline no longer hides under the top bar on iPhone — the page now leaves room for the notch",
         "Live platform counters and the member-stories section now appear only when we choose to publish them, so the homepage never shows a half-empty trust block",
         "A back arrow on the Start page and on every sign-up tile: step back one tile, or return to the homepage without detouring through Sign In",
         "The CarryOn logo on public pages always returns to the homepage",

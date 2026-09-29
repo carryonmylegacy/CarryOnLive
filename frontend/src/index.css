@@ -2047,3 +2047,9 @@ body.ect-chat-active .dashboard-content-area {
     font-size: 16px !important;
   }
 }
+
+/* /pricing content offset — clears the fixed MarketingNav (h-16 + safe-area) on notched phones */
+.pricing-safe-top { padding-top: calc(7rem + env(safe-area-inset-top, 0px)); }
+@media (min-width: 640px) {
+  .pricing-safe-top { padding-top: calc(9rem + env(safe-area-inset-top, 0px)); }
+}

@@ -159,7 +159,7 @@ const PricingPage = () => {
       {/* Same fixed marketing nav as /customers, /vs, /sources — Pricing highlighted. */}
       <MarketingNav navigateWithFade={navigate} testIdSuffix="-pricing" />
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-8 pt-28 pb-12 sm:pt-36 sm:pb-20">
+      <div className="max-w-5xl mx-auto px-4 sm:px-8 pb-12 sm:pb-20 pricing-safe-top">
         {/* Hero */}
         <div className="text-center mb-10">
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-[var(--t)] mb-3" style={{ fontFamily: 'Outfit, sans-serif' }} data-testid="pricing-h1">

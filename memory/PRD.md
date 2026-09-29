@@ -597,6 +597,9 @@ bug — fix it in the preview DB immediately (snippet in
 - Hardcoded `rgba(212,175,55,…)` → `var(--gold-rgb)` sweep.
 
 ### Last verified end-to-end working item
+**Sep 29 2026 (latest) — `/pricing` headline clipped under the nav on iPhone (NOT PUSHED).** The fixed `MarketingNav` adds `env(safe-area-inset-top)` to its height; `/pricing` was the only marketing page whose content offset (`pt-28`) did not — the headline slid under the nav on notched phones. New `.pricing-safe-top` (index.css) mirrors the other pages' `calc(Nrem + safe-area)` pattern. Verified with an emulated 59 px inset at 390 px and at 1440 px; check.sh ALL CLEAR. Rule for future marketing pages: any content under `MarketingNav` must include the safe-area term in its top padding.
+
+
 **Sep 29 2026 (latest) — Homepage "Last product update" date (NOT PUSHED).** Was stuck on Sep 20 because it reads the hand-maintained `frontend/public/changelog.json`. Added Sep 27/28/29 public entries; the date now also considers the build date stamped into `/version.json` by `yarn build`; check.sh Stage 4b blocks a push when internal work is newer than the public changelog. Testing agent iteration_72 verified at phone + desktop. PyJWT bumped to 2.14.0 (new CVE), dep baseline refreshed.
 
 **Sep 29 2026 (latest) — Live Metrics master switch (NOT PUSHED).** All public live counters (homepage "N families set up" badge, trust-block numbers) **and the member-stories section ("No published member stories yet…" / approved stories grid)** now hang off one founder toggle `live_metrics_enabled` (default OFF) in the sidebar/mobile stack beneath Free Mode; the old auto/on/off selector (auto-reveal at 25 families) is gone. Verified ON → badge appears on /home, OFF → gone; check.sh ALL CLEAR.
