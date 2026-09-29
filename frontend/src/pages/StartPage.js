@@ -244,7 +244,7 @@ const StartPage = () => {
       {/* Header */}
       <header className="flex items-center justify-between px-4 sm:px-8 pb-4" style={{ borderBottom: '1px solid var(--b)', paddingTop: 'calc(1rem + env(safe-area-inset-top, 0px))' }}>
         <div className="flex items-center gap-2 sm:gap-4 min-w-0">
-          <button type="button" onClick={() => navigate('/')}
+          <button type="button" onClick={() => navigate('/home')}
             className="flex items-center gap-1 -ml-1 pr-1 text-sm font-medium text-[var(--t4)] hover:text-[var(--t)] transition-colors"
             aria-label="Back to the home page" data-testid="start-back-home">
             <ArrowLeft className="w-5 h-5" />
