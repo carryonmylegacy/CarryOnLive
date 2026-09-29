@@ -597,6 +597,8 @@ bug — fix it in the preview DB immediately (snippet in
 - Hardcoded `rgba(212,175,55,…)` → `var(--gold-rgb)` sweep.
 
 ### Last verified end-to-end working item
+**Sep 29 2026 (latest) — Live Metrics master switch (NOT PUSHED).** All public live counters (homepage "N families set up" badge, trust-block numbers) now hang off one founder toggle `live_metrics_enabled` (default OFF) in the sidebar/mobile stack beneath Free Mode; the old auto/on/off selector (auto-reveal at 25 families) is gone. Verified ON → badge appears on /home, OFF → gone; check.sh ALL CLEAR.
+
 **Sep 29 2026 (latest) — `/start` back arrow (NOT PUSHED).** ← in the upper-left of the Start page (before the logo) returns to the **marketing homepage (`/home`)** — `/` renders the sign-in screen inside the app/PWA shell, which is why the first cut landed on Sign In. `LogoHome` on all public pages now also goes to `/home` when signed out (`/` when signed in). Verified at phone + desktop widths.
 
 **Sep 28 2026 (latest) — Total Family Continuity gauge proportions (NOT PUSHED).** The dial wrapper had no width, so both gauges were sized by the "How is this calculated?" link (133 px). Circle ring now 440 px desktop / 260 px phone with a 22 px bold "GETTING STARTED" inside the ring; speedometer fills the card. Verified at 1860 px and 390 px.

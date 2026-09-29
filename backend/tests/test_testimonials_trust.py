@@ -6,15 +6,16 @@ import pytest
 import requests
 
 BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "").rstrip("/")
-ADMIN_EMAIL = "info@carryon.us"
-ADMIN_PASSWORD = "Demo1234!"
+# Founder account (see /app/memory/test_credentials.md) — info@carryon.us is a benefactor now.
+ADMIN_EMAIL = os.environ.get("CARRYON_FOUNDER_EMAIL", "founder@carryon.us")
+ADMIN_PASSWORD = os.environ.get("CARRYON_FOUNDER_PASSWORD", "CarryOntheWisdom!")
 
 
 # ---------------- Fixtures ----------------
 @pytest.fixture(scope="module")
 def admin_token():
     time.sleep(1)
-    r = requests.post(f"{BASE_URL}/api/auth/login", json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD})
+    r = requests.post(f"{BASE_URL}/api/auth/login", json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD, "force_login": True})
     assert r.status_code == 200, r.text
     body = r.json()
     tok = body.get("access_token") or body.get("token")
@@ -238,64 +239,40 @@ class TestAdminModeration:
 
 # ---------------- Live Platform Stats ----------------
 class TestPlatformStats:
-    def test_public_platform_stats_auto(self, admin_headers):
-        # Ensure auto first
-        requests.put(
+    """One founder switch (`live_metrics_enabled`, default OFF) gates every public counter."""
+
+    def _set(self, admin_headers, value):
+        r = requests.put(
             f"{BASE_URL}/api/admin/platform-settings",
             headers=admin_headers,
-            json={"show_live_stats": "auto"},
+            json={"live_metrics_enabled": value},
         )
+        assert r.status_code == 200
+        return r
+
+    def test_public_platform_stats_hidden_by_default(self, admin_headers):
+        self._set(admin_headers, False)
         r = requests.get(f"{BASE_URL}/api/public/platform-stats")
         assert r.status_code == 200
         data = r.json()
-        for key in [
-            "families",
-            "documents",
-            "messages",
-            "checklist_items",
-            "people_invited",
-            "visible",
-            "mode",
-            "updated_at",
-        ]:
+        for key in ["families", "documents", "messages", "checklist_items", "people_invited", "visible", "mode", "updated_at"]:
             assert key in data
-        # Preview DB has 111 estates → visible True in auto mode
-        if data["families"] >= 25:
-            assert data["visible"] is True
-        assert data["mode"] == "auto"
+        # No auto-reveal threshold any more: hidden regardless of how many families exist.
+        assert data["visible"] is False
+        assert data["mode"] == "off"
 
-    def test_toggle_off_on_auto(self, admin_headers):
-        # off
-        r_off = requests.put(
-            f"{BASE_URL}/api/admin/platform-settings",
-            headers=admin_headers,
-            json={"show_live_stats": "off"},
-        )
-        assert r_off.status_code == 200
-        r = requests.get(f"{BASE_URL}/api/public/platform-stats")
-        assert r.json()["visible"] is False
-        assert r.json()["mode"] == "off"
-
-        # on
-        requests.put(
-            f"{BASE_URL}/api/admin/platform-settings",
-            headers=admin_headers,
-            json={"show_live_stats": "on"},
-        )
+    def test_toggle_on_off(self, admin_headers):
+        self._set(admin_headers, True)
         r = requests.get(f"{BASE_URL}/api/public/platform-stats")
         assert r.json()["visible"] is True
         assert r.json()["mode"] == "on"
 
-        # restore auto
-        requests.put(
-            f"{BASE_URL}/api/admin/platform-settings",
-            headers=admin_headers,
-            json={"show_live_stats": "auto"},
-        )
+        self._set(admin_headers, False)
         r = requests.get(f"{BASE_URL}/api/public/platform-stats")
-        assert r.json()["mode"] == "auto"
+        assert r.json()["visible"] is False
+        assert r.json()["mode"] == "off"
 
-    def test_site_content_includes_show_live_stats(self):
+    def test_site_content_includes_live_metrics_flag(self):
         r = requests.get(f"{BASE_URL}/api/public/site-content")
         assert r.status_code == 200
-        assert "show_live_stats" in r.json()
+        assert r.json()["live_metrics_enabled"] in (True, False)

@@ -38,7 +38,6 @@ export const SiteContentTab = ({ getAuthHeaders }) => {
   const [founder, setFounder] = useState({ name: '', title: '', bio: '', linkedin: '' });
   const [savedFounder, setSavedFounder] = useState({ name: '', title: '', bio: '', linkedin: '' });
   const [savingFounder, setSavingFounder] = useState(false);
-  const [liveStatsMode, setLiveStatsMode] = useState('auto');
   const [trustpilotUrl, setTrustpilotUrl] = useState('');
   const [savedTrustpilotUrl, setSavedTrustpilotUrl] = useState('');
   const [savingTrustpilot, setSavingTrustpilot] = useState(false);
@@ -74,7 +73,6 @@ export const SiteContentTab = ({ getAuthHeaders }) => {
         };
         setFounder(f);
         setSavedFounder(f);
-        setLiveStatsMode(res.data?.show_live_stats || 'auto');
         setTrustpilotUrl(res.data?.trustpilot_url || '');
         setSavedTrustpilotUrl(res.data?.trustpilot_url || '');
         apiClient.get(`${API_URL}/public/platform-stats`).then(r => setLiveStats(r.data)).catch(() => {});
@@ -225,16 +223,6 @@ export const SiteContentTab = ({ getAuthHeaders }) => {
       toast.success(url ? 'Trustpilot link saved — the reviews card is live on the homepage' : 'Trustpilot link removed');
     } catch { toast.error('Failed to save'); }
     setSavingTrustpilot(false);
-  };
-
-  const handleLiveStatsMode = async (mode) => {
-    try {
-      await apiClient.put(`${API_URL}/admin/platform-settings`, { show_live_stats: mode }, getAuthHeaders());
-      setLiveStatsMode(mode);
-      const r = await apiClient.get(`${API_URL}/public/platform-stats`);
-      setLiveStats(r.data);
-      toast.success(`Live numbers: ${mode}`);
-    } catch { toast.error('Failed to save'); }
   };
 
   const handleHeadshotRemove = async () => {
@@ -543,29 +531,22 @@ export const SiteContentTab = ({ getAuthHeaders }) => {
         </CardContent>
       </Card>
 
-      {/* Live platform numbers (homepage trust block) */}
+      {/* Live platform numbers (homepage trust block) — controlled by the sidebar switch */}
       <Card className="border-[var(--b)] bg-[var(--s)]">
-        <CardContent className="p-5 space-y-4">
+        <CardContent className="p-5 space-y-3">
           <div className="flex items-center gap-2">
             <Activity className="w-4 h-4 text-[var(--gold)]" />
-            <h3 className="text-base font-bold text-[var(--t)]">Live Platform Numbers (homepage)</h3>
+            <h3 className="text-base font-bold text-[var(--t)]">Live Platform Numbers (public site)</h3>
           </div>
           <p className="text-sm text-[var(--t4)]">
-            Real counts from the database, shown in the homepage trust block. <strong className="text-[var(--t)]">Auto</strong> shows them once 25+ families exist; <strong className="text-[var(--t)]">On</strong> forces them visible now; <strong className="text-[var(--t)]">Off</strong> hides them.
+            The homepage &ldquo;families set up&rdquo; badge and the trust-block counters are controlled by the
+            <strong className="text-[var(--t)]"> Live Metrics </strong>switch in your sidebar (beneath Free Mode). Off by default — nothing public shows live numbers until you turn it on.
           </p>
           {liveStats && (
             <p className="text-xs text-[var(--t4)]" data-testid="live-stats-preview">
               Right now: {liveStats.families} families &middot; {liveStats.documents} documents &middot; {liveStats.messages} messages &middot; {liveStats.checklist_items} checklist steps &middot; {liveStats.people_invited} people invited &mdash; currently <span className={liveStats.visible ? 'text-green-400' : 'text-[var(--t4)]'}>{liveStats.visible ? 'VISIBLE' : 'hidden'}</span>
             </p>
           )}
-          <div className="flex gap-2">
-            {['auto', 'on', 'off'].map(mode => (
-              <button key={mode} onClick={() => handleLiveStatsMode(mode)}
-                className="px-4 py-2 rounded-lg text-sm font-bold capitalize transition-all"
-                style={liveStatsMode === mode ? { background: 'var(--gold)', color: '#0F1629' } : { background: 'var(--b)', color: 'var(--t4)', border: '1px solid var(--b2)' }}
-                data-testid={`live-stats-mode-${mode}`}>{mode}</button>
-            ))}
-          </div>
         </CardContent>
       </Card>
 

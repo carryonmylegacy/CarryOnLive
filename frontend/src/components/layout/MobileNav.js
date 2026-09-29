@@ -34,6 +34,7 @@ import {
   Search,
   StickyNote,
   Gift,
+  Activity,
   Plus,
   Heart,
   Star,
@@ -1083,6 +1084,16 @@ const MobileNav = () => {
                     mobile
                     testId="mobile-free-mode-toggle"
                     activeBadge="LIVE"
+                  />
+                  <PlatformBooleanToggle
+                    settingKey="live_metrics_enabled"
+                    label="Live Metrics"
+                    Icon={Activity}
+                    activeColor="#10b981"
+                    activeLabel="Shown"
+                    inactiveLabel="Hidden"
+                    mobile
+                    testId="mobile-live-metrics-toggle"
                   />
                   <PlatformBooleanToggle
                     settingKey="ai_burn_guard_enabled"

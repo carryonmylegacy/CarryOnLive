@@ -34,6 +34,7 @@ import {
   Search,
   StickyNote,
   Gift,
+  Activity,
   Plus,
   Heart,
   Star,
@@ -972,6 +973,18 @@ const Sidebar = () => {
             collapsed={collapsed}
             testId="sidebar-free-mode-toggle"
             activeBadge="LIVE"
+          />
+          {/* Public live counters (homepage "N families set up" badge, trust-block numbers).
+              One switch, default OFF — nothing on the public site shows live metrics until it's ON. */}
+          <PlatformBooleanToggle
+            settingKey="live_metrics_enabled"
+            label="Live Metrics"
+            Icon={Activity}
+            activeColor="#10b981"
+            activeLabel="Shown"
+            inactiveLabel="Hidden"
+            collapsed={collapsed}
+            testId="sidebar-live-metrics-toggle"
           />
           <PlatformBooleanToggle
             settingKey="ai_burn_guard_enabled"

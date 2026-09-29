@@ -17,7 +17,6 @@ router = APIRouter()
 
 ROLES = {"benefactor", "beneficiary", "hospice_family", "military", "other"}
 STATUSES = {"pending", "approved", "rejected"}
-LIVE_STATS_MIN_FAMILIES = 25
 _stats_cache: dict = {"at": 0.0, "data": None}
 
 
@@ -160,18 +159,18 @@ async def compute_platform_stats() -> dict:
 
 @router.get("/public/platform-stats")
 async def public_platform_stats():
-    """Real counts from the live database. Hidden (visible=false) until the founder turns them on or >= 25 families exist."""
+    """Real counts from the live database. Hidden (visible=false) unless the founder's
+    Live Metrics switch (sidebar toggle → platform_settings.live_metrics_enabled) is ON."""
     now = time.time()
     if _stats_cache["data"] is None or now - _stats_cache["at"] > 600:
         _stats_cache["data"] = await compute_platform_stats()
         _stats_cache["at"] = now
     stats = _stats_cache["data"]
-    settings = await db.platform_settings.find_one({"_id": "global"}, {"show_live_stats": 1}) or {}
-    mode = settings.get("show_live_stats", "auto")
-    visible = mode == "on" or (mode == "auto" and stats["families"] >= LIVE_STATS_MIN_FAMILIES)
+    settings = await db.platform_settings.find_one({"_id": "global"}, {"live_metrics_enabled": 1}) or {}
+    visible = bool(settings.get("live_metrics_enabled", False))
     return {
         **stats,
         "visible": visible,
-        "mode": mode,
+        "mode": "on" if visible else "off",
         "updated_at": datetime.fromtimestamp(_stats_cache["at"], tz=timezone.utc).isoformat(),
     }

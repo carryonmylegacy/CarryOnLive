@@ -19,6 +19,7 @@ const PlatformBooleanToggle = ({
 }) => {
   const [on, setOn] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [loaded, setLoaded] = useState(false); // ignore taps until the real state is known
 
   useEffect(() => {
     const token = (() => { try { return localStorage.getItem('carryon_token'); } catch { return null; } })();
@@ -27,13 +28,13 @@ const PlatformBooleanToggle = ({
     apiClient.get(`${API_URL}/admin/platform-settings`, {
       headers: { Authorization: `Bearer ${token}` },
     }).then((res) => {
-      if (!cancelled) setOn(!!res.data?.[settingKey]);
+      if (!cancelled) { setOn(!!res.data?.[settingKey]); setLoaded(true); }
     }).catch(() => {});
     return () => { cancelled = true; };
   }, [settingKey]);
 
   const toggle = async () => {
-    if (busy) return;
+    if (busy || !loaded) return;
     const next = !on;
     setOn(next);
     setBusy(true);
@@ -63,7 +64,7 @@ const PlatformBooleanToggle = ({
     return (
       <button
         onClick={toggle}
-        disabled={busy}
+        disabled={busy || !loaded}
         className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl transition-all"
         style={{
           background: on ? `${activeColor}1A` : 'var(--b)',
@@ -127,7 +128,7 @@ const PlatformBooleanToggle = ({
           </span>
         )}
       </div>
-      <Switch checked={on} onCheckedChange={toggle} disabled={busy} data-testid={`${testId}-switch`} />
+      <Switch checked={on} onCheckedChange={toggle} disabled={busy || !loaded} data-testid={`${testId}-switch`} />
     </div>
   );
 };

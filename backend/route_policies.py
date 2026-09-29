@@ -513,7 +513,7 @@ ROUTE_POLICIES: dict = {
     },
     "GET /api/public/platform-stats": {
         "auth": "public",
-        "notes": "Aggregate counts only; 10-min cache; gated by show_live_stats",
+        "notes": "Aggregate counts only; 10-min cache; gated by live_metrics_enabled (founder sidebar switch)",
     },
     # ── Site copy (founder-editable public-site text) ──────────────────────
     "GET /api/public/site-copy": {

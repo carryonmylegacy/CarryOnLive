@@ -151,7 +151,7 @@ async def get_public_site_content(request: Request):
         "trustpilot_url": settings.get("trustpilot_url", ""),
         # Founder story (/founder-about): False = request-access gate, True = open to everyone
         "founder_story_public": bool(settings.get("founder_story_public", False)),
-        "show_live_stats": settings.get("show_live_stats", "auto"),
+        "live_metrics_enabled": bool(settings.get("live_metrics_enabled", False)),
         # Public, non-sensitive feature flags (mirrors prior admin/platform behavior).
         "offline_mode": settings.get("offline_mode", "off"),
         "subscriptions_enabled": settings.get("subscriptions_enabled", True),
