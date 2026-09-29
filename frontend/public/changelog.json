@@ -1,6 +1,37 @@
 {
   "entries": [
     {
+      "date": "2026-09-29",
+      "title": "Cleaner homepage, easier way back",
+      "items": [
+        "Live platform counters and the member-stories section now appear only when we choose to publish them, so the homepage never shows a half-empty trust block",
+        "A back arrow on the Start page and on every sign-up tile: step back one tile, or return to the homepage without detouring through Sign In",
+        "The CarryOn logo on public pages always returns to the homepage",
+        "Last product update on the homepage now reflects the actual release date"
+      ]
+    },
+    {
+      "date": "2026-09-28",
+      "title": "Sign-up flow hardened: back, forward, plan changes and payment returns",
+      "items": [
+        "Every sign-up tile is now a real step in your browser history — the phone back-swipe steps back one tile, forward returns, and what you typed is kept (never your password)",
+        "Picking a plan opens a single account tile before secure checkout; “Explore First” never shows payment wording",
+        "Coming back from Stripe — paid, cancelled, or still processing — lands you exactly where you left off, with a clear status strip",
+        "Long tiles show a “More below” cue and a scroll rail; validation messages scroll to the field they mention",
+        "Dashboard: the Total Family Continuity ring is larger with a fully readable label"
+      ]
+    },
+    {
+      "date": "2026-09-27",
+      "title": "Faster start for plan subscribers",
+      "items": [
+        "Choosing a plan now takes one short account step before secure checkout; the remaining details are collected right after payment",
+        "Special pricing tiers (Seniors, Military, Veteran, New Adult, Hospice) presented in one consistent box with matching feature lists",
+        "Video previews on the homepage show real thumbnails",
+        "Audit-integrity indicator corrected for records created before the current chain format"
+      ]
+    },
+    {
       "date": "2026-09-20",
       "title": "Trust, sourcing and consistency cleanup across the public site",
       "items": [

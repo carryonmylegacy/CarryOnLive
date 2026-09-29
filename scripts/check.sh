@@ -77,10 +77,22 @@ else
   BLOCKING_ISSUES=$((BLOCKING_ISSUES + 1))
 fi
 
-# 4b. Backend pytest full suite (opt-in)
+# 4b. Public changelog freshness — ALWAYS blocking (homepage "Last product update" reads it)
+echo ""
+echo -e "${BOLD}Stage 4b/5: Public changelog freshness (BLOCKING)${NC}"
+if python3 /app/scripts/check_public_changelog.py > /tmp/check_changelog.log 2>&1; then
+  echo -e "  ${GREEN}PASS${NC}"
+  cat /tmp/check_changelog.log
+else
+  echo -e "  ${RED}FAIL${NC}"
+  cat /tmp/check_changelog.log
+  BLOCKING_ISSUES=$((BLOCKING_ISSUES + 1))
+fi
+
+# 4c. Backend pytest full suite (opt-in)
 if [ "$HK_RUN_TESTS" = "1" ]; then
   echo ""
-  echo -e "${BOLD}Stage 4b/5: Backend full pytest (BLOCKING)${NC}"
+  echo -e "${BOLD}Stage 4c/5: Backend full pytest (BLOCKING)${NC}"
   cd backend
   if pytest tests/ -x -q --tb=short > /tmp/check_pytest.log 2>&1; then
     echo -e "  ${GREEN}PASS${NC}"
@@ -93,7 +105,7 @@ if [ "$HK_RUN_TESTS" = "1" ]; then
   cd ..
 else
   echo ""
-  echo -e "${BOLD}Stage 4b/5:${NC} Full pytest skipped (set HK_RUN_TESTS=1 to run)"
+  echo -e "${BOLD}Stage 4c/5:${NC} Full pytest skipped (set HK_RUN_TESTS=1 to run)"
 fi
 
 # 5. Lighthouse (opt-in)

@@ -41,15 +41,27 @@ export const useChangelog = () => {
   return entries;
 };
 
+// Build date stamped by `yarn build` into /version.json — every deploy is a product update,
+// so the homepage never shows a stale date even if the public changelog lags a release.
+const useBuildDate = () => {
+  const [built, setBuilt] = useState(null);
+  useEffect(() => {
+    fetch('/version.json', { cache: 'no-store' }).then(r => r.json()).then(d => setBuilt(d.built || null)).catch(() => {});
+  }, []);
+  return built;
+};
+
 export const formatDate = (iso) => new Date(`${iso}T12:00:00Z`).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 
 export const LastUpdated = ({ testIdSuffix = '' }) => {
   const entries = useChangelog();
-  const latest = entries.find(e => e.date);
-  if (!latest) return null;
+  const built = useBuildDate();
+  const latest = entries.find(e => e.date)?.date;
+  const shown = [latest, built].filter(Boolean).sort().pop();
+  if (!shown) return null;
   return (
     <p className="inline-flex items-center gap-2 text-[#8b97ab] text-sm" data-testid={`last-updated${testIdSuffix}`}>
-      <Clock className="w-4 h-4 text-[#d4af37]" /> Last product update: <span className="text-white font-medium">{formatDate(latest.date)}</span>
+      <Clock className="w-4 h-4 text-[#d4af37]" /> Last product update: <span className="text-white font-medium" data-testid={`last-updated-date${testIdSuffix}`}>{formatDate(shown)}</span>
       <a href="/changelog" className="text-[#d4af37] hover:text-[#fcd34d] underline underline-offset-4" data-testid={`changelog-link${testIdSuffix}`}>See what&apos;s new</a>
     </p>
   );
