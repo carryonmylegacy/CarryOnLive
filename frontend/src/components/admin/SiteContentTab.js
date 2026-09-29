@@ -539,7 +539,7 @@ export const SiteContentTab = ({ getAuthHeaders }) => {
             <h3 className="text-base font-bold text-[var(--t)]">Live Platform Numbers (public site)</h3>
           </div>
           <p className="text-sm text-[var(--t4)]">
-            The homepage &ldquo;families set up&rdquo; badge and the trust-block counters are controlled by the
+            The homepage &ldquo;families set up&rdquo; badge, the trust-block counters and the member-stories section are controlled by the
             <strong className="text-[var(--t)]"> Live Metrics </strong>switch in your sidebar (beneath Free Mode). Off by default — nothing public shows live numbers until you turn it on.
           </p>
           {liveStats && (

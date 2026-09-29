@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Quote, BadgeCheck, ArrowRight } from 'lucide-react';
 import { API_URL } from '../../config';
+import { getPublic } from '../../utils/publicCache';
 
 export const ROLE_LABELS = {
   benefactor: 'Set up a plan for their family',
@@ -36,9 +37,14 @@ export const TestimonialCard = ({ t, testIdSuffix = '' }) => (
 );
 
 // Approved, real member stories. Shows the honest empty state until the first one is approved.
+// Whole block sits behind the founder's Live Metrics switch (same gate as the live counters).
 export const TestimonialsBlock = ({ testIdSuffix = '' }) => {
   const { items, total, loaded } = useTestimonials(6);
-  if (!loaded) return null;
+  const [metricsOn, setMetricsOn] = useState(null);
+  useEffect(() => {
+    getPublic('/public/platform-stats').then(s => setMetricsOn(!!s?.visible)).catch(() => setMetricsOn(false));
+  }, []);
+  if (!loaded || !metricsOn) return null;
   if (total === 0) {
     return (
       <p className="text-center text-[#8b97ab] text-sm" data-testid={`testimonials-empty${testIdSuffix}`}>
