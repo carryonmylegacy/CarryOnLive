@@ -99,6 +99,16 @@ else
   BLOCKING_ISSUES=$((BLOCKING_ISSUES + 1))
 fi
 
+echo -e "${BOLD}Stage 4e/5: Production requirements.txt is curated, not a pip freeze (BLOCKING)${NC}"
+if python3 /app/scripts/check_requirements.py > /tmp/check_requirements.log 2>&1; then
+  echo -e "  ${GREEN}PASS${NC}"
+  cat /tmp/check_requirements.log
+else
+  echo -e "  ${RED}FAIL${NC}"
+  cat /tmp/check_requirements.log
+  BLOCKING_ISSUES=$((BLOCKING_ISSUES + 1))
+fi
+
 # 4c. Backend pytest full suite (opt-in)
 if [ "$HK_RUN_TESTS" = "1" ]; then
   echo ""

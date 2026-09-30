@@ -350,6 +350,17 @@ user approval:
    `subscription_overrides`, `payment_transactions` collections. Don't
    consolidate them.
 
+
+6. **NEVER `pip freeze > backend/requirements.txt`.** The preview pod is Python
+   3.11 with dev tooling (black, mypy, ruff, pip-audit…) and ML libs (librosa,
+   numba, scipy, scikit-learn…) installed; the Render image is `python:3.12-slim`
+   with no compiler. A freeze on Sep 29, 2026 shipped ~40 never-imported packages
+   and the Render build died ("Exited with status 1"). Add or bump pins **by hand,
+   one line per real dependency**. `scripts/check_requirements.py` (check.sh
+   Stage 4e, BLOCKING) rejects a freeze dump. To prove a pin installs on Render
+   before pushing: `pip download <pin> --python-version 3.12 --platform
+   manylinux2014_x86_64 --only-binary=:all: --no-deps -d /tmp/w`.
+
 ---
 
 ## 🟢 RULE 6 — Update test_credentials.md whenever auth changes
