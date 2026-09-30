@@ -2,8 +2,10 @@ import React from 'react';
 import { ChevronRight } from 'lucide-react';
 import { MobileNav, STANDALONE_LINKS, isCurrentLink, visibleLinks } from './MobileNav';
 import { useCopy } from '../../copy/CopyContext';
+import { BackHome } from './BackHome';
+import { LogoHome } from './LogoHome';
 
-// Marketing nav for standalone pages (/about, /customers, /changelog). Hash links resolve to the homepage.
+// Marketing nav for standalone pages (/pricing, /customers, /changelog, …). Hash links resolve to /home.
 export const MarketingNav = ({ navigateWithFade, current, testIdSuffix = '' }) => {
   const { t, flags } = useCopy();
   const links = visibleLinks(STANDALONE_LINKS, flags);
@@ -12,7 +14,10 @@ export const MarketingNav = ({ navigateWithFade, current, testIdSuffix = '' }) =
   return (
     <nav className="fixed top-0 w-full z-[100]" style={{ borderBottom: '1px solid rgba(14,165,233,0.06)', background: 'rgba(11,18,33,0.97)', paddingTop: 'env(safe-area-inset-top, 0px)' }} data-testid={`marketing-nav${testIdSuffix}`}>
       <div className="max-w-[1400px] mx-auto px-6 lg:px-10 h-16 flex items-center justify-between">
-        <a href="/" className="flex items-center" data-testid={`marketing-nav-logo${testIdSuffix}`}><img src="/carryon-logo.png" alt="CarryOn" className="h-12" /></a>
+        <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+          <BackHome testId={`marketing-nav-back${testIdSuffix}`} compact className="-ml-1 pr-1" />
+          <LogoHome testId={`marketing-nav-logo${testIdSuffix}`} />
+        </div>
         <div className="hidden lg:flex items-center gap-7">
           {links.map(item => (
             <a key={item.label} href={item.href} aria-current={isCurrentLink(item.href, here) ? 'page' : undefined} className={`text-sm font-medium transition-colors duration-300 ${isCurrentLink(item.href, here) ? 'text-[#d4af37]' : 'text-[#8b97ab] hover:text-[#d4af37]'}`}>{t(`nav.${item.k}`)}</a>

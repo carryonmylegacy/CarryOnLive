@@ -27,6 +27,7 @@ import {
   unlockOfflineCredential,
 } from '../offline/offlineCredentialCache';
 import { LogoHome } from '../components/landing/LogoHome';
+import { BackHome } from '../components/landing/BackHome';
 import { COMPANY } from '../config/company';
 import { getPublic } from '../utils/publicCache';
 
@@ -889,7 +890,10 @@ const LoginPage = () => {
       {/* NAV BAR */}
       <nav className="fixed top-0 w-full z-[100]" style={{ borderBottom: '1px solid rgba(14,165,233,0.06)', background: 'rgba(11,18,33,0.97)', paddingTop: 'env(safe-area-inset-top, 0px)' }}>
         <div className="max-w-[1400px] mx-auto px-6 lg:px-10 h-16 flex items-center justify-between">
-          <LogoHome testId="login-logo" />
+          <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+            <BackHome testId="login-back-home" compact className="-ml-1 pr-1" />
+            <LogoHome testId="login-logo" />
+          </div>
           <div className="hidden lg:flex items-center gap-7">
             {navLinks.map(item => (
               <a key={item.label} href={item.href} className="text-[#8b97ab] text-sm font-medium hover:text-[#d4af37] transition-colors duration-300">{t(`nav.${item.k}`)}</a>

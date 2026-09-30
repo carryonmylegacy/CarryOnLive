@@ -14,10 +14,11 @@ import PublicFooter from '../components/PublicFooter';
 import { Link } from 'react-router-dom';
 import {
   Shield, Lock, KeyRound, FileCheck, Server, AlertTriangle,
-  Eye, Mail, ArrowLeft, CheckCircle2, Clock,
+  Eye, Mail, CheckCircle2, Clock,
 } from 'lucide-react';
 import { useCopy, renderCopy } from '../copy/CopyContext';
 import { LogoHome } from '../components/landing/LogoHome';
+import { BackHome } from '../components/landing/BackHome';
 
 const Section = ({ icon: Icon, title, children, testid }) => (
   <section
@@ -72,14 +73,7 @@ const SecurityPage = () => {
       {/* Back link */}
       <div className="flex items-center justify-between mb-8">
         <LogoHome testId="security-logo" />
-        <Link
-          to="/"
-          className="inline-flex items-center gap-1.5 text-sm hover:text-white transition-colors"
-          style={{ color: 'var(--t4)' }}
-          data-testid="security-back-home"
-        >
-          <ArrowLeft className="w-4 h-4" /> Home
-        </Link>
+        <BackHome testId="security-back-home" />
       </div>
 
       {/* Hero */}

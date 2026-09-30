@@ -2,9 +2,10 @@ import React from 'react';
 import SEO from '../components/SEO';
 import PublicFooter from '../components/PublicFooter';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, FileText } from 'lucide-react';
+import { FileText } from 'lucide-react';
 import { useCopy, renderBlocks } from '../copy/CopyContext';
 import { LogoHome } from '../components/landing/LogoHome';
+import { BackHome } from '../components/landing/BackHome';
 
 const LINK = 'text-[#7AABFD] hover:text-[#A5C6FE] transition-colors';
 const BLOCKS = { pClass: 'mb-3 last:mb-0', ulClass: 'list-disc list-inside space-y-1 ml-2', linkClass: LINK };
@@ -22,10 +23,7 @@ const TermsPage = () => {
       <div className="max-w-3xl mx-auto relative z-10">
         <div className="flex items-center justify-between mb-8">
           <LogoHome testId="terms-logo" />
-          <Link to="/login" className="inline-flex items-center gap-2 text-[#A0AABF] hover:text-white transition-colors" data-testid="terms-back-link">
-            <ArrowLeft className="w-4 h-4" />
-            {t('legal.back')}
-          </Link>
+          <BackHome testId="terms-back-link" label={t('legal.back')} className="text-[#A0AABF] hover:text-white" />
         </div>
 
         <div className="glass-card p-8 md:p-12">

@@ -89,6 +89,16 @@ else
   BLOCKING_ISSUES=$((BLOCKING_ISSUES + 1))
 fi
 
+echo -e "${BOLD}Stage 4d/5: Public home links → /home, never / (BLOCKING)${NC}"
+if python3 /app/scripts/check_home_links.py > /tmp/check_home_links.log 2>&1; then
+  echo -e "  ${GREEN}PASS${NC}"
+  cat /tmp/check_home_links.log
+else
+  echo -e "  ${RED}FAIL${NC}"
+  cat /tmp/check_home_links.log
+  BLOCKING_ISSUES=$((BLOCKING_ISSUES + 1))
+fi
+
 # 4c. Backend pytest full suite (opt-in)
 if [ "$HK_RUN_TESTS" = "1" ]; then
   echo ""

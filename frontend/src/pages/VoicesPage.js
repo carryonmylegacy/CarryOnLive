@@ -9,6 +9,7 @@ import { getOfflineMode } from '../offline/featureFlag';
 import { getLocalVoices, upsertLocalVoices } from '../offline/repos/voicesRepo';
 import { useCopy, renderCopy } from '../copy/CopyContext';
 import { LogoHome } from '../components/landing/LogoHome';
+import { BackHome } from '../components/landing/BackHome';
 
 /**
  * Public "Voices" page — feeds from GET /api/share-cards/voices/public,
@@ -94,12 +95,15 @@ export default function VoicesPage() {
         data-testid="voices-header"
       >
         <div className="max-w-6xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
-          <LogoHome testId="voices-logo" />
+          <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+            <BackHome testId="voices-back-home" compact className="-ml-1 pr-1" />
+            <LogoHome testId="voices-logo" />
+          </div>
           <nav className="hidden md:flex items-center gap-7 text-[22px]" style={{ color: 'var(--t3)' }}>
-            <a href="/#features" className="hover:text-white transition-colors">{t('nav.features')}</a>
-            <a href="/#pricing" className="hover:text-white transition-colors">{t('nav.pricing')}</a>
+            <a href="/home#features" className="hover:text-white transition-colors">{t('nav.features')}</a>
+            <Link to="/pricing" className="hover:text-white transition-colors">{t('nav.pricing')}</Link>
             <Link to="/voices" className="hover:text-white transition-colors" style={{ color: 'var(--gold)' }}>{t('voices.nav_voices')}</Link>
-            <a href="/#faq" className="hover:text-white transition-colors">{t('nav.faq')}</a>
+            <a href="/home#faq" className="hover:text-white transition-colors">{t('nav.faq')}</a>
           </nav>
           <div className="flex items-center gap-2">
             <Link

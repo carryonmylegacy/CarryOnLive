@@ -73,7 +73,7 @@ const ReadinessScorePage = () => {
       <section className="relative overflow-hidden" style={{ paddingTop: 'calc(8rem + env(safe-area-inset-top, 0px))' }}>
         <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 70% 50% at 50% 0%, rgba(212,175,55,0.08) 0%, transparent 60%)' }} />
         <RevealSection className="max-w-[760px] mx-auto px-6 relative z-10 pb-12">
-          <a href="/" className="inline-flex items-center gap-1.5 text-sm text-[#8492a8] hover:text-[#d4af37] transition-colors mb-8" data-testid="readiness-back-home"><ArrowLeft className="w-4 h-4" /> {t('readiness.back')}</a>
+          <a href="/home" className="inline-flex items-center gap-1.5 text-sm text-[#8492a8] hover:text-[#d4af37] transition-colors mb-8" data-testid="readiness-back-home"><ArrowLeft className="w-4 h-4" /> {t('readiness.back')}</a>
           <p className="text-[#d4af37] text-xs font-bold uppercase tracking-[0.2em] mb-4">{t('readiness.hero.eyebrow')}</p>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-[1.08] mb-5" style={{ ...OUTFIT, textWrap: 'balance' }} data-testid="readiness-h1">{t('readiness.hero.title')}</h1>
           <p className="text-[#a0aec0] text-base lg:text-lg leading-relaxed" data-testid="readiness-intro">{renderCopy(t('readiness.hero.intro'), 'text-white font-semibold')}</p>

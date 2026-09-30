@@ -3,6 +3,8 @@ import { ChevronRight, AlertCircle } from 'lucide-react';
 import { useCopy, renderCopy, copyList } from '../../copy/CopyContext';
 import { LiveCountBadge } from '../landing/LiveStats';
 import { RevealSection } from '../landing/RevealSection';
+import { BackHome } from '../landing/BackHome';
+import { LogoHome } from '../landing/LogoHome';
 
 export const HEADING = { fontFamily: 'Outfit, sans-serif' };
 export const GOLD_BTN = { background: '#d4af37', color: '#0B1221' };
@@ -20,7 +22,10 @@ export const BenefactorNav = ({ onSignIn }) => {
   return (
     <nav className="fixed top-0 w-full z-[100]" style={{ background: 'rgba(11,18,33,0.97)', borderBottom: '1px solid rgba(14,165,233,0.06)', paddingTop: 'env(safe-area-inset-top, 0px)' }} data-testid="benefactor-nav">
       <div className="max-w-[1100px] mx-auto px-6 h-16 flex items-center justify-between">
-        <a href="/" className="flex items-center" data-testid="benefactor-nav-logo"><img src="/carryon-logo.png" alt="CarryOn" className="h-12" /></a>
+        <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+          <BackHome testId="benefactor-nav-back" compact className="-ml-1 pr-1" />
+          <LogoHome testId="benefactor-nav-logo" />
+        </div>
         <button onClick={onSignIn} className="text-[#d4af37] text-sm font-semibold hover:text-[#fcd34d] transition-colors flex items-center gap-1" data-testid="benefactor-nav-sign-in">{t('nav.signin')} <ChevronRight className="w-3.5 h-3.5" /></button>
       </div>
     </nav>

@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { SEO } from '../components/SEO';
 import { ChevronRight, ChevronLeft, Linkedin, ArrowRight } from 'lucide-react';
+import { BackHome } from '../components/landing/BackHome';
+import { LogoHome } from '../components/landing/LogoHome';
 import { MobileNav, STANDALONE_LINKS } from '../components/landing/MobileNav';
 import { founderPhotoUrl, FOUNDER_LINKEDIN_DEFAULT } from '../components/landing/FounderCard';
 import { useCopy, renderCopy } from '../copy/CopyContext';
@@ -97,13 +99,14 @@ const AboutPage = () => {
       {/* NAV BAR */}
       <nav className="fixed top-0 w-full z-50" style={{ borderBottom: '1px solid rgba(30,48,80,0.3)', background: 'rgba(13,27,42,0.97)', paddingTop: 'env(safe-area-inset-top, 0px)' }}>
         <div className="max-w-[1400px] mx-auto px-6 lg:px-10 h-16 flex items-center justify-between">
-          <a href="/" className="flex items-center" data-testid="about-logo">
-            <img src="/carryon-logo.png" alt="CarryOn" className="h-12 cursor-pointer" />
-          </a>
+          <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+            <BackHome testId="about-back-home" compact className="-ml-1 pr-1" />
+            <LogoHome testId="about-logo" />
+          </div>
           <div className="hidden md:flex items-center gap-8">
-            <a href="/#features" className="text-[#8b97ab] text-sm font-medium hover:text-[#d4af37] transition-colors">{t('nav.features')}</a>
-            <a href="/#security" className="text-[#8b97ab] text-sm font-medium hover:text-[#d4af37] transition-colors">{t('nav.security')}</a>
-            <a href="/#steps" className="text-[#8b97ab] text-sm font-medium hover:text-[#d4af37] transition-colors">{t('nav.steps')}</a>
+            <a href="/home#features" className="text-[#8b97ab] text-sm font-medium hover:text-[#d4af37] transition-colors">{t('nav.features')}</a>
+            <a href="/home#security" className="text-[#8b97ab] text-sm font-medium hover:text-[#d4af37] transition-colors">{t('nav.security')}</a>
+            <a href="/home#steps" className="text-[#8b97ab] text-sm font-medium hover:text-[#d4af37] transition-colors">{t('nav.steps')}</a>
             <span className="text-[#d4af37] text-sm font-medium" aria-current="page">{t('nav.about')}</span>
             <a href="/founder-about" className="text-[#8b97ab] text-sm font-medium hover:text-[#d4af37] transition-colors" data-testid="about-nav-founder">{t('nav.founder')}</a>
           </div>

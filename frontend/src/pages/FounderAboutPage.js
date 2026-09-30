@@ -2,11 +2,12 @@ import { FlagBackdrop } from '../components/FlagBackdrop';
 import React, { useState, useEffect } from 'react';
 import SEO from '../components/SEO';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { Loader2, ShieldX, Lock, Eye, EyeOff, Send, ArrowLeft } from 'lucide-react';
+import { Loader2, ShieldX, Lock, Eye, EyeOff, Send } from 'lucide-react';
 import { API_URL } from '../config';
 import { useCopy, renderCopy } from '../copy/CopyContext';
 import { MarketingNav } from '../components/landing/MarketingNav';
 import { LogoHome } from '../components/landing/LogoHome';
+import { BackHome } from '../components/landing/BackHome';
 import { MarketingFooter } from '../components/landing/MarketingFooter';
 import { FounderStory } from '../components/founder/FounderStory';
 
@@ -167,13 +168,11 @@ const FounderAboutPage = () => {
         <FlagBackdrop style={{ filter: 'brightness(0.35) contrast(1.05) saturate(0.8)' }} />
       </div>
       <div className="absolute inset-0 z-[1]" style={{ background: 'radial-gradient(ellipse 80% 60% at 50% 50%, rgba(13,27,42,0.5) 0%, rgba(13,27,42,0.85) 100%)' }} />
-      <div className="absolute left-6 z-10" style={{ top: 'calc(1rem + env(safe-area-inset-top, 0px))' }}><LogoHome testId="founder-gate-logo" /></div>
+      <div className="absolute left-4 sm:left-6 z-10 flex items-center gap-2 sm:gap-4" style={{ top: 'calc(1rem + env(safe-area-inset-top, 0px))' }}><BackHome testId="founder-gate-back-home" compact /><LogoHome testId="founder-gate-logo" /></div>
 
       <div className="relative z-10 w-full max-w-sm">
         {/* Back link */}
-        <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-[#8b97ab] text-xs hover:text-[#d4af37] transition-colors mb-4 py-1" data-testid="founder-back-btn">
-          <ArrowLeft className="w-3.5 h-3.5" /> Back
-        </button>
+        <BackHome testId="founder-back-btn" label="Back" className="mb-4" />
 
         <p className="text-[#9aa5b4] text-xs sm:text-sm leading-relaxed mb-4" data-testid="founder-gate-intro">
           {renderCopy(t('founder.gate.intro'))}

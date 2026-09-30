@@ -12,12 +12,12 @@
 import React, { useEffect } from 'react';
 import SEO from '../components/SEO';
 import PublicFooter from '../components/PublicFooter';
-import { Link } from 'react-router-dom';
 import {
-  HeartHandshake, Download, Calendar, Archive, Code2, ArrowLeft, CheckCircle2,
+  HeartHandshake, Download, Calendar, Archive, Code2, CheckCircle2,
 } from 'lucide-react';
 import { useCopy, renderCopy, copyList } from '../copy/CopyContext';
 import { LogoHome } from '../components/landing/LogoHome';
+import { BackHome } from '../components/landing/BackHome';
 
 const Card = ({ icon: Icon, title, children, testid }) => (
   <section
@@ -68,14 +68,7 @@ const WindDownPromisePage = () => {
     <div className="max-w-3xl mx-auto px-5 sm:px-8 pt-12 pb-24" style={{ paddingTop: 'calc(48px + env(safe-area-inset-top, 0px))' }}>
       <div className="flex items-center justify-between mb-8">
         <LogoHome testId="winddown-logo" />
-        <Link
-          to="/"
-          className="inline-flex items-center gap-1.5 text-sm hover:text-white transition-colors"
-          style={{ color: 'var(--t4)' }}
-          data-testid="winddown-back-home"
-        >
-          <ArrowLeft className="w-4 h-4" /> {t('winddown.back')}
-        </Link>
+        <BackHome testId="winddown-back-home" label={t('winddown.back')} />
       </div>
 
       <div className="mb-10">

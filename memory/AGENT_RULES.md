@@ -410,6 +410,24 @@ hamburger menu bar and the top edge of the dock."
 
 ---
 
+## 🔴 RULE 8b — Public pages NEVER link to `/`. Home is `/home`. Every public page has a back arrow. (Sep 29, 2026)
+
+Inside the installed app / PWA shell, `RootRoute` renders the **sign-in screen** at `/`.
+Any public-page link to `/` (logo, back arrow, footer "Home", `/#features`-style hash link)
+therefore drops the visitor on Sign In. The founder has reported this **three times**.
+
+- Use `<BackHome>` (back arrow, left of the logo) and `<LogoHome>` from
+  `components/landing/` on every public surface; both resolve through `homeHref()`
+  (`/home` signed-out, `/` signed-in → portal router).
+- Hand-written links go to `/home` or `/home#section`, never `/` or `/#section`.
+- `MarketingNav` already carries the arrow + logo — new marketing pages must use it.
+- `scripts/check_home_links.py` (check.sh Stage 4d, BLOCKING) fails the push on any
+  `href="/"`, `to="/"`, `/#hash`, `navigate('/')` in `pages/**`, `components/landing/**`,
+  `components/benefactor/**`. Do not allow-list around it.
+
+---
+
+
 ## 🟡 RULE 9 — Revenue-funnel Playwright E2E activation path (Feb 14, 2026)
 
 **Why this rule exists:** We added `/app/frontend/tests/e2e/signup_invite_flow.spec.js`

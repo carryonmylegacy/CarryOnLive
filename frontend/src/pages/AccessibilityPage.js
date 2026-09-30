@@ -5,13 +5,13 @@
 import React, { useEffect } from 'react';
 import SEO from '../components/SEO';
 import PublicFooter from '../components/PublicFooter';
-import { Link } from 'react-router-dom';
 import {
-  Accessibility, ArrowLeft, CheckCircle2, AlertTriangle, Mail, Target,
+  Accessibility, CheckCircle2, AlertTriangle, Mail, Target,
 } from 'lucide-react';
 import { COMPANY } from '../config/company';
 import { useCopy, renderCopy, copyList } from '../copy/CopyContext';
 import { LogoHome } from '../components/landing/LogoHome';
+import { BackHome } from '../components/landing/BackHome';
 
 const Section = ({ icon: Icon, title, children, testid }) => (
   <section
@@ -55,14 +55,7 @@ const AccessibilityPage = () => {
     <div className="max-w-3xl mx-auto px-5 sm:px-8 pt-12 pb-24" style={{ paddingTop: 'calc(48px + env(safe-area-inset-top, 0px))' }}>
       <div className="flex items-center justify-between mb-8">
         <LogoHome testId="accessibility-logo" />
-        <Link
-          to="/"
-          className="inline-flex items-center gap-1.5 text-sm hover:text-white transition-colors"
-          style={{ color: 'var(--t4)' }}
-          data-testid="accessibility-back-home"
-        >
-          <ArrowLeft className="w-4 h-4" /> {t('a11y.back')}
-        </Link>
+        <BackHome testId="accessibility-back-home" label={t('a11y.back')} />
       </div>
 
       {/* Hero */}

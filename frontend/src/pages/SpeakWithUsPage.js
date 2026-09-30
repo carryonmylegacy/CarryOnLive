@@ -7,6 +7,7 @@ import { RevealSection } from '../components/landing/RevealSection';
 import LandingContent from '../components/landing/LandingContent';
 import { API_URL } from '../config';
 import { LogoHome } from '../components/landing/LogoHome';
+import { BackHome } from '../components/landing/BackHome';
 
 const useIsMobileViewport = (breakpoint = 768) => {
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < breakpoint);
@@ -52,6 +53,7 @@ const SpeakWithUsPage = () => {
         {/* Dark gradient background — no flag */}
         <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, #0a1628 0%, #0d1a30 40%, #111f34 100%)' }} />
         <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 80% 50% at 50% 20%, rgba(var(--gold-rgb), 0.04) 0%, transparent 60%)' }} />
+        <div className="absolute left-4 sm:left-6 z-20" style={{ top: 'calc(0.5rem + env(safe-area-inset-top, 0px))' }}><BackHome testId="speak-back-home" /></div>
 
         <div className="relative z-10 flex flex-col items-center px-6 pb-8 lg:pb-10 pt-[calc(3rem+env(safe-area-inset-top,0px))] lg:pt-[calc(5rem+env(safe-area-inset-top,0px))]">
 

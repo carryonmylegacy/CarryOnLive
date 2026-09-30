@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import { ShieldCheck, Lock, ExternalLink, Loader2 } from 'lucide-react';
 import { API_URL } from '../config';
 import { LogoHome } from '../components/landing/LogoHome';
+import { BackHome } from '../components/landing/BackHome';
 
 /**
  * Public "Our Promise" page — renders the platform's Prime Directive
@@ -47,7 +48,7 @@ const OurPromisePage = () => {
     >
       <SEO title="Our Promise — CarryOn" description="The CarryOn Prime Directive: the standing commitment that governs every decision we make for the families who trust us." path="/our-promise" />
       <div style={{ maxWidth: 720, margin: '0 auto' }}>
-        <div style={{ marginBottom: 28 }}><LogoHome testId="our-promise-logo" /></div>
+        <div style={{ marginBottom: 28, display: 'flex', alignItems: 'center', gap: 16 }}><BackHome testId="our-promise-back-home" compact /><LogoHome testId="our-promise-logo" /></div>
         {/* Eyebrow */}
         <div
           data-testid="our-promise-eyebrow"

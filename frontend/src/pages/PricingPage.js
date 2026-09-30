@@ -446,7 +446,7 @@ const PricingPage = () => {
           <span><Shield className="w-4 h-4 inline mr-1" />{t('pricing.badge1')}</span>
           <span><Check className="w-4 h-4 inline mr-1" />{t('pricing.badge2')}</span>
           <span>{t('pricing.badge3')}</span>
-          <a href="/" className="hover:text-[var(--t4)] inline-flex items-center gap-1">Back to homepage <ChevronRight className="w-3 h-3" /></a>
+          <a href="/home" className="hover:text-[var(--t4)] inline-flex items-center gap-1" data-testid="pricing-back-home-footer">Back to homepage <ChevronRight className="w-3 h-3" /></a>
         </div>
       </div>
     </div>

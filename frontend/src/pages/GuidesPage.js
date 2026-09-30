@@ -158,7 +158,7 @@ const Unlaunched = ({ t }) => (
       <p className="text-[#d4af37] text-xs font-bold uppercase tracking-[0.2em] mb-4">{t('guides.index.eyebrow')}</p>
       <h1 className="text-3xl sm:text-4xl font-bold text-white mb-4" style={OUTFIT}>{t('guides.index.unlaunched.title')}</h1>
       <p className="text-[#a0aec0] text-base mb-8">{renderCopy(t('guides.index.unlaunched.text'))}</p>
-      <a href="/" className="inline-flex items-center gap-2 px-8 py-3.5 rounded-lg font-bold text-base" style={{ background: '#d4af37', color: '#0B1221' }} data-testid="guides-unlaunched-home">{t('guides.index.unlaunched.button')}</a>
+      <a href="/home" className="inline-flex items-center gap-2 px-8 py-3.5 rounded-lg font-bold text-base" style={{ background: '#d4af37', color: '#0B1221' }} data-testid="guides-unlaunched-home">{t('guides.index.unlaunched.button')}</a>
     </div>
   </section>
 );

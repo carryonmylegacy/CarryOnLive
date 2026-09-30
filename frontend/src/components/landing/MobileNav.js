@@ -16,8 +16,9 @@ export const MARKETING_LINKS = [
   { k: 'founder', label: 'Founder', href: '/founder-about' },
 ];
 
-// Same menu on standalone pages (/about, /customers, /vs, …): hash links resolve to the homepage.
-export const STANDALONE_LINKS = MARKETING_LINKS.map(l => ({ ...l, href: l.href.startsWith('#') ? `/${l.href}` : l.href }));
+// Same menu on standalone pages (/about, /customers, /vs, …): hash links resolve to /home —
+// never `/`, which is the sign-in screen inside the installed app / PWA shell.
+export const STANDALONE_LINKS = MARKETING_LINKS.map(l => ({ ...l, href: l.href.startsWith('#') ? `/home${l.href}` : l.href }));
 
 // "Customers" joins the top menu only once 3+ approved stories exist (the footer link always stays).
 export const CUSTOMERS_NAV_MIN_STORIES = 3;

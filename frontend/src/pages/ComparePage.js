@@ -137,7 +137,7 @@ const CompareDetail = ({ competitor, navigateWithFade, t }) => {
       <section className="relative overflow-hidden" style={{ paddingTop: 'calc(8rem + env(safe-area-inset-top, 0px))' }}>
         <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 70% 50% at 50% 0%, rgba(212,175,55,0.08) 0%, transparent 60%)' }} />
         <RevealSection className="max-w-[860px] mx-auto px-6 text-center relative z-10 pb-12">
-          <nav className="text-xs text-[#8492a8] mb-4" aria-label="Breadcrumb"><a href="/" className="hover:text-[#d4af37]">{t('footer.home')}</a> <span className="mx-1">/</span> <a href="/vs" className="hover:text-[#d4af37]">{t('footer.compare')}</a> <span className="mx-1">/</span> <span className="text-[#a0aec0]">{competitor.name}</span></nav>
+          <nav className="text-xs text-[#8492a8] mb-4" aria-label="Breadcrumb"><a href="/home" className="hover:text-[#d4af37]">{t('footer.home')}</a> <span className="mx-1">/</span> <a href="/vs" className="hover:text-[#d4af37]">{t('footer.compare')}</a> <span className="mx-1">/</span> <span className="text-[#a0aec0]">{competitor.name}</span></nav>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-[1.08] mb-5" style={{ fontFamily: 'Outfit, sans-serif', textWrap: 'balance' }} data-testid="compare-h1">
             {t('compare.vs_word')} <span className="text-[#d4af37]">{competitor.name}</span>
           </h1>
