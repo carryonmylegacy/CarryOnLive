@@ -4,8 +4,8 @@ import { TYPES, BUCKETS, rolesForCategory, isEquityRole } from '../../../config/
 
 const US_STATE = /^[A-Z]{0,2}$/;
 const row = { background: 'var(--card)', border: '1px solid var(--b)' };
-const sel = 'input-field select-themed text-sm h-9';
-const inp = 'input-field text-sm h-9';
+const sel = 'input-field select-themed text-base h-9';
+const inp = 'input-field text-base h-9';
 
 const Head = ({ icon: Icon, children, testId }) => (
   <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-[var(--t5)] mt-4 mb-2" data-testid={testId}>
@@ -70,7 +70,7 @@ export const EntityAIReview = ({ draft, onChange, user, beneficiaries = [], exte
                   <select className={`${sel} flex-1 min-w-0`} value={e.type} onChange={(ev) => upd('entities', i, { type: ev.target.value })} aria-label="Entity type" data-testid={`es-ai-entity-type-${i}`}>
                     {(TYPES[e.category] || []).map((t) => <option key={t.id} value={t.id}>{t.friendly}</option>)}
                   </select>
-                  <input className={`${inp} w-16 text-center uppercase`} value={e.formation_state || ''} maxLength={2} placeholder="ST"
+                  <input className="input-field text-base h-9 w-16 text-center uppercase" value={e.formation_state || ''} maxLength={2} placeholder="ST"
                     onChange={(ev) => { const v = ev.target.value.toUpperCase(); if (US_STATE.test(v)) upd('entities', i, { formation_state: v || null }); }}
                     aria-label="Formation state" data-testid={`es-ai-entity-state-${i}`} />
                 </div>
@@ -126,7 +126,7 @@ export const EntityAIReview = ({ draft, onChange, user, beneficiaries = [], exte
                   {roles.map((r) => <option key={r.id} value={r.id}>{r.label}</option>)}
                 </select>
                 {isEquityRole(c.role) && (
-                  <input className={`${inp} w-20 text-center`} type="number" min={0} max={100} value={c.ownership_pct ?? ''} placeholder="%"
+                  <input className="input-field text-base h-9 w-20 text-center" type="number" min={0} max={100} value={c.ownership_pct ?? ''} placeholder="%"
                     onChange={(ev) => upd('connections', i, { ownership_pct: ev.target.value === '' ? null : Number(ev.target.value) })} aria-label="Ownership percent" data-testid={`es-ai-conn-pct-${i}`} />
                 )}
               </div>

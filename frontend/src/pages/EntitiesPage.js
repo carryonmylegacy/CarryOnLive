@@ -66,7 +66,7 @@ export default function EntitiesPage() {
 
   return (
     <div
-      className="p-4 lg:p-6 pt-4 lg:pt-12 pb-24 lg:pb-6 space-y-5 animate-fade-in max-w-full overflow-x-hidden"
+      className="p-4 lg:p-6 pt-4 lg:pt-14 pb-24 lg:pb-6 space-y-5 animate-fade-in max-w-full overflow-x-hidden"
       data-testid="entities-page"
       style={{
         background: `radial-gradient(ellipse at top left, rgba(${rgb}, 0.18), transparent 55%), radial-gradient(ellipse at bottom right, rgba(${rgb}, 0.07), transparent 55%)`,

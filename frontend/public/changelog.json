@@ -1,6 +1,17 @@
 {
   "entries": [
     {
+      "date": "2026-10-07",
+      "title": "Describe your entities out loud — the chart drafts itself",
+      "items": [
+        "Entities & Structures: a new “Describe your structure” box at the top of the page. Tap the mic (or type) and talk through your trusts, LLCs, properties and who holds what — CarryOn drafts the entities, people and connections for you",
+        "You review every detail (“here’s what I heard”) and can edit names, types, states, roles and percentages before anything is created; nothing is added until you tap Build my chart",
+        "Everything the draft creates lands in the same tiles you already use, so you can fine-tune any of it afterwards",
+        "Homepage product screenshots now respond to swipe, drag and the arrow keys on iPad and desktop — the same gesture as on the phone — plus previous/next arrows",
+        "Dashboard: the per-pillar breakdown lines (“Beneficiaries 0% · Messages 0% · Why?”) now show on desktop exactly as they do on the phone"
+      ]
+    },
+    {
       "date": "2026-09-29",
       "title": "Cleaner homepage, easier way back",
       "items": [
