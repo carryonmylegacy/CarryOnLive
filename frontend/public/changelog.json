@@ -8,7 +8,9 @@
         "You review every detail (“here’s what I heard”) and can edit names, types, states, roles and percentages before anything is created; nothing is added until you tap Build my chart",
         "Everything the draft creates lands in the same tiles you already use, so you can fine-tune any of it afterwards",
         "Homepage product screenshots now respond to swipe, drag and the arrow keys on iPad and desktop — the same gesture as on the phone — plus previous/next arrows",
-        "Dashboard: the per-pillar breakdown lines (“Beneficiaries 0% · Messages 0% · Why?”) now show on desktop exactly as they do on the phone"
+        "Dashboard: the per-pillar breakdown lines (“Beneficiaries 0% · Messages 0% · Why?”) now show on desktop exactly as they do on the phone",
+        "Fixed: an account whose trial had ended but whose plan was granted by the Founder could see “Current Plan · Granted by Founder” yet still be told its “full-access period has ended” when adding anything. The Subscription page and every feature now read the same single source of truth, and a plan granted or activated while the app is open unlocks it right away",
+        "The Secure Document Vault stays fully usable after a trial ends — including large uploads from the phone"
       ]
     },
     {

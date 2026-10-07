@@ -116,19 +116,25 @@ def test_catalog_every_tier_has_matching_beneficiary_plan(tier):
     )
 
 
-# ------------------------------------------------------------- stage 2: status.py map ----
+# ------------------------------------------------------------- stage 2: beneficiary map ----
+# Oct 7 2026: the ben_<tier> map moved from status.py's local `plan_map` to
+# guards.BENEFICIARY_PLAN_MAP (shared by /subscriptions/status and the gates).
 def _status_plan_map():
-    tree = ast.parse(Path(BACKEND, "routes/subscriptions/status.py").read_text())
+    tree = ast.parse(Path(BACKEND, "guards.py").read_text())
     for node in ast.walk(tree):
-        if isinstance(node, ast.Assign) and any(isinstance(t, ast.Name) and t.id == "plan_map" for t in node.targets):
+        if isinstance(node, ast.Assign) and any(
+            isinstance(t, ast.Name) and t.id == "BENEFICIARY_PLAN_MAP" for t in node.targets
+        ):
             return ast.literal_eval(node.value)
-    raise AssertionError("status.py: plan_map literal not found")
+    raise AssertionError("guards.py: BENEFICIARY_PLAN_MAP literal not found")
 
 
 @pytest.mark.parametrize("tier", tier_params("status.plan_map", TIERS))
 def test_status_plan_map_covers_tier(tier):
     m = _status_plan_map()
-    assert m.get(tier) == f"ben_{tier}", f"{tier}: status.py plan_map -> {m.get(tier)!r} (falls through to ben_base)"
+    assert m.get(tier) == f"ben_{tier}", (
+        f"{tier}: guards.BENEFICIARY_PLAN_MAP -> {m.get(tier)!r} (falls through to ben_base)"
+    )
 
 
 # ----------------------------------------------------------- stage 6a: backend statics ----
