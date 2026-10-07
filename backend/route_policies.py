@@ -463,6 +463,12 @@ ROUTE_POLICIES: dict = {
         "estate_access": "member",
         "estate_id_source": "path.estate_id",
     },
+    # Entities & Structures — AI draft from a spoken/typed description (owner only; writes nothing)
+    "POST /api/financial/entities/{estate_id}/ai-draft": {
+        "auth": "required",
+        "estate_access": "owner",
+        "estate_id_source": "path.estate_id",
+    },
     # Admin compliance / platform-health evidence routes ──────────────────────
     "GET /api/admin/audit-chain-status": {"auth": "required", "roles": ["admin"], "notes": "Compliance scope"},
     "GET /api/admin/soc2-readiness": {

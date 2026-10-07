@@ -111,7 +111,7 @@ const AboutPage = () => {
             <a href="/founder-about" className="text-[#8b97ab] text-sm font-medium hover:text-[#d4af37] transition-colors" data-testid="about-nav-founder">{t('nav.founder')}</a>
           </div>
           <div className="flex items-center gap-3">
-            <a href="/login" className="text-[#d4af37] text-sm font-semibold hover:text-[#fcd34d] transition-colors flex items-center gap-1 min-h-[44px] px-2">
+            <a href="/login" className="text-[#d4af37] text-sm font-semibold hover:text-[#fcd34d] transition-colors flex items-center gap-1 min-h-[44px] px-2 whitespace-nowrap">
               <ChevronLeft className="w-3.5 h-3.5" /> {t('nav.signin')}
             </a>
             <MobileNav links={STANDALONE_LINKS} current="/about" navigateWithFade={(p) => { window.location.href = p; }} testIdSuffix="-about" />

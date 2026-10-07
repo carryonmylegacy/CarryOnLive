@@ -16,6 +16,7 @@ from config import db
 
 DEFAULT_LIMITS = {
     "quickstart_generate": 1,
+    "entities_ai_draft": 20,
     "beneficiary_concierge": 10,
     "guardian_generate_iac": 1,
     "guardian_heavy": 3,

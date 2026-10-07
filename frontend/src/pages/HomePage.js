@@ -151,16 +151,16 @@ const HomePage = () => {
       <nav className="fixed top-0 w-full z-[100]" style={{ borderBottom: '1px solid rgba(14,165,233,0.06)', background: 'rgba(11,18,33,0.97)', paddingTop: 'env(safe-area-inset-top, 0px)' }}>
         <div className="max-w-[1400px] mx-auto px-6 lg:px-10 h-16 flex items-center justify-between">
           <img src="/carryon-logo.png" alt="CarryOn" className="h-12 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} data-testid="home-logo" />
-          <div className="hidden lg:flex items-center gap-7">
+          <div className="hidden lg:flex items-center gap-5 xl:gap-7 whitespace-nowrap">
             {visibleLinks(MARKETING_LINKS, flags).map(item => (
-              <a key={item.label} href={item.href} className="text-[#8b97ab] text-sm font-medium hover:text-[#d4af37] transition-colors duration-300">{t(`nav.${item.k}`)}</a>
+              <a key={item.label} href={item.href} className="text-[#8b97ab] text-[13px] xl:text-sm font-medium hover:text-[#d4af37] transition-colors duration-300">{t(`nav.${item.k}`)}</a>
             ))}
           </div>
           <div className="flex items-center gap-4">
-            <button onClick={() => navigateWithFade('/start')} className="hidden sm:inline-flex items-center gap-1 px-5 py-2 rounded-lg text-sm font-bold transition-all active:scale-95" style={{ background: '#d4af37', color: '#0B1221' }} data-testid="home-nav-get-started">
+            <button onClick={() => navigateWithFade('/start')} className="hidden sm:inline-flex items-center gap-1 px-5 py-2 rounded-lg text-sm font-bold transition-all active:scale-95 whitespace-nowrap" style={{ background: '#d4af37', color: '#0B1221' }} data-testid="home-nav-get-started">
               {t('nav.start')}
             </button>
-            <button onClick={() => navigateWithFade('/login')} className="text-[#d4af37] text-sm font-semibold hover:text-[#fcd34d] transition-colors flex items-center gap-1 min-h-[44px] px-2" data-testid="home-sign-in-nav">
+            <button onClick={() => navigateWithFade('/login')} className="text-[#d4af37] text-sm font-semibold hover:text-[#fcd34d] transition-colors flex items-center gap-1 min-h-[44px] px-2 whitespace-nowrap" data-testid="home-sign-in-nav">
               {t('nav.signin')} <ChevronRight className="w-3.5 h-3.5" />
             </button>
             <MobileNav navigateWithFade={navigateWithFade} testIdSuffix="-home" />

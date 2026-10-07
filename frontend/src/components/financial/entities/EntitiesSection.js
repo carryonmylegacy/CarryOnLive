@@ -22,6 +22,7 @@ import EntityDocumentsModal from './EntityDocumentsModal';
 import EntitiesShareToggle from './EntitiesShareToggle';
 import EntityLegend from './EntityLegend';
 import BlockEditModal from './BlockEditModal';
+import EntityAIBuilder from './EntityAIBuilder';
 
 const DRAFT_KEY = (estateId) => `cfp:entityWizard:draft:${estateId || 'global'}`;
 const DRAFT_TTL_MS = 24 * 60 * 60 * 1000;
@@ -38,6 +39,7 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
   const [walletEntries, setWalletEntries] = useState([]);
   const [loaded, setLoaded] = useState(false);
   const [showWizard, setShowWizard] = useState(false);
+  const [aiTick, setAiTick] = useState(0); // bumps when the AI card collapses/expands so the chart re-measures
   const [quickInfoNode, setQuickInfoNode] = useState(null);
   const [quickInfoRect, setQuickInfoRect] = useState(null);
   const [docsModalEntity, setDocsModalEntity] = useState(null);
@@ -237,7 +239,7 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
       window.visualViewport?.removeEventListener('resize', compute);
       window.visualViewport?.removeEventListener('scroll', compute);
     };
-  }, [loaded, expanded, viewMode, entities.length, externals.length]);
+  }, [loaded, expanded, viewMode, entities.length, externals.length, aiTick]);
 
   const isEmpty = entities.length === 0 && externals.length === 0;
 
@@ -434,7 +436,17 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
   if (isEmpty) {
     return (
       <>
-        <div className="flex justify-end" data-testid="entities-empty-cta">
+        <EntityAIBuilder
+          estateId={estateId}
+          user={effectiveUser}
+          beneficiaries={beneficiaries || []}
+          externals={externals}
+          hasChart={false}
+          getAuthHeaders={getAuthHeaders}
+          onBuilt={() => { fetchAll(); onEntitiesChanged?.(); }}
+        />
+        <div className="flex items-center justify-between gap-3" data-testid="entities-empty-cta">
+          <span className="text-xs text-[var(--t4)]">Prefer to fill in the forms yourself?</span>
           <button
             onClick={() => setShowWizard(true)}
             className="text-xs font-semibold flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-colors hover:bg-[var(--s)]"
@@ -466,6 +478,16 @@ export default function EntitiesSection({ estateId, beneficiaries, onEntitiesCha
       ref={sectionRef}
       data-testid="entities-section"
     >
+      <EntityAIBuilder
+        estateId={estateId}
+        user={effectiveUser}
+        beneficiaries={beneficiaries || []}
+        externals={externals}
+        hasChart
+        getAuthHeaders={getAuthHeaders}
+        onBuilt={() => { fetchAll(); onEntitiesChanged?.(); }}
+        onToggle={() => setAiTick((n) => n + 1)}
+      />
       {/* Title row — count line only, rendered in the same weight/
           color/family as the previous "Entities & Structures" h2 the
           founder removed (May 22 2026) since the page header above

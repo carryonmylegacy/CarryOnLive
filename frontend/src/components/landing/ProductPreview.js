@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { LayoutDashboard, FolderLock, PhoneCall, ListChecks, Lock, Camera, MessageSquareHeart } from 'lucide-react';
+import { LayoutDashboard, FolderLock, PhoneCall, ListChecks, Lock, Camera, MessageSquareHeart, ChevronLeft, ChevronRight } from 'lucide-react';
 import { RevealSection } from './RevealSection';
 import { SHOTS_VERSION } from './shotsVersion';
 
@@ -28,40 +28,67 @@ const TABS = [
 const Shots = ({ active, prefix, suffix }) => TABS.map(t => (
   <img key={t.id} src={`/screenshots/${prefix}${t.id}.webp?v=${SHOTS_VERSION}`} alt={t.alt}
     width={prefix ? 780 : 2160} height={prefix ? 1328 : 1350}
-    loading={t.id === 'checklist' ? 'eager' : 'lazy'}
+    loading={t.id === 'checklist' ? 'eager' : 'lazy'} draggable={false}
     data-testid={t.id === active ? `preview-panel-${t.id}${suffix}` : undefined}
     className="absolute inset-0 w-full h-full object-cover object-top transition-opacity duration-300"
     style={{ opacity: t.id === active ? 1 : 0, pointerEvents: t.id === active ? 'auto' : 'none' }} />
 ));
 
-const DesktopFrame = ({ active, url, testIdSuffix }) => (
-  <div className="hidden md:block rounded-2xl overflow-hidden" style={{ ...card, boxShadow: '0 30px 80px rgba(0,0,0,0.5), 0 0 60px rgba(212,175,55,0.06)' }} data-testid={`preview-desktop-frame${testIdSuffix}`}>
-    <div className="flex items-center gap-3 px-4 py-2.5" style={{ background: 'rgba(8,14,26,0.9)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-      <div className="flex gap-1.5">{['#ff5f57', '#febc2e', '#28c840'].map(c => <span key={c} className="w-2.5 h-2.5 rounded-full" style={{ background: c }} />)}</div>
-      <div className="flex-1 flex items-center gap-2 rounded-md px-3 py-1 text-xs text-[#8b97ab]" style={{ background: 'rgba(255,255,255,0.04)' }} data-testid={`preview-url${testIdSuffix}`}>
-        <Lock className="w-3 h-3 text-[#10b981]" /> {url}
-      </div>
-    </div>
-    <div className="relative w-full" style={{ aspectRatio: '16 / 10', background: '#0b1322' }}>
-      <Shots active={active} prefix="" suffix="" />
-    </div>
-  </div>
+const SWIPE_PX = 40;
+
+// Shared swipe/drag handlers: touch (phone, iPad) and mouse drag (laptop) both step tabs.
+const useSwipe = (onStep) => {
+  const startX = useRef(null);
+  const end = (x) => {
+    if (startX.current === null) return;
+    const dx = x - startX.current;
+    startX.current = null;
+    if (Math.abs(dx) > SWIPE_PX) onStep(dx < 0 ? 1 : -1);
+  };
+  return {
+    onTouchStart: e => { startX.current = e.touches[0].clientX; },
+    onTouchEnd: e => end(e.changedTouches[0].clientX),
+    onPointerDown: e => { if (e.pointerType === 'mouse') startX.current = e.clientX; },
+    onPointerUp: e => { if (e.pointerType === 'mouse') end(e.clientX); },
+    onPointerLeave: () => { startX.current = null; },
+  };
+};
+
+const ArrowBtn = ({ dir, onClick, testId }) => (
+  <button type="button" onClick={onClick} aria-label={dir < 0 ? 'Previous screenshot' : 'Next screenshot'} data-testid={testId}
+    className={`absolute top-1/2 -translate-y-1/2 ${dir < 0 ? 'left-3' : 'right-3'} w-10 h-10 rounded-full flex items-center justify-center text-white transition-colors hover:bg-[rgba(212,175,55,0.9)] hover:text-[#0B1221] active:scale-95 z-10`}
+    style={{ background: 'rgba(11,19,34,0.72)', border: '1px solid rgba(255,255,255,0.18)', backdropFilter: 'blur(6px)' }}>
+    {dir < 0 ? <ChevronLeft className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
+  </button>
 );
 
-const SWIPE_PX = 40;
+// Tablet / laptop: swipe, mouse-drag, arrow buttons and ← → keys all step through the tabs.
+const DesktopFrame = ({ active, url, onStep, testIdSuffix }) => {
+  const swipe = useSwipe(onStep);
+  return (
+    <div className="hidden md:block rounded-2xl overflow-hidden" style={{ ...card, boxShadow: '0 30px 80px rgba(0,0,0,0.5), 0 0 60px rgba(212,175,55,0.06)' }} data-testid={`preview-desktop-frame${testIdSuffix}`}>
+      <div className="flex items-center gap-3 px-4 py-2.5" style={{ background: 'rgba(8,14,26,0.9)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+        <div className="flex gap-1.5">{['#ff5f57', '#febc2e', '#28c840'].map(c => <span key={c} className="w-2.5 h-2.5 rounded-full" style={{ background: c }} />)}</div>
+        <div className="flex-1 flex items-center gap-2 rounded-md px-3 py-1 text-xs text-[#8b97ab]" style={{ background: 'rgba(255,255,255,0.04)' }} data-testid={`preview-url${testIdSuffix}`}>
+          <Lock className="w-3 h-3 text-[#10b981]" /> {url}
+        </div>
+      </div>
+      <div className="relative w-full select-none cursor-grab active:cursor-grabbing" style={{ aspectRatio: '16 / 10', background: '#0b1322', touchAction: 'pan-y' }} tabIndex={0} role="group" aria-roledescription="carousel" aria-label="Product screenshots — use the arrow keys to move between them"
+        onKeyDown={e => { if (e.key === 'ArrowLeft') { e.preventDefault(); onStep(-1); } if (e.key === 'ArrowRight') { e.preventDefault(); onStep(1); } }}
+        {...swipe} data-testid={`preview-desktop-stage${testIdSuffix}`}>
+        <Shots active={active} prefix="" suffix="" />
+        <ArrowBtn dir={-1} onClick={() => onStep(-1)} testId={`preview-prev${testIdSuffix}`} />
+        <ArrowBtn dir={1} onClick={() => onStep(1)} testId={`preview-next${testIdSuffix}`} />
+      </div>
+    </div>
+  );
+};
 
 // Phone: swipe left/right steps through the tabs; the dots below mirror the position.
 const PhoneFrame = ({ active, onStep, testIdSuffix }) => {
-  const startX = useRef(null);
+  const swipe = useSwipe(onStep);
   return (
-    <div className="md:hidden mx-auto" style={{ maxWidth: '300px', touchAction: 'pan-y' }} data-testid={`preview-phone-frame${testIdSuffix}`}
-      onTouchStart={e => { startX.current = e.touches[0].clientX; }}
-      onTouchEnd={e => {
-        if (startX.current === null) return;
-        const dx = e.changedTouches[0].clientX - startX.current;
-        startX.current = null;
-        if (Math.abs(dx) > SWIPE_PX) onStep(dx < 0 ? 1 : -1);
-      }}>
+    <div className="md:hidden mx-auto" style={{ maxWidth: '300px', touchAction: 'pan-y' }} data-testid={`preview-phone-frame${testIdSuffix}`} {...swipe}>
       <div className="relative rounded-[2.6rem] p-2.5" style={{ background: 'linear-gradient(160deg, #1c2a44, #0b1322)', border: '1px solid rgba(255,255,255,0.14)', boxShadow: '0 30px 80px rgba(0,0,0,0.6), 0 0 50px rgba(212,175,55,0.08), inset 0 1px 0 rgba(255,255,255,0.08)' }}>
         <div className="relative rounded-[2.1rem] overflow-hidden" style={{ aspectRatio: '390 / 664', background: '#0b1322' }}>
           <Shots active={active} prefix="m-" suffix="-mobile" />
@@ -72,7 +99,7 @@ const PhoneFrame = ({ active, onStep, testIdSuffix }) => {
 };
 
 const Dots = ({ active, onSelect, testIdSuffix }) => (
-  <div className="md:hidden flex items-center justify-center mt-4" role="tablist" aria-label="Screenshots" data-testid={`preview-dots${testIdSuffix}`}>
+  <div className="flex items-center justify-center mt-4" role="tablist" aria-label="Screenshots" data-testid={`preview-dots${testIdSuffix}`}>
     {TABS.map(t => (
       <button key={t.id} type="button" role="tab" aria-selected={active === t.id} aria-label={t.label} onClick={() => onSelect(t.id)}
         className="p-2" data-testid={`preview-dot-${t.id}${testIdSuffix}`}>
@@ -111,7 +138,7 @@ export const ProductPreview = ({ testIdSuffix = '', defaultTab = 'checklist' }) 
                 </button>
               ))}
             </div>
-            <DesktopFrame active={active} url={tab.url} testIdSuffix={testIdSuffix} />
+            <DesktopFrame active={active} url={tab.url} onStep={step} testIdSuffix={testIdSuffix} />
             <PhoneFrame active={active} onStep={step} testIdSuffix={testIdSuffix} />
             <Dots active={active} onSelect={setActive} testIdSuffix={testIdSuffix} />
             <p className="text-center text-[#a0aec0] text-sm lg:text-base mt-6 max-w-[680px] mx-auto leading-relaxed" data-testid={`preview-caption${testIdSuffix}`}>{tab.caption}</p>

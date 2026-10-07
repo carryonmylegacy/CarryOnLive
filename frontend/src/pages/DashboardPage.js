@@ -1807,6 +1807,12 @@ const DashboardPage = () => {
           .filter((f) => isFeatureKeyEnabled(f, enabledFeatures))
           .map((f) => `${EXPLAIN_LABELS[f]} ${FEATURE_PERCENTS[f]}%`)
           .join(' · ');
+        const TileExplainer = ({ e }) => (
+          <p className="mt-1.5 px-1 text-center leading-snug" style={{ fontSize: 12 }} data-testid={`tile-explainer-${e.key}`}>
+            <span className="text-[var(--t4)] font-bold">{explainerFor(e.key)}</span>{' '}
+            <a href={`/readiness-score#${EXPLAIN_ANCHOR[e.key]}`} target="_blank" rel="noopener noreferrer" className="font-bold whitespace-nowrap hover:underline" style={{ color: e.chipColor }} data-testid={`tile-explainer-link-${e.key}`}>Why?</a>
+          </p>
+        );
         const TilesGrid = ({ chiclet = false }) => (
           <div
             className={
@@ -1819,10 +1825,7 @@ const DashboardPage = () => {
             {ENTRIES.map((e) => (
               <div key={e.key} className="flex flex-col">
                 <div className="flex-1">{e.tile}</div>
-                <p className="mt-1.5 px-1 text-center leading-snug" style={{ fontSize: 12 }} data-testid={`tile-explainer-${e.key}`}>
-                  <span className="text-[var(--t4)] font-bold">{explainerFor(e.key)}</span>{' '}
-                  <a href={`/readiness-score#${EXPLAIN_ANCHOR[e.key]}`} target="_blank" rel="noopener noreferrer" className="font-bold whitespace-nowrap hover:underline" style={{ color: e.chipColor }} data-testid={`tile-explainer-link-${e.key}`}>Why?</a>
-                </p>
+                <TileExplainer e={e} />
               </div>
             ))}
           </div>
@@ -1905,7 +1908,10 @@ const DashboardPage = () => {
                   data-testid="dashboard-stat-grid"
                 >
                   {ENTRIES.map((e) => (
-                    <React.Fragment key={e.key}>{e.tile}</React.Fragment>
+                    <div key={e.key} className="flex flex-col min-h-0">
+                      <div className="flex-1 min-h-0">{e.tile}</div>
+                      <TileExplainer e={e} />
+                    </div>
                   ))}
                 </div>
               </div>

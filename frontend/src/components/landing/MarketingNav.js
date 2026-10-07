@@ -18,14 +18,14 @@ export const MarketingNav = ({ navigateWithFade, current, testIdSuffix = '' }) =
           <BackHome testId={`marketing-nav-back${testIdSuffix}`} compact className="-ml-1 pr-1" />
           <LogoHome testId={`marketing-nav-logo${testIdSuffix}`} />
         </div>
-        <div className="hidden lg:flex items-center gap-7">
+        <div className="hidden lg:flex items-center gap-5 xl:gap-7 whitespace-nowrap">
           {links.map(item => (
-            <a key={item.label} href={item.href} aria-current={isCurrentLink(item.href, here) ? 'page' : undefined} className={`text-sm font-medium transition-colors duration-300 ${isCurrentLink(item.href, here) ? 'text-[#d4af37]' : 'text-[#8b97ab] hover:text-[#d4af37]'}`}>{t(`nav.${item.k}`)}</a>
+            <a key={item.label} href={item.href} aria-current={isCurrentLink(item.href, here) ? 'page' : undefined} className={`text-[13px] xl:text-sm font-medium transition-colors duration-300 ${isCurrentLink(item.href, here) ? 'text-[#d4af37]' : 'text-[#8b97ab] hover:text-[#d4af37]'}`}>{t(`nav.${item.k}`)}</a>
           ))}
         </div>
         <div className="flex items-center gap-4">
-          <button onClick={() => go('/start')} className="hidden sm:inline-flex items-center gap-1 px-5 py-2 rounded-lg text-sm font-bold transition-all active:scale-95" style={{ background: '#d4af37', color: '#0B1221' }} data-testid={`marketing-nav-start${testIdSuffix}`}>{t('nav.start')}</button>
-          <button onClick={() => go('/login')} className="text-[#d4af37] text-sm font-semibold hover:text-[#fcd34d] transition-colors flex items-center gap-1 min-h-[44px] px-2" data-testid={`marketing-nav-sign-in${testIdSuffix}`}>{t('nav.signin')} <ChevronRight className="w-3.5 h-3.5" /></button>
+          <button onClick={() => go('/start')} className="hidden sm:inline-flex items-center gap-1 px-5 py-2 rounded-lg text-sm font-bold transition-all active:scale-95 whitespace-nowrap" style={{ background: '#d4af37', color: '#0B1221' }} data-testid={`marketing-nav-start${testIdSuffix}`}>{t('nav.start')}</button>
+          <button onClick={() => go('/login')} className="text-[#d4af37] text-sm font-semibold hover:text-[#fcd34d] transition-colors flex items-center gap-1 min-h-[44px] px-2 whitespace-nowrap" data-testid={`marketing-nav-sign-in${testIdSuffix}`}>{t('nav.signin')} <ChevronRight className="w-3.5 h-3.5" /></button>
           <MobileNav links={links} current={here} navigateWithFade={go} testIdSuffix={testIdSuffix} />
         </div>
       </div>

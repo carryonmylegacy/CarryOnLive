@@ -894,9 +894,9 @@ const LoginPage = () => {
             <BackHome testId="login-back-home" compact className="-ml-1 pr-1" />
             <LogoHome testId="login-logo" />
           </div>
-          <div className="hidden lg:flex items-center gap-7">
+          <div className="hidden lg:flex items-center gap-5 xl:gap-7 whitespace-nowrap">
             {navLinks.map(item => (
-              <a key={item.label} href={item.href} className="text-[#8b97ab] text-sm font-medium hover:text-[#d4af37] transition-colors duration-300">{t(`nav.${item.k}`)}</a>
+              <a key={item.label} href={item.href} className="text-[#8b97ab] text-[13px] xl:text-sm font-medium hover:text-[#d4af37] transition-colors duration-300">{t(`nav.${item.k}`)}</a>
             ))}
           </div>
           <div className="flex items-center gap-3 sm:gap-4">
@@ -913,7 +913,7 @@ const LoginPage = () => {
             >
               {mobileNavOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
-            <button onClick={() => navigateWithFade('/signup')} className="text-[#d4af37] text-sm font-semibold hover:text-[#fcd34d] transition-colors flex items-center gap-1 min-h-[44px] px-2">
+            <button onClick={() => navigateWithFade('/signup')} className="text-[#d4af37] text-sm font-semibold hover:text-[#fcd34d] transition-colors flex items-center gap-1 min-h-[44px] px-2 whitespace-nowrap">
               {t('nav.start_plan')} <ChevronRight className="w-3.5 h-3.5" />
             </button>
           </div>
