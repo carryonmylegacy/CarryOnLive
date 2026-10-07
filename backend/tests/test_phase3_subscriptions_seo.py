@@ -13,16 +13,16 @@ ADMIN_PASSWORD = "Demo1234!"
 @pytest.fixture(scope="module")
 def admin_token():
     r = requests.post(
-        f"{BASE_URL}/api/auth/login", json={"username_or_email": ADMIN_EMAIL, "password": ADMIN_PASSWORD}, timeout=60
+        f"{BASE_URL}/api/auth/login", json={"username_or_email": ADMIN_EMAIL, "password": ADMIN_PASSWORD, "force_login": True}, timeout=60
     )
     # Try alt payload keys
     if r.status_code != 200:
         r = requests.post(
-            f"{BASE_URL}/api/auth/login", json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD}, timeout=30
+            f"{BASE_URL}/api/auth/login", json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD, "force_login": True}, timeout=30
         )
     if r.status_code != 200:
         r = requests.post(
-            f"{BASE_URL}/api/auth/login", json={"username": ADMIN_EMAIL, "password": ADMIN_PASSWORD}, timeout=30
+            f"{BASE_URL}/api/auth/login", json={"username": ADMIN_EMAIL, "password": ADMIN_PASSWORD, "force_login": True}, timeout=30
         )
     assert r.status_code == 200, f"Admin login failed: {r.status_code} {r.text[:300]}"
     data = r.json()

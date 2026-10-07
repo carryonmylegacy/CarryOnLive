@@ -7,6 +7,7 @@ import bcrypt
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 
 from config import db
+from services.hot_cache import invalidate_subscription_cache
 from guards import require_admin, require_staff
 from routes.admin.trial_policy import get_trial_days
 
@@ -374,7 +375,7 @@ async def set_estate_tier(estate_id: str, request: Request, current_user: dict =
     if tier is not None and tier not in valid_tiers:
         raise HTTPException(status_code=400, detail=f"Invalid tier: {tier}")
 
-    estate = await db.estates.find_one({"id": estate_id}, {"_id": 0, "id": 1})
+    estate = await db.estates.find_one({"id": estate_id}, {"_id": 0, "id": 1, "owner_id": 1})
     if not estate:
         raise HTTPException(status_code=404, detail="Estate not found")
 
@@ -382,5 +383,7 @@ async def set_estate_tier(estate_id: str, request: Request, current_user: dict =
         await db.estates.update_one({"id": estate_id}, {"$unset": {"verified_tier": ""}})
     else:
         await db.estates.update_one({"id": estate_id}, {"$set": {"verified_tier": tier}})
+    if estate.get("owner_id"):
+        invalidate_subscription_cache(estate["owner_id"])
 
     return {"success": True, "estate_id": estate_id, "verified_tier": tier if tier else None}

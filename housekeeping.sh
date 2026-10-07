@@ -1746,6 +1746,26 @@ else
   fi
 fi
 
+# CP5 — ONE subscription-access truth (Oct 7 2026). The UI's
+# /subscriptions/status and every API write gate must read
+# guards.resolve_subscription_access; a second hand-rolled formula is how
+# a Granted-by-Founder account got "full-access period has ended" 403s.
+STATUS_FILE="/app/backend/routes/subscriptions/status.py"
+if grep -q "resolve_subscription_access(current_user\[\"id\"\], refresh=True)" "$STATUS_FILE" && ! grep -qE "has_access = \($" "$STATUS_FILE"; then
+  echo -e "CP. CP5a /subscriptions/status uses guards.resolve_subscription_access ......... ${GREEN}PASS${NC}"
+else
+  echo -e "CP. CP5a /subscriptions/status uses guards.resolve_subscription_access ......... ${RED}FAIL${NC} (status.py must derive has_access from guards.resolve_subscription_access(refresh=True), never its own formula)"
+  CP_FAIL=$((CP_FAIL + 1))
+fi
+ROGUE_TRIAL_GATES=$(grep -rlE "trial_ends_at" /app/backend/routes /app/backend/middleware_subscription_lock.py 2>/dev/null | xargs grep -lE "has_access|HTTPException\(status_code=403" 2>/dev/null | grep -vE "routes/subscriptions/status.py|routes/admin/|routes/subscriptions/admin.py|routes/subscriptions/verification_and_lifecycle.py|routes/trial_reminders.py|routes/funnel.py|routes/referrals.py|routes/pro_clients.py|routes/auth/|routes/beta.py" || true)
+if [ -z "$ROGUE_TRIAL_GATES" ]; then
+  echo -e "CP. CP5b No route decides access from trial_ends_at on its own ......... ${GREEN}PASS${NC}"
+else
+  echo -e "CP. CP5b No route decides access from trial_ends_at on its own ......... ${RED}FAIL${NC} ($(echo "$ROGUE_TRIAL_GATES" | tr '\n' ' ')— call guards.get_subscription_access instead)"
+  CP_FAIL=$((CP_FAIL + 1))
+fi
+
+
 if [ "$CP_FAIL" -gt 0 ]; then
   FAILS=$((FAILS + CP_FAIL))
   echo -e "${RED}CRITICAL PATHWAY FAILURE${NC}: $CP_FAIL invariant(s) broken."

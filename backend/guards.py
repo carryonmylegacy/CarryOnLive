@@ -21,111 +21,168 @@ from utils import get_current_user, get_current_user_optional
 __all__ = ["get_current_user_optional"]
 
 
-async def get_subscription_access(current_user: dict = Depends(get_current_user)):
-    """Check if user has active access (trial or subscription).
+def _access(has_access: bool, reason: str, **extra) -> dict:
+    return {"has_access": has_access, "reason": reason, "is_dormant": False, "is_grace": False, **extra}
 
-    Result is cached in-process for 30s (services/hot_cache.py) — every
-    Stripe webhook handler that flips a user's billing status calls
-    `invalidate_subscription_cache(user_id)` so changes propagate fast.
+
+async def resolve_subscription_access(user_id: str, *, refresh: bool = False) -> dict:
+    """SINGLE source of truth for "does this account have full access".
+
+    Used by every API write gate (middleware_subscription_lock + the
+    per-route checks) AND by GET /api/subscriptions/status, so the UI can
+    never disagree with the API. Precedence (first match wins):
+      admin role → free_access override → per-user beta → global beta →
+      platform free mode → active / past_due subscription →
+      founder-granted estate tier (Admin → Users → Assign Tier) →
+      dormant → active trial → expired.
+
+    Cached in-process for 30s (services/hot_cache.py). `refresh=True`
+    bypasses and rewrites the cache — /subscriptions/status uses it so the
+    moment the UI paints a fresh state the API gates agree with it.
     """
     from services.hot_cache import (
         get_cached_subscription as _cache_get,
         set_cached_subscription as _cache_set,
     )
 
-    cached = _cache_get(current_user["id"])
-    if cached is not None:
-        return cached
+    if not refresh:
+        cached = _cache_get(user_id)
+        if cached is not None:
+            return cached
 
-    user = await db.users.find_one({"id": current_user["id"]}, {"_id": 0})
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    # Admin always has access
+    result = await _resolve_uncached(user)
+    _cache_set(user_id, result)
+    return result
+
+
+async def _resolve_uncached(user: dict) -> dict:
+    uid = user["id"]
     if user.get("role") == "admin":
-        result = {"has_access": True, "reason": "admin", "is_dormant": False, "is_grace": False}
-        _cache_set(current_user["id"], result)
-        return result
+        return _access(True, "admin")
 
-    # Check for free access override (B2B, beta, etc.)
-    override = await db.subscription_overrides.find_one({"user_id": user["id"]}, {"_id": 0})
+    override = await db.subscription_overrides.find_one({"user_id": uid}, {"_id": 0})
     if override and override.get("free_access"):
-        result = {"has_access": True, "reason": "free_access", "is_dormant": False, "is_grace": False}
-        _cache_set(current_user["id"], result)
-        return result
+        return _access(True, "free_access")
 
-    # Check per-user beta tester status
     if user.get("is_beta_tester"):
-        result = {"has_access": True, "reason": "beta", "is_dormant": False, "is_grace": False}
-        _cache_set(current_user["id"], result)
-        return result
+        return _access(True, "beta")
 
-    # Check global beta mode (legacy fallback)
-    settings = await db.subscription_settings.find_one({"_id": "global"}, {"_id": 0})
-    if settings and settings.get("beta_mode"):
-        result = {"has_access": True, "reason": "beta", "is_dormant": False, "is_grace": False}
-        _cache_set(current_user["id"], result)
-        return result
+    # Same default as routes/subscriptions/plans.get_subscription_settings
+    # (a missing settings doc means beta mode ON) so status + gates agree.
+    settings = await db.subscription_settings.find_one({"_id": "global"}, {"_id": 0, "beta_mode": 1})
+    if settings is None or settings.get("beta_mode", True):
+        return _access(True, "beta")
 
-    platform_settings = await db.platform_settings.find_one(
-        {"_id": "global"},
-        {"_id": 0, "platform_free_mode": 1},
-    )
+    platform_settings = await db.platform_settings.find_one({"_id": "global"}, {"_id": 0, "platform_free_mode": 1})
     if platform_settings and platform_settings.get("platform_free_mode"):
-        result = {
-            "has_access": True,
-            "reason": "platform_free_mode",
-            "is_dormant": False,
-            "is_grace": False,
-            "platform_free_mode": True,
-        }
-        _cache_set(current_user["id"], result)
-        return result
+        return _access(True, "platform_free_mode", platform_free_mode=True)
 
-    # Check subscription status
-    sub = await db.user_subscriptions.find_one({"user_id": user["id"]}, {"_id": 0})
-    if sub:
-        status = sub.get("status", "")
-        if status == "active":
-            result = {"has_access": True, "reason": "subscription", "is_dormant": False, "is_grace": False}
-            _cache_set(current_user["id"], result)
-            return result
-        if status == "past_due":
-            result = {
-                "has_access": True,
-                "reason": "grace_period",
-                "is_dormant": False,
-                "is_grace": True,
-                "grace_period_end": sub.get("grace_period_end"),
-            }
-            _cache_set(current_user["id"], result)
-            return result
-        if status == "dormant":
-            result = {
-                "has_access": False,
-                "reason": "dormant",
-                "is_dormant": True,
-                "is_grace": False,
-                "dormant_since": sub.get("dormant_since"),
-            }
-            _cache_set(current_user["id"], result)
-            return result
+    sub = await db.user_subscriptions.find_one({"user_id": uid}, {"_id": 0})
+    status = (sub or {}).get("status", "")
+    if status == "active":
+        return _access(True, "subscription", tier=sub.get("plan_id"))
+    if status == "past_due":
+        return _access(True, "grace_period", is_grace=True, grace_period_end=sub.get("grace_period_end"))
 
-    # Check trial
+    # Founder-granted tier lives on the estate row (Admin → Users → Assign
+    # Tier). /subscriptions/status has always honoured it; the API gates
+    # did not — the Oct 7 2026 "full-access period has ended" 403 on a
+    # Granted-by-Founder account was exactly that drift.
+    granted = await db.estates.find_one(
+        {"owner_id": uid, "verified_tier": {"$exists": True, "$ne": ""}},
+        {"_id": 0, "verified_tier": 1},
+    )
+    if granted:
+        return _access(True, "admin_grant", tier=granted["verified_tier"])
+
+    if status == "dormant":
+        return _access(False, "dormant", is_dormant=True, dormant_since=sub.get("dormant_since"))
+
     trial_ends = user.get("trial_ends_at")
     if trial_ends:
         try:
             ends = datetime.fromisoformat(trial_ends.replace("Z", "+00:00"))
             if datetime.now(timezone.utc) < ends:
-                result = {"has_access": True, "reason": "trial", "is_dormant": False, "is_grace": False}
-                _cache_set(current_user["id"], result)
-                return result
+                return _access(True, "trial")
         except (ValueError, TypeError):
             pass
 
-    result = {"has_access": False, "reason": "expired", "is_dormant": False, "is_grace": False}
-    _cache_set(current_user["id"], result)
-    return result
+    # Beneficiaries ride on their benefactor's plan (same rule the
+    # /subscriptions/status paywall paints — dual-role users must not see
+    # an unlocked UI and then get a 403 from a write gate).
+    if user.get("role") == "beneficiary":
+        inherited = await resolve_beneficiary_inheritance(user)
+        if inherited and inherited.get("locked_tier"):
+            return _access(True, "beneficiary_inherited", tier=inherited["locked_tier"])
+
+    return _access(False, "expired")
+
+
+BENEFICIARY_PLAN_MAP = {
+    "premium": "ben_premium",
+    "standard": "ben_standard",
+    "base": "ben_base",
+    "military": "ben_military",
+    "hospice": "ben_hospice",
+    "veteran": "ben_veteran",
+    "seniors": "ben_seniors",
+    "new_adult": "ben_new_adult",
+    "enterprise": "ben_enterprise",
+}
+
+
+async def resolve_beneficiary_inheritance(user: dict) -> dict | None:
+    """Locate the estate a beneficiary belongs to and the ben_<tier> it
+    inherits. Precedence: estate.verified_tier (founder grant) →
+    benefactor's user_subscriptions.plan_id → benefactor's legacy
+    users.verified_tier. Shared by /subscriptions/status and the gates."""
+    ben_link = await db.beneficiaries.find_one({"user_id": user["id"]}, {"_id": 0, "estate_id": 1})
+    if not ben_link and user.get("email"):
+        ben_link = await db.beneficiaries.find_one({"email": user["email"]}, {"_id": 0, "estate_id": 1})
+    proj = {"_id": 0, "id": 1, "owner_id": 1, "status": 1, "verified_tier": 1}
+    estate = None
+    if ben_link and ben_link.get("estate_id"):
+        estate = await db.estates.find_one({"id": ben_link["estate_id"]}, proj)
+    if not estate or not estate.get("owner_id"):
+        estate = await db.estates.find_one({"beneficiaries": user["id"]}, proj)
+    if not estate or not estate.get("owner_id"):
+        return {"estate": estate, "benefactor_id": None, "locked_tier": None, "source": None}
+
+    owner_id = estate["owner_id"]
+    estate_tier = estate.get("verified_tier")
+    if estate_tier:
+        return {
+            "estate": estate,
+            "benefactor_id": owner_id,
+            "locked_tier": BENEFICIARY_PLAN_MAP.get(estate_tier, "ben_base"),
+            "source": "estate_admin_tier",
+        }
+    ben_sub = await db.user_subscriptions.find_one({"user_id": owner_id}, {"_id": 0, "plan_id": 1})
+    if ben_sub and ben_sub.get("plan_id"):
+        return {
+            "estate": estate,
+            "benefactor_id": owner_id,
+            "locked_tier": BENEFICIARY_PLAN_MAP.get(ben_sub["plan_id"], "ben_base"),
+            "source": "benefactor_locked",
+        }
+    owner = await db.users.find_one({"id": owner_id}, {"_id": 0, "verified_tier": 1})
+    if owner and owner.get("verified_tier"):
+        return {
+            "estate": estate,
+            "benefactor_id": owner_id,
+            "locked_tier": BENEFICIARY_PLAN_MAP.get(owner["verified_tier"], "ben_base"),
+            "source": "benefactor_locked",
+        }
+    return {"estate": estate, "benefactor_id": owner_id, "locked_tier": None, "source": None}
+
+
+async def get_subscription_access(current_user: dict = Depends(get_current_user)):
+    """Dependency form of resolve_subscription_access (cached)."""
+    return await resolve_subscription_access(current_user["id"])
 
 
 async def require_active_subscription(

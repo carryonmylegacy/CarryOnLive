@@ -360,7 +360,7 @@ async def _finalize_document(metadata: dict, data: bytes, record: dict, user: di
     """
     # Lazy imports keep the module import graph small and avoid circular
     # imports when `documents.py` is loaded later.
-    from guards import require_benefactor_role, get_subscription_access
+    from guards import require_benefactor_role
     from models import Document
     from services.audit import audit_log
     from services.encryption import encrypt_aes256, get_estate_salt
@@ -377,9 +377,8 @@ async def _finalize_document(metadata: dict, data: bytes, record: dict, user: di
     if not estate_id or not name or not category:
         raise HTTPException(status_code=400, detail="document finalizer requires estate_id, name, category")
 
-    access = await get_subscription_access(user)
-    if not access["has_access"]:
-        raise HTTPException(status_code=403, detail="Subscription required to upload documents.")
+    # No subscription gate here on purpose: SDV stays fully usable after the
+    # trial ends (mirrors routes/documents.upload_document, Aug 2026 rule).
     await require_benefactor_role(user, "upload documents")
 
     # Ownership check (match documents.upload_document)

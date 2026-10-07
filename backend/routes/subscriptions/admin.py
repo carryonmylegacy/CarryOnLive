@@ -11,6 +11,7 @@ from datetime import datetime, timedelta, timezone
 from fastapi import Depends, Form, HTTPException, Request
 
 from config import db, logger
+from services.hot_cache import invalidate_subscription_cache
 from utils import get_current_user
 from routes.subscriptions.plans import (
     router,
@@ -168,6 +169,7 @@ async def update_admin_user_subscription(
         update["custom_discount"] = data.custom_discount
 
     await db.subscription_overrides.update_one({"user_id": user_id}, {"$set": update}, upsert=True)
+    invalidate_subscription_cache(user_id)
 
     return {
         "success": True,

@@ -853,11 +853,17 @@ export const AuthProvider = ({ children }) => {
       try { return localStorage.getItem('selected_estate_id') || localStorage.getItem('beneficiary_estate_id') || null; }
       catch { return null; }
     };
-    const onFocus = () => { fetchEnabledFeatures(token, currentEstateId()); };
+    const refreshAll = () => {
+      fetchEnabledFeatures(token, currentEstateId());
+      // Subscription truth travels with it (founder grant / Stripe
+      // activation while the tab is open must lift the lockdown banner).
+      fetchSubscriptionStatus(token);
+    };
+    const onFocus = () => { refreshAll(); };
     window.addEventListener('focus', onFocus);
     const interval = setInterval(() => {
       if (document.visibilityState === 'visible') {
-        fetchEnabledFeatures(token, currentEstateId());
+        refreshAll();
       }
     }, 5 * 60 * 1000);
     return () => {

@@ -16,6 +16,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from config import db
+from services.hot_cache import invalidate_subscription_cache
 from guards import require_admin
 from services.audit import get_client_ip, log_audit_event
 
@@ -60,6 +61,9 @@ async def bulk_assign_tier(
             {"id": {"$in": data.estate_ids}},
             {"$set": {"verified_tier": data.tier}},
         )
+    async for e in db.estates.find({"id": {"$in": data.estate_ids}}, {"_id": 0, "owner_id": 1}):
+        if e.get("owner_id"):
+            invalidate_subscription_cache(e["owner_id"])
 
     await log_audit_event(
         actor_id=current_user["id"],

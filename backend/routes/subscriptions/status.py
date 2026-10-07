@@ -15,6 +15,7 @@ from datetime import datetime, timedelta, timezone
 from fastapi import Depends
 
 from config import db
+from guards import resolve_beneficiary_inheritance, resolve_subscription_access
 from utils import get_current_user
 from routes.admin.trial_policy import get_trial_days
 from routes.subscriptions.plans import (
@@ -144,15 +145,11 @@ async def get_subscription_status(current_user: dict = Depends(get_current_user)
         }
         has_active_sub = True
 
-    # User has access if: beta mode OR per-user beta OR free override OR active subscription OR trial active
-    has_access = (
-        platform_free_mode
-        or is_beta
-        or is_beta_tester
-        or has_free_access
-        or has_active_sub
-        or trial.get("trial_active", False)
-    )
+    # Single source of truth shared with every API write gate
+    # (guards.resolve_subscription_access). refresh=True rewrites the 30s
+    # gate cache so the API agrees with whatever this response paints.
+    access = await resolve_subscription_access(current_user["id"], refresh=True)
+    has_access = bool(access.get("has_access"))
     if platform_free_mode:
         is_grace = False
         is_dormant = False
@@ -179,60 +176,15 @@ async def get_subscription_status(current_user: dict = Depends(get_current_user)
     benefactor_id = None
     ben_estate = None  # hoisted: read by the response builder below
     if current_user.get("role") == "beneficiary":
-        # Method 1: Check `beneficiaries` collection (user_id or email match)
-        ben_link = await db.beneficiaries.find_one({"user_id": current_user["id"]}, {"_id": 0, "estate_id": 1})
-        if not ben_link:
-            ben_link = await db.beneficiaries.find_one({"email": current_user.get("email")}, {"_id": 0, "estate_id": 1})
-        if ben_link and ben_link.get("estate_id"):
-            ben_estate = await db.estates.find_one(
-                {"id": ben_link["estate_id"]},
-                {"_id": 0, "id": 1, "owner_id": 1, "status": 1, "verified_tier": 1},
-            )
-            benefactor_id = ben_estate.get("owner_id") if ben_estate else None
-
-        # Method 2: Check estate.beneficiaries array (fallback)
-        if not benefactor_id:
-            ben_estate = await db.estates.find_one(
-                {"beneficiaries": current_user["id"]},
-                {"_id": 0, "id": 1, "owner_id": 1, "status": 1, "verified_tier": 1},
-            )
-            if ben_estate:
-                benefactor_id = ben_estate.get("owner_id")
-
-        # Check if estate has transitioned
+        inherited = await resolve_beneficiary_inheritance(current_user) or {}
+        ben_estate = inherited.get("estate")
+        benefactor_id = inherited.get("benefactor_id")
+        beneficiary_locked_tier = inherited.get("locked_tier")
+        estate_admin_tier = (ben_estate or {}).get("verified_tier")
         if ben_estate:
             estate_transitioned = ben_estate.get("status") == "transitioned"
 
         if benefactor_id:
-            ben_sub = await db.user_subscriptions.find_one({"user_id": benefactor_id}, {"_id": 0})
-            benefactor_user = await db.users.find_one({"id": benefactor_id}, {"_id": 0, "verified_tier": 1})
-            plan_map = {
-                "premium": "ben_premium",
-                "standard": "ben_standard",
-                "base": "ben_base",
-                "military": "ben_military",
-                "hospice": "ben_hospice",
-                "veteran": "ben_veteran",
-                "seniors": "ben_seniors",
-                "new_adult": "ben_new_adult",
-                "enterprise": "ben_enterprise",
-            }
-            # Source-of-truth precedence for the beneficiary's locked tier:
-            #   1. Estate-level `verified_tier` — set by Founder via Admin →
-            #      Users → Assign Tier. MUST take precedence; otherwise an
-            #      admin grant on a benefactor estate would never surface
-            #      on the beneficiary's own paywall, which is exactly the
-            #      regression the user just reported.
-            #   2. Benefactor's real `user_subscriptions` row.
-            #   3. Benefactor's legacy `users.verified_tier` (rarely set).
-            estate_admin_tier = (ben_estate or {}).get("verified_tier")
-            if estate_admin_tier:
-                beneficiary_locked_tier = plan_map.get(estate_admin_tier, "ben_base")
-            elif ben_sub and ben_sub.get("plan_id"):
-                beneficiary_locked_tier = plan_map.get(ben_sub["plan_id"], "ben_base")
-            elif benefactor_user and benefactor_user.get("verified_tier"):
-                beneficiary_locked_tier = plan_map.get(benefactor_user["verified_tier"], "ben_base")
-
             # ── Synthesize an active sub for the beneficiary so the
             # paywall lights up the ben_<tier> card as "Current Plan",
             # mirroring what the benefactor sees. Without this, the
