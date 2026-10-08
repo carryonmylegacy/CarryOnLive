@@ -13,6 +13,7 @@ from . import summary  # noqa: F401
 from . import portal_aggregate  # noqa: F401
 from . import entities  # noqa: F401
 from . import entities_ai  # noqa: F401
+from . import cfp_ai  # noqa: F401
 from . import entities_pdf  # noqa: F401
 from . import entities_share  # noqa: F401
 

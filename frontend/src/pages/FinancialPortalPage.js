@@ -41,6 +41,7 @@ import CashflowTimeline from '../components/financial/CashflowTimeline';
 import FinancialSummary from '../components/financial/FinancialSummary';
 import CfpVisibilityToggle from '../components/CfpVisibilityToggle';
 import QuickAdd from '../components/financial/QuickAdd';
+import { CFPAIBuilder } from '../components/financial/ai/CFPAIBuilder';
 // EntitiesSection moved to its own page (/entities) on May 22 2026.
 // Component file remains under components/financial/entities/.
 
@@ -961,6 +962,19 @@ const FinancialPortalPage = () => {
           Open Entities &amp; Structures →
         </button>
       </div>
+
+      {/* AI Builder — describe bills/debts/accounts/property by voice or text, review, then create through the normal endpoints */}
+      {estate?.id && (
+        <CFPAIBuilder
+          estateId={estate.id}
+          hasItems={bills.length + debts.length + accounts.length + propertyAssets.length > 0}
+          billCats={billCats} billLabels={billLabels}
+          debtCats={debtCats} debtLabels={debtLabels}
+          acctCats={acctCats} acctLabels={acctLabels}
+          getAuthHeaders={getAuthHeaders}
+          onBuilt={() => fetchAll()}
+        />
+      )}
 
       {/* Financial Summary Cards */}
       <FinancialSummary

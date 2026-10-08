@@ -45,6 +45,9 @@ import { API_URL } from '../config';
 import { Button } from '../components/ui/button';
 // removed unused SectionLock from '../components/security/SectionLock';
 
+import { DictationControl } from '../components/ai/DictationMicButton';
+const GUARDIAN_KEYTERMS = ['CarryOn', 'estate', 'trust', 'beneficiary', 'executor', 'power of attorney'];
+
 const suggestedQuestions = [
   "What documents am I missing for a complete estate plan?",
   "What are my state's probate requirements?",
@@ -74,9 +77,7 @@ const GuardianPage = () => {
   const fromGettingStarted = location.state?.fromGettingStarted === true;
   const [headerHeight, setHeaderHeight] = useState(48);
   const [mobileHeaderVisible, setMobileHeaderVisible] = useState(true);
-  const [isListening, setIsListening] = useState(false);
   const [showOnboardingReturn, _setShowOnboardingReturn] = useState(fromGettingStarted);
-  const recognitionRef = useRef(null);
   const [guidedFlowDone, setGuidedFlowDone] = useState(true);
   const [hasAddress, setHasAddress] = useState(null); // null = loading, true/false = resolved
 
@@ -140,40 +141,6 @@ const GuardianPage = () => {
   const landingInputRef = useRef(null);
   const abortControllerRef = useRef(null);
 
-  // Voice-to-text using Web Speech API
-  const toggleVoiceInput = useCallback((setter, currentValue) => {
-    if (isListening) {
-      recognitionRef.current?.stop();
-      setIsListening(false);
-      return;
-    }
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      toast.error('Voice input is not supported in this browser');
-      return;
-    }
-    const recognition = new SpeechRecognition();
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.lang = 'en-US';
-    let finalTranscript = currentValue || '';
-    recognition.onresult = (event) => {
-      let interim = '';
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        if (event.results[i].isFinal) {
-          finalTranscript += (finalTranscript ? ' ' : '') + event.results[i][0].transcript;
-        } else {
-          interim += event.results[i][0].transcript;
-        }
-      }
-      setter(finalTranscript + (interim ? ' ' + interim : ''));
-    };
-    recognition.onerror = () => setIsListening(false);
-    recognition.onend = () => setIsListening(false);
-    recognitionRef.current = recognition;
-    recognition.start();
-    setIsListening(true);
-  }, [isListening]);
 
   // ─── Data Fetching ───
   const fetchSessions = useCallback(async () => {
@@ -726,11 +693,15 @@ const GuardianPage = () => {
                 data-testid="landing-input"
               />
               <div className="flex items-center justify-between pb-1">
-                <button type="button" onClick={() => toggleVoiceInput(setLandingInput, landingInput)}
-                  className={`w-8 h-8 rounded-xl flex items-center justify-center active:scale-90 transition-transform ${isListening ? 'bg-red-500/20 text-red-400' : 'text-[var(--gold)] hover:bg-[var(--gold)]/10'}`}
-                  data-testid="landing-mic-button">
-                  {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-                </button>
+                <DictationControl value={landingInput} onText={setLandingInput} keyterms={GUARDIAN_KEYTERMS}>
+                  {({ supported, listening, transcribing, tap, label }) => supported ? (
+                    <button type="button" onClick={tap} aria-label={label} title={label}
+                      className={`w-8 h-8 rounded-xl flex items-center justify-center active:scale-90 transition-transform ${listening ? 'bg-red-500/20 text-red-400' : 'text-[var(--gold)] hover:bg-[var(--gold)]/10'}`}
+                      data-testid="landing-mic-button">
+                      {listening ? <MicOff className="w-4 h-4" /> : transcribing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mic className="w-4 h-4" />}
+                    </button>
+                  ) : <span />}
+                </DictationControl>
                 <button type="submit" disabled={!landingInput.trim()}
                   className="w-8 h-8 rounded-xl flex items-center justify-center active:scale-90 transition-transform disabled:opacity-30"
                   style={{ background: landingInput.trim() ? 'linear-gradient(135deg, #d4af37, #b8962e)' : 'var(--s)', color: landingInput.trim() ? '#080e1a' : 'var(--t5)' }}
@@ -1024,11 +995,15 @@ const GuardianPage = () => {
             />
             <div className="flex items-center justify-between pt-1 pb-0.5">
               <div className="flex items-center gap-1">
-                <button type="button" onClick={() => toggleVoiceInput(setInput, input)}
-                  className={`w-7 h-7 rounded-lg flex items-center justify-center active:scale-90 transition-transform ${isListening ? 'bg-red-500/20 text-red-400' : 'text-[var(--gold)] hover:bg-[var(--gold)]/10'}`}
-                  data-testid="chat-mic-button">
-                  {isListening ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
-                </button>
+                <DictationControl value={input} onText={setInput} keyterms={GUARDIAN_KEYTERMS}>
+                  {({ supported, listening, transcribing, tap, label }) => supported ? (
+                    <button type="button" onClick={tap} aria-label={label} title={label}
+                      className={`w-7 h-7 rounded-lg flex items-center justify-center active:scale-90 transition-transform ${listening ? 'bg-red-500/20 text-red-400' : 'text-[var(--gold)] hover:bg-[var(--gold)]/10'}`}
+                      data-testid="chat-mic-button">
+                      {listening ? <MicOff className="w-3.5 h-3.5" /> : transcribing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mic className="w-3.5 h-3.5" />}
+                    </button>
+                  ) : <span />}
+                </DictationControl>
                 {hasConversation && (
                   <>
                     <button type="button" onClick={() => { setShowActions(!showActions); setShowQuestions(false); }}

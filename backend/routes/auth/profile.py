@@ -178,6 +178,7 @@ async def get_me(current_user: dict = Depends(get_current_user)):
         "is_beta_tester": user_doc.get("is_beta_tester", False),
         "beta_accepted": bool(user_doc.get("beta_accepted_at")),
         "hide_benefactor_reminder": user_doc.get("hide_benefactor_reminder", False),
+        "dictation_engine": user_doc.get("dictation_engine"),
         "otp_enabled": user_doc.get("otp_enabled", True),
         "primary_estate_id": user_doc.get("primary_estate_id", ""),
         "preferred_plan": user_doc.get("preferred_plan", "") or "",
@@ -269,10 +270,13 @@ async def update_profile(body: dict, current_user: dict = Depends(get_current_us
         "address_state",
         "address_zip",
         "hide_benefactor_reminder",
+        "dictation_engine",
     }
     update = {k: v for k, v in body.items() if k in allowed_fields}
     if not update:
         raise HTTPException(status_code=400, detail="No valid fields to update")
+    if "dictation_engine" in update and update["dictation_engine"] not in ("private", "device"):
+        raise HTTPException(status_code=400, detail="dictation_engine must be 'private' or 'device'")
 
     if "first_name" in update or "last_name" in update:
         current = await db.users.find_one(

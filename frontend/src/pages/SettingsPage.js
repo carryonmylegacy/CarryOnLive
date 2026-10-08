@@ -15,6 +15,7 @@ import ProfileCard from '../components/settings/ProfileCard';
 import PersonalInfoCard from '../components/settings/PersonalInfoCard';
 import EstatePhotoCard from '../components/settings/EstatePhotoCard';
 import PublicDeviceModeCard from '../components/settings/PublicDeviceModeCard';
+import { DictationSettingsCard } from '../components/settings/DictationSettingsCard';
 import OfflineBehaviorCard from '../components/settings/OfflineBehaviorCard';
 import OfflineAccessCard from '../components/settings/OfflineAccessCard';
 import OfflineCapabilitiesCard from '../components/settings/OfflineCapabilitiesCard';
@@ -291,13 +292,10 @@ const SettingsPage = () => {
           because staff portals don't surface the ECT. */}
       {!isStaff && <ChatAutoscrollCard />}
 
-      {/* ── Section: Privacy — non-staff only ── */}
-      {!isStaff && (
-        <>
-          <SectionHeader title="Privacy & Data" hint="What we collect and how you control it." />
-          <PrivacyCard />
-        </>
-      )}
+      {/* ── Section: Privacy — Dictation is for everyone (staff dictate too); PrivacyCard non-staff only ── */}
+      <SectionHeader title="Privacy & Data" hint="What we collect and how you control it." />
+      <DictationSettingsCard />
+      {!isStaff && <PrivacyCard />}
 
       {/* Beta Tester Settings */}
       {user?.is_beta_tester && (

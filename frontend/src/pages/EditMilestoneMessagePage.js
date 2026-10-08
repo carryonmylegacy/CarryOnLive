@@ -35,6 +35,7 @@ import { cachedGet } from '../utils/apiCache';
 import { SectionLockBanner, SectionLockedOverlay } from '../components/security/SectionLock';
 import { resolvePhotoUrl } from '../utils/photoUrl';
 import { API_URL } from '../config';
+import { DictationControl } from '../components/ai/DictationMicButton';
 
 const eventTypes = [
   { value: 'birthday', label: 'Birthday', icon: Gift },
@@ -72,7 +73,6 @@ export default function EditMilestoneMessagePage() {
   const [countdown, setCountdown] = useState(null);
   const [facingMode, setFacingMode] = useState('user');
   const [showRecordingOverlay, setShowRecordingOverlay] = useState(false);
-  const [isSpeechListening, setIsSpeechListening] = useState(false);
   const [audioBlob, setAudioBlob] = useState(null);
   const [audioUrl, setAudioUrl] = useState(null);
   const [videoRemoved, setVideoRemoved] = useState(false);
@@ -83,7 +83,6 @@ export default function EditMilestoneMessagePage() {
   const chunksRef = useRef([]);
   const streamRef = useRef(null);
   const videoThumbnailRef = useRef(null);
-  const speechRecognitionRef = useRef(null);
   const audioRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
 
@@ -184,43 +183,9 @@ export default function EditMilestoneMessagePage() {
       }
       if (videoUrl) URL.revokeObjectURL(videoUrl);
       if (audioUrl) URL.revokeObjectURL(audioUrl);
-      speechRecognitionRef.current?.stop?.();
     };
   }, [audioUrl, videoUrl]);
 
-  const toggleSpeechToText = () => {
-    if (isSpeechListening) {
-      speechRecognitionRef.current?.stop();
-      setIsSpeechListening(false);
-      return;
-    }
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      toast.error('Voice input not supported in this browser');
-      return;
-    }
-    const recognition = new SpeechRecognition();
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.lang = 'en-US';
-    let finalTranscript = content || '';
-    recognition.onresult = (event) => {
-      let interim = '';
-      for (let index = event.resultIndex; index < event.results.length; index += 1) {
-        if (event.results[index].isFinal) {
-          finalTranscript += `${finalTranscript ? ' ' : ''}${event.results[index][0].transcript}`;
-        } else {
-          interim += event.results[index][0].transcript;
-        }
-      }
-      setContent(finalTranscript + (interim ? ` ${interim}` : ''));
-    };
-    recognition.onerror = () => setIsSpeechListening(false);
-    recognition.onend = () => setIsSpeechListening(false);
-    speechRecognitionRef.current = recognition;
-    recognition.start();
-    setIsSpeechListening(true);
-  };
 
   const initCamera = async (facing) => {
     try {
@@ -594,14 +559,15 @@ export default function EditMilestoneMessagePage() {
                 <div className="space-y-2">
                   <Label className="text-[#94a3b8]">Message Content <span className="text-red-400">*</span></Label>
                   <Textarea value={content} onChange={(event) => setContent(event.target.value)} placeholder="Write your heartfelt message here..." className="input-field min-h-[150px]" data-testid="edit-message-content-input" />
-                  <button
-                    type="button"
-                    onClick={toggleSpeechToText}
-                    className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs transition-colors ${isSpeechListening ? 'bg-red-500/20 text-red-400' : 'text-[var(--t5)] hover:bg-[var(--s)] hover:text-[var(--t3)]'}`}
-                    data-testid="edit-message-dictation-button"
-                  >
-                    {isSpeechListening ? <><MicOff className="h-3.5 w-3.5" /> Stop Dictation</> : <><Mic className="h-3.5 w-3.5" /> Dictate Message</>}
-                  </button>
+                  <DictationControl value={content} onText={setContent}>
+                    {({ supported, listening, transcribing, tap, label }) => supported ? (
+                      <button type="button" onClick={tap} title={label}
+                        className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs transition-colors ${listening ? 'bg-red-500/20 text-red-400' : 'text-[var(--t5)] hover:bg-[var(--s)] hover:text-[var(--t3)]'}`}
+                        data-testid="edit-message-dictation-button">
+                        {listening ? <><MicOff className="h-3.5 w-3.5" /> Stop Dictation</> : transcribing ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Transcribing…</> : <><Mic className="h-3.5 w-3.5" /> Dictate Message</>}
+                      </button>
+                    ) : null}
+                  </DictationControl>
                 </div>
               </CardContent>
             </Card>

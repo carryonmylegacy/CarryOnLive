@@ -469,6 +469,17 @@ ROUTE_POLICIES: dict = {
         "estate_access": "owner",
         "estate_id_source": "path.estate_id",
     },
+    # Financial Picture — AI draft of bills/debts/accounts/property (owner only; writes nothing)
+    "POST /api/financial/cfp/{estate_id}/ai-draft": {
+        "auth": "required",
+        "estate_access": "owner",
+        "estate_id_source": "path.estate_id",
+    },
+    # Private dictation — audio in memory → xAI STT (zero retention) → text back; nothing stored
+    "POST /api/ai/transcribe": {
+        "auth": "required",
+        "notes": "No estate scope: returns the caller's own transcript only; audio/transcript never persisted",
+    },
     # Admin compliance / platform-health evidence routes ──────────────────────
     "GET /api/admin/audit-chain-status": {"auth": "required", "roles": ["admin"], "notes": "Compliance scope"},
     "GET /api/admin/soc2-readiness": {

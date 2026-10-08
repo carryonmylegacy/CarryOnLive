@@ -124,7 +124,7 @@ const SecurityPage = () => {
       <Section icon={Eye} title={t('security.s.privacy')} testid="security-privacy">
         <ul className="space-y-2">
           <Bullet>{renderCopy(t('security.privacy.1'))} <Link to="/wind-down-promise" className="underline" style={{ color: 'var(--gold)' }}>{t('security.privacy.1link')}</Link>.</Bullet>
-          {[2, 3, 4, 5].map(n => <Bullet key={n}>{renderCopy(t(`security.privacy.${n}`))}</Bullet>)}
+          {[2, 3, 4, 5, 6].map(n => <Bullet key={n}>{renderCopy(t(`security.privacy.${n}`))}</Bullet>)}
         </ul>
       </Section>
 

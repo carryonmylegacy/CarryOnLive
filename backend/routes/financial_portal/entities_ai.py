@@ -7,26 +7,22 @@ the draft for review and then creates each row through the same endpoints the wi
 so every tile stays editable exactly as a hand-built one.
 """
 
-import asyncio
 import json
 import re
-import time
 from typing import Any, Optional
 
 from fastapi import Depends, HTTPException
 from pydantic import BaseModel, Field
 
-from config import XAI_MODEL, XAI_MODEL_LIGHT, db, logger, xai_client
-from services.ai_burn_guard import require_ai_burn_budget
+from config import db
+from services.ai_builder import run_ai_draft
 from services.ai_safety import hardened_system_prompt
-from services.llm_cost_ledger import record_xai_response
 from utils import get_current_user
 
 from ._core import router, _verify_estate_access
 
 CATEGORIES = ("business", "trust", "charity", "property", "specialized")
 EQUITY_ROLES = {"owner", "member", "shareholder", "gp", "lp", "joint_tenant", "tenant_in_common", "community_property"}
-_FENCE_RE = re.compile(r"```(?:json)?\s*(\{.*?\})\s*```", re.S)
 
 
 class CatalogType(BaseModel):
@@ -154,23 +150,6 @@ def _build_messages(description: str, catalog: EntityCatalog, ctx: dict) -> list
         {"role": "system", "content": hardened_system_prompt(ROLE_PROMPT)},
         {"role": "user", "content": user_msg},
     ]
-
-
-def _extract_json(text: str) -> Optional[dict]:
-    if not text:
-        return None
-    m = _FENCE_RE.search(text)
-    blob = m.group(1) if m else None
-    if blob is None:
-        start, end = text.find("{"), text.rfind("}")
-        blob = text[start : end + 1] if start >= 0 and end > start else None
-    if not blob:
-        return None
-    try:
-        parsed = json.loads(blob)
-    except json.JSONDecodeError:
-        return None
-    return parsed if isinstance(parsed, dict) else None
 
 
 def _pct(v: Any) -> Optional[float]:
@@ -307,48 +286,13 @@ async def ai_draft_structure(estate_id: str, payload: AIDraftRequest, current_us
     _estate, can_manage = await _verify_estate_access(estate_id, current_user, require_owner=True)
     if not can_manage:
         raise HTTPException(status_code=403, detail="Only the estate owner can draft entities")
-    if not xai_client:
-        raise HTTPException(status_code=503, detail="AI service not configured. Please contact support.")
-    await require_ai_burn_budget(current_user, "entities_ai_draft")
-
     ctx = await _estate_context(estate_id, current_user)
-    messages = _build_messages(payload.description, payload.catalog, ctx)
-
-    completion, used_model, last_err = None, None, None
-    for model_name in (XAI_MODEL_LIGHT, XAI_MODEL):
-        started = time.time()
-        try:
-            completion = await asyncio.wait_for(
-                asyncio.to_thread(
-                    xai_client.chat.completions.create,
-                    model=model_name,
-                    messages=messages,
-                    temperature=0.2,
-                    max_tokens=3000,
-                ),
-                timeout=70.0,
-            )
-            used_model = model_name
-            await record_xai_response(
-                completion,
-                endpoint="entities_ai_draft",
-                model=model_name,
-                user_id=current_user["id"],
-                estate_id=estate_id,
-                started_at=started,
-            )
-            break
-        except Exception as exc:  # noqa: BLE001
-            last_err = exc
-            logger.warning(f"Entities AI draft failed on {model_name}: {exc}")
-    if completion is None:
-        raise HTTPException(
-            status_code=503, detail=f"AI service unavailable — please try again in a minute. ({last_err})"
-        )
-
-    raw = _extract_json(completion.choices[0].message.content or "")
-    if raw is None:
-        raise HTTPException(status_code=502, detail="The AI reply could not be read. Please try describing it again.")
+    raw, used_model = await run_ai_draft(
+        current_user=current_user,
+        estate_id=estate_id,
+        feature="entities_ai_draft",
+        messages=_build_messages(payload.description, payload.catalog, ctx),
+    )
     draft = _validate_draft(raw, payload.catalog, ctx, payload.description)
     if not draft["entities"] and not draft["connections"]:
         raise HTTPException(

@@ -1,21 +1,9 @@
 import React from 'react';
-import { Trash2, AlertTriangle, Building2, Users, GitBranch, Plus } from 'lucide-react';
+import { Building2, Users, GitBranch, Plus } from 'lucide-react';
 import { TYPES, BUCKETS, rolesForCategory, isEquityRole } from '../../../config/entityCatalog';
+import { rowStyle as row, sel, inp, Head, Remove, HeardSummary } from '../../ai/reviewPrimitives';
 
 const US_STATE = /^[A-Z]{0,2}$/;
-const row = { background: 'var(--card)', border: '1px solid var(--b)' };
-const sel = 'input-field select-themed text-base h-9';
-const inp = 'input-field text-base h-9';
-
-const Head = ({ icon: Icon, children, testId }) => (
-  <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-[var(--t5)] mt-4 mb-2" data-testid={testId}>
-    <Icon className="w-3.5 h-3.5" /> {children}
-  </div>
-);
-
-const Remove = ({ onClick, testId }) => (
-  <button type="button" onClick={onClick} className="text-[#ef4444] hover:opacity-70 p-1" aria-label="Remove" data-testid={testId}><Trash2 className="w-3.5 h-3.5" /></button>
-);
 
 // Editable "Here's what I heard" lists. `draft` is the validated server draft; every edit
 // flows back through `onChange` so Build uses exactly what the subscriber approved.
@@ -38,20 +26,7 @@ export const EntityAIReview = ({ draft, onChange, user, beneficiaries = [], exte
 
   return (
     <div data-testid="es-ai-review">
-      {draft.summary && (
-        <div className="rounded-xl p-3 text-[13px] leading-snug" style={{ background: 'rgba(var(--gold-rgb), 0.08)', border: '1px solid rgba(var(--gold-rgb), 0.35)', color: 'var(--t)' }} data-testid="es-ai-summary">
-          <span className="font-bold text-[var(--gold)]">Here&apos;s what I heard:</span> {draft.summary}
-        </div>
-      )}
-      {draft.questions?.length > 0 && (
-        <ul className="mt-3 space-y-1.5" data-testid="es-ai-questions">
-          {draft.questions.map((q, i) => (
-            <li key={i} className="flex items-start gap-2 text-[12px] leading-snug rounded-lg px-3 py-2" style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.35)', color: 'var(--t)' }}>
-              <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5 text-[#f59e0b]" /> {q}
-            </li>
-          ))}
-        </ul>
-      )}
+      <HeardSummary summary={draft.summary} questions={draft.questions} idPrefix="es-ai" />
 
       <Head icon={Building2} testId="es-ai-entities-head">Entities ({draft.entities.length})</Head>
       <div className="space-y-2">

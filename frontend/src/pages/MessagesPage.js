@@ -41,6 +41,7 @@ import { Checkbox } from '../components/ui/checkbox';
 import SlidePanel from '../components/SlidePanel';
 import { resolvePhotoUrl } from '../utils/photoUrl';
 import { API_URL } from '../config';
+import { DictationControl } from '../components/ai/DictationMicButton';
 import VideoPlaybackModal from '../components/messages/VideoPlaybackModal';
 import MessageCard from '../components/messages/MessageCard';
 import MMGuidedWizard from '../components/messages/MMGuidedWizard';
@@ -162,8 +163,6 @@ const MessagesPage = () => {
   const chunksRef = useRef([]);
   const streamRef = useRef(null);
   const videoThumbnailRef = useRef(null);
-  const speechRecognitionRef = useRef(null);
-  const [isSpeechListening, setIsSpeechListening] = useState(false);
   // When the user edits a still-queued offline milestone, we hydrate
   // its blob from IndexedDB and remember the row's pendingUpload PK
   // here so handleCreate can patch the queue entry in-place rather
@@ -171,36 +170,6 @@ const MessagesPage = () => {
   const editingPendingUploadIdRef = useRef(null);
   const editingPendingOriginalBlobRef = useRef(null);
 
-  const toggleSpeechToText = () => {
-    if (isSpeechListening) {
-      speechRecognitionRef.current?.stop();
-      setIsSpeechListening(false);
-      return;
-    }
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) { toast.error('Voice input not supported in this browser'); return; }
-    const recognition = new SpeechRecognition();
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.lang = 'en-US';
-    let finalTranscript = content || '';
-    recognition.onresult = (event) => {
-      let interim = '';
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        if (event.results[i].isFinal) {
-          finalTranscript += (finalTranscript ? ' ' : '') + event.results[i][0].transcript;
-        } else {
-          interim += event.results[i][0].transcript;
-        }
-      }
-      setContent(finalTranscript + (interim ? ' ' + interim : ''));
-    };
-    recognition.onerror = () => setIsSpeechListening(false);
-    recognition.onend = () => setIsSpeechListening(false);
-    speechRecognitionRef.current = recognition;
-    recognition.start();
-    setIsSpeechListening(true);
-  };
 
   // Voice recording state
   const [audioBlob, setAudioBlob] = useState(null);
@@ -1510,8 +1479,6 @@ const MessagesPage = () => {
             setTitle={setTitle}
             content={content}
             setContent={setContent}
-            toggleSpeechToText={toggleSpeechToText}
-            isSpeechListening={isSpeechListening}
             beneficiaries={beneficiaries}
             selectedRecipients={selectedRecipients}
             setSelectedRecipients={setSelectedRecipients}
@@ -1587,11 +1554,15 @@ const MessagesPage = () => {
                 className="input-field min-h-[120px]"
                 data-testid="message-content-input"
               />
-              <button type="button" onClick={toggleSpeechToText}
-                className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-colors ${isSpeechListening ? 'bg-red-500/20 text-red-400' : 'text-[var(--t5)] hover:text-[var(--t3)] hover:bg-[var(--s)]'}`}
-                data-testid="message-mic-button">
-                {isSpeechListening ? <><MicOff className="w-3.5 h-3.5" /> Stop Dictation</> : <><Mic className="w-3.5 h-3.5" /> Dictate Message</>}
-              </button>
+              <DictationControl value={content} onText={setContent}>
+                {({ supported, listening, transcribing, tap, label }) => supported ? (
+                  <button type="button" onClick={tap} title={label}
+                    className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-colors ${listening ? 'bg-red-500/20 text-red-400' : 'text-[var(--t5)] hover:text-[var(--t3)] hover:bg-[var(--s)]'}`}
+                    data-testid="message-mic-button">
+                    {listening ? <><MicOff className="w-3.5 h-3.5" /> Stop Dictation</> : transcribing ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Transcribing…</> : <><Mic className="w-3.5 h-3.5" /> Dictate Message</>}
+                  </button>
+                ) : null}
+              </DictationControl>
             </div>
             
             {/* Video Recording */}

@@ -4,6 +4,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
+import { DictationControl } from '../ai/DictationMicButton';
 
 /**
  * MMGuidedWizard — pure presentational 3-step Milestone Message wizard.
@@ -20,7 +21,6 @@ const MMGuidedWizard = ({
   guidedStep, setGuidedStep,
   title, setTitle,
   content, setContent,
-  toggleSpeechToText, isSpeechListening,
   beneficiaries, selectedRecipients, setSelectedRecipients,
   handleCreate, creating,
 }) => (
@@ -100,11 +100,15 @@ const MMGuidedWizard = ({
             data-testid="message-content-input"
             autoFocus
           />
-          <button type="button" onClick={toggleSpeechToText}
-            className={`flex items-center gap-1.5 text-sm px-4 py-2 rounded-xl transition-colors ${isSpeechListening ? 'bg-red-500/20 text-red-400' : 'text-[var(--t5)] hover:text-[var(--t3)] hover:bg-[var(--s)]'}`}
-            data-testid="message-mic-button">
-            {isSpeechListening ? <><MicOff className="w-4 h-4" /> Stop Dictation</> : <><Mic className="w-4 h-4" /> Speak Instead of Typing</>}
-          </button>
+          <DictationControl value={content} onText={setContent}>
+            {({ supported, listening, transcribing, tap, label }) => supported ? (
+              <button type="button" onClick={tap} title={label}
+                className={`flex items-center gap-1.5 text-sm px-4 py-2 rounded-xl transition-colors ${listening ? 'bg-red-500/20 text-red-400' : 'text-[var(--t5)] hover:text-[var(--t3)] hover:bg-[var(--s)]'}`}
+                data-testid="message-mic-button">
+                {listening ? <><MicOff className="w-4 h-4" /> Stop Dictation</> : transcribing ? <><Loader2 className="w-4 h-4 animate-spin" /> Transcribing…</> : <><Mic className="w-4 h-4" /> Speak Instead of Typing</>}
+              </button>
+            ) : null}
+          </DictationControl>
         </div>
         <div className="flex gap-3">
           <Button

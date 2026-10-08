@@ -1765,6 +1765,30 @@ else
   CP_FAIL=$((CP_FAIL + 1))
 fi
 
+# CP6 — Private dictation keeps its /security promise (Oct 8 2026): audio is
+# held in memory for the single xAI request; never written to disk, object
+# storage or Mongo, and the transcript is never persisted.
+STT_FILE="/app/backend/routes/ai_transcribe.py"
+STT_LEAK=$(grep -nE "open\(|write_bytes|aiofiles|gridfs|object_storage|upload_to_storage|save_file|\.insert_one\(\{[^}]*(text|transcript|audio)" "$STT_FILE" 2>/dev/null || true)
+if [ -f "$STT_FILE" ] && [ -z "$STT_LEAK" ] && grep -q "del audio" "$STT_FILE"; then
+  echo -e "CP. CP6 Private dictation never persists audio or transcript ......... ${GREEN}PASS${NC}"
+else
+  echo -e "CP. CP6 Private dictation never persists audio or transcript ......... ${RED}FAIL${NC} (routes/ai_transcribe.py must hold audio in memory only and return the transcript without storing it — see /security 'Dictation & AI Builders')"
+  CP_FAIL=$((CP_FAIL + 1))
+fi
+
+# CP6 — Private dictation keeps its /security promise (Oct 8 2026): audio is
+# held in memory for the single xAI request; never written to disk, object
+# storage or Mongo, and the transcript is never persisted.
+STT_FILE="/app/backend/routes/ai_transcribe.py"
+STT_LEAK=$(grep -nE "open\(|write_bytes|aiofiles|gridfs|object_storage|upload_to_storage|save_file|\.insert_one\(\{[^}]*(text|transcript|audio)" "$STT_FILE" 2>/dev/null || true)
+if [ -f "$STT_FILE" ] && [ -z "$STT_LEAK" ] && grep -q "del audio" "$STT_FILE"; then
+  echo -e "CP. CP6 Private dictation never persists audio or transcript ......... ${GREEN}PASS${NC}"
+else
+  echo -e "CP. CP6 Private dictation never persists audio or transcript ......... ${RED}FAIL${NC} (routes/ai_transcribe.py must hold audio in memory only and return the transcript without storing it — see /security 'Dictation & AI Builders')"
+  CP_FAIL=$((CP_FAIL + 1))
+fi
+
 
 if [ "$CP_FAIL" -gt 0 ]; then
   FAILS=$((FAILS + CP_FAIL))
