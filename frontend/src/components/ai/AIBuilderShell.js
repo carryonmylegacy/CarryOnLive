@@ -3,6 +3,13 @@ import { Sparkles, Loader2, ChevronDown, ChevronUp, Wand2, RotateCcw } from 'luc
 import { notify } from '../AppNotification';
 import { DictationMicButton } from './DictationMicButton';
 import { DICTATION_ENGINES } from '../../hooks/useDictation';
+import { useAuth } from '../../contexts/AuthContext';
+
+// One hook for every builder: the `aib` feature gate (Admin → Finance → Subs → Feature Gates).
+export const useAIBuildersEnabled = () => {
+  const { enabledFeatures } = useAuth();
+  return Array.isArray(enabledFeatures) && enabledFeatures.includes('aib');
+};
 
 const btn = 'inline-flex items-center justify-center gap-1.5 rounded-full text-xs font-bold px-3.5 py-2 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed';
 
@@ -23,6 +30,7 @@ export const AIBuilderShell = ({
   const [draft, setDraft] = useState(null);
   const [mic, setMic] = useState({ listening: false, transcribing: false, error: null, engine: null });
   const onText = useCallback((t) => setText(t), []);
+  const enabled = useAIBuildersEnabled();
 
   const toggle = () => {
     const next = !collapsed;
@@ -58,6 +66,8 @@ export const AIBuilderShell = ({
       setBuilding(false);
     }
   };
+
+  if (!enabled) return null;
 
   if (collapsed) {
     return (

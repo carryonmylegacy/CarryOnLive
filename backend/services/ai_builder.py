@@ -51,6 +51,12 @@ async def run_ai_draft(
     """Call xAI (light model first, flagship as fallback) and return (raw_json, model_used)."""
     if not xai_client:
         raise HTTPException(status_code=503, detail="AI service not configured. Please contact support.")
+    from routes.feature_gates import is_feature_enabled_for_user  # local: avoids a routes↔services import cycle
+
+    if not await is_feature_enabled_for_user(current_user, "aib"):
+        raise HTTPException(
+            status_code=403, detail="AI Builders are not included in your plan. You can still add everything by hand."
+        )
     await require_ai_burn_budget(current_user, feature)
 
     completion, used_model, last_err = None, None, None

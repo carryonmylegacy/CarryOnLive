@@ -107,6 +107,23 @@ PLATFORM_FEATURES = [
         "core": False,
         "default_off": True,
     },
+    {
+        # AI Builders — the "talk-it-in" draft tools on every list surface
+        # (Financial Picture, Entities, Beneficiaries, FFN, Digital Wallet,
+        # Immediate Action Checklist, Contingency Protocols, Milestone
+        # Message scaffolding, QuickStart "let me just tell you"). Each
+        # draft is an xAI call, so the founder decides which tiers carry
+        # the token burn. Default OFF for every tier and every partner.
+        # Server gate lives in services/ai_builder.run_ai_draft (one choke
+        # point for all nine endpoints); the UI hides every builder card
+        # and the QuickStart story tile when the gate is off. Private
+        # dictation itself (the mic) is NOT part of this gate.
+        "key": "aib",
+        "label": "AI Builders — talk-it-in (AIB)",
+        "route": "",
+        "core": False,
+        "default_off": True,
+    },
 ]
 
 FEATURE_KEYS = [f["key"] for f in PLATFORM_FEATURES]
@@ -471,17 +488,28 @@ async def is_feature_enabled_for_user(user_doc: dict, feature_key: str) -> bool:
 
     Mirrors the tier-resolution order used by `get_user_enabled_features`
     but without the request scaffolding — callable from any module that
-    needs to gate a non-routed action (e.g., trustee login). Honors the
-    B2B partner override.
+    needs to gate a non-routed action (e.g., trustee login, AI Builder
+    drafts). Honors the B2B partner override and platform Free Mode.
     """
+    platform_settings = await db.platform_settings.find_one({"_id": "global"})
+    free_mode_on = bool((platform_settings or {}).get("platform_free_mode", False))
+
     # Partner override first — same precedence as the request-scoped path.
     if user_doc.get("partner_id"):
         partner_doc = await db.b2b_partners.find_one(
             {"id": user_doc["partner_id"], "active": True},
-            {"_id": 0, "id": 1, "feature_gates": 1},
+            {"_id": 0, "id": 1, "feature_gates": 1, "free_feature_gates": 1},
         )
-        if partner_doc and isinstance(partner_doc.get("feature_gates"), dict):
-            return bool(partner_doc["feature_gates"].get(feature_key, False))
+        if partner_doc:
+            partner_gates = partner_doc.get("feature_gates")
+            if free_mode_on and isinstance(partner_doc.get("free_feature_gates"), dict):
+                partner_gates = partner_doc["free_feature_gates"]
+            if isinstance(partner_gates, dict):
+                return bool(partner_gates.get(feature_key, False))
+
+    gates = await get_feature_gates()
+    if free_mode_on:
+        return bool(gates.get(feature_key, {}).get("free_mode", False))
 
     effective_tier = None
     sub = await db.user_subscriptions.find_one(
@@ -499,5 +527,4 @@ async def is_feature_enabled_for_user(user_doc: dict, feature_key: str) -> bool:
     if not effective_tier:
         effective_tier = user_doc.get("verified_tier") or "premium"
 
-    gates = await get_feature_gates()
     return bool(gates.get(feature_key, {}).get(effective_tier, False))

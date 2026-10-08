@@ -73,6 +73,8 @@ PARTNER_FEATURE_PILLARS = [
     {"key": "ces", "label": "CarryOn Entities & Structures", "default_off": True},
     # Trustee Mode Access defaults OFF — partners must explicitly opt in.
     {"key": "tma", "label": "Trustee Mode Access", "default_off": True},
+    # AI Builders (talk-it-in drafts, one xAI call each) default OFF — partners must explicitly opt in.
+    {"key": "aib", "label": "AI Builders (talk-it-in)", "default_off": True},
 ]
 PARTNER_FEATURE_KEYS = [f["key"] for f in PARTNER_FEATURE_PILLARS]
 

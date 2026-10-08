@@ -36,6 +36,7 @@ const FEATURE_ROWS = [
   { key: 'ces', label: 'Trusts, LLCs & entity map' },
   { key: 'bec', label: 'AI concierge for your beneficiaries' },
   { key: 'tma', label: 'Trustee access on your behalf' },
+  { key: 'aib', label: 'Talk-it-in AI builders (dictate, review, done)' },
 ];
 
 const PricingPage = () => {

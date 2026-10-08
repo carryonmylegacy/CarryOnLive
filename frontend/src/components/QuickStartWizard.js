@@ -32,6 +32,7 @@ import AddressAutocomplete from './AddressAutocomplete';
 import { RELATIONSHIPS } from '../config/relationships';
 import { toast } from '../utils/toast';
 import { QuickStartStory } from './quickstart/QuickStartStory';
+import { useAIBuildersEnabled } from './ai/AIBuilderShell';
 
 const STEPS = [
   'gate', 'welcome', 'residence', 'household',
@@ -61,6 +62,7 @@ const QuickStartWizard = ({ forceOpen = false, onClose = () => {} }) => {
   // to the server when the subscriber taps Next on each pre-filled screen.
   const [storyOpen, setStoryOpen] = useState(false);
   const [prefill, setPrefill] = useState(readPrefill);
+  const aibEnabled = useAIBuildersEnabled();
   const stepFor = (prog, key) => {
     const saved = prog?.data?.[key];
     return saved && Object.keys(saved).length ? saved : (prefill[key] || {});
@@ -568,7 +570,7 @@ const QuickStartWizard = ({ forceOpen = false, onClose = () => {} }) => {
                 {brand} QuickStart
               </h2>
               <p className="text-xs" style={{ color: '#CBD5E1' }}>
-                {storyOpen ? 'Your story' : `Step ${currentIdx + 1} of ${totalSteps}`}
+                {storyOpen && aibEnabled ? 'Your story' : `Step ${currentIdx + 1} of ${totalSteps}`}
               </p>
             </div>
           </div>
@@ -599,7 +601,7 @@ const QuickStartWizard = ({ forceOpen = false, onClose = () => {} }) => {
 
         {/* Scrollable body */}
         <div className="flex-1 overflow-y-auto px-5 py-5" style={{ color: '#F8FAFC' }}>
-          {storyOpen ? (
+          {storyOpen && aibEnabled ? (
             <QuickStartStory firstName={(user?.first_name || user?.name || '').split(' ')[0] || 'there'} brand={brand} getAuthHeaders={getAuthHeaders}
               onApply={applyStory} onBack={() => { setStoryOpen(false); handleGateChoice('new'); }} />
           ) : (
@@ -639,6 +641,7 @@ const QuickStartWizard = ({ forceOpen = false, onClose = () => {} }) => {
             brand={brand}
             allData={progress?.data || {}}
             onGateChoice={(choice) => handleGateChoice(choice)}
+            storyEnabled={aibEnabled}
           />
           {error && (
             <p className="mt-3 text-xs" style={{ color: '#fca5a5' }} data-testid="quickstart-error">{error}</p>
@@ -648,7 +651,7 @@ const QuickStartWizard = ({ forceOpen = false, onClose = () => {} }) => {
         </div>
 
         {/* Footer */}
-        {!storyOpen && (
+        {!(storyOpen && aibEnabled) && (
         <div
           className="flex items-center justify-between gap-3 px-5 py-4 border-t"
           style={{ borderColor: 'rgba(255,255,255,0.10)' }}
@@ -795,7 +798,7 @@ const _ENTITY_TYPES = [
   ['nonprofit','Nonprofit / 501(c)'],['holding_company','Holding Company'],
 ];
 
-export const QuickStartStep = ({ stepKey, data, setData, user, brand, allData, onGateChoice }) => {
+export const QuickStartStep = ({ stepKey, data, setData, user, brand, allData, onGateChoice, storyEnabled = false }) => {
   const set = (k, v) => setData({ ...data, [k]: v });
   const firstName = (user?.first_name || user?.name || '').split(' ')[0] || 'there';
 
@@ -811,7 +814,7 @@ export const QuickStartStep = ({ stepKey, data, setData, user, brand, allData, o
           will help you arrive at one prepared. If you already have your plan in place,
           you&apos;re welcome to use QuickStart as a refresher — but you don&apos;t need to.
         </p>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 pt-2">
+        <div className={`grid grid-cols-1 ${storyEnabled ? 'lg:grid-cols-3' : 'lg:grid-cols-2'} gap-3 pt-2`}>
           <button
             type="button"
             data-testid="qs-gate-new"
@@ -827,6 +830,7 @@ export const QuickStartStep = ({ stepKey, data, setData, user, brand, allData, o
             <div className="text-lg font-bold mb-1">Yes &mdash; walk me through it</div>
             <div className="text-xs opacity-80">~2 minutes, one screen at a time. Ends with a printable, professional-prep checklist.</div>
           </button>
+          {storyEnabled && (
           <button
             type="button"
             data-testid="qs-gate-story"
@@ -841,6 +845,7 @@ export const QuickStartStep = ({ stepKey, data, setData, user, brand, allData, o
             <div className="text-lg font-bold mb-1">Yes &mdash; let me just tell you</div>
             <div className="text-xs" style={mutedStyle}>Talk for a minute or two (or type). {brand} sorts it onto the same screens; you check each one before anything is kept.</div>
           </button>
+          )}
           <button
             type="button"
             data-testid="qs-gate-familiar"
