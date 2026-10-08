@@ -479,6 +479,8 @@ ROUTE_POLICIES: dict = {
     "POST /api/beneficiaries/{estate_id}/ai-draft": {"auth": "required", "estate_access": "owner", "estate_id_source": "path.estate_id"},
     "POST /api/ffn/{estate_id}/ai-draft": {"auth": "required", "estate_access": "owner", "estate_id_source": "path.estate_id"},
     "POST /api/digital-wallet/{estate_id}/ai-draft": {"auth": "required", "estate_access": "owner", "estate_id_source": "path.estate_id", "notes": "Secrets never leave the client: model forbidden to emit them, server scrubs, review uses a masked field"},
+    "POST /api/checklists/{estate_id}/ai-draft": {"auth": "required", "estate_access": "owner", "estate_id_source": "path.estate_id"},
+    "POST /api/ccp/{estate_id}/ai-draft": {"auth": "required", "estate_access": "owner", "estate_id_source": "path.estate_id", "notes": "Pre-fills the existing /ccp/wizard/generate inputs + depth panels; writes nothing"},
     # Private dictation — audio in memory → xAI STT (zero retention) → text back; nothing stored
     "POST /api/ai/transcribe": {
         "auth": "required",

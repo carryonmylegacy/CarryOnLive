@@ -22,6 +22,7 @@ import { API_URL } from '../config';
 import { openPdfPreview } from '../utils/openPdfPreview';
 import CachedPdfIcon from '../components/CachedPdfIcon';
 import SlidePanel from '../components/SlidePanel';
+import { ChecklistAIBuilder } from '../components/checklist/ChecklistAIBuilder';
 import useIacTaskStream from '../hooks/useIacTaskStream';
 
 import { formatPhoneUS } from '../utils/phoneFormat';
@@ -997,6 +998,10 @@ const ChecklistPage = () => {
         </button>
         <CachedPdfIcon pdfType="iac_standalone" />
       </div>
+
+      {estate?.id && (
+        <ChecklistAIBuilder estateId={estate.id} hasItems={totalCount > 0} getAuthHeaders={getAuthHeaders} onBuilt={() => { invalidateCache('/checklists/'); fetchData(); }} />
+      )}
 
       {/* Add/Edit form — slides in from the right matching all other
           slide-ins across the app (CFP / DAV pre-refactor / Beneficiary

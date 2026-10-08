@@ -92,6 +92,7 @@ async def run_ai_draft(
 
 
 _SOURCE_TAG_RE = re.compile(r"\s*\((?:source|per|from)\s*:\s*[^)]*\)", re.I)
+_PLACEHOLDERS = {"unknown", "n/a", "na", "none", "null", "not stated", "not provided", "not specified", "not mentioned", "not given", "tbd"}
 
 
 def clean_str(v, limit: int) -> Optional[str]:
@@ -99,6 +100,8 @@ def clean_str(v, limit: int) -> Optional[str]:
     if v is None:
         return None
     s = _SOURCE_TAG_RE.sub("", str(v)).strip()
+    if s.lower() in _PLACEHOLDERS:
+        return None
     return s[:limit] if s else None
 
 

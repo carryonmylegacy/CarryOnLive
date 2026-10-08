@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from config import db
+from guards import require_estate_owner
 from utils import get_current_user
 from services.access_control import resolve_estate_actor, beneficiary_can_view_ffn
 
@@ -69,8 +70,8 @@ async def create_ffn_contact(estate_id: str, data: FFNContactCreate, current_use
     estate = await db.estates.find_one({"id": estate_id}, {"_id": 0, "id": 1, "owner_id": 1})
     if not estate:
         raise HTTPException(status_code=404, detail="Estate not found")
-    if estate["owner_id"] != current_user["id"]:
-        raise HTTPException(status_code=403, detail="Only the estate owner can manage FFN contacts")
+    # Same convention as beneficiaries / digital-wallet writes: owner, or a CarryOn admin.
+    await require_estate_owner(estate_id, current_user)
 
     if not data.name.strip():
         raise HTTPException(status_code=400, detail="Name is required")
@@ -107,8 +108,9 @@ async def update_ffn_contact(contact_id: str, data: FFNContactUpdate, current_us
         raise HTTPException(status_code=404, detail="Contact not found")
 
     estate = await db.estates.find_one({"id": contact["estate_id"]}, {"_id": 0, "id": 1, "owner_id": 1})
-    if not estate or estate["owner_id"] != current_user["id"]:
-        raise HTTPException(status_code=403, detail="Only the estate owner can manage FFN contacts")
+    if not estate:
+        raise HTTPException(status_code=404, detail="Estate not found")
+    await require_estate_owner(estate["id"], current_user)
 
     update = {}
     for field in ("name", "phone", "email", "address", "relationship", "notes"):
@@ -131,8 +133,9 @@ async def delete_ffn_contact(contact_id: str, current_user: dict = Depends(get_c
         raise HTTPException(status_code=404, detail="Contact not found")
 
     estate = await db.estates.find_one({"id": contact["estate_id"]}, {"_id": 0, "id": 1, "owner_id": 1})
-    if not estate or estate["owner_id"] != current_user["id"]:
-        raise HTTPException(status_code=403, detail="Only the estate owner can manage FFN contacts")
+    if not estate:
+        raise HTTPException(status_code=404, detail="Estate not found")
+    await require_estate_owner(estate["id"], current_user)
 
     now = datetime.now(timezone.utc)
     await db.ffn_contacts.update_one({"id": contact_id}, {"$set": {"deleted_at": now.isoformat()}})

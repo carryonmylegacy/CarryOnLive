@@ -49,7 +49,7 @@ import {
   Cross,
 } from 'lucide-react';
 
-const HOUSEHOLD_OPTIONS = [
+export const HOUSEHOLD_OPTIONS = [
   { id: 'children', label: 'Children', icon: Baby, color: '#3B7BF7' },
   { id: 'infants', label: 'Infants/Toddlers', icon: Baby, color: '#FF8FB0' },
   { id: 'teens', label: 'Teenagers', icon: GraduationCap, color: '#06B6D4' },
@@ -64,7 +64,7 @@ const HOUSEHOLD_OPTIONS = [
   { id: 'livestock', label: 'Livestock', icon: Bird, color: '#88C8F7' },
 ];
 
-const CONCERN_OPTIONS = [
+export const CONCERN_OPTIONS = [
   { id: 'hurricane', label: 'Hurricane', icon: CloudRain, color: '#3B7BF7' },
   { id: 'tornado', label: 'Tornado', icon: Wind, color: '#6B7BF7' },
   { id: 'earthquake', label: 'Earthquake', icon: Mountain, color: '#F5A623' },

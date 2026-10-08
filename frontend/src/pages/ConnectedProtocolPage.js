@@ -9,6 +9,7 @@ import { useDraftState } from '../hooks/useDraftState';
 import CCPPlanEditor from '../components/ccp/CCPPlanEditor';
 import CCPActiveView from '../components/ccp/CCPActiveView';
 import CCPWizard from '../components/ccp/CCPWizard';
+import { CCPAIBuilder } from '../components/ccp/CCPAIBuilder';
 import CCPDebriefView from '../components/ccp/CCPDebriefView';
 import CCPWelcomeWalkthrough from '../components/ccp/CCPWelcomeWalkthrough';
 import ReadinessScoreCard from '../components/ccp/ReadinessScoreCard';
@@ -85,7 +86,7 @@ const PLAN_TYPE_LABELS = {
 const CCP_POLL_INTERVAL = 5000;
 
 export default function ConnectedProtocolPage() {
-  const { user } = useAuth();
+  const { user, getAuthHeaders } = useAuth();
   const brand = useBrand();
   const cleanLabel = useLabelCleaner();
   const navigate = useNavigate();
@@ -1016,6 +1017,11 @@ export default function ConnectedProtocolPage() {
           Click to expand for the line-item breakdown of what to fix next. */}
       {estateId && (
         <ReadinessScoreCard estateId={estateId} refreshKey={depthRefreshKey} />
+      )}
+
+      {isBenefactor && estateId && (
+        <CCPAIBuilder estateId={estateId} hasPlans={plans.length > 0} getAuthHeaders={getAuthHeaders}
+          onOpenWizard={() => setView('wizard')} onDepthSaved={() => setDepthRefreshKey((k) => k + 1)} />
       )}
 
       {/* Big Navigation Buttons */}

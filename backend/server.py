@@ -32,6 +32,7 @@ from routes.partner_brief import router as partner_brief_router
 from routes.beneficiary_concierge import router as beneficiary_concierge_router
 from routes.ai_transcribe import router as ai_transcribe_router
 from routes.ai_builders_people import router as ai_builders_people_router
+from routes.ai_builders_plans import router as ai_builders_plans_router
 from routes.auth import router as auth_router
 from routes.beneficiaries import router as beneficiaries_router
 from routes.checklist import router as checklist_router
@@ -391,6 +392,7 @@ api_router.include_router(partner_brief_router)
 api_router.include_router(beneficiary_concierge_router)
 api_router.include_router(ai_transcribe_router)
 api_router.include_router(ai_builders_people_router)
+api_router.include_router(ai_builders_plans_router)
 api_router.include_router(admin_router)
 api_router.include_router(public_content_router)
 api_router.include_router(site_copy_router)

@@ -21,6 +21,8 @@ DEFAULT_LIMITS = {
     "beneficiaries_ai_draft": 20,
     "ffn_ai_draft": 20,
     "digital_wallet_ai_draft": 20,
+    "checklist_ai_draft": 20,
+    "ccp_ai_draft": 20,
     "beneficiary_concierge": 10,
     "guardian_generate_iac": 1,
     "guardian_heavy": 3,
