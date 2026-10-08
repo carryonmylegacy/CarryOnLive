@@ -8,6 +8,7 @@ Token is returned as `access_token`; frontend stores it in `localStorage.carryon
 - Password: CarryOntheWisdom!
 - Username: foundercarryon
 - Role: admin (founder — sees all six Admin Portal sections at /admin)
+- Founder Estate id (preview): 971e7ccb-9a45-4765-848f-aaefa43e2c08 — use this estate for AI Builder tests (the `aib` gate is ON for the founder; `info@carryon.us` is subscription-expired → 403 on every write/draft). Admin `GET /api/estates` lists ALL estates — never test against other people's estates. Never create beneficiaries in tests (sends real invitation e-mails); edit the existing "Test Invitee" and restore it.
 
 ## Benefactor (preview) — Pete Mitchell equivalent, NOT admin
 - Email: info@carryon.us
