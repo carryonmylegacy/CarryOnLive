@@ -15,7 +15,7 @@ from fastapi import Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from config import db
-from services.ai_builder import run_ai_draft
+from services.ai_builder import existing_row, run_ai_draft
 from services.ai_safety import hardened_system_prompt
 from utils import get_current_user
 
@@ -61,7 +61,15 @@ async def _estate_context(estate_id: str, user: dict) -> dict:
     return {
         "user": {"id": user["id"], "name": user.get("name") or f"{first} {user.get('last_name') or ''}".strip()},
         "entities": [
-            {"id": e["id"], "name": e["name"], "category": e["category"], "type": e["type"]} for e in entities
+            {
+                "id": e["id"],
+                "name": e["name"],
+                "category": e["category"],
+                "type": e["type"],
+                "formation_state": e.get("formation_state"),
+                "notes": e.get("notes"),
+            }
+            for e in entities
         ],
         "beneficiaries": [
             {"id": b["id"], "name": b.get("name") or _person_label(b), "relationship": b.get("relationship")}
@@ -100,7 +108,8 @@ HARD RULES
    "match": {"kind": "user", "id": "<SPEAKER id>"} (use the speaker's first name) and connect it. "My wife and
    I each own 50%" = TWO connections: the speaker 50% and the wife 50%. Never drop the speaker.
 4. Entities already in EXISTING entities (same or clearly the same name) → reference with "existing_id";
-   do not duplicate them.
+   do not duplicate them. For an existing entity fill in ONLY what the speaker newly stated (a formation
+   state, a different type, a remark for notes) and leave the rest null — new connections to it are fine.
 5. Every connection points AT an entity (target_ref must be an entity ref). Sources may be people or
    entities (an LLC owned by a trust: source = the trust, role "owner"/"member").
 6. ownership_pct only for equity roles (owner, member, shareholder, gp, lp, joint_tenant, tenant_in_common,
@@ -181,17 +190,20 @@ def _validate_draft(raw: dict, catalog: EntityCatalog, ctx: dict, description: s
         existing_id = e.get("existing_id") if e.get("existing_id") in existing_entities else None
         if existing_id:
             ex = existing_entities[existing_id]
-            entities.append(
+            spoken_type = e.get("type") if e.get("type") in type_ids.get(ex["category"], set()) else None
+            spoken_state = str(e.get("formation_state") or "").strip().upper()[:2] or None
+            spoken_notes = (str(e.get("notes")).strip()[:500] or None) if e.get("notes") else None
+            row = existing_row(
                 {
-                    "ref": ref,
-                    "existing_id": existing_id,
-                    "name": ex["name"],
-                    "category": ex["category"],
+                    "id": ex["id"],
                     "type": ex["type"],
-                    "formation_state": None,
-                    "notes": None,
-                }
+                    "formation_state": ex.get("formation_state"),
+                    "notes": ex.get("notes"),
+                },
+                ("type", "formation_state", "notes"),
+                {"type": spoken_type, "formation_state": spoken_state, "notes": spoken_notes},
             )
+            entities.append({"ref": ref, "name": ex["name"], "category": ex["category"], **row})
             refs[ref] = "entity"
             continue
         name = str(e.get("name") or "").strip()[:200]
@@ -215,6 +227,7 @@ def _validate_draft(raw: dict, catalog: EntityCatalog, ctx: dict, description: s
             {
                 "ref": ref,
                 "existing_id": None,
+                "changes": [],
                 "name": name,
                 "category": category,
                 "type": type_id,

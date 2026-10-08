@@ -140,3 +140,49 @@ def clean_int(v, lo: int, hi: int) -> Optional[int]:
 
 def pick(v, allowed, default=None):
     return v if v in allowed else default
+
+
+# Shared prompt rule — every builder that can match the speaker's words to a record already on file.
+EXISTING_RULE = (
+    'Items already in EXISTING (the same thing, even if the speaker names it a little differently) → set "existing_id" '
+    'to that id and fill in ONLY the fields the speaker gave NEW or CHANGED information about ("my mortgage is due on '
+    'the first" → existing_id + due_day 1, every other field null). Never repeat values that are already on file, never '
+    "rename an existing item, and never duplicate it. If they only mention it without new facts, return just existing_id."
+)
+
+
+def _same(a, b) -> bool:
+    if isinstance(a, str) and isinstance(b, str):
+        return a.strip().lower() == b.strip().lower()
+    if isinstance(a, bool) or isinstance(b, bool):
+        return bool(a) == bool(b)
+    if isinstance(a, (int, float)) and isinstance(b, (int, float)):
+        return abs(float(a) - float(b)) < 1e-9
+    return a == b
+
+
+def merge_existing(existing: dict, spoken: dict, append: tuple[str, ...] = ("notes",)) -> tuple[dict, list[str]]:
+    """Overlay the speaker's non-empty values on the stored record → (merged row, changed field names).
+    Free-text `append` fields are appended to, not replaced, so a remark never wipes earlier notes."""
+    merged = dict(existing)
+    changes: list[str] = []
+    for key, val in spoken.items():
+        if val is None or val == "" or val == []:
+            continue
+        cur = existing.get(key)
+        if _same(cur, val):
+            continue
+        if key in append and isinstance(cur, str) and cur.strip() and isinstance(val, str):
+            if val.strip().lower() in cur.lower():
+                continue
+            val = f"{cur.strip()} · {val.strip()}"
+        merged[key] = val
+        changes.append(key)
+    return merged, changes
+
+
+def existing_row(doc: dict, fields: tuple[str, ...], spoken: dict, append: tuple[str, ...] = ("notes",)) -> dict:
+    """Review row for a record already on file: current values + the speaker's changes, with `changes` listed."""
+    base = {f: doc.get(f) for f in fields}
+    merged, changes = merge_existing(base, spoken, append)
+    return {"existing_id": doc["id"], "changes": changes, **merged}

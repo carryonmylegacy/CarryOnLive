@@ -31,9 +31,9 @@ export const EntityAIBuilder = ({ estateId, user, beneficiaries = [], externals 
     canBuild={(draft) => draft.entities.length > 0 || draft.connections.length > 0}
     build={async (draft) => {
       const res = await applyEntityDraft({ draft, estateId, authHeaders: getAuthHeaders() });
-      const made = [res.entities && `${res.entities} entit${res.entities === 1 ? 'y' : 'ies'}`, res.people && `${res.people} ${res.people === 1 ? 'person' : 'people'}`, res.connections && `${res.connections} connection${res.connections === 1 ? '' : 's'}`].filter(Boolean).join(', ');
+      const made = [res.entities && `${res.entities} entit${res.entities === 1 ? 'y' : 'ies'}`, res.updated && `${res.updated} updated entit${res.updated === 1 ? 'y' : 'ies'}`, res.people && `${res.people} ${res.people === 1 ? 'person' : 'people'}`, res.connections && `${res.connections} connection${res.connections === 1 ? '' : 's'}`].filter(Boolean).join(', ');
       onBuilt?.(res);
-      return { made, failures: res.failures, message: `Added ${made} to your chart. Tap any tile to fine-tune it.` };
+      return { made, failures: res.failures, message: `Applied ${made || 'your changes'} to your chart. Tap any tile to fine-tune it.` };
     }}
   />
 );

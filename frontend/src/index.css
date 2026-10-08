@@ -1248,6 +1248,12 @@ input[type="number"].allow-number-spinner {
   .input-field::placeholder {
     color: var(--t5, #64748b);
   }
+  /* AI Builder "e.g. …" example: quieter than typed text, and it never runs under the mic button. */
+  .ai-builder-input::placeholder {
+    color: var(--t5, #64748b);
+    opacity: 0.55;
+    font-weight: 400;
+  }
   .input-field:focus {
     outline: none;
     border-color: #d4af37;

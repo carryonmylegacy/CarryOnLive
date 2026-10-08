@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field
 
 from config import db
 from guards import require_estate_owner
-from services.ai_builder import clean_str, pick, run_ai_draft
+from services.ai_builder import EXISTING_RULE, clean_str, existing_row, pick, run_ai_draft
 from services.ai_safety import hardened_system_prompt
 from utils import get_current_user
 
@@ -25,6 +25,19 @@ IAC_CATEGORIES = ("legal", "financial", "insurance", "property", "medical", "per
 IAC_PRIORITIES = ("critical", "high", "medium", "low")
 IAC_ACTIONS = ("call", "email", "visit", "file_paperwork", "notify", "custom")
 IAC_TIMEFRAMES = ("immediate", "first_week", "two_weeks", "first_month", "no_rush")
+IAC_FIELDS = (
+    "title",
+    "description",
+    "category",
+    "priority",
+    "action_type",
+    "due_timeframe",
+    "contact_name",
+    "contact_phone",
+    "contact_email",
+    "contact_address",
+    "notes",
+)
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 
@@ -50,7 +63,8 @@ HARD RULES
    memberships → medium/two_weeks or low/first_month.
 4. contact_name / contact_phone / contact_email / contact_address ONLY when stated (the person or office to
    reach for THIS item — e.g. "Tom handles the dog" → contact_name "Tom").
-5. Items already in EXISTING (same meaning) → existing_id, no duplicate.
+5. EXISTING_RULE ("Tom's number is now 804-555-0199" → existing_id + contact_phone only; "make the gym cancellation
+   low priority" → existing_id + priority "low").
 6. "summary": ONE sentence. "questions": max 5 short sentences.
 
 OUTPUT — exactly one fenced JSON block, nothing outside it:
@@ -60,16 +74,44 @@ OUTPUT — exactly one fenced JSON block, nothing outside it:
    "action_type": "<ACTIONS>", "due_timeframe": "<TIMEFRAMES>", "contact_name": null, "contact_phone": null, "contact_email": null,
    "contact_address": null, "notes": null}],
  "questions": ["string"]}
-```"""
+```""".replace("EXISTING_RULE", EXISTING_RULE)
+
+
+def _iac_spoken(it: dict, new: bool) -> dict:
+    email = (clean_str(it.get("contact_email"), 200) or "").lower()
+    return {
+        "title": clean_str(it.get("title"), 200) if new else None,
+        "description": clean_str(it.get("description"), 1000) or ("" if new else None),
+        "category": pick(it.get("category"), IAC_CATEGORIES, "general" if new else None),
+        "priority": pick(it.get("priority"), IAC_PRIORITIES, "medium" if new else None),
+        "action_type": pick(it.get("action_type"), IAC_ACTIONS, "custom" if new else None),
+        "due_timeframe": pick(it.get("due_timeframe"), IAC_TIMEFRAMES, "first_week" if new else None),
+        "contact_name": clean_str(it.get("contact_name"), 120),
+        "contact_phone": clean_str(it.get("contact_phone"), 40),
+        "contact_email": email if EMAIL_RE.match(email) else None,
+        "contact_address": clean_str(it.get("contact_address"), 300),
+        "notes": clean_str(it.get("notes"), 500),
+    }
 
 
 @router.post("/checklists/{estate_id}/ai-draft")
 async def ai_draft_checklist(estate_id: str, payload: DraftRequest, current_user: dict = Depends(get_current_user)):
     await require_estate_owner(estate_id, current_user)
-    rows = await db.checklists.find({"estate_id": estate_id}, {"_id": 0, "id": 1, "title": 1, "category": 1}).to_list(
-        400
-    )
-    existing = [{"id": r["id"], "title": r.get("title") or "", "category": r.get("category")} for r in rows]
+    docs = await db.checklists.find(
+        {"estate_id": estate_id}, {"_id": 0, "id": 1, **{f: 1 for f in IAC_FIELDS}}
+    ).to_list(400)
+    existing = [
+        {
+            "id": r["id"],
+            "title": r.get("title") or "",
+            "category": r.get("category"),
+            "priority": r.get("priority"),
+            "due_timeframe": r.get("due_timeframe"),
+            "contact_name": r.get("contact_name"),
+            "contact_phone": r.get("contact_phone"),
+        }
+        for r in docs
+    ]
     user_msg = (
         f"SPEAKER: {current_user.get('name') or 'the estate owner'}\n\nEXISTING: {json.dumps(existing, separators=(',', ':'))}\n\n"
         f'DESCRIPTION (verbatim):\n"""\n{payload.description.strip()}\n"""'
@@ -89,28 +131,21 @@ async def ai_draft_checklist(estate_id: str, payload: DraftRequest, current_user
         if not isinstance(it, dict):
             continue
         title = clean_str(it.get("title"), 200)
+        ex = next((r for r in existing if r["id"] == it.get("existing_id")), None) or (
+            next((r for r in existing if r["title"].lower() == title.lower()), None) if title else None
+        )
+        if ex:
+            doc = next(d for d in docs if d["id"] == ex["id"])
+            spoken = _iac_spoken(it, False)
+            if doc.get("description"):
+                spoken["description"] = None  # the model tends to restate it; only fill an empty one
+            row = existing_row(doc, IAC_FIELDS, spoken)
+            row["description"] = row.get("description") or ""
+            out.append(row)
+            continue
         if not title:
             continue
-        ex = next((r for r in existing if r["id"] == it.get("existing_id")), None) or next(
-            (r for r in existing if r["title"].lower() == title.lower()), None
-        )
-        email = (clean_str(it.get("contact_email"), 200) or "").lower()
-        out.append(
-            {
-                "existing_id": ex["id"] if ex else None,
-                "title": ex["title"] if ex else title,
-                "description": clean_str(it.get("description"), 1000) or "",
-                "category": pick(it.get("category"), IAC_CATEGORIES, "general"),
-                "priority": pick(it.get("priority"), IAC_PRIORITIES, "medium"),
-                "action_type": pick(it.get("action_type"), IAC_ACTIONS, "custom"),
-                "due_timeframe": pick(it.get("due_timeframe"), IAC_TIMEFRAMES, "first_week"),
-                "contact_name": clean_str(it.get("contact_name"), 120),
-                "contact_phone": clean_str(it.get("contact_phone"), 40),
-                "contact_email": email if EMAIL_RE.match(email) else None,
-                "contact_address": clean_str(it.get("contact_address"), 300),
-                "notes": clean_str(it.get("notes"), 500),
-            }
-        )
+        out.append({"existing_id": None, "changes": [], **_iac_spoken(it, True)})
     if not out:
         raise HTTPException(
             status_code=422,
@@ -154,6 +189,20 @@ GO_BAG_CATEGORIES = (
 )
 
 
+GO_BAG_FIELDS = ("category", "name", "qty", "notes")
+
+
+def _match_go_bag(name: str, items: list[dict]) -> Optional[dict]:
+    """The go-bag item on file the speaker means — exact name first, then a close match ("water" ~ "Water, 3 gal")."""
+    n = name.strip().lower()
+    for it in items:
+        if (it.get("name") or "").strip().lower() == n:
+            return it
+    names = [(it.get("name") or "").strip().lower() for it in items]
+    close = difflib.get_close_matches(n, names, n=1, cutoff=0.8)
+    return items[names.index(close[0])] if close else None
+
+
 class TemplateQuestion(BaseModel):
     key: str
     label: str
@@ -188,6 +237,9 @@ HARD RULES
 6. out_of_area: the relative/friend OUTSIDE the region everyone calls to check in (name, relationship,
    phone, email, city, state, notes). Omit if none.
 7. go_bag: items they say they have or need, category ∈ GO_BAG_CATEGORIES, qty as spoken ("3 days", "2 gal").
+   An item already in EXISTING_GO_BAG (the same thing, even if worded a little differently) → use the name
+   EXACTLY as on file and give ONLY the qty / category / notes the speaker newly stated (others null). Never
+   duplicate an item on file.
 8. "summary": ONE sentence. "questions": max 5 short sentences — always ask for any REQUIRED template
    question you could not answer.
 
@@ -215,9 +267,12 @@ async def ai_draft_ccp(estate_id: str, payload: CcpDraftRequest, current_user: d
         ]
         for c, qs in payload.templates.items()
     }
+    bag_doc = await db.ccp_go_bag.find_one({"estate_id": estate_id}, {"_id": 0, "id": 1, "items": 1})
+    bag_items = [it for it in ((bag_doc or {}).get("items") or []) if isinstance(it, dict) and it.get("name")]
     user_msg = (
         f"SPEAKER: {current_user.get('name') or 'the estate owner'}\n\nCONCERNS: {json.dumps(concerns)}\n\nHOUSEHOLD: {json.dumps(list(CCP_HOUSEHOLD))}\n\n"
         f"GO_BAG_CATEGORIES: {json.dumps(list(GO_BAG_CATEGORIES))}\n\nTEMPLATES: {json.dumps(tmpl_compact, separators=(',', ':'))}\n\n"
+        f"EXISTING_GO_BAG: {json.dumps([{'name': it['name'], 'category': it.get('category'), 'qty': it.get('qty')} for it in bag_items], separators=(',', ':'))}\n\n"
         f'DESCRIPTION (verbatim):\n"""\n{payload.description.strip()}\n"""'
     )
     raw, model = await run_ai_draft(
@@ -277,19 +332,35 @@ async def ai_draft_ccp(estate_id: str, payload: CcpDraftRequest, current_user: d
             out_of_area["state"][:2].upper() if len(out_of_area["state"]) <= 2 else out_of_area["state"]
         )
     go_bag = []
+    seen_existing: set[str] = set()
     for g in raw.get("go_bag") or []:
         if not isinstance(g, dict):
             continue
         name = clean_str(g.get("name"), 120)
-        if name:
-            go_bag.append(
-                {
-                    "category": pick(g.get("category"), GO_BAG_CATEGORIES, "other"),
-                    "name": name,
-                    "qty": clean_str(g.get("qty"), 40),
-                    "notes": clean_str(g.get("notes"), 300),
-                }
-            )
+        if not name:
+            continue
+        ex = _match_go_bag(name, bag_items)
+        if ex and ex.get("id") and ex["id"] not in seen_existing:
+            seen_existing.add(ex["id"])
+            spoken = {
+                "category": pick(g.get("category"), GO_BAG_CATEGORIES, None),
+                "qty": clean_str(g.get("qty"), 40),
+                "notes": clean_str(g.get("notes"), 300),
+            }
+            if spoken["category"] == "other":
+                spoken["category"] = None  # the model's fallback — never downgrade a real category
+            go_bag.append(existing_row(ex, GO_BAG_FIELDS, spoken))
+            continue
+        go_bag.append(
+            {
+                "existing_id": None,
+                "changes": [],
+                "category": pick(g.get("category"), GO_BAG_CATEGORIES, "other"),
+                "name": name,
+                "qty": clean_str(g.get("qty"), 40),
+                "notes": clean_str(g.get("notes"), 300),
+            }
+        )
 
     questions = [q for q in (clean_str(x, 300) for x in (raw.get("questions") or [])) if q][:5]
     missing = [q.label.rstrip(" *") for q in payload.templates[concern] if q.required and q.key not in answers]

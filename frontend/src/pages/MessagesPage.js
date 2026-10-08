@@ -1387,7 +1387,7 @@ const MessagesPage = () => {
       </div>
 
       {estate?.id && (
-        <MessagesAIBuilder estateId={estate.id} beneficiaries={beneficiaries} hasItems={messages.length > 0} getAuthHeaders={getAuthHeaders} onBuilt={fetchData} />
+        <MessagesAIBuilder estateId={estate.id} beneficiaries={beneficiaries} messages={messages} hasItems={messages.length > 0} getAuthHeaders={getAuthHeaders} onBuilt={fetchData} />
       )}
 
       {/* Tabs */}

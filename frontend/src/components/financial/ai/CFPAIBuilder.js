@@ -2,8 +2,11 @@ import React from 'react';
 import apiClient from '../../../utils/apiClient';
 import { API_URL } from '../../../config';
 import { AIBuilderShell } from '../../ai/AIBuilderShell';
+import { hasWork } from '../../ai/reviewPrimitives';
 import { CFPAIReview } from './CFPAIReview';
 import { applyCfpDraft } from './cfpAIApply';
+
+const BUCKETS = ['bills', 'debts', 'accounts', 'property'];
 
 const EXAMPLE = 'e.g. "Our mortgage is with Truist, about $2,400 on the 1st, auto-pay, around $310,000 left at 6.25%. Power is Dominion, about $180 on the 15th. '
   + 'Chase checking has about $12,000, joint with Karen. My Fidelity 401k is around $400,000. We own the house on Oak Street, worth about $450,000, and a 2019 Highlander."';
@@ -18,11 +21,11 @@ export const CFPAIBuilder = ({ estateId, hasItems, billCats, billLabels, debtCat
     <AIBuilderShell
       id="cfp-ai-builder"
       title="Describe your finances"
-      intro="Tap the mic (or type) and walk through the bills you pay, what you owe, where your money sits and what you own. I’ll sort it into bills, debts, accounts and property — you review every line before anything is saved, and every tile stays editable."
+      intro="Tap the mic (or type) and walk through the bills you pay, what you owe, where your money sits and what you own — or tell me what changed on something already here (“the mortgage is due on the first”). I’ll sort it into bills, debts, accounts and property; you review every line before anything is saved, and every tile stays editable."
       example={EXAMPLE}
       keyterms={KEYTERMS}
       draftLabel="Draft my picture"
-      buildLabel="Add to my picture"
+      buildLabel="Apply to my picture"
       collapsible={hasItems}
       collapsedLabel="Describe your finances — speak or type, and I’ll draft the bills, debts, accounts and property"
       draft={async (text) => {
@@ -30,12 +33,12 @@ export const CFPAIBuilder = ({ estateId, hasItems, billCats, billLabels, debtCat
         return r.data.draft;
       }}
       renderReview={(draft, setDraft) => <CFPAIReview draft={draft} onChange={setDraft} catalog={catalog} />}
-      validate={(d) => ['bills', 'debts', 'accounts', 'property'].some((k) => d[k].some((x) => !x.existing_id && !x.name.trim())) ? 'Every line needs a name before adding it.' : null}
-      canBuild={(d) => ['bills', 'debts', 'accounts', 'property'].some((k) => d[k].some((x) => !x.existing_id))}
+      validate={(d) => BUCKETS.some((k) => d[k].some((x) => !x.name.trim())) ? 'Every line needs a name before adding it.' : null}
+      canBuild={(d) => BUCKETS.some((k) => hasWork(d[k]))}
       build={async (draft) => {
         const res = await applyCfpDraft({ draft, estateId, authHeaders: getAuthHeaders() });
         onBuilt?.(res);
-        return { made: res.made, failures: res.failures, message: `Added ${res.made} to your Financial Picture. Tap any tile to fine-tune it.` };
+        return { made: res.made, failures: res.failures, message: `${res.made.charAt(0).toUpperCase()}${res.made.slice(1)} in your Financial Picture. Tap any tile to fine-tune it.` };
       }}
     />
   );

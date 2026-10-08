@@ -15,8 +15,9 @@ from pydantic import BaseModel, Field
 from config import db
 from guards import require_estate_owner
 from routes.ai_builders_people import RELATIONSHIPS, _speaker
-from services.ai_builder import clean_int, clean_str, pick, run_ai_draft
+from services.ai_builder import clean_int, clean_str, merge_existing, pick, run_ai_draft
 from services.ai_safety import hardened_system_prompt
+from services.encryption import decrypt_field, get_estate_salt
 from utils import get_current_user
 
 router = APIRouter()
@@ -67,11 +68,16 @@ HARD RULES
    record from.
 6. "summary": ONE sentence. "questions": max 3 short sentences, ONLY when the answer would change what gets
    created (an unnamed recipient, an unclear moment). Do not ask about relationships or confirm the obvious.
+7. Messages already in EXISTING (the same message — same person and the same moment, or the speaker clearly refers
+   to it: "change Emma's wedding message to a video", "add Jack to the Christmas note", "make Mike's message
+   say thank you for 1998 too") → set "existing_id" and fill in ONLY what changes: a new message_type, a new
+   moment (trigger fields), the ADDED recipients in recipient_names, and in "why" ONLY the new thing to say.
+   Everything else null. Never duplicate an existing message.
 
 OUTPUT — exactly one fenced JSON block, nothing outside it:
 ```json
 {"summary": "string",
- "messages": [{"title": "string", "recipient_names": ["string"], "message_type": "video|voice|text",
+ "messages": [{"existing_id": null, "title": "string", "recipient_names": ["string"], "message_type": "video|voice|text",
    "trigger_type": "immediate|age_milestone|event|specific_date", "trigger_age": null, "trigger_value": null,
    "custom_event_label": null, "trigger_date": null, "why": "string"}],
  "questions": ["string"]}
@@ -106,8 +112,49 @@ async def ai_draft_messages(estate_id: str, payload: DraftRequest, current_user:
         for b in bens
         if b.get("name")
     ]
+    name_by_rid = {(b.get("user_id") or b["id"]): b.get("name") for b in bens}
+    name_by_rid.update({b["id"]: b.get("name") for b in bens})
+    msgs = await db.messages.find(
+        {"estate_id": estate_id, "deleted_at": None},
+        {
+            "_id": 0,
+            "id": 1,
+            "title": 1,
+            "encrypted_title": 1,
+            "recipients": 1,
+            "message_type": 1,
+            "trigger_type": 1,
+            "trigger_value": 1,
+            "trigger_age": 1,
+            "trigger_date": 1,
+            "custom_event_label": 1,
+        },
+    ).to_list(200)
+    if msgs:
+        salt = await get_estate_salt(estate_id)
+        for mg in msgs:
+            if mg.get("encrypted_title"):
+                try:
+                    mg["title"] = decrypt_field(mg["encrypted_title"], salt)
+                except Exception:  # noqa: BLE001 — an undecryptable title just stays as stored
+                    pass
+    existing = [
+        {
+            "id": mg["id"],
+            "title": mg.get("title") or "",
+            "recipients": [name_by_rid.get(r, "?") for r in (mg.get("recipients") or [])],
+            "message_type": mg.get("message_type"),
+            "trigger_type": mg.get("trigger_type"),
+            "trigger_value": mg.get("trigger_value"),
+            "trigger_age": mg.get("trigger_age"),
+            "trigger_date": mg.get("trigger_date"),
+            "custom_event_label": mg.get("custom_event_label"),
+        }
+        for mg in msgs
+    ]
     user_msg = (
         f"SPEAKER: {_speaker(current_user)}\n\nTODAY: {date.today().isoformat()}\n\nRECIPIENTS: {json.dumps(roster, separators=(',', ':'))}\n\n"
+        f"EXISTING (messages already set up): {json.dumps(existing, separators=(',', ':'))}\n\n"
         f'DESCRIPTION (verbatim):\n"""\n{payload.description.strip()}\n"""'
     )
     raw, model = await run_ai_draft(
@@ -125,8 +172,9 @@ async def ai_draft_messages(estate_id: str, payload: DraftRequest, current_user:
     for m in raw.get("messages") or []:
         if not isinstance(m, dict):
             continue
+        ex = next((mg for mg in msgs if mg["id"] == m.get("existing_id")), None)
         title = clean_str(m.get("title"), 120)
-        if not title:
+        if not title and not ex:
             continue
         names, ids = [], []
         for nm in m.get("recipient_names") or []:
@@ -141,9 +189,15 @@ async def ai_draft_messages(estate_id: str, payload: DraftRequest, current_user:
                     names.append(b.get("name") or nm)
             else:
                 names.append(nm)
-        trig = pick(m.get("trigger_type"), MM_TRIGGERS, "immediate")
-        if not names and re.search(
-            r"\b(kids?|children|sons?|daughters?|grandkids|grandchildren)\b", f"{title} {m.get('why') or ''}".lower()
+        trig_raw = pick(m.get("trigger_type"), MM_TRIGGERS, None)
+        trig = trig_raw or "immediate"
+        if (
+            not names
+            and not ex
+            and re.search(
+                r"\b(kids?|children|sons?|daughters?|grandkids|grandchildren)\b",
+                f"{title} {m.get('why') or ''}".lower(),
+            )
         ):
             for b in bens:  # a group message with no names → the children already on the roster
                 if (b.get("relation") or b.get("relationship") or "").lower() in (
@@ -165,8 +219,50 @@ async def ai_draft_messages(estate_id: str, payload: DraftRequest, current_user:
         d = clean_str(m.get("trigger_date"), 10) if trig == "specific_date" else None
         if trig == "specific_date" and not (d and DATE_RE.match(d)):
             trig, d = "immediate", None
+        if ex:
+            base = {
+                "title": ex.get("title") or "",
+                "recipient_ids": list(ex.get("recipients") or []),
+                "message_type": ex.get("message_type"),
+                "trigger_type": ex.get("trigger_type"),
+                "trigger_age": ex.get("trigger_age"),
+                "trigger_value": ex.get("trigger_value"),
+                "custom_event_label": ex.get("custom_event_label"),
+                "trigger_date": ex.get("trigger_date"),
+                "why": "",
+            }
+            spoken = {
+                "message_type": pick(m.get("message_type"), MM_TYPES, None),
+                "recipient_ids": sorted(set(base["recipient_ids"]) | set(ids)) if ids else None,
+                "why": clean_str(m.get("why"), 1500),
+            }
+            if trig_raw:  # a moment was actually spoken — move the whole trigger together
+                spoken.update(
+                    {
+                        "trigger_type": trig,
+                        "trigger_age": age,
+                        "trigger_value": event,
+                        "custom_event_label": label,
+                        "trigger_date": d,
+                    }
+                )
+            merged, changes = merge_existing(base, spoken, append=())
+            if "trigger_type" in changes or any(
+                k in changes for k in ("trigger_age", "trigger_value", "custom_event_label", "trigger_date")
+            ):
+                for k in ("trigger_type", "trigger_age", "trigger_value", "custom_event_label", "trigger_date"):
+                    merged[k] = spoken.get(k)
+            if "recipient_ids" in changes:
+                changes = [c for c in changes if c != "recipient_ids"] + ["recipients"]
+            merged["recipient_names"] = [name_by_rid.get(r, "?") for r in merged["recipient_ids"]] + [
+                n for n in names if n not in name_by_rid.values()
+            ]
+            out.append({"existing_id": ex["id"], "changes": changes, **merged})
+            continue
         out.append(
             {
+                "existing_id": None,
+                "changes": [],
                 "title": title,
                 "recipient_ids": ids,
                 "recipient_names": names,

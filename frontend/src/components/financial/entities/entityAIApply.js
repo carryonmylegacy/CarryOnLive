@@ -29,6 +29,11 @@ export async function applyEntityDraft({ draft, estateId, authHeaders }) {
   });
 
   draft.entities.forEach((e) => { if (e.existing_id) entityIds[e.ref] = e.existing_id; });
+  // Existing entities the speaker changed (type / state / notes) → PATCH, the same call the tile's edit form makes.
+  const changed = draft.entities.filter((e) => e.existing_id && e.changes?.length);
+  const patchRes = await settle(changed.map((e) => apiClient.patch(`${API_URL}/financial/entities/${e.existing_id}`,
+    Object.fromEntries(e.changes.filter((k) => ['type', 'formation_state', 'notes'].includes(k)).map((k) => [k, e[k] ?? null])), authHeaders)));
+  patchRes.forEach((r, i) => { if (!r.ok) failures.push(`Entity "${changed[i].name}" (update)`); });
   const newEntities = draft.entities.filter((e) => !e.existing_id);
   const entityRes = await settle(newEntities.map((e) => apiClient.post(`${API_URL}/financial/entities`, {
     estate_id: estateId, category: e.category, type: e.type, name: e.name.trim(),
@@ -53,6 +58,7 @@ export async function applyEntityDraft({ draft, estateId, authHeaders }) {
   return {
     people: peopleRes.filter((r) => r.ok).length,
     entities: entityRes.filter((r) => r.ok).length,
+    updated: patchRes.filter((r) => r.ok).length,
     connections: connRes.filter((r) => r.ok).length,
     failures,
   };

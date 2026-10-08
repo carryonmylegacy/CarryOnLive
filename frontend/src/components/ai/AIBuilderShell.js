@@ -102,9 +102,9 @@ export const AIBuilderShell = ({
         <>
           <div className="relative">
             <textarea value={text} onChange={(e) => setText(e.target.value)} rows={4} placeholder={example}
-              className="input-field text-base leading-relaxed resize-y" style={{ height: 'auto', minHeight: '7.5rem', paddingRight: '3rem', paddingTop: '0.6rem' }}
+              className="input-field ai-builder-input text-base leading-relaxed resize-y" style={{ height: 'auto', minHeight: '7.5rem', paddingRight: '3.5rem', paddingTop: '0.6rem' }}
               aria-label={title} data-testid={`${id}-input`} />
-            <DictationMicButton value={text} onText={onText} keyterms={keyterms} onState={setMic} testId={`${id}-mic`} className="absolute right-2 top-2" />
+            <DictationMicButton value={text} onText={onText} keyterms={keyterms} onState={setMic} testId={`${id}-mic`} className="absolute right-2 top-2 z-10 shadow-sm" />
           </div>
           <div className="flex items-center justify-between gap-3 mt-3 flex-wrap">
             <span className={`text-[11px] ${mic.error ? 'text-[#ef4444]' : 'text-[var(--t5)]'}`} data-testid={`${id}-status`}>

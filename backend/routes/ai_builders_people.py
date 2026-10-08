@@ -14,11 +14,56 @@ from pydantic import BaseModel, Field
 
 from config import db
 from guards import require_estate_owner
-from services.ai_builder import clean_str, pick, run_ai_draft
+from services.ai_builder import EXISTING_RULE, clean_str, existing_row, pick, run_ai_draft
 from services.ai_safety import hardened_system_prompt
 from utils import get_current_user
 
 router = APIRouter()
+
+BEN_FIELDS = (
+    "first_name",
+    "middle_name",
+    "last_name",
+    "suffix",
+    "relation",
+    "email",
+    "phone",
+    "date_of_birth",
+    "address_street",
+    "address_city",
+    "address_state",
+    "address_zip",
+    "medical_conditions",
+    "allergies",
+    "prescriptions",
+    "blood_type",
+    "primary_doctor",
+    "school_or_employer",
+    "notes",
+)
+# Carried through an UPDATE untouched — PUT /beneficiaries replaces the whole record.
+BEN_KEEP = (
+    "gender",
+    "address_line2",
+    "ssn_last_four",
+    "avatar_color",
+    "mm_access",
+    "ega_access",
+    "sdv_access",
+    "iac_access",
+    "ffn_access",
+    "dav_access",
+    "dts_access",
+)
+FFN_FIELDS = ("name", "phone", "email", "address", "relationship", "notes")
+DAV_FIELDS = (
+    "account_name",
+    "login_username",
+    "category",
+    "assigned_beneficiary_id",
+    "beneficiary_visibility",
+    "notes",
+)
 
 RELATIONSHIPS = (
     "Spouse",
@@ -107,9 +152,9 @@ HARD RULES
    ask for the birthday), address_street/city/state(2-letter)/zip ONLY when stated. Never guess them.
 5. Health / readiness details the speaker volunteers (conditions, allergies, prescriptions, blood type,
    doctor, school or employer) go in those fields; anything else useful goes in "notes".
-6. People already in EXISTING (same name) → set existing_id and do not duplicate.
+6. EXISTING_RULE
 7. "summary": ONE plain sentence restating who you heard. "questions": max 5 short, specific sentences —
-   always include one if any email is missing, because the form needs an email for every beneficiary.
+   always include one if any NEW person's email is missing, because the form needs an email for every beneficiary.
 
 OUTPUT — exactly one fenced JSON block, nothing outside it:
 ```json
@@ -120,16 +165,61 @@ OUTPUT — exactly one fenced JSON block, nothing outside it:
    "medical_conditions": null, "allergies": null, "prescriptions": null, "blood_type": null, "primary_doctor": null,
    "school_or_employer": null, "notes": null}],
  "questions": ["string"]}
-```"""
+```""".replace("EXISTING_RULE", EXISTING_RULE)
+
+
+def _ben_spoken(b: dict, new: bool) -> dict:
+    state = clean_str(b.get("address_state"), 2)
+    return {
+        "first_name": clean_str(b.get("first_name"), 80) if new else None,
+        "middle_name": clean_str(b.get("middle_name"), 80),
+        "last_name": (clean_str(b.get("last_name"), 80) or "") if new else None,
+        "suffix": clean_str(b.get("suffix"), 10),
+        "relation": pick(b.get("relation"), RELATIONSHIPS, "Other" if new else None),
+        "email": _email(b.get("email")) or ("" if new else None),
+        "phone": clean_str(b.get("phone"), 40),
+        "date_of_birth": _iso_date(b.get("date_of_birth")),
+        "address_street": clean_str(b.get("address_street"), 200),
+        "address_city": clean_str(b.get("address_city"), 100),
+        "address_state": state.upper() if state and US_STATE_RE.match(state) else None,
+        "address_zip": clean_str(b.get("address_zip"), 12),
+        "medical_conditions": clean_str(b.get("medical_conditions"), 500),
+        "allergies": clean_str(b.get("allergies"), 300),
+        "prescriptions": clean_str(b.get("prescriptions"), 500),
+        "blood_type": clean_str(b.get("blood_type"), 5),
+        "primary_doctor": clean_str(b.get("primary_doctor"), 120),
+        "school_or_employer": clean_str(b.get("school_or_employer"), 120),
+        "notes": clean_str(b.get("notes"), 500),
+    }
+
+
+def _ben_doc_fields(doc: dict) -> dict:
+    """Older rows only have `name`; split it so the full-record PUT has first/last."""
+    d = dict(doc)
+    if not d.get("first_name") or not d.get("last_name"):
+        parts = (d.get("name") or "").split(" ")
+        d.setdefault("first_name", parts[0] if parts else "")
+        d["first_name"] = d.get("first_name") or (parts[0] if parts else "")
+        d["last_name"] = d.get("last_name") or (" ".join(parts[1:]) if len(parts) > 1 else "")
+    d["email"] = d.get("email") or ""
+    return d
 
 
 @router.post("/beneficiaries/{estate_id}/ai-draft")
 async def ai_draft_beneficiaries(estate_id: str, payload: DraftRequest, current_user: dict = Depends(get_current_user)):
     await require_estate_owner(estate_id, current_user)
-    rows = await db.beneficiaries.find({"estate_id": estate_id}, {"_id": 0, "id": 1, "name": 1, "relation": 1}).to_list(
-        300
-    )
-    existing = [{"id": r["id"], "name": r.get("name") or "", "relation": r.get("relation")} for r in rows]
+    proj = {"_id": 0, "id": 1, "name": 1, **{f: 1 for f in BEN_FIELDS + BEN_KEEP}}
+    docs = await db.beneficiaries.find({"estate_id": estate_id, "deleted_at": None}, proj).to_list(300)
+    existing = [
+        {
+            "id": r["id"],
+            "name": r.get("name") or "",
+            "relation": r.get("relation"),
+            "email": r.get("email"),
+            "phone": r.get("phone"),
+        }
+        for r in docs
+    ]
     user_msg = (
         f"SPEAKER: {_speaker(current_user)}  SPEAKER_SURNAME: {_surname(current_user) or 'unknown'}\n\n"
         f"RELATIONS: {json.dumps(list(RELATIONSHIPS))}\n\nEXISTING: {json.dumps(existing, separators=(',', ':'))}\n\n"
@@ -151,35 +241,17 @@ async def ai_draft_beneficiaries(estate_id: str, payload: DraftRequest, current_
         ex = next((r for r in existing if r["id"] == b.get("existing_id")), None) or _existing_match(
             f"{b.get('first_name', '')} {b.get('last_name', '')}", existing
         )
-        first = clean_str(b.get("first_name"), 80)
-        if not first and not ex:
+        if ex:
+            doc = _ben_doc_fields(next(d for d in docs if d["id"] == ex["id"]))
+            row = existing_row(doc, BEN_FIELDS, _ben_spoken(b, False))
+            row["existing_name"] = ex["name"]
+            row["keep"] = {k: doc[k] for k in BEN_KEEP if k in doc}
+            out.append(row)
             continue
-        state = clean_str(b.get("address_state"), 2)
-        out.append(
-            {
-                "existing_id": ex["id"] if ex else None,
-                "existing_name": ex["name"] if ex else None,
-                "first_name": first or (ex["name"].split(" ")[0] if ex else ""),
-                "middle_name": clean_str(b.get("middle_name"), 80),
-                "last_name": clean_str(b.get("last_name"), 80) or "",
-                "suffix": clean_str(b.get("suffix"), 10),
-                "relation": pick(b.get("relation"), RELATIONSHIPS, "Other"),
-                "email": _email(b.get("email")) or "",
-                "phone": clean_str(b.get("phone"), 40),
-                "date_of_birth": _iso_date(b.get("date_of_birth")),
-                "address_street": clean_str(b.get("address_street"), 200),
-                "address_city": clean_str(b.get("address_city"), 100),
-                "address_state": state.upper() if state and US_STATE_RE.match(state) else None,
-                "address_zip": clean_str(b.get("address_zip"), 12),
-                "medical_conditions": clean_str(b.get("medical_conditions"), 500),
-                "allergies": clean_str(b.get("allergies"), 300),
-                "prescriptions": clean_str(b.get("prescriptions"), 500),
-                "blood_type": clean_str(b.get("blood_type"), 5),
-                "primary_doctor": clean_str(b.get("primary_doctor"), 120),
-                "school_or_employer": clean_str(b.get("school_or_employer"), 120),
-                "notes": clean_str(b.get("notes"), 500),
-            }
-        )
+        spoken = _ben_spoken(b, True)
+        if not spoken["first_name"]:
+            continue
+        out.append({"existing_id": None, "existing_name": None, "changes": [], "keep": {}, **spoken})
     if not out:
         raise HTTPException(
             status_code=422,
@@ -204,25 +276,34 @@ HARD RULES
    "College roommate", "Business partner", "Sister-in-law").
 3. Anything about HOW or WHEN to reach them ("call, don't text", "she's in Portugal until June", "has a key
    to the house") goes in "notes".
-4. People already in EXISTING (same name) → set existing_id and do not duplicate.
+4. EXISTING_RULE
 5. "summary": ONE sentence. "questions": max 5 short sentences — ask for phone or email when both are missing
-   for someone, since a notification needs at least one way to reach them.
+   for a NEW person, since a notification needs at least one way to reach them.
 
 OUTPUT — exactly one fenced JSON block, nothing outside it:
 ```json
 {"summary": "string",
  "contacts": [{"existing_id": null, "name": "string", "phone": "", "email": "", "address": "", "relationship": "", "notes": ""}],
  "questions": ["string"]}
-```"""
+```""".replace("EXISTING_RULE", EXISTING_RULE)
 
 
 @router.post("/ffn/{estate_id}/ai-draft")
 async def ai_draft_ffn(estate_id: str, payload: DraftRequest, current_user: dict = Depends(get_current_user)):
     await require_estate_owner(estate_id, current_user)
-    rows = await db.ffn_contacts.find(
-        {"estate_id": estate_id}, {"_id": 0, "id": 1, "name": 1, "relationship": 1}
+    docs = await db.ffn_contacts.find(
+        {"estate_id": estate_id, "deleted_at": None}, {"_id": 0, "id": 1, **{f: 1 for f in FFN_FIELDS}}
     ).to_list(500)
-    existing = [{"id": r["id"], "name": r.get("name") or "", "relationship": r.get("relationship")} for r in rows]
+    existing = [
+        {
+            "id": r["id"],
+            "name": r.get("name") or "",
+            "relationship": r.get("relationship"),
+            "phone": r.get("phone") or None,
+            "email": r.get("email") or None,
+        }
+        for r in docs
+    ]
     user_msg = f'SPEAKER: {_speaker(current_user)}\n\nEXISTING: {json.dumps(existing, separators=(",", ":"))}\n\nDESCRIPTION (verbatim):\n"""\n{payload.description.strip()}\n"""'
     raw, model = await run_ai_draft(
         current_user=current_user,
@@ -241,17 +322,19 @@ async def ai_draft_ffn(estate_id: str, payload: DraftRequest, current_user: dict
         if not name:
             continue
         ex = next((r for r in existing if r["id"] == c.get("existing_id")), None) or _existing_match(name, existing)
-        out.append(
-            {
-                "existing_id": ex["id"] if ex else None,
-                "name": ex["name"] if ex else name,
-                "phone": clean_str(c.get("phone"), 40) or "",
-                "email": _email(c.get("email")) or "",
-                "address": clean_str(c.get("address"), 300) or "",
-                "relationship": clean_str(c.get("relationship"), 60) or "",
-                "notes": clean_str(c.get("notes"), 500) or "",
-            }
-        )
+        spoken = {
+            "phone": clean_str(c.get("phone"), 40),
+            "email": _email(c.get("email")),
+            "address": clean_str(c.get("address"), 300),
+            "relationship": clean_str(c.get("relationship"), 60),
+            "notes": clean_str(c.get("notes"), 500),
+        }
+        if ex:
+            doc = next(d for d in docs if d["id"] == ex["id"])
+            row = existing_row({**{f: doc.get(f) or "" for f in FFN_FIELDS}, "id": doc["id"]}, FFN_FIELDS, spoken)
+            out.append(row)
+            continue
+        out.append({"existing_id": None, "changes": [], "name": name, **{k: v or "" for k, v in spoken.items()}})
     if not out:
         raise HTTPException(
             status_code=422,
@@ -287,7 +370,8 @@ OTHER RULES
    I'm gone"; otherwise "private".
 5. What to DO with it ("cancel", "transfer to Mark", "memorialize", "keep paying — it's the family plan")
    and any non-secret access detail ("2FA goes to my phone") go in "notes".
-6. Entries already in EXISTING (same account_name) → existing_id, no duplicate.
+6. EXISTING_RULE (for an existing entry, "Sarah should get the Coinbase now" → existing_id + assigned_beneficiary_name
+   + beneficiary_visibility only).
 7. "summary": ONE sentence. "questions": max 5 short sentences.
 
 OUTPUT — exactly one fenced JSON block, nothing outside it:
@@ -296,7 +380,7 @@ OUTPUT — exactly one fenced JSON block, nothing outside it:
  "entries": [{"existing_id": null, "account_name": "string", "login_username": "", "category": "<one of CATEGORIES>",
    "assigned_beneficiary_name": null, "beneficiary_visibility": "private", "notes": null, "secret_mentioned": false}],
  "questions": ["string"]}
-```"""
+```""".replace("EXISTING_RULE", EXISTING_RULE)
 
 
 def _scrub_secret(text: Optional[str]) -> Optional[str]:
@@ -316,15 +400,23 @@ async def ai_draft_digital_wallet(
     estate_id: str, payload: DraftRequest, current_user: dict = Depends(get_current_user)
 ):
     await require_estate_owner(estate_id, current_user)
-    rows = await db.digital_wallet.find(
-        {"estate_id": estate_id}, {"_id": 0, "id": 1, "account_name": 1, "category": 1}
+    docs = await db.digital_wallet.find(
+        {"estate_id": estate_id, "deleted_at": None}, {"_id": 0, "id": 1, **{f: 1 for f in DAV_FIELDS}}
     ).to_list(500)
-    existing = [
-        {"id": r["id"], "account_name": r.get("account_name") or "", "category": r.get("category")} for r in rows
-    ]
     bens = await db.beneficiaries.find(
         {"estate_id": estate_id}, {"_id": 0, "id": 1, "name": 1, "first_name": 1}
     ).to_list(300)
+    ben_name_by_id = {b["id"]: b.get("name") for b in bens}
+    existing = [
+        {
+            "id": r["id"],
+            "account_name": r.get("account_name") or "",
+            "category": r.get("category"),
+            "assigned_to": ben_name_by_id.get(r.get("assigned_beneficiary_id")),
+            "visibility": r.get("beneficiary_visibility"),
+        }
+        for r in docs
+    ]
     user_msg = (
         f"SPEAKER: {_speaker(current_user)}\n\nCATEGORIES: {json.dumps(list(WALLET_CATEGORIES))}\n\n"
         f"BENEFICIARIES (for assigned_beneficiary_name matching): {json.dumps([b.get('name') for b in bens])}\n\n"
@@ -369,16 +461,36 @@ async def ai_draft_digital_wallet(
             if ben_name
             else None
         )
+        spoken = {
+            "login_username": _scrub_secret(clean_str(e.get("login_username"), 200)),
+            "category": pick(e.get("category"), WALLET_CATEGORIES, "other" if not ex else None),
+            "assigned_beneficiary_id": ben["id"] if ben else None,
+            "beneficiary_visibility": pick(
+                e.get("beneficiary_visibility"), WALLET_VISIBILITY, "private" if not ex else None
+            ),
+            "notes": _scrub_secret(clean_str(e.get("notes"), 500)),
+        }
+        if ex:
+            doc = next(d for d in docs if d["id"] == ex["id"])
+            row = existing_row(doc, DAV_FIELDS, spoken)
+            row["login_username"] = row.get("login_username") or ""
+            row["assigned_beneficiary_name"] = ben_name_by_id.get(row.get("assigned_beneficiary_id")) or (
+                ben_name if ben_name and not ben else None
+            )
+            row["secret_mentioned"] = bool(e.get("secret_mentioned"))
+            out.append(row)
+            continue
         out.append(
             {
-                "existing_id": ex["id"] if ex else None,
-                "account_name": ex["account_name"] if ex else name,
-                "login_username": _scrub_secret(clean_str(e.get("login_username"), 200)) or "",
-                "category": pick(e.get("category"), WALLET_CATEGORIES, "other"),
-                "assigned_beneficiary_id": ben["id"] if ben else None,
+                "existing_id": None,
+                "changes": [],
+                "account_name": name,
+                "login_username": spoken["login_username"] or "",
+                "category": spoken["category"],
+                "assigned_beneficiary_id": spoken["assigned_beneficiary_id"],
                 "assigned_beneficiary_name": ben.get("name") if ben else ben_name,
-                "beneficiary_visibility": pick(e.get("beneficiary_visibility"), WALLET_VISIBILITY, "private"),
-                "notes": _scrub_secret(clean_str(e.get("notes"), 500)),
+                "beneficiary_visibility": spoken["beneficiary_visibility"],
+                "notes": spoken["notes"],
                 "secret_mentioned": bool(e.get("secret_mentioned")),
             }
         )

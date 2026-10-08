@@ -5,6 +5,24 @@ import { Trash2, AlertTriangle } from 'lucide-react';
 export const rowStyle = { background: 'var(--card)', border: '1px solid var(--b)' };
 export const sel = 'input-field select-themed text-base h-9';
 export const inp = 'input-field text-base h-9';
+export const CHANGED = 'ring-1 ring-[#f59e0b] rounded-lg';
+
+// Rows that match something already on file carry `existing_id` + `changes` (the fields the speaker
+// changed). These helpers keep every builder's create-vs-update logic identical.
+export const chg = (item, field) => Boolean(item?.existing_id) && Array.isArray(item?.changes) && item.changes.includes(field);
+export const isUpdate = (item) => Boolean(item?.existing_id) && (item?.changes?.length || 0) > 0;
+export const isNew = (item) => !item?.existing_id;
+export const hasWork = (rows) => rows.some((r) => isNew(r) || isUpdate(r));
+// Apply an edit; on an existing row the edited keys become part of `changes` so Build knows to update it.
+export const touch = (item, patch) => (item.existing_id
+  ? { ...item, ...patch, changes: Array.from(new Set([...(item.changes || []), ...Object.keys(patch)])) }
+  : { ...item, ...patch });
+export const countLabel = (made, updated, noun, plural = `${noun}s`) => {
+  const parts = [];
+  if (made) parts.push(`added ${made} ${made === 1 ? noun : plural}`);
+  if (updated) parts.push(`updated ${updated} ${updated === 1 ? noun : plural}`);
+  return parts.join(' and ') || 'nothing';
+};
 
 export const Head = ({ icon: Icon, children, testId }) => (
   <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-[var(--t5)] mt-4 mb-2" data-testid={testId}>
@@ -35,9 +53,9 @@ export const HeardSummary = ({ summary, questions, idPrefix }) => (
   </>
 );
 
-// Small labelled field used inside review rows. `type` = text | number | select.
-export const Field = ({ label, value, onChange, type = 'text', options, placeholder, className = '', testId, step }) => (
-  <label className={`block min-w-0 ${className}`}>
+// Small labelled field used inside review rows. `type` = text | number | select. `changed` rings it amber.
+export const Field = ({ label, value, onChange, type = 'text', options, placeholder, className = '', testId, step, changed = false }) => (
+  <label className={`block min-w-0 ${changed ? CHANGED : ''} ${className}`}>
     <span className="block text-[11px] font-bold uppercase tracking-wide text-[var(--t5)] mb-0.5">{label}</span>
     {type === 'select' ? (
       <select className={sel} value={value ?? ''} onChange={(e) => onChange(e.target.value)} data-testid={testId}>
@@ -50,6 +68,7 @@ export const Field = ({ label, value, onChange, type = 'text', options, placehol
   </label>
 );
 
-export const ExistingBadge = () => (
-  <span className="text-[11px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded" style={{ background: 'rgba(16,185,129,0.15)', color: '#10b981' }}>Already on file</span>
-);
+// "Already on file" (nothing to change) or "Update" (amber — the speaker changed something; fields ring amber).
+export const ExistingBadge = ({ changes = [], testId }) => (changes.length
+  ? <span className="text-[11px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded whitespace-nowrap" style={{ background: 'rgba(245,158,11,0.15)', color: '#f59e0b' }} title={`Changing: ${changes.join(', ')}`} data-testid={testId}>Update</span>
+  : <span className="text-[11px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded whitespace-nowrap" style={{ background: 'rgba(16,185,129,0.15)', color: '#10b981' }} data-testid={testId}>Already on file</span>);

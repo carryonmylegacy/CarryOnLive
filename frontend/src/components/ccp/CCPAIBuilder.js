@@ -3,7 +3,7 @@ import { Shield, MapPin, PhoneCall, Backpack, Plus } from 'lucide-react';
 import apiClient from '../../utils/apiClient';
 import { API_URL } from '../../config';
 import { AIBuilderShell } from '../ai/AIBuilderShell';
-import { rowStyle, inp, sel, Head, Remove, HeardSummary, Field } from '../ai/reviewPrimitives';
+import { rowStyle, sel, Head, Remove, HeardSummary, Field, ExistingBadge, chg, touch, isNew, isUpdate } from '../ai/reviewPrimitives';
 import { getDisasterTemplate } from './disasterTemplates';
 import { CONCERN_OPTIONS, HOUSEHOLD_OPTIONS } from './CCPWizard';
 
@@ -101,22 +101,23 @@ const OutOfAreaSection = ({ oa, onChange }) => {
 };
 
 const GoBagSection = ({ items, onChange }) => {
-  const upd = (i, patch) => onChange(items.map((x, idx) => (idx === i ? { ...x, ...patch } : x)));
+  const upd = (i, patch) => onChange(items.map((x, idx) => (idx === i ? touch(x, patch) : x)));
   return (
     <>
       <Head icon={Backpack} testId="ccp-ai-gobag-head">Go-bag ({items.length})</Head>
       <div className="space-y-2">
         {items.map((g, i) => (
           <div key={i} className="p-2.5 rounded-xl flex flex-wrap sm:flex-nowrap items-end gap-2" style={rowStyle} data-testid={`ccp-ai-gobag-row-${i}`}>
-            <Field label="Item" value={g.name} onChange={(v) => upd(i, { name: v })} className="flex-1 min-w-[40%]" testId={`ccp-ai-gobag-name-${i}`} />
-            <Field label="Category" type="select" options={GO_BAG_CATS} value={g.category} onChange={(v) => upd(i, { category: v })} className="w-36" testId={`ccp-ai-gobag-category-${i}`} />
-            <Field label="Qty" value={g.qty} onChange={(v) => upd(i, { qty: nz(v) })} className="w-24" testId={`ccp-ai-gobag-qty-${i}`} />
-            <Field label="Notes" value={g.notes} onChange={(v) => upd(i, { notes: nz(v) })} className="flex-1 min-w-[40%]" testId={`ccp-ai-gobag-notes-${i}`} />
+            <Field label="Item" value={g.name} onChange={(v) => upd(i, { name: v })} className="flex-1 min-w-[40%]" changed={chg(g, 'name')} testId={`ccp-ai-gobag-name-${i}`} />
+            <Field label="Category" type="select" options={GO_BAG_CATS} value={g.category} onChange={(v) => upd(i, { category: v })} className="w-36" changed={chg(g, 'category')} testId={`ccp-ai-gobag-category-${i}`} />
+            <Field label="Qty" value={g.qty} onChange={(v) => upd(i, { qty: nz(v) })} className="w-24" changed={chg(g, 'qty')} testId={`ccp-ai-gobag-qty-${i}`} />
+            <Field label="Notes" value={g.notes} onChange={(v) => upd(i, { notes: nz(v) })} className="flex-1 min-w-[40%]" changed={chg(g, 'notes')} testId={`ccp-ai-gobag-notes-${i}`} />
+            {g.existing_id && <ExistingBadge changes={g.changes} testId={`ccp-ai-gobag-badge-${i}`} />}
             <Remove onClick={() => onChange(items.filter((_, idx) => idx !== i))} testId={`ccp-ai-gobag-remove-${i}`} />
           </div>
         ))}
       </div>
-      <button type="button" onClick={() => onChange([...items, { category: 'other', name: '', qty: null, notes: null }])} className="inline-flex items-center gap-1 text-xs font-bold text-[var(--gold)] hover:underline mt-1" data-testid="ccp-ai-gobag-add"><Plus className="w-3.5 h-3.5" /> Add a go-bag item</button>
+      <button type="button" onClick={() => onChange([...items, { existing_id: null, changes: [], category: 'other', name: '', qty: null, notes: null }])} className="inline-flex items-center gap-1 text-xs font-bold text-[var(--gold)] hover:underline mt-1" data-testid="ccp-ai-gobag-add"><Plus className="w-3.5 h-3.5" /> Add a go-bag item</button>
     </>
   );
 };
@@ -137,7 +138,7 @@ export const CCPAIBuilder = ({ estateId, hasPlans, getAuthHeaders, onOpenWizard,
   <AIBuilderShell
     id="ccp-ai-builder"
     title="Describe your family’s plan"
-    intro="Tap the mic (or type) and talk it through: where you live, who is in the house, the disaster that worries you most, where you would go and when, who takes which pet, where the papers are, what is in the go-bag, and who everyone calls to check in. I’ll fill in the plan wizard for you; you review before anything is saved."
+    intro="Tap the mic (or type) and talk it through: where you live, who is in the house, the disaster that worries you most, where you would go and when, who takes which pet, where the papers are, what is in the go-bag, and who everyone calls to check in — or tell me what changed (“bump the water to five days”). I’ll fill in the plan wizard for you; you review before anything is saved."
     example={EXAMPLE}
     keyterms={KEYTERMS}
     draftLabel="Draft my plan inputs"
@@ -172,9 +173,20 @@ export const CCPAIBuilder = ({ estateId, hasPlans, getAuthHeaders, onOpenWizard,
         try {
           const cur = (await apiClient.get(`${API_URL}/ccp/go-bag/${estateId}`, auth)).data.items || [];
           const have = new Set(cur.map((i) => (i.name || '').trim().toLowerCase()));
-          const add = draft.go_bag.filter((g) => !have.has(g.name.trim().toLowerCase())).map((g) => ({ category: g.category, name: g.name.trim(), qty: g.qty, notes: g.notes }));
-          if (add.length) await apiClient.put(`${API_URL}/ccp/go-bag/${estateId}`, [...cur, ...add], auth);
-          made.push(`${add.length} go-bag item${add.length === 1 ? '' : 's'}`);
+          let added = 0; let changed = 0;
+          const next = cur.map((item) => {
+            const g = draft.go_bag.find((x) => x.existing_id === item.id && isUpdate(x));
+            if (!g) return item;
+            changed += 1;
+            return { ...item, category: g.category, name: g.name.trim(), qty: g.qty, notes: g.notes };
+          });
+          draft.go_bag.filter((g) => isNew(g) && !have.has(g.name.trim().toLowerCase())).forEach((g) => {
+            next.push({ category: g.category, name: g.name.trim(), qty: g.qty, notes: g.notes });
+            added += 1;
+          });
+          if (added || changed) await apiClient.put(`${API_URL}/ccp/go-bag/${estateId}`, next, auth);
+          const parts = [added && `${added} go-bag item${added === 1 ? '' : 's'} added`, changed && `${changed} go-bag item${changed === 1 ? '' : 's'} updated`].filter(Boolean);
+          if (parts.length) made.push(parts.join(', '));
         } catch (err) { failures.push(`go-bag (${detail(err)})`); }
       }
       try {
