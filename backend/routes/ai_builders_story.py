@@ -30,6 +30,7 @@ class DraftRequest(BaseModel):
 MM_TYPES = ("text", "voice", "video")
 MM_TRIGGERS = ("immediate", "age_milestone", "event", "specific_date")
 MM_EVENTS = ("birthday", "graduation", "marriage", "custom")
+EVENT_HINTS = (("wedding", "marriage"), ("marri", "marriage"), ("bride", "marriage"), ("groom", "marriage"), ("graduat", "graduation"), ("birthday", "birthday"))
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
 MM_PROMPT = """You are the CarryOn Milestone Messages (MM) assistant. The estate owner describes, in everyday
@@ -39,8 +40,10 @@ EXISTING "Create Message" form — one draft per message. The owner records the 
 
 HARD RULES
 1. One entry per distinct message. "A letter to each of my kids on their wedding day" → one entry per named
-   child (only names in RECIPIENTS or the description). "Both kids" / "all my children" → every child named
-   anywhere in the description goes in recipient_names. Never invent people, dates or ages.
+   child (only names in RECIPIENTS or the description). When a message is addressed to a GROUP ("both kids",
+   "all my children", "the grandkids", "everyone") recipient_names MUST list every member of that group who is
+   named anywhere in the description or RECIPIENTS — e.g. kids Emma and Jack named earlier → ["Emma", "Jack"].
+   Never invent people, dates or ages.
 2. recipient_names: names as spoken, matched to RECIPIENTS when clearly the same person (first name is
    enough). Unmatched names stay in recipient_names so the owner can pick them.
 3. message_type: video | voice | text — what they said they want to record ("I want to look her in the eye"
@@ -48,8 +51,9 @@ HARD RULES
 4. trigger_type:
    immediate      = delivered when the estate transitions (the default when no moment is named)
    age_milestone  = "when he turns 30" → trigger_age 30
-   event          = birthday | graduation | marriage ("wedding day", "gets married") | custom (custom →
-                    custom_event_label like "First child", "Retirement", "First home", "Turned 18")
+   event          = birthday | graduation | marriage | custom. A wedding / "gets married" / "walks down the
+                    aisle" is ALWAYS trigger_value "marriage" (never custom). custom only for moments outside
+                    those three → custom_event_label like "First child", "Retirement", "First home", "Turned 18"
    specific_date  = an actual calendar date → trigger_date YYYY-MM-DD (only if the year is stated)
 5. title: short, warm, in the owner's voice ("For Emma on her wedding day"). why: 1-3 sentences capturing
    what they want to say and why — in THEIR words, never embellished. This becomes the written note they
@@ -64,7 +68,10 @@ OUTPUT — exactly one fenced JSON block, nothing outside it:
    "trigger_type": "immediate|age_milestone|event|specific_date", "trigger_age": null, "trigger_value": null,
    "custom_event_label": null, "trigger_date": null, "why": "string"}],
  "questions": ["string"]}
-```"""
+```
+EXAMPLE — "A video for Emma on her wedding day. A note to both kids at Christmas 2027." →
+messages[0] recipient_names ["Emma"], trigger_type "event", trigger_value "marriage";
+messages[1] recipient_names ["Emma", <the other kid if named>], trigger_type "specific_date", trigger_date "2027-12-25"."""
 
 
 def _match_recipient(name: str, bens: list[dict]) -> Optional[dict]:
@@ -106,7 +113,7 @@ async def ai_draft_messages(estate_id: str, payload: DraftRequest, current_user:
         names, ids = [], []
         for nm in m.get("recipient_names") or []:
             nm = clean_str(nm, 80)
-            if not nm or nm.split(" ")[0].lower() not in desc_lower:
+            if not nm or not re.search(rf"\b{re.escape(nm.split(' ')[0].lower())}\b", desc_lower):
                 continue  # the model substituted a name the speaker never said
             b = _match_recipient(nm, bens)
             if b:
@@ -117,11 +124,18 @@ async def ai_draft_messages(estate_id: str, payload: DraftRequest, current_user:
             else:
                 names.append(nm)
         trig = pick(m.get("trigger_type"), MM_TRIGGERS, "immediate")
+        if not names and re.search(r"\b(kids?|children|sons?|daughters?|grandkids|grandchildren)\b", f"{title} {m.get('why') or ''}".lower()):
+            for b in bens:  # a group message with no names → the children already on the roster
+                if (b.get("relation") or b.get("relationship") or "").lower() in ("son", "daughter", "grandson", "granddaughter"):
+                    ids.append(b.get("user_id") or b["id"]); names.append(b.get("name"))
         age = clean_int(m.get("trigger_age"), 1, 100) if trig == "age_milestone" else None
         if trig == "age_milestone" and not age:
             trig = "immediate"
         event = pick(m.get("trigger_value"), MM_EVENTS, "custom") if trig == "event" else None
         label = clean_str(m.get("custom_event_label"), 80) if event == "custom" else None
+        if event == "custom" and not label:
+            blob = f"{title} {m.get('why') or ''}".lower()
+            event = next((e for kw, e in EVENT_HINTS if kw in blob), "custom")
         d = clean_str(m.get("trigger_date"), 10) if trig == "specific_date" else None
         if trig == "specific_date" and not (d and DATE_RE.match(d)):
             trig, d = "immediate", None
@@ -240,7 +254,7 @@ async def ai_draft_quickstart(payload: DraftRequest, current_user: dict = Depend
         if not isinstance(b, dict):
             continue
         name = clean_str(b.get("name"), 120)
-        if not name or name.split(" ")[0].lower() not in desc_lower:
+        if not name or not re.search(rf"\b{re.escape(name.split(' ')[0].lower())}\b", desc_lower):
             continue
         rel = pick(b.get("relationship"), RELATIONSHIPS, "Other")
         existing = _match_recipient(name, bens)
@@ -269,14 +283,14 @@ async def ai_draft_quickstart(payload: DraftRequest, current_user: dict = Depend
 
     li = raw.get("life_insurance") if isinstance(raw.get("life_insurance"), dict) else {}
     count = clean_int(li.get("policy_count"), 0, 20)
-    if count is not None or li.get("unsure") is True:
+    if (count or li.get("unsure") is True) or (count == 0 and re.search(r"insur|polic", desc_lower)):
         steps["life_insurance"] = {"policy_count": count if count is not None else 0, "unsure": li.get("unsure") is True}
 
     biz = raw.get("business") if isinstance(raw.get("business"), dict) else None
     if biz:
-        if biz.get("none") is True:
+        if biz.get("none") is True and re.search(r"business|compan|llc|corp|partnership|self.employed|own", desc_lower):
             steps["business"] = {"none": True, "types": [], "counts": {}}
-        else:
+        elif biz.get("none") is not True:
             types = [t for t in (biz.get("types") or []) if t in QS_BUSINESS]
             if types:
                 counts_raw = biz.get("counts") if isinstance(biz.get("counts"), dict) else {}
@@ -286,7 +300,7 @@ async def ai_draft_quickstart(payload: DraftRequest, current_user: dict = Depend
     counts_raw = docs.get("counts") if isinstance(docs.get("counts"), dict) else {}
     counts = {k: clean_int(counts_raw.get(k), 0, 20) for k in QS_DOC_COUNTS if clean_int(counts_raw.get(k), 0, 20) is not None}
     flags = [f for f in (docs.get("flags") or []) if f in QS_DOC_FLAGS]
-    if counts or flags:
+    if any(counts.values()) or flags or (counts and re.search(r"\bwill\b|trust|succession|buy.sell", desc_lower)):
         steps["existing_documents"] = {"counts": counts, "flags": flags}
 
     if not steps:
