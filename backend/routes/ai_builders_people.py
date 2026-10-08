@@ -21,15 +21,40 @@ from utils import get_current_user
 router = APIRouter()
 
 RELATIONSHIPS = (
-    "Spouse", "Partner", "Son", "Daughter", "Son-in-law", "Daughter-in-law", "Mother", "Father",
-    "Mother-in-law", "Father-in-law", "Brother", "Sister", "Aunt", "Uncle", "Grandson", "Granddaughter",
-    "Grandmother", "Grandfather", "Nephew", "Niece", "Friend", "Trustee", "Professional Service Provider", "Charity", "Other",
+    "Spouse",
+    "Partner",
+    "Son",
+    "Daughter",
+    "Son-in-law",
+    "Daughter-in-law",
+    "Mother",
+    "Father",
+    "Mother-in-law",
+    "Father-in-law",
+    "Brother",
+    "Sister",
+    "Aunt",
+    "Uncle",
+    "Grandson",
+    "Granddaughter",
+    "Grandmother",
+    "Grandfather",
+    "Nephew",
+    "Niece",
+    "Friend",
+    "Trustee",
+    "Professional Service Provider",
+    "Charity",
+    "Other",
 )
 WALLET_CATEGORIES = ("crypto", "banking", "email", "social_media", "cloud", "subscription", "other")
 WALLET_VISIBILITY = ("private", "posthumous_only", "show_now")
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 US_STATE_RE = re.compile(r"^[A-Za-z]{2}$")
-SECRET_WORDS = re.compile(r"\b(password|passcode|pin|pass ?phrase|recovery (?:code|phrase)|seed phrase|security (?:answer|code)|one.time code)\b", re.I)
+SECRET_WORDS = re.compile(
+    r"\b(password|passcode|pin|pass ?phrase|recovery (?:code|phrase)|seed phrase|security (?:answer|code)|one.time code)\b",
+    re.I,
+)
 
 
 class DraftRequest(BaseModel):
@@ -101,7 +126,9 @@ OUTPUT — exactly one fenced JSON block, nothing outside it:
 @router.post("/beneficiaries/{estate_id}/ai-draft")
 async def ai_draft_beneficiaries(estate_id: str, payload: DraftRequest, current_user: dict = Depends(get_current_user)):
     await require_estate_owner(estate_id, current_user)
-    rows = await db.beneficiaries.find({"estate_id": estate_id}, {"_id": 0, "id": 1, "name": 1, "relation": 1}).to_list(300)
+    rows = await db.beneficiaries.find({"estate_id": estate_id}, {"_id": 0, "id": 1, "name": 1, "relation": 1}).to_list(
+        300
+    )
     existing = [{"id": r["id"], "name": r.get("name") or "", "relation": r.get("relation")} for r in rows]
     user_msg = (
         f"SPEAKER: {_speaker(current_user)}  SPEAKER_SURNAME: {_surname(current_user) or 'unknown'}\n\n"
@@ -109,45 +136,60 @@ async def ai_draft_beneficiaries(estate_id: str, payload: DraftRequest, current_
         f'DESCRIPTION (verbatim):\n"""\n{payload.description.strip()}\n"""'
     )
     raw, model = await run_ai_draft(
-        current_user=current_user, estate_id=estate_id, feature="beneficiaries_ai_draft",
-        messages=[{"role": "system", "content": hardened_system_prompt(BEN_PROMPT)}, {"role": "user", "content": user_msg}],
+        current_user=current_user,
+        estate_id=estate_id,
+        feature="beneficiaries_ai_draft",
+        messages=[
+            {"role": "system", "content": hardened_system_prompt(BEN_PROMPT)},
+            {"role": "user", "content": user_msg},
+        ],
     )
     out = []
     for b in raw.get("beneficiaries") or []:
         if not isinstance(b, dict):
             continue
-        ex = next((r for r in existing if r["id"] == b.get("existing_id")), None) or _existing_match(f"{b.get('first_name', '')} {b.get('last_name', '')}", existing)
+        ex = next((r for r in existing if r["id"] == b.get("existing_id")), None) or _existing_match(
+            f"{b.get('first_name', '')} {b.get('last_name', '')}", existing
+        )
         first = clean_str(b.get("first_name"), 80)
         if not first and not ex:
             continue
         state = clean_str(b.get("address_state"), 2)
-        out.append({
-            "existing_id": ex["id"] if ex else None,
-            "existing_name": ex["name"] if ex else None,
-            "first_name": first or (ex["name"].split(" ")[0] if ex else ""),
-            "middle_name": clean_str(b.get("middle_name"), 80),
-            "last_name": clean_str(b.get("last_name"), 80) or "",
-            "suffix": clean_str(b.get("suffix"), 10),
-            "relation": pick(b.get("relation"), RELATIONSHIPS, "Other"),
-            "email": _email(b.get("email")) or "",
-            "phone": clean_str(b.get("phone"), 40),
-            "date_of_birth": _iso_date(b.get("date_of_birth")),
-            "address_street": clean_str(b.get("address_street"), 200),
-            "address_city": clean_str(b.get("address_city"), 100),
-            "address_state": state.upper() if state and US_STATE_RE.match(state) else None,
-            "address_zip": clean_str(b.get("address_zip"), 12),
-            "medical_conditions": clean_str(b.get("medical_conditions"), 500),
-            "allergies": clean_str(b.get("allergies"), 300),
-            "prescriptions": clean_str(b.get("prescriptions"), 500),
-            "blood_type": clean_str(b.get("blood_type"), 5),
-            "primary_doctor": clean_str(b.get("primary_doctor"), 120),
-            "school_or_employer": clean_str(b.get("school_or_employer"), 120),
-            "notes": clean_str(b.get("notes"), 500),
-        })
+        out.append(
+            {
+                "existing_id": ex["id"] if ex else None,
+                "existing_name": ex["name"] if ex else None,
+                "first_name": first or (ex["name"].split(" ")[0] if ex else ""),
+                "middle_name": clean_str(b.get("middle_name"), 80),
+                "last_name": clean_str(b.get("last_name"), 80) or "",
+                "suffix": clean_str(b.get("suffix"), 10),
+                "relation": pick(b.get("relation"), RELATIONSHIPS, "Other"),
+                "email": _email(b.get("email")) or "",
+                "phone": clean_str(b.get("phone"), 40),
+                "date_of_birth": _iso_date(b.get("date_of_birth")),
+                "address_street": clean_str(b.get("address_street"), 200),
+                "address_city": clean_str(b.get("address_city"), 100),
+                "address_state": state.upper() if state and US_STATE_RE.match(state) else None,
+                "address_zip": clean_str(b.get("address_zip"), 12),
+                "medical_conditions": clean_str(b.get("medical_conditions"), 500),
+                "allergies": clean_str(b.get("allergies"), 300),
+                "prescriptions": clean_str(b.get("prescriptions"), 500),
+                "blood_type": clean_str(b.get("blood_type"), 5),
+                "primary_doctor": clean_str(b.get("primary_doctor"), 120),
+                "school_or_employer": clean_str(b.get("school_or_employer"), 120),
+                "notes": clean_str(b.get("notes"), 500),
+            }
+        )
     if not out:
-        raise HTTPException(status_code=422, detail="I could not find anyone to add in that description. Try naming each person and how they're related to you.")
+        raise HTTPException(
+            status_code=422,
+            detail="I could not find anyone to add in that description. Try naming each person and how they're related to you.",
+        )
     questions = [q for q in (clean_str(x, 300) for x in (raw.get("questions") or [])) if q][:5]
-    return {"draft": {"summary": clean_str(raw.get("summary"), 400) or "", "beneficiaries": out, "questions": questions}, "model": model}
+    return {
+        "draft": {"summary": clean_str(raw.get("summary"), 400) or "", "beneficiaries": out, "questions": questions},
+        "model": model,
+    }
 
 
 # ──────────────────────────────────────────────────────────────────── FFN ──
@@ -177,12 +219,19 @@ OUTPUT — exactly one fenced JSON block, nothing outside it:
 @router.post("/ffn/{estate_id}/ai-draft")
 async def ai_draft_ffn(estate_id: str, payload: DraftRequest, current_user: dict = Depends(get_current_user)):
     await require_estate_owner(estate_id, current_user)
-    rows = await db.ffn_contacts.find({"estate_id": estate_id}, {"_id": 0, "id": 1, "name": 1, "relationship": 1}).to_list(500)
+    rows = await db.ffn_contacts.find(
+        {"estate_id": estate_id}, {"_id": 0, "id": 1, "name": 1, "relationship": 1}
+    ).to_list(500)
     existing = [{"id": r["id"], "name": r.get("name") or "", "relationship": r.get("relationship")} for r in rows]
-    user_msg = f"SPEAKER: {_speaker(current_user)}\n\nEXISTING: {json.dumps(existing, separators=(',', ':'))}\n\nDESCRIPTION (verbatim):\n\"\"\"\n{payload.description.strip()}\n\"\"\""
+    user_msg = f'SPEAKER: {_speaker(current_user)}\n\nEXISTING: {json.dumps(existing, separators=(",", ":"))}\n\nDESCRIPTION (verbatim):\n"""\n{payload.description.strip()}\n"""'
     raw, model = await run_ai_draft(
-        current_user=current_user, estate_id=estate_id, feature="ffn_ai_draft",
-        messages=[{"role": "system", "content": hardened_system_prompt(FFN_PROMPT)}, {"role": "user", "content": user_msg}],
+        current_user=current_user,
+        estate_id=estate_id,
+        feature="ffn_ai_draft",
+        messages=[
+            {"role": "system", "content": hardened_system_prompt(FFN_PROMPT)},
+            {"role": "user", "content": user_msg},
+        ],
     )
     out = []
     for c in raw.get("contacts") or []:
@@ -192,19 +241,27 @@ async def ai_draft_ffn(estate_id: str, payload: DraftRequest, current_user: dict
         if not name:
             continue
         ex = next((r for r in existing if r["id"] == c.get("existing_id")), None) or _existing_match(name, existing)
-        out.append({
-            "existing_id": ex["id"] if ex else None,
-            "name": ex["name"] if ex else name,
-            "phone": clean_str(c.get("phone"), 40) or "",
-            "email": _email(c.get("email")) or "",
-            "address": clean_str(c.get("address"), 300) or "",
-            "relationship": clean_str(c.get("relationship"), 60) or "",
-            "notes": clean_str(c.get("notes"), 500) or "",
-        })
+        out.append(
+            {
+                "existing_id": ex["id"] if ex else None,
+                "name": ex["name"] if ex else name,
+                "phone": clean_str(c.get("phone"), 40) or "",
+                "email": _email(c.get("email")) or "",
+                "address": clean_str(c.get("address"), 300) or "",
+                "relationship": clean_str(c.get("relationship"), 60) or "",
+                "notes": clean_str(c.get("notes"), 500) or "",
+            }
+        )
     if not out:
-        raise HTTPException(status_code=422, detail="I could not find anyone to add in that description. Try naming each person and how you know them.")
+        raise HTTPException(
+            status_code=422,
+            detail="I could not find anyone to add in that description. Try naming each person and how you know them.",
+        )
     questions = [q for q in (clean_str(x, 300) for x in (raw.get("questions") or [])) if q][:5]
-    return {"draft": {"summary": clean_str(raw.get("summary"), 400) or "", "contacts": out, "questions": questions}, "model": model}
+    return {
+        "draft": {"summary": clean_str(raw.get("summary"), 400) or "", "contacts": out, "questions": questions},
+        "model": model,
+    }
 
 
 # ──────────────────────────────────────────────────────────── Digital Wallet ──
@@ -246,24 +303,41 @@ def _scrub_secret(text: Optional[str]) -> Optional[str]:
     """Belt-and-braces: drop any sentence that names a secret, in case the model ignored the rule."""
     if not text:
         return text
-    kept = [s for s in re.split(r"(?<=[.!?;])\s+", text) if not SECRET_WORDS.search(s) and "locked field" not in s.lower() and "left it out" not in s.lower()]
+    kept = [
+        s
+        for s in re.split(r"(?<=[.!?;])\s+", text)
+        if not SECRET_WORDS.search(s) and "locked field" not in s.lower() and "left it out" not in s.lower()
+    ]
     return " ".join(kept).strip() or None
 
 
 @router.post("/digital-wallet/{estate_id}/ai-draft")
-async def ai_draft_digital_wallet(estate_id: str, payload: DraftRequest, current_user: dict = Depends(get_current_user)):
+async def ai_draft_digital_wallet(
+    estate_id: str, payload: DraftRequest, current_user: dict = Depends(get_current_user)
+):
     await require_estate_owner(estate_id, current_user)
-    rows = await db.digital_wallet.find({"estate_id": estate_id}, {"_id": 0, "id": 1, "account_name": 1, "category": 1}).to_list(500)
-    existing = [{"id": r["id"], "account_name": r.get("account_name") or "", "category": r.get("category")} for r in rows]
-    bens = await db.beneficiaries.find({"estate_id": estate_id}, {"_id": 0, "id": 1, "name": 1, "first_name": 1}).to_list(300)
+    rows = await db.digital_wallet.find(
+        {"estate_id": estate_id}, {"_id": 0, "id": 1, "account_name": 1, "category": 1}
+    ).to_list(500)
+    existing = [
+        {"id": r["id"], "account_name": r.get("account_name") or "", "category": r.get("category")} for r in rows
+    ]
+    bens = await db.beneficiaries.find(
+        {"estate_id": estate_id}, {"_id": 0, "id": 1, "name": 1, "first_name": 1}
+    ).to_list(300)
     user_msg = (
         f"SPEAKER: {_speaker(current_user)}\n\nCATEGORIES: {json.dumps(list(WALLET_CATEGORIES))}\n\n"
         f"BENEFICIARIES (for assigned_beneficiary_name matching): {json.dumps([b.get('name') for b in bens])}\n\n"
-        f"EXISTING: {json.dumps(existing, separators=(',', ':'))}\n\nDESCRIPTION (verbatim):\n\"\"\"\n{payload.description.strip()}\n\"\"\""
+        f'EXISTING: {json.dumps(existing, separators=(",", ":"))}\n\nDESCRIPTION (verbatim):\n"""\n{payload.description.strip()}\n"""'
     )
     raw, model = await run_ai_draft(
-        current_user=current_user, estate_id=estate_id, feature="digital_wallet_ai_draft",
-        messages=[{"role": "system", "content": hardened_system_prompt(DAV_PROMPT)}, {"role": "user", "content": user_msg}],
+        current_user=current_user,
+        estate_id=estate_id,
+        feature="digital_wallet_ai_draft",
+        messages=[
+            {"role": "system", "content": hardened_system_prompt(DAV_PROMPT)},
+            {"role": "user", "content": user_msg},
+        ],
     )
     spoken_secret = bool(SECRET_WORDS.search(payload.description))
     out = []
@@ -273,28 +347,64 @@ async def ai_draft_digital_wallet(estate_id: str, payload: DraftRequest, current
         name = clean_str(e.get("account_name"), 120)
         if not name:
             continue
-        ex = next((r for r in existing if r["id"] == e.get("existing_id")), None) or next((r for r in existing if r["account_name"].lower() == name.lower()), None)
+        ex = next((r for r in existing if r["id"] == e.get("existing_id")), None) or next(
+            (r for r in existing if r["account_name"].lower() == name.lower()), None
+        )
         ben_name = clean_str(e.get("assigned_beneficiary_name"), 120)
         if ben_name and ben_name.split(" ")[0].lower() not in payload.description.lower():
             ben_name = None  # model substituted a name the speaker never said
-        ben = next((b for b in bens if ben_name and (b.get("name", "").lower() == ben_name.lower() or (b.get("first_name") or "").lower() == ben_name.split(" ")[0].lower())), None) if ben_name else None
-        out.append({
-            "existing_id": ex["id"] if ex else None,
-            "account_name": ex["account_name"] if ex else name,
-            "login_username": _scrub_secret(clean_str(e.get("login_username"), 200)) or "",
-            "category": pick(e.get("category"), WALLET_CATEGORIES, "other"),
-            "assigned_beneficiary_id": ben["id"] if ben else None,
-            "assigned_beneficiary_name": ben.get("name") if ben else ben_name,
-            "beneficiary_visibility": pick(e.get("beneficiary_visibility"), WALLET_VISIBILITY, "private"),
-            "notes": _scrub_secret(clean_str(e.get("notes"), 500)),
-            "secret_mentioned": bool(e.get("secret_mentioned")),
-        })
+        ben = (
+            next(
+                (
+                    b
+                    for b in bens
+                    if ben_name
+                    and (
+                        b.get("name", "").lower() == ben_name.lower()
+                        or (b.get("first_name") or "").lower() == ben_name.split(" ")[0].lower()
+                    )
+                ),
+                None,
+            )
+            if ben_name
+            else None
+        )
+        out.append(
+            {
+                "existing_id": ex["id"] if ex else None,
+                "account_name": ex["account_name"] if ex else name,
+                "login_username": _scrub_secret(clean_str(e.get("login_username"), 200)) or "",
+                "category": pick(e.get("category"), WALLET_CATEGORIES, "other"),
+                "assigned_beneficiary_id": ben["id"] if ben else None,
+                "assigned_beneficiary_name": ben.get("name") if ben else ben_name,
+                "beneficiary_visibility": pick(e.get("beneficiary_visibility"), WALLET_VISIBILITY, "private"),
+                "notes": _scrub_secret(clean_str(e.get("notes"), 500)),
+                "secret_mentioned": bool(e.get("secret_mentioned")),
+            }
+        )
     if spoken_secret and not any(x["secret_mentioned"] for x in out):
         for x in out:
             x["secret_mentioned"] = True
     if not out:
-        raise HTTPException(status_code=422, detail="I could not find any accounts in that description. Try naming each service and what should happen to it.")
-    questions = [q for q in (clean_str(x, 300) for x in (raw.get("questions") or [])) if q and not SECRET_WORDS.search(q) or "left it out" in (q or "")][:5]
+        raise HTTPException(
+            status_code=422,
+            detail="I could not find any accounts in that description. Try naming each service and what should happen to it.",
+        )
+    questions = [
+        q
+        for q in (clean_str(x, 300) for x in (raw.get("questions") or []))
+        if q and not SECRET_WORDS.search(q) or "left it out" in (q or "")
+    ][:5]
     if spoken_secret and not any("left it out" in q for q in questions):
-        questions.insert(0, "I heard a password or PIN — for your security I left it out; type it into the locked field on that entry.")
-    return {"draft": {"summary": _scrub_secret(clean_str(raw.get("summary"), 400)) or "", "entries": out, "questions": questions[:5]}, "model": model}
+        questions.insert(
+            0,
+            "I heard a password or PIN — for your security I left it out; type it into the locked field on that entry.",
+        )
+    return {
+        "draft": {
+            "summary": _scrub_secret(clean_str(raw.get("summary"), 400)) or "",
+            "entries": out,
+            "questions": questions[:5],
+        },
+        "model": model,
+    }

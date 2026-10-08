@@ -66,15 +66,23 @@ OUTPUT — exactly one fenced JSON block, nothing outside it:
 @router.post("/checklists/{estate_id}/ai-draft")
 async def ai_draft_checklist(estate_id: str, payload: DraftRequest, current_user: dict = Depends(get_current_user)):
     await require_estate_owner(estate_id, current_user)
-    rows = await db.checklists.find({"estate_id": estate_id}, {"_id": 0, "id": 1, "title": 1, "category": 1}).to_list(400)
+    rows = await db.checklists.find({"estate_id": estate_id}, {"_id": 0, "id": 1, "title": 1, "category": 1}).to_list(
+        400
+    )
     existing = [{"id": r["id"], "title": r.get("title") or "", "category": r.get("category")} for r in rows]
     user_msg = (
         f"SPEAKER: {current_user.get('name') or 'the estate owner'}\n\nEXISTING: {json.dumps(existing, separators=(',', ':'))}\n\n"
         f'DESCRIPTION (verbatim):\n"""\n{payload.description.strip()}\n"""'
     )
     raw, model = await run_ai_draft(
-        current_user=current_user, estate_id=estate_id, feature="checklist_ai_draft", max_tokens=3500,
-        messages=[{"role": "system", "content": hardened_system_prompt(IAC_PROMPT)}, {"role": "user", "content": user_msg}],
+        current_user=current_user,
+        estate_id=estate_id,
+        feature="checklist_ai_draft",
+        max_tokens=3500,
+        messages=[
+            {"role": "system", "content": hardened_system_prompt(IAC_PROMPT)},
+            {"role": "user", "content": user_msg},
+        ],
     )
     out = []
     for it in raw.get("items") or []:
@@ -83,31 +91,67 @@ async def ai_draft_checklist(estate_id: str, payload: DraftRequest, current_user
         title = clean_str(it.get("title"), 200)
         if not title:
             continue
-        ex = next((r for r in existing if r["id"] == it.get("existing_id")), None) or next((r for r in existing if r["title"].lower() == title.lower()), None)
+        ex = next((r for r in existing if r["id"] == it.get("existing_id")), None) or next(
+            (r for r in existing if r["title"].lower() == title.lower()), None
+        )
         email = (clean_str(it.get("contact_email"), 200) or "").lower()
-        out.append({
-            "existing_id": ex["id"] if ex else None,
-            "title": ex["title"] if ex else title,
-            "description": clean_str(it.get("description"), 1000) or "",
-            "category": pick(it.get("category"), IAC_CATEGORIES, "general"),
-            "priority": pick(it.get("priority"), IAC_PRIORITIES, "medium"),
-            "action_type": pick(it.get("action_type"), IAC_ACTIONS, "custom"),
-            "due_timeframe": pick(it.get("due_timeframe"), IAC_TIMEFRAMES, "first_week"),
-            "contact_name": clean_str(it.get("contact_name"), 120),
-            "contact_phone": clean_str(it.get("contact_phone"), 40),
-            "contact_email": email if EMAIL_RE.match(email) else None,
-            "contact_address": clean_str(it.get("contact_address"), 300),
-            "notes": clean_str(it.get("notes"), 500),
-        })
+        out.append(
+            {
+                "existing_id": ex["id"] if ex else None,
+                "title": ex["title"] if ex else title,
+                "description": clean_str(it.get("description"), 1000) or "",
+                "category": pick(it.get("category"), IAC_CATEGORIES, "general"),
+                "priority": pick(it.get("priority"), IAC_PRIORITIES, "medium"),
+                "action_type": pick(it.get("action_type"), IAC_ACTIONS, "custom"),
+                "due_timeframe": pick(it.get("due_timeframe"), IAC_TIMEFRAMES, "first_week"),
+                "contact_name": clean_str(it.get("contact_name"), 120),
+                "contact_phone": clean_str(it.get("contact_phone"), 40),
+                "contact_email": email if EMAIL_RE.match(email) else None,
+                "contact_address": clean_str(it.get("contact_address"), 300),
+                "notes": clean_str(it.get("notes"), 500),
+            }
+        )
     if not out:
-        raise HTTPException(status_code=422, detail="I could not find any actions in that description. Try saying what needs to be done and who should do it.")
+        raise HTTPException(
+            status_code=422,
+            detail="I could not find any actions in that description. Try saying what needs to be done and who should do it.",
+        )
     questions = [q for q in (clean_str(x, 300) for x in (raw.get("questions") or [])) if q][:5]
-    return {"draft": {"summary": clean_str(raw.get("summary"), 400) or "", "items": out, "questions": questions}, "model": model}
+    return {
+        "draft": {"summary": clean_str(raw.get("summary"), 400) or "", "items": out, "questions": questions},
+        "model": model,
+    }
 
 
 # ───────────────────────────────────────────────────────────────────── CCP ──
-CCP_HOUSEHOLD = ("children", "infants", "teens", "elderly", "multigen", "pregnant", "medical_equipment", "disabled", "non_english", "pets", "service_animal", "livestock")
-GO_BAG_CATEGORIES = ("water", "food", "medication", "first_aid", "tools", "documents", "cash", "clothing", "communication", "pet_supplies", "comfort", "other")
+CCP_HOUSEHOLD = (
+    "children",
+    "infants",
+    "teens",
+    "elderly",
+    "multigen",
+    "pregnant",
+    "medical_equipment",
+    "disabled",
+    "non_english",
+    "pets",
+    "service_animal",
+    "livestock",
+)
+GO_BAG_CATEGORIES = (
+    "water",
+    "food",
+    "medication",
+    "first_aid",
+    "tools",
+    "documents",
+    "cash",
+    "clothing",
+    "communication",
+    "pet_supplies",
+    "comfort",
+    "other",
+)
 
 
 class TemplateQuestion(BaseModel):
@@ -164,20 +208,35 @@ async def ai_draft_ccp(estate_id: str, payload: CcpDraftRequest, current_user: d
     if not payload.templates:
         raise HTTPException(status_code=400, detail="templates required")
     concerns = list(payload.templates.keys())
-    tmpl_compact = {c: [{"key": q.key, "label": q.label, "required": q.required, **({"options": q.options} if q.options else {})} for q in qs] for c, qs in payload.templates.items()}
+    tmpl_compact = {
+        c: [
+            {"key": q.key, "label": q.label, "required": q.required, **({"options": q.options} if q.options else {})}
+            for q in qs
+        ]
+        for c, qs in payload.templates.items()
+    }
     user_msg = (
         f"SPEAKER: {current_user.get('name') or 'the estate owner'}\n\nCONCERNS: {json.dumps(concerns)}\n\nHOUSEHOLD: {json.dumps(list(CCP_HOUSEHOLD))}\n\n"
         f"GO_BAG_CATEGORIES: {json.dumps(list(GO_BAG_CATEGORIES))}\n\nTEMPLATES: {json.dumps(tmpl_compact, separators=(',', ':'))}\n\n"
         f'DESCRIPTION (verbatim):\n"""\n{payload.description.strip()}\n"""'
     )
     raw, model = await run_ai_draft(
-        current_user=current_user, estate_id=estate_id, feature="ccp_ai_draft", max_tokens=3500,
-        messages=[{"role": "system", "content": hardened_system_prompt(CCP_PROMPT)}, {"role": "user", "content": user_msg}],
+        current_user=current_user,
+        estate_id=estate_id,
+        feature="ccp_ai_draft",
+        max_tokens=3500,
+        messages=[
+            {"role": "system", "content": hardened_system_prompt(CCP_PROMPT)},
+            {"role": "user", "content": user_msg},
+        ],
     )
     plan_raw = raw.get("plan") if isinstance(raw.get("plan"), dict) else {}
     concern = pick(plan_raw.get("concern"), concerns, None)
     if not concern:
-        raise HTTPException(status_code=422, detail="I could not tell which disaster you're planning for. Name it (hurricane, wildfire, earthquake, house fire…) and where you live.")
+        raise HTTPException(
+            status_code=422,
+            detail="I could not tell which disaster you're planning for. Name it (hurricane, wildfire, earthquake, house fire…) and where you live.",
+        )
     allowed = {q.key: q for q in payload.templates[concern]}
     answers = {}
     for k, v in (plan_raw.get("follow_up_answers") or {}).items():
@@ -195,20 +254,42 @@ async def ai_draft_ccp(estate_id: str, payload: CcpDraftRequest, current_user: d
     household = [h for h in (plan_raw.get("household") or []) if h in CCP_HOUSEHOLD]
 
     rv_raw = raw.get("rendezvous") if isinstance(raw.get("rendezvous"), dict) else {}
-    rendezvous = {k: clean_str(rv_raw.get(k), 300) for k in ("primary_label", "primary_address", "primary_notes", "secondary_label", "secondary_address", "secondary_notes", "evacuation_routes")}
+    rendezvous = {
+        k: clean_str(rv_raw.get(k), 300)
+        for k in (
+            "primary_label",
+            "primary_address",
+            "primary_notes",
+            "secondary_label",
+            "secondary_address",
+            "secondary_notes",
+            "evacuation_routes",
+        )
+    }
     oa_raw = raw.get("out_of_area") if isinstance(raw.get("out_of_area"), dict) else {}
-    out_of_area = {k: clean_str(oa_raw.get(k), 200) for k in ("name", "relationship", "phone", "email", "city", "state", "notes")}
+    out_of_area = {
+        k: clean_str(oa_raw.get(k), 200) for k in ("name", "relationship", "phone", "email", "city", "state", "notes")
+    }
     if out_of_area["email"] and not EMAIL_RE.match(out_of_area["email"]):
         out_of_area["email"] = None
     if out_of_area["state"]:
-        out_of_area["state"] = out_of_area["state"][:2].upper() if len(out_of_area["state"]) <= 2 else out_of_area["state"]
+        out_of_area["state"] = (
+            out_of_area["state"][:2].upper() if len(out_of_area["state"]) <= 2 else out_of_area["state"]
+        )
     go_bag = []
     for g in raw.get("go_bag") or []:
         if not isinstance(g, dict):
             continue
         name = clean_str(g.get("name"), 120)
         if name:
-            go_bag.append({"category": pick(g.get("category"), GO_BAG_CATEGORIES, "other"), "name": name, "qty": clean_str(g.get("qty"), 40), "notes": clean_str(g.get("notes"), 300)})
+            go_bag.append(
+                {
+                    "category": pick(g.get("category"), GO_BAG_CATEGORIES, "other"),
+                    "name": name,
+                    "qty": clean_str(g.get("qty"), 40),
+                    "notes": clean_str(g.get("notes"), 300),
+                }
+            )
 
     questions = [q for q in (clean_str(x, 300) for x in (raw.get("questions") or [])) if q][:5]
     missing = [q.label.rstrip(" *") for q in payload.templates[concern] if q.required and q.key not in answers]
@@ -217,11 +298,15 @@ async def ai_draft_ccp(estate_id: str, payload: CcpDraftRequest, current_user: d
             questions.append(f"The wizard still needs: {m}.")
     draft = {
         "summary": clean_str(raw.get("summary"), 400) or "",
-        "plan": {"concern": concern, "location": clean_str(plan_raw.get("location"), 300), "household": household, "follow_up_answers": answers},
+        "plan": {
+            "concern": concern,
+            "location": clean_str(plan_raw.get("location"), 300),
+            "household": household,
+            "follow_up_answers": answers,
+        },
         "rendezvous": rendezvous,
         "out_of_area": out_of_area,
         "go_bag": go_bag,
         "questions": questions[:5],
     }
     return {"draft": draft, "model": model}
-

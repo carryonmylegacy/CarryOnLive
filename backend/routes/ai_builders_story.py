@@ -30,7 +30,14 @@ class DraftRequest(BaseModel):
 MM_TYPES = ("text", "voice", "video")
 MM_TRIGGERS = ("immediate", "age_milestone", "event", "specific_date")
 MM_EVENTS = ("birthday", "graduation", "marriage", "custom")
-EVENT_HINTS = (("wedding", "marriage"), ("marri", "marriage"), ("bride", "marriage"), ("groom", "marriage"), ("graduat", "graduation"), ("birthday", "birthday"))
+EVENT_HINTS = (
+    ("wedding", "marriage"),
+    ("marri", "marriage"),
+    ("bride", "marriage"),
+    ("groom", "marriage"),
+    ("graduat", "graduation"),
+    ("birthday", "birthday"),
+)
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
 MM_PROMPT = """You are the CarryOn Milestone Messages (MM) assistant. The estate owner describes, in everyday
@@ -91,16 +98,27 @@ def _match_recipient(name: str, bens: list[dict]) -> Optional[dict]:
 async def ai_draft_messages(estate_id: str, payload: DraftRequest, current_user: dict = Depends(get_current_user)):
     await require_estate_owner(estate_id, current_user)
     bens = await db.beneficiaries.find(
-        {"estate_id": estate_id, "deleted_at": None}, {"_id": 0, "id": 1, "user_id": 1, "name": 1, "first_name": 1, "relation": 1, "relationship": 1}
+        {"estate_id": estate_id, "deleted_at": None},
+        {"_id": 0, "id": 1, "user_id": 1, "name": 1, "first_name": 1, "relation": 1, "relationship": 1},
     ).to_list(300)
-    roster = [{"name": b.get("name"), "relationship": b.get("relation") or b.get("relationship")} for b in bens if b.get("name")]
+    roster = [
+        {"name": b.get("name"), "relationship": b.get("relation") or b.get("relationship")}
+        for b in bens
+        if b.get("name")
+    ]
     user_msg = (
         f"SPEAKER: {_speaker(current_user)}\n\nTODAY: {date.today().isoformat()}\n\nRECIPIENTS: {json.dumps(roster, separators=(',', ':'))}\n\n"
         f'DESCRIPTION (verbatim):\n"""\n{payload.description.strip()}\n"""'
     )
     raw, model = await run_ai_draft(
-        current_user=current_user, estate_id=estate_id, feature="messages_ai_draft", max_tokens=3500,
-        messages=[{"role": "system", "content": hardened_system_prompt(MM_PROMPT)}, {"role": "user", "content": user_msg}],
+        current_user=current_user,
+        estate_id=estate_id,
+        feature="messages_ai_draft",
+        max_tokens=3500,
+        messages=[
+            {"role": "system", "content": hardened_system_prompt(MM_PROMPT)},
+            {"role": "user", "content": user_msg},
+        ],
     )
     desc_lower = payload.description.lower()
     out = []
@@ -124,10 +142,18 @@ async def ai_draft_messages(estate_id: str, payload: DraftRequest, current_user:
             else:
                 names.append(nm)
         trig = pick(m.get("trigger_type"), MM_TRIGGERS, "immediate")
-        if not names and re.search(r"\b(kids?|children|sons?|daughters?|grandkids|grandchildren)\b", f"{title} {m.get('why') or ''}".lower()):
+        if not names and re.search(
+            r"\b(kids?|children|sons?|daughters?|grandkids|grandchildren)\b", f"{title} {m.get('why') or ''}".lower()
+        ):
             for b in bens:  # a group message with no names → the children already on the roster
-                if (b.get("relation") or b.get("relationship") or "").lower() in ("son", "daughter", "grandson", "granddaughter"):
-                    ids.append(b.get("user_id") or b["id"]); names.append(b.get("name"))
+                if (b.get("relation") or b.get("relationship") or "").lower() in (
+                    "son",
+                    "daughter",
+                    "grandson",
+                    "granddaughter",
+                ):
+                    ids.append(b.get("user_id") or b["id"])
+                    names.append(b.get("name"))
         age = clean_int(m.get("trigger_age"), 1, 100) if trig == "age_milestone" else None
         if trig == "age_milestone" and not age:
             trig = "immediate"
@@ -139,34 +165,100 @@ async def ai_draft_messages(estate_id: str, payload: DraftRequest, current_user:
         d = clean_str(m.get("trigger_date"), 10) if trig == "specific_date" else None
         if trig == "specific_date" and not (d and DATE_RE.match(d)):
             trig, d = "immediate", None
-        out.append({
-            "title": title,
-            "recipient_ids": ids,
-            "recipient_names": names,
-            "message_type": pick(m.get("message_type"), MM_TYPES, "video"),
-            "trigger_type": trig,
-            "trigger_age": age,
-            "trigger_value": event,
-            "custom_event_label": label,
-            "trigger_date": d,
-            "why": clean_str(m.get("why"), 1500) or "",
-        })
+        out.append(
+            {
+                "title": title,
+                "recipient_ids": ids,
+                "recipient_names": names,
+                "message_type": pick(m.get("message_type"), MM_TYPES, "video"),
+                "trigger_type": trig,
+                "trigger_age": age,
+                "trigger_value": event,
+                "custom_event_label": label,
+                "trigger_date": d,
+                "why": clean_str(m.get("why"), 1500) or "",
+            }
+        )
     if not out:
-        raise HTTPException(status_code=422, detail="I could not find any messages in that description. Try saying who each one is for, when it should arrive, and what you want them to know.")
+        raise HTTPException(
+            status_code=422,
+            detail="I could not find any messages in that description. Try saying who each one is for, when it should arrive, and what you want them to know.",
+        )
     questions = [q for q in (clean_str(x, 300) for x in (raw.get("questions") or [])) if q][:3]
-    return {"draft": {"summary": clean_str(raw.get("summary"), 400) or "", "messages": out, "questions": questions}, "model": model}
+    return {
+        "draft": {"summary": clean_str(raw.get("summary"), 400) or "", "messages": out, "questions": questions},
+        "model": model,
+    }
 
 
 # ─────────────────────────────────────────────────────────────── QuickStart ──
 QS_MARITAL = ("single", "married", "partnered", "widowed", "divorced", "separated")
 QS_TENURE = ("own", "rent", "other")
 QS_PROPERTY_KINDS = ("vacation", "rental", "land", "commercial", "other")
-QS_BUSINESS = ("sole_prop", "llc", "s_corp", "c_corp", "partnership", "limited_partnership", "nonprofit", "holding_company")
+QS_BUSINESS = (
+    "sole_prop",
+    "llc",
+    "s_corp",
+    "c_corp",
+    "partnership",
+    "limited_partnership",
+    "nonprofit",
+    "holding_company",
+)
 QS_DOC_COUNTS = ("wills", "trusts", "policies_business")
 QS_DOC_FLAGS = ("durable_poa", "healthcare_directive", "hipaa_release", "guardianship_designation")
 US_STATES = {
-    "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD", "MA", "MI", "MN", "MS", "MO",
-    "MT", "NE", "NV", "NH", "NJ", "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY", "DC",
+    "AL",
+    "AK",
+    "AZ",
+    "AR",
+    "CA",
+    "CO",
+    "CT",
+    "DE",
+    "FL",
+    "GA",
+    "HI",
+    "ID",
+    "IL",
+    "IN",
+    "IA",
+    "KS",
+    "KY",
+    "LA",
+    "ME",
+    "MD",
+    "MA",
+    "MI",
+    "MN",
+    "MS",
+    "MO",
+    "MT",
+    "NE",
+    "NV",
+    "NH",
+    "NJ",
+    "NM",
+    "NY",
+    "NC",
+    "ND",
+    "OH",
+    "OK",
+    "OR",
+    "PA",
+    "RI",
+    "SC",
+    "SD",
+    "TN",
+    "TX",
+    "UT",
+    "VT",
+    "VA",
+    "WA",
+    "WV",
+    "WI",
+    "WY",
+    "DC",
 }
 QS_STEPS = ("residence", "household", "properties", "life_insurance", "business", "existing_documents")
 
@@ -215,27 +307,52 @@ def _state(v) -> Optional[str]:
 
 
 def _address(d: dict) -> dict:
-    street, city, state, zipc = clean_str(d.get("street"), 200), clean_str(d.get("city"), 100), _state(d.get("state")), clean_str(d.get("zip"), 10)
-    return {"street": street or "", "line2": "", "city": city or "", "state": state or "", "zip": zipc or "", "address": ", ".join(filter(None, [street, city]))}
+    street, city, state, zipc = (
+        clean_str(d.get("street"), 200),
+        clean_str(d.get("city"), 100),
+        _state(d.get("state")),
+        clean_str(d.get("zip"), 10),
+    )
+    return {
+        "street": street or "",
+        "line2": "",
+        "city": city or "",
+        "state": state or "",
+        "zip": zipc or "",
+        "address": ", ".join(filter(None, [street, city])),
+    }
 
 
 @router.post("/quickstart/ai-draft")
 async def ai_draft_quickstart(payload: DraftRequest, current_user: dict = Depends(get_current_user)):
-    if not (current_user.get("role") == "benefactor" or current_user.get("is_also_benefactor") or current_user.get("role") == "admin"):
+    if not (
+        current_user.get("role") == "benefactor"
+        or current_user.get("is_also_benefactor")
+        or current_user.get("role") == "admin"
+    ):
         raise HTTPException(status_code=403, detail="QuickStart is for benefactors.")
     estate = await db.estates.find_one({"owner_id": current_user["id"], "deleted_at": None}, {"_id": 0, "id": 1})
     estate_id = estate["id"] if estate else None
     bens = []
     if estate_id:
-        bens = await db.beneficiaries.find({"estate_id": estate_id, "deleted_at": None}, {"_id": 0, "id": 1, "name": 1, "first_name": 1, "relation": 1, "relationship": 1}).to_list(300)
+        bens = await db.beneficiaries.find(
+            {"estate_id": estate_id, "deleted_at": None},
+            {"_id": 0, "id": 1, "name": 1, "first_name": 1, "relation": 1, "relationship": 1},
+        ).to_list(300)
     user_msg = (
         f"SPEAKER: {_speaker(current_user)}\n\nMARITAL: {json.dumps(list(QS_MARITAL))}\nRELATIONSHIPS: {json.dumps(list(RELATIONSHIPS))}\n"
         f"PROPERTY_KINDS: {json.dumps(list(QS_PROPERTY_KINDS))}\nBUSINESS: {json.dumps(list(QS_BUSINESS))}\nDOC_FLAGS: {json.dumps(list(QS_DOC_FLAGS))}\n\n"
         f'DESCRIPTION (verbatim):\n"""\n{payload.description.strip()}\n"""'
     )
     raw, model = await run_ai_draft(
-        current_user=current_user, estate_id=estate_id or "", feature="quickstart_ai_draft", max_tokens=3000,
-        messages=[{"role": "system", "content": hardened_system_prompt(QS_PROMPT)}, {"role": "user", "content": user_msg}],
+        current_user=current_user,
+        estate_id=estate_id or "",
+        feature="quickstart_ai_draft",
+        max_tokens=3000,
+        messages=[
+            {"role": "system", "content": hardened_system_prompt(QS_PROMPT)},
+            {"role": "user", "content": user_msg},
+        ],
     )
     desc_lower = payload.description.lower()
     steps: dict = {}
@@ -258,7 +375,13 @@ async def ai_draft_quickstart(payload: DraftRequest, current_user: dict = Depend
             continue
         rel = pick(b.get("relationship"), RELATIONSHIPS, "Other")
         existing = _match_recipient(name, bens)
-        row = {"name": existing.get("name") if existing else name, "relationship": (existing.get("relation") or existing.get("relationship")) if existing and (existing.get("relation") or existing.get("relationship")) else rel, "age": clean_int(b.get("age"), 0, 120)}
+        row = {
+            "name": existing.get("name") if existing else name,
+            "relationship": (existing.get("relation") or existing.get("relationship"))
+            if existing and (existing.get("relation") or existing.get("relationship"))
+            else rel,
+            "age": clean_int(b.get("age"), 0, 120),
+        }
         if row["age"] is None:
             row["age"] = ""
         if existing:
@@ -276,7 +399,11 @@ async def ai_draft_quickstart(payload: DraftRequest, current_user: dict = Depend
         steps["household"] = household
 
     props = raw.get("properties") if isinstance(raw.get("properties"), dict) else {}
-    plist = [{**_address(p), "kind": pick(p.get("kind"), QS_PROPERTY_KINDS, "other")} for p in (props.get("list") or []) if isinstance(p, dict)]
+    plist = [
+        {**_address(p), "kind": pick(p.get("kind"), QS_PROPERTY_KINDS, "other")}
+        for p in (props.get("list") or [])
+        if isinstance(p, dict)
+    ]
     plist = [p for p in plist if p["address"] or p["state"] or p["kind"] != "other"]
     if plist:
         steps["properties"] = {"list": plist}
@@ -284,7 +411,10 @@ async def ai_draft_quickstart(payload: DraftRequest, current_user: dict = Depend
     li = raw.get("life_insurance") if isinstance(raw.get("life_insurance"), dict) else {}
     count = clean_int(li.get("policy_count"), 0, 20)
     if (count or li.get("unsure") is True) or (count == 0 and re.search(r"insur|polic", desc_lower)):
-        steps["life_insurance"] = {"policy_count": count if count is not None else 0, "unsure": li.get("unsure") is True}
+        steps["life_insurance"] = {
+            "policy_count": count if count is not None else 0,
+            "unsure": li.get("unsure") is True,
+        }
 
     biz = raw.get("business") if isinstance(raw.get("business"), dict) else None
     if biz:
@@ -294,16 +424,33 @@ async def ai_draft_quickstart(payload: DraftRequest, current_user: dict = Depend
             types = [t for t in (biz.get("types") or []) if t in QS_BUSINESS]
             if types:
                 counts_raw = biz.get("counts") if isinstance(biz.get("counts"), dict) else {}
-                steps["business"] = {"none": False, "types": types, "counts": {t: clean_int(counts_raw.get(t), 1, 50) or 1 for t in types}}
+                steps["business"] = {
+                    "none": False,
+                    "types": types,
+                    "counts": {t: clean_int(counts_raw.get(t), 1, 50) or 1 for t in types},
+                }
 
     docs = raw.get("existing_documents") if isinstance(raw.get("existing_documents"), dict) else {}
     counts_raw = docs.get("counts") if isinstance(docs.get("counts"), dict) else {}
-    counts = {k: clean_int(counts_raw.get(k), 0, 20) for k in QS_DOC_COUNTS if clean_int(counts_raw.get(k), 0, 20) is not None}
+    counts = {
+        k: clean_int(counts_raw.get(k), 0, 20) for k in QS_DOC_COUNTS if clean_int(counts_raw.get(k), 0, 20) is not None
+    }
     flags = [f for f in (docs.get("flags") or []) if f in QS_DOC_FLAGS]
     if any(counts.values()) or flags or (counts and re.search(r"\bwill\b|trust|succession|buy.sell", desc_lower)):
         steps["existing_documents"] = {"counts": counts, "flags": flags}
 
     if not steps:
-        raise HTTPException(status_code=422, detail="I could not pick out any answers from that. Try telling me where you live, who is in your family, and what you own.")
+        raise HTTPException(
+            status_code=422,
+            detail="I could not pick out any answers from that. Try telling me where you live, who is in your family, and what you own.",
+        )
     questions = [q for q in (clean_str(x, 300) for x in (raw.get("questions") or [])) if q][:5]
-    return {"draft": {"summary": clean_str(raw.get("summary"), 400) or "", "steps": steps, "filled": [s for s in QS_STEPS if s in steps], "questions": questions}, "model": model}
+    return {
+        "draft": {
+            "summary": clean_str(raw.get("summary"), 400) or "",
+            "steps": steps,
+            "filled": [s for s in QS_STEPS if s in steps],
+            "questions": questions,
+        },
+        "model": model,
+    }

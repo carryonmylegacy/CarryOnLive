@@ -92,7 +92,19 @@ async def run_ai_draft(
 
 
 _SOURCE_TAG_RE = re.compile(r"\s*\((?:source|per|from)\s*:\s*[^)]*\)", re.I)
-_PLACEHOLDERS = {"unknown", "n/a", "na", "none", "null", "not stated", "not provided", "not specified", "not mentioned", "not given", "tbd"}
+_PLACEHOLDERS = {
+    "unknown",
+    "n/a",
+    "na",
+    "none",
+    "null",
+    "not stated",
+    "not provided",
+    "not specified",
+    "not mentioned",
+    "not given",
+    "tbd",
+}
 
 
 def clean_str(v, limit: int) -> Optional[str]:

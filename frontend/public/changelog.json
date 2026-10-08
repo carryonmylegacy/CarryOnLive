@@ -2,9 +2,14 @@
   "entries": [
     {
       "date": "2026-10-08",
-      "title": "Talk your finances in — and choose who hears your voice",
+      "title": "Talk it in — every list in CarryOn can now be dictated, and you choose who hears your voice",
       "items": [
         "Financial Picture: a new “Describe your finances” box at the top of the page. Tap the mic (or type) and walk through your bills, what you owe, your accounts and what you own — CarryOn sorts it into bills, debts, accounts and property, you review every line (“here’s what I heard”), then add it. Every tile stays editable",
+        "Beneficiaries, Friends & Family Notification and the Digital Access Vault each gained the same “describe it” box: name the people (or the accounts) in one breath, review what CarryOn heard, add them. Passwords are never spoken to the AI — you type them into a locked field that goes straight into your encrypted vault",
+        "Immediate Action Checklist: talk through the first calls, filings and hand-offs; each one becomes a checklist item with a priority and a timeframe for you to review",
+        "Contingency Protocols: describe where you live, who is in the house, the disaster that worries you, where you would go, the go-bag and your out-of-area check-in contact — CarryOn fills in the plan wizard and the meeting-point / check-in / go-bag panels, then you generate the plan as before",
+        "Milestone Messages: say who each message is for, when it should arrive and what you want them to know — CarryOn sets each one up with your notes written in, ready for you to record the video or voice",
+        "QuickStart now offers a third door for new members: “Yes — let me just tell you.” Tell your family story once, in plain words, and CarryOn pre-fills the QuickStart screens; nothing is kept until you have looked each screen over and tapped Next",
         "You now choose how CarryOn listens, once, for every mic in the app: CarryOn Private Dictation (recommended — your voice goes only to CarryOn and is transcribed on our zero-data-retention AI account; audio is discarded immediately) or your device’s own dictation (Apple / Google, live as you speak). Change it any time under Settings → Dictation",
         "The Entities & Structures builder, Milestone Message dictation and the Estate Guardian mic all honour that one choice",
         "Security page: a new “Dictation & AI Builders” entry spells out exactly what is sent where, and that nothing is saved until you approve it"

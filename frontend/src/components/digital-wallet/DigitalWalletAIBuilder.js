@@ -10,6 +10,10 @@ const VIS = [{ value: 'private', label: 'Private (only me)' }, { value: 'posthum
 const EXAMPLE = 'e.g. "Netflix on the family email — cancel it. Coinbase, sign-in is mark.h@gmail.com, Sarah should get that after I\u2019m gone. My personal Gmail, two-factor goes to my phone, Karen can see it now. Ring doorbell, keep paying." (Don\u2019t say passwords — you\u2019ll type those into a locked field.)';
 const KEYTERMS = ['Coinbase', 'iCloud', 'Gmail', 'Netflix', 'Dropbox', 'Venmo', 'PayPal', 'two-factor', 'domain'];
 const BLANK = { existing_id: null, account_name: '', login_username: '', category: 'other', assigned_beneficiary_id: null, assigned_beneficiary_name: null, beneficiary_visibility: 'private', notes: null, secret_mentioned: false, password: '' };
+const leftOut = (e) => Boolean(e.secret_mentioned) && !e.existing_id;
+const LeftOutFlag = ({ i }) => (
+  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#f59e0b] whitespace-nowrap" data-testid={`dav-ai-left-out-flag-${i}`}><ShieldAlert className="w-3.5 h-3.5" /> Password left out</span>
+);
 
 const Review = ({ draft, onChange, beneficiaries }) => {
   const upd = (i, patch) => onChange({ ...draft, entries: draft.entries.map((e, idx) => (idx === i ? { ...e, ...patch } : e)) });
@@ -28,7 +32,7 @@ const Review = ({ draft, onChange, beneficiaries }) => {
             <div className="flex items-center gap-2">
               <input className={`${inp} flex-1 font-semibold`} value={e.account_name} disabled={Boolean(e.existing_id)} onChange={(ev) => upd(i, { account_name: ev.target.value })} placeholder="Service / account" data-testid={`dav-ai-name-${i}`} />
               {e.existing_id && <ExistingBadge />}
-              {e.secret_mentioned && !e.existing_id && <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#f59e0b] whitespace-nowrap" data-testid={`dav-ai-secret-flag-${i}`}><ShieldAlert className="w-3.5 h-3.5" /> Secret left out</span>}
+              {leftOut(e) && <LeftOutFlag i={i} />}
               <Remove onClick={() => del(i)} testId={`dav-ai-remove-${i}`} />
             </div>
             {!e.existing_id && (
@@ -37,7 +41,7 @@ const Review = ({ draft, onChange, beneficiaries }) => {
                 <Field label="Sign-in username / email" value={e.login_username} onChange={(v) => upd(i, { login_username: v })} testId={`dav-ai-login-${i}`} />
                 <label className="block min-w-0">
                   <span className="block text-[11px] font-bold uppercase tracking-wide text-[var(--t5)] mb-0.5 inline-flex items-center gap-1"><Lock className="w-3 h-3" /> Password (typed, encrypted)</span>
-                  <input className={inp} type="password" autoComplete="new-password" value={e.password || ''} onChange={(ev) => upd(i, { password: ev.target.value })} placeholder="Optional — never dictated" data-testid={`dav-ai-password-${i}`} />
+                  <input className={`${inp} text-base`} type="password" autoComplete="new-password" value={e.password || ''} onChange={(ev) => upd(i, { password: ev.target.value })} placeholder="Optional — never dictated" data-testid={`dav-ai-password-${i}`} />
                 </label>
                 <Field label="Who handles it" type="select" options={benOpts} value={e.assigned_beneficiary_id || ''} onChange={(v) => upd(i, { assigned_beneficiary_id: v || null })} testId={`dav-ai-beneficiary-${i}`} />
                 <Field label="Visibility" type="select" options={VIS} value={e.beneficiary_visibility} onChange={(v) => upd(i, { beneficiary_visibility: v })} className="col-span-2" testId={`dav-ai-visibility-${i}`} />
