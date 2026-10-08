@@ -45,6 +45,7 @@ import { DictationControl } from '../components/ai/DictationMicButton';
 import VideoPlaybackModal from '../components/messages/VideoPlaybackModal';
 import MessageCard from '../components/messages/MessageCard';
 import MMGuidedWizard from '../components/messages/MMGuidedWizard';
+import { MessagesAIBuilder } from '../components/messages/MessagesAIBuilder';
 import SortControl, { makeSorter } from '../components/ui/SortControl';
 import { useDraftState } from '../hooks/useDraftState';
 import VideoRecordingOverlay from '../components/messages/VideoRecordingOverlay';
@@ -1384,6 +1385,10 @@ const MessagesPage = () => {
           Messages will be securely stored and automatically delivered when the beneficiary reports each milestone through the platform. You can edit or delete any message at any time before transition.
         </p>
       </div>
+
+      {estate?.id && (
+        <MessagesAIBuilder estateId={estate.id} beneficiaries={beneficiaries} hasItems={messages.length > 0} getAuthHeaders={getAuthHeaders} onBuilt={fetchData} />
+      )}
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>

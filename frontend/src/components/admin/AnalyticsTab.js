@@ -13,6 +13,7 @@ import {
 } from 'recharts';
 import { BarChart3, PieChart as PieIcon } from 'lucide-react';
 import { API_URL } from '../../config';
+import { DictationUsageCard } from './DictationUsageCard';
 
 const CHART_COLORS = ['#d4af37', '#60A5FA', '#22C993', '#B794F6', '#F59E0B', '#ec4899'];
 
@@ -193,6 +194,8 @@ export const AnalyticsTab = ({ getAuthHeaders }) => {
           </CardContent>
         </Card>
       </div>
+
+      <DictationUsageCard headers={headers} />
 
       {/* Actions Row */}
       <div className="flex items-center justify-center gap-3 flex-wrap">

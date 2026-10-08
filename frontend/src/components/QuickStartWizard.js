@@ -31,6 +31,7 @@ import { openPdfPreview } from '../utils/openPdfPreview';
 import AddressAutocomplete from './AddressAutocomplete';
 import { RELATIONSHIPS } from '../config/relationships';
 import { toast } from '../utils/toast';
+import { QuickStartStory } from './quickstart/QuickStartStory';
 
 const STEPS = [
   'gate', 'welcome', 'residence', 'household',
@@ -43,6 +44,8 @@ const STEPS = [
 export { STEPS };
 
 const SESSION_SKIP_KEY = 'carryon_quickstart_skipped_session';
+const PREFILL_KEY = 'carryon_quickstart_prefill';
+const readPrefill = () => { try { return JSON.parse(sessionStorage.getItem(PREFILL_KEY) || '{}') || {}; } catch { return {}; } };
 
 const QuickStartWizard = ({ forceOpen = false, onClose = () => {} }) => {
   const { user, getAuthHeaders } = useAuth();
@@ -54,6 +57,15 @@ const QuickStartWizard = ({ forceOpen = false, onClose = () => {} }) => {
   const [stepData, setStepData] = useState({});
   const [error, setError] = useState('');
   const stepIdxRef = useRef(0);
+  // "Tell me your story" — the AI pre-fill lives here (and in sessionStorage) and is only written
+  // to the server when the subscriber taps Next on each pre-filled screen.
+  const [storyOpen, setStoryOpen] = useState(false);
+  const [prefill, setPrefill] = useState(readPrefill);
+  const stepFor = (prog, key) => {
+    const saved = prog?.data?.[key];
+    return saved && Object.keys(saved).length ? saved : (prefill[key] || {});
+  };
+  const clearPrefill = () => { setPrefill({}); try { sessionStorage.removeItem(PREFILL_KEY); } catch { /* ignore */ } };
 
   // Eligibility: benefactors only (multi-role with benefactor flag also
   // included so a beneficiary-with-benefactor-side sees it).
@@ -100,8 +112,7 @@ const QuickStartWizard = ({ forceOpen = false, onClose = () => {} }) => {
         setDismissedThisSession(true);
       }
       stepIdxRef.current = Math.max(0, STEPS.indexOf(cur));
-      const savedForStep = res.data?.data?.[cur] || {};
-      setStepData(savedForStep);
+      setStepData(stepFor(res.data, cur));
     } catch (e) {
       setError(e?.response?.data?.detail || 'Could not load your QuickStart progress.');
     }
@@ -173,8 +184,7 @@ const QuickStartWizard = ({ forceOpen = false, onClose = () => {} }) => {
         getAuthHeaders(),
       );
       setProgress(res.data);
-      const savedForNext = res.data?.data?.[nextKey] || {};
-      setStepData(savedForNext);
+      setStepData(stepFor(res.data, nextKey));
     } catch (e) {
       setError(e?.response?.data?.detail || 'Could not skip this step.');
     }
@@ -385,11 +395,13 @@ const QuickStartWizard = ({ forceOpen = false, onClose = () => {} }) => {
       const nextStep = choice === 'new' ? 'welcome' : 'gate';
       const res = await apiClient.put(
         `${API_URL}/quickstart/step/gate`,
-        { data: { familiar: choice }, next_step: nextStep },
+        { data: { familiar: choice === 'story' ? 'new' : choice, via: choice === 'story' ? 'story' : 'screens' }, next_step: nextStep },
         getAuthHeaders(),
       );
       setProgress(res.data);
-      if (choice === 'familiar') {
+      if (choice === 'story') {
+        setStoryOpen(true);
+      } else if (choice === 'familiar') {
         // Mark dismissed for the session; the Resume CTA stays on the
         // dashboard so they can come back at any time.
         try { sessionStorage.setItem(SESSION_SKIP_KEY, '1'); } catch { /* ignore */ }
@@ -406,6 +418,24 @@ const QuickStartWizard = ({ forceOpen = false, onClose = () => {} }) => {
     setSaving(false);
   };
 
+  // Story draft → hold it as per-step pre-fill, jump to the first screen; every screen still saves
+  // through the ordinary Next (PUT /quickstart/step/{step}) so nothing is written unreviewed.
+  const applyStory = async (draft) => {
+    const steps = draft?.steps || {};
+    setPrefill(steps);
+    try { sessionStorage.setItem(PREFILL_KEY, JSON.stringify(steps)); } catch { /* ignore */ }
+    const res = await apiClient.put(
+      `${API_URL}/quickstart/step/gate`,
+      { data: { familiar: 'new', via: 'story' }, next_step: 'residence' },
+      getAuthHeaders(),
+    );
+    setProgress(res.data);
+    setStepData(Object.keys(res.data?.data?.residence || {}).length ? res.data.data.residence : (steps.residence || {}));
+    setStoryOpen(false);
+    const n = (draft?.filled || []).length;
+    toast.success(`I filled in ${n} screen${n === 1 ? '' : 's'} from your story — look each one over and tap Next.`);
+  };
+
   const goToStep = async (nextKey) => {
     if (!STEPS.includes(nextKey)) return;
     setSaving(true);
@@ -417,8 +447,7 @@ const QuickStartWizard = ({ forceOpen = false, onClose = () => {} }) => {
         getAuthHeaders(),
       );
       setProgress(res.data);
-      const savedForStep = res.data?.data?.[nextKey] || {};
-      setStepData(savedForStep);
+      setStepData(stepFor(res.data, nextKey));
     } catch (e) {
       setError(e?.response?.data?.detail || 'Could not save this step.');
     }
@@ -466,6 +495,7 @@ const QuickStartWizard = ({ forceOpen = false, onClose = () => {} }) => {
       });
       // Refresh progress so `complete=true` is reflected and the modal
       // closes on next render.
+      clearPrefill();
       await fetchProgress();
       // Tell the rest of the app (Dashboard tile, etc.) that QW state
       // changed so they can refetch and switch from the Resume CTA
@@ -538,7 +568,7 @@ const QuickStartWizard = ({ forceOpen = false, onClose = () => {} }) => {
                 {brand} QuickStart
               </h2>
               <p className="text-xs" style={{ color: '#CBD5E1' }}>
-                Step {currentIdx + 1} of {totalSteps}
+                {storyOpen ? 'Your story' : `Step ${currentIdx + 1} of ${totalSteps}`}
               </p>
             </div>
           </div>
@@ -569,6 +599,17 @@ const QuickStartWizard = ({ forceOpen = false, onClose = () => {} }) => {
 
         {/* Scrollable body */}
         <div className="flex-1 overflow-y-auto px-5 py-5" style={{ color: '#F8FAFC' }}>
+          {storyOpen ? (
+            <QuickStartStory firstName={(user?.first_name || user?.name || '').split(' ')[0] || 'there'} brand={brand} getAuthHeaders={getAuthHeaders}
+              onApply={applyStory} onBack={() => { setStoryOpen(false); handleGateChoice('new'); }} />
+          ) : (
+          <>
+          {prefill[currentStep] && !(progress?.completed_steps || []).includes(currentStep) && (
+            <div className="mb-3 rounded-xl px-3 py-2 flex items-start gap-2 text-xs lg:text-sm" style={{ background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.40)', color: '#F8FAFC' }} data-testid="quickstart-prefill-banner">
+              <Sparkles className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: '#FCD34D' }} />
+              <span>Filled in from your story — look it over, fix anything, then tap Next.</span>
+            </div>
+          )}
           {showUseExistingButton && (
             <div className="mb-3 flex justify-end">
               <button
@@ -602,9 +643,12 @@ const QuickStartWizard = ({ forceOpen = false, onClose = () => {} }) => {
           {error && (
             <p className="mt-3 text-xs" style={{ color: '#fca5a5' }} data-testid="quickstart-error">{error}</p>
           )}
+          </>
+          )}
         </div>
 
         {/* Footer */}
+        {!storyOpen && (
         <div
           className="flex items-center justify-between gap-3 px-5 py-4 border-t"
           style={{ borderColor: 'rgba(255,255,255,0.10)' }}
@@ -670,6 +714,7 @@ const QuickStartWizard = ({ forceOpen = false, onClose = () => {} }) => {
             )}
           </div>
         </div>
+        )}
       </div>
     </div>
   );
@@ -766,7 +811,7 @@ export const QuickStartStep = ({ stepKey, data, setData, user, brand, allData, o
           will help you arrive at one prepared. If you already have your plan in place,
           you&apos;re welcome to use QuickStart as a refresher — but you don&apos;t need to.
         </p>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 pt-2">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 pt-2">
           <button
             type="button"
             data-testid="qs-gate-new"
@@ -780,7 +825,21 @@ export const QuickStartStep = ({ stepKey, data, setData, user, brand, allData, o
             }}
           >
             <div className="text-lg font-bold mb-1">Yes &mdash; walk me through it</div>
-            <div className="text-xs opacity-80">~2 minutes. Ends with a printable, professional-prep checklist.</div>
+            <div className="text-xs opacity-80">~2 minutes, one screen at a time. Ends with a printable, professional-prep checklist.</div>
+          </button>
+          <button
+            type="button"
+            data-testid="qs-gate-story"
+            onClick={() => onGateChoice && onGateChoice('story')}
+            className="rounded-2xl px-5 py-5 text-left transition-all active:scale-[0.98]"
+            style={{
+              background: 'rgba(212,175,55,0.14)',
+              color: '#F8FAFC',
+              border: '1px solid rgba(212,175,55,0.55)',
+            }}
+          >
+            <div className="text-lg font-bold mb-1">Yes &mdash; let me just tell you</div>
+            <div className="text-xs" style={mutedStyle}>Talk for a minute or two (or type). {brand} sorts it onto the same screens; you check each one before anything is kept.</div>
           </button>
           <button
             type="button"

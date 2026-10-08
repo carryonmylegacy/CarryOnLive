@@ -129,9 +129,10 @@ go-bag, and who the out-of-area check-in contact is. Produce a DRAFT that pre-fi
 and the depth panels. The plan itself is generated afterwards by the wizard — you only fill its inputs.
 
 HARD RULES
-1. concern: exactly ONE id from CONCERNS (the disaster they are planning for). If they mention several, pick
-   the one they spend the most words on and list the others THEY MENTIONED in "questions" ("Want a separate
-   plan for <other disaster> too?"). Never suggest a disaster they did not bring up.
+1. concern: exactly ONE id from CONCERNS (the disaster they are planning for). If the speaker never names or
+   clearly describes a disaster or emergency, concern MUST be null — never guess or default to the first id.
+   If they mention several, pick the one they spend the most words on and list the others THEY MENTIONED in
+   "questions" ("Want a separate plan for <other disaster> too?"). Never suggest a disaster they did not bring up.
 2. location: the home address or city/state as stated ("Houston, TX" is fine). Never invent one.
 3. household: ids from HOUSEHOLD that apply (children, infants, teens, elderly, multigen, pregnant,
    medical_equipment, disabled, non_english, pets, service_animal, livestock). Adults-only → [].
@@ -149,7 +150,7 @@ HARD RULES
 OUTPUT — exactly one fenced JSON block, nothing outside it:
 ```json
 {"summary": "string",
- "plan": {"concern": "<CONCERNS id>", "location": "string|null", "household": ["<HOUSEHOLD id>"], "follow_up_answers": {"<key>": "string"}},
+ "plan": {"concern": "<CONCERNS id>|null", "location": "string|null", "household": ["<HOUSEHOLD id>"], "follow_up_answers": {"<key>": "string"}},
  "rendezvous": {"primary_label": null, "primary_address": null, "primary_notes": null, "secondary_label": null, "secondary_address": null, "secondary_notes": null, "evacuation_routes": null},
  "out_of_area": {"name": null, "relationship": null, "phone": null, "email": null, "city": null, "state": null, "notes": null},
  "go_bag": [{"category": "<GO_BAG_CATEGORIES>", "name": "string", "qty": null, "notes": null}],

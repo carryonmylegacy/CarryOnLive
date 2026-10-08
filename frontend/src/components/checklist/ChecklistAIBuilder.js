@@ -70,9 +70,9 @@ export const ChecklistAIBuilder = ({ estateId, hasItems, getAuthHeaders, onBuilt
     validate={(d) => (d.items.some((x) => !x.existing_id && !x.title.trim()) ? 'Every item needs a title.' : null)}
     canBuild={(d) => d.items.some((x) => !x.existing_id)}
     build={async (draft) => {
-      let made = 0; const failures = [];
+      let made = 0; let onFile = 0; const failures = [];
       for (const it of draft.items) {
-        if (it.existing_id) continue;
+        if (it.existing_id) { onFile += 1; continue; }
         const { existing_id: _e, ...rest } = it;
         const body = Object.fromEntries(Object.entries({ estate_id: estateId, ...rest }).filter(([, v]) => v !== null));
         try { await apiClient.post(`${API_URL}/checklists`, body, getAuthHeaders()); made += 1; }
@@ -80,7 +80,7 @@ export const ChecklistAIBuilder = ({ estateId, hasItems, getAuthHeaders, onBuilt
       }
       onBuilt?.();
       const label = `${made} checklist item${made === 1 ? '' : 's'}`;
-      return { made: label, failures, message: `Added ${label}. Tap any item to fine-tune it.` };
+      return { made: label, failures, message: `Added ${label}${onFile ? `; ${onFile} ${onFile === 1 ? 'was' : 'were'} already on file` : ''}. Tap any item to fine-tune it.` };
     }}
   />
 );
