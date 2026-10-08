@@ -475,6 +475,10 @@ ROUTE_POLICIES: dict = {
         "estate_access": "owner",
         "estate_id_source": "path.estate_id",
     },
+    # People pillars — AI drafts (owner only; write nothing)
+    "POST /api/beneficiaries/{estate_id}/ai-draft": {"auth": "required", "estate_access": "owner", "estate_id_source": "path.estate_id"},
+    "POST /api/ffn/{estate_id}/ai-draft": {"auth": "required", "estate_access": "owner", "estate_id_source": "path.estate_id"},
+    "POST /api/digital-wallet/{estate_id}/ai-draft": {"auth": "required", "estate_access": "owner", "estate_id_source": "path.estate_id", "notes": "Secrets never leave the client: model forbidden to emit them, server scrubs, review uses a masked field"},
     # Private dictation — audio in memory → xAI STT (zero retention) → text back; nothing stored
     "POST /api/ai/transcribe": {
         "auth": "required",

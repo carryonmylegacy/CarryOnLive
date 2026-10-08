@@ -73,6 +73,7 @@ import {
 } from './beneficiariesPageConstants';
 import { SortableBeneficiaryCard } from './beneficiaries/SortableBeneficiaryCard';
 import { DeleteBeneficiaryDialog } from './beneficiaries/DeleteBeneficiaryDialog';
+import { BeneficiaryAIBuilder } from '../components/beneficiaries/BeneficiaryAIBuilder';
 
 // SortableCard, relation labels, avatar colors, succession constants, and
 // US state codes moved to ./beneficiariesPageConstants.js and
@@ -967,6 +968,10 @@ const BeneficiariesPage = () => {
       </div>
 
       <SectionLockedOverlay sectionId="beneficiaries">
+
+      {estate?.id && (
+        <BeneficiaryAIBuilder estateId={estate.id} hasItems={beneficiaries.length > 0} getAuthHeaders={getAuthHeaders} onBuilt={() => fetchData()} />
+      )}
 
       {/* Desktop: Tree Left + Tiles Right / Mobile: Tree Top + Tiles Below */}
       {beneficiaries.length === 0 ? (

@@ -20,6 +20,7 @@ import { API_URL } from '../config';
 import { saveList, readList } from '../utils/localListCache';
 import { sanitizeDavList } from '../utils/sanitizeDavForCache';
 import { useDraftState } from '../hooks/useDraftState';
+import { DigitalWalletAIBuilder } from '../components/digital-wallet/DigitalWalletAIBuilder';
 
 const CATEGORIES = [
   { value: 'crypto', label: 'Cryptocurrency', icon: Wallet },
@@ -39,6 +40,7 @@ const DigitalWalletPage = () => {
   const isBeneficiaryPortal = location.pathname.startsWith('/beneficiary');
   const [entries, setEntries] = useState([]);
   const [beneficiaries, setBeneficiaries] = useState([]);
+  const [estateId, setEstateId] = useState(null);
   const [loading, setLoading] = useState(true);
   // Draft persistence — keep the add panel open if the user navigates
   // away mid-creation. Per-estate so multi-estate users don't bleed.
@@ -102,6 +104,7 @@ const DigitalWalletPage = () => {
       if (estatesRes.data.length > 0) {
         const savedId = localStorage.getItem('selected_estate_id');
         const eid = (savedId && estatesRes.data.find(e => e.id === savedId)?.id) || estatesRes.data[0].id;
+        setEstateId(eid);
         const [walletRes, benRes] = await Promise.all([
           apiClient.get(`${API_URL}/digital-wallet/${eid}`, { headers }).catch(() => ({ data: [] })),
           apiClient.get(`${API_URL}/beneficiaries/${eid}`, { headers }).catch(() => ({ data: [] })),
@@ -252,6 +255,10 @@ const DigitalWalletPage = () => {
       )}
 
       <SectionLockedOverlay sectionId="digital-access">
+
+      {estateId && (
+        <DigitalWalletAIBuilder estateId={estateId} hasItems={entries.length > 0} beneficiaries={beneficiaries} getAuthHeaders={getAuthHeaders} onBuilt={() => fetchData()} />
+      )}
 
       {entries.length === 0 && !showAdd ? (
         <Card className="glass-card">

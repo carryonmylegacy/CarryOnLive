@@ -17,6 +17,7 @@ import { API_URL } from '../config';
 import { formatPhoneUS } from '../utils/phoneFormat';
 import { saveList, readList } from '../utils/localListCache';
 import { useDraftState } from '../hooks/useDraftState';
+import { FFNAIBuilder } from '../components/ffn/FFNAIBuilder';
 
 const EMPTY_FORM = { name: '', phone: '', email: '', address: '', relationship: '', notes: '' };
 
@@ -231,6 +232,10 @@ export default function FFNPage() {
 
       <SectionLockBanner sectionId="ffn" />
       <SectionLockedOverlay sectionId="ffn">
+
+      {estateId && (
+        <FFNAIBuilder estateId={estateId} hasItems={contacts.length > 0} getAuthHeaders={getAuthHeaders} onBuilt={() => fetchData()} />
+      )}
 
       {/* Explainer */}
       <Card className="glass-card" data-testid="ffn-explainer">
