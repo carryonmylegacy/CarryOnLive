@@ -98,7 +98,7 @@ def _iac_spoken(it: dict, new: bool) -> dict:
 async def ai_draft_checklist(estate_id: str, payload: DraftRequest, current_user: dict = Depends(get_current_user)):
     await require_estate_owner(estate_id, current_user)
     docs = await db.checklists.find(
-        {"estate_id": estate_id}, {"_id": 0, "id": 1, **{f: 1 for f in IAC_FIELDS}}
+        {"estate_id": estate_id, "deleted_at": None}, {"_id": 0, "id": 1, **{f: 1 for f in IAC_FIELDS}}
     ).to_list(400)
     existing = [
         {

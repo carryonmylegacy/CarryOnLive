@@ -131,8 +131,15 @@ def _email(v) -> Optional[str]:
 
 
 def _existing_match(name: str, rows: list[dict]) -> Optional[dict]:
+    """Exact name on file; a lone first name ("Bill") matches only when exactly one person on file carries it."""
     n = (name or "").strip().lower()
-    return next((r for r in rows if n and r["name"].lower() == n), None)
+    if not n:
+        return None
+    exact = next((r for r in rows if r["name"].lower() == n), None)
+    if exact or " " in n:
+        return exact
+    firsts = [r for r in rows if r["name"].lower().split(" ")[0] == n]
+    return firsts[0] if len(firsts) == 1 else None
 
 
 # ─────────────────────────────────────────────────────────── Beneficiaries ──
@@ -276,7 +283,8 @@ HARD RULES
    "College roommate", "Business partner", "Sister-in-law").
 3. Anything about HOW or WHEN to reach them ("call, don't text", "she's in Portugal until June", "has a key
    to the house") goes in "notes".
-4. EXISTING_RULE
+4. EXISTING_RULE A description that ONLY changes someone already in EXISTING ("Bill's new cell is 804-555-0199")
+   is a valid result: return that one contact with existing_id and just the changed field — never an empty list.
 5. "summary": ONE sentence. "questions": max 5 short sentences — ask for phone or email when both are missing
    for a NEW person, since a notification needs at least one way to reach them.
 
@@ -319,9 +327,9 @@ async def ai_draft_ffn(estate_id: str, payload: DraftRequest, current_user: dict
         if not isinstance(c, dict):
             continue
         name = clean_str(c.get("name"), 120)
-        if not name:
-            continue
-        ex = next((r for r in existing if r["id"] == c.get("existing_id")), None) or _existing_match(name, existing)
+        ex = next((r for r in existing if r["id"] == c.get("existing_id")), None) or (
+            _existing_match(name, existing) if name else None
+        )
         spoken = {
             "phone": clean_str(c.get("phone"), 40),
             "email": _email(c.get("email")),
@@ -334,11 +342,13 @@ async def ai_draft_ffn(estate_id: str, payload: DraftRequest, current_user: dict
             row = existing_row({**{f: doc.get(f) or "" for f in FFN_FIELDS}, "id": doc["id"]}, FFN_FIELDS, spoken)
             out.append(row)
             continue
+        if not name:
+            continue
         out.append({"existing_id": None, "changes": [], "name": name, **{k: v or "" for k, v in spoken.items()}})
     if not out:
         raise HTTPException(
             status_code=422,
-            detail="I could not find anyone to add in that description. Try naming each person and how you know them.",
+            detail="I could not find anyone to add or update in that description. Try naming each person and how you know them — or who already on the list has changed.",
         )
     questions = [q for q in (clean_str(x, 300) for x in (raw.get("questions") or [])) if q][:5]
     return {
@@ -371,7 +381,8 @@ OTHER RULES
 5. What to DO with it ("cancel", "transfer to Mark", "memorialize", "keep paying — it's the family plan")
    and any non-secret access detail ("2FA goes to my phone") go in "notes".
 6. EXISTING_RULE (for an existing entry, "Sarah should get the Coinbase now" → existing_id + assigned_beneficiary_name
-   + beneficiary_visibility only).
+   + beneficiary_visibility only; "cancel Netflix" → existing_id + notes "Cancel"). A description that ONLY changes
+   entries already in EXISTING is a valid result — return those rows with existing_id, never an empty list.
 7. "summary": ONE sentence. "questions": max 5 short sentences.
 
 OUTPUT — exactly one fenced JSON block, nothing outside it:
@@ -437,11 +448,11 @@ async def ai_draft_digital_wallet(
         if not isinstance(e, dict):
             continue
         name = clean_str(e.get("account_name"), 120)
-        if not name:
-            continue
-        ex = next((r for r in existing if r["id"] == e.get("existing_id")), None) or next(
-            (r for r in existing if r["account_name"].lower() == name.lower()), None
+        ex = next((r for r in existing if r["id"] == e.get("existing_id")), None) or (
+            next((r for r in existing if r["account_name"].lower() == name.lower()), None) if name else None
         )
+        if not name and not ex:
+            continue
         ben_name = clean_str(e.get("assigned_beneficiary_name"), 120)
         if ben_name and ben_name.split(" ")[0].lower() not in payload.description.lower():
             ben_name = None  # model substituted a name the speaker never said
@@ -500,7 +511,7 @@ async def ai_draft_digital_wallet(
     if not out:
         raise HTTPException(
             status_code=422,
-            detail="I could not find any accounts in that description. Try naming each service and what should happen to it.",
+            detail="I could not find any accounts to add or update in that description. Try naming each service and what should happen to it.",
         )
     questions = [
         q
