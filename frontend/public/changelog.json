@@ -1,6 +1,16 @@
 {
   "entries": [
     {
+      "date": "2026-10-08",
+      "title": "Talk your finances in — and choose who hears your voice",
+      "items": [
+        "Financial Picture: a new “Describe your finances” box at the top of the page. Tap the mic (or type) and walk through your bills, what you owe, your accounts and what you own — CarryOn sorts it into bills, debts, accounts and property, you review every line (“here’s what I heard”), then add it. Every tile stays editable",
+        "You now choose how CarryOn listens, once, for every mic in the app: CarryOn Private Dictation (recommended — your voice goes only to CarryOn and is transcribed on our zero-data-retention AI account; audio is discarded immediately) or your device’s own dictation (Apple / Google, live as you speak). Change it any time under Settings → Dictation",
+        "The Entities & Structures builder, Milestone Message dictation and the Estate Guardian mic all honour that one choice",
+        "Security page: a new “Dictation & AI Builders” entry spells out exactly what is sent where, and that nothing is saved until you approve it"
+      ]
+    },
+    {
       "date": "2026-10-07",
       "title": "Describe your entities out loud — the chart drafts itself",
       "items": [
