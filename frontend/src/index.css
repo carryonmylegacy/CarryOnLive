@@ -1267,24 +1267,39 @@ input[type="number"].allow-number-spinner {
     border-color: #d4af37;
     box-shadow: 0 0 0 1px rgba(var(--gold-rgb), 0.2);
   }
-  .ai-dictation-box textarea.ai-builder-input {
+  .ai-dictation-grid {
+    display: grid;
+  }
+  .ai-dictation-grid > * {
+    grid-area: 1 / 1;
+    min-width: 0;
+  }
+  .ai-dictation-box textarea.ai-builder-input,
+  .ai-dictation-example {
     display: block;
     width: 100%;
+    font-size: 1rem;
+    line-height: 1.6;
+    padding: 0.75rem 0.875rem 0.25rem;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+  .ai-dictation-box textarea.ai-builder-input {
     background: transparent;
     border: 0;
     outline: none;
     resize: none;
     overflow-y: auto;
     color: inherit;
-    font-size: 1rem;
-    line-height: 1.6;
-    padding: 0.75rem 0.875rem 0.25rem;
-    overflow-wrap: anywhere;
+    position: relative;
   }
-  .ai-builder-input::placeholder {
+  /* The "e.g. …" example: a real element (Safari clips long native placeholders at a stale width), quieter than typed text. */
+  .ai-dictation-example {
     color: var(--t5, #64748b);
     opacity: 0.55;
     font-weight: 400;
+    pointer-events: none;
+    user-select: none;
   }
   .input-field:focus {
     outline: none;
