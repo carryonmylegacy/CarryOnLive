@@ -1,8 +1,8 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import { Loader2, ShieldCheck, Sparkles, ArrowLeft } from 'lucide-react';
 import apiClient from '../../utils/apiClient';
 import { API_URL } from '../../config';
-import { DictationMicButton } from '../ai/DictationMicButton';
+import { DictationTextarea } from '../ai/DictationTextarea';
 import { notify } from '../AppNotification';
 
 const EXAMPLE = 'e.g. "We live in Richmond, Virginia — we own the house. I\u2019m married to Karen. Two kids: Emma is 16 and Jack is 12, and my mother lives with us. We have a rental in Norfolk and a cabin in West Virginia. Two life insurance policies, one through work. I own an LLC for my consulting business. We did a will about ten years ago but no trust, and I have a power of attorney."';
@@ -13,7 +13,6 @@ export const QuickStartStory = ({ firstName, brand, getAuthHeaders, onApply, onB
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
   const [mic, setMic] = useState({ listening: false, transcribing: false, error: null, engine: null });
-  const onText = useCallback((t) => setText(t), []);
 
   const go = async () => {
     if (text.trim().length < 8 || busy || mic.listening || mic.transcribing) return;
@@ -45,13 +44,7 @@ export const QuickStartStory = ({ firstName, brand, getAuthHeaders, onApply, onB
           <strong>Before you start:</strong> your words go only to {brand}, so we can sort them onto these screens. We don’t keep the recording or the words once that’s done, and nothing is saved until you’ve checked each screen and tapped Next. Anything you’d rather not say out loud, you can type on the screen itself.
         </p>
       </div>
-      <div className="relative">
-        <textarea value={text} onChange={(e) => setText(e.target.value)} rows={6} placeholder={EXAMPLE} aria-label="Your story"
-          className="w-full rounded-xl px-3 py-3 focus:outline-none focus:ring-2 focus:ring-[#d4af37] resize-y"
-          style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.18)', color: '#F8FAFC', fontSize: '16px', minHeight: '9rem', paddingRight: '3rem' }}
-          data-testid="qs-story-input" />
-        <DictationMicButton value={text} onText={onText} keyterms={KEYTERMS} onState={setMic} testId="qs-story-mic" className="absolute right-2 top-2" />
-      </div>
+      <DictationTextarea value={text} onChange={setText} placeholder={EXAMPLE} minHeight="9rem" keyterms={KEYTERMS} onState={setMic} ariaLabel="Your story" testId="qs-story-input" micTestId="qs-story-mic" className="on-dark" />
       <p className={`text-[11px] ${mic.error ? 'text-[#fca5a5]' : ''}`} style={mic.error ? undefined : { color: '#CBD5E1' }} data-testid="qs-story-status">{status}</p>
       <div className="flex items-center justify-between gap-3 flex-wrap pt-1">
         <button type="button" onClick={onBack} disabled={busy} data-testid="qs-story-back"

@@ -1,7 +1,7 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import { Sparkles, Loader2, ChevronDown, ChevronUp, Wand2, RotateCcw } from 'lucide-react';
 import { notify } from '../AppNotification';
-import { DictationMicButton } from './DictationMicButton';
+import { DictationTextarea } from './DictationTextarea';
 import { DICTATION_ENGINES } from '../../hooks/useDictation';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -29,7 +29,6 @@ export const AIBuilderShell = ({
   const [building, setBuilding] = useState(false);
   const [draft, setDraft] = useState(null);
   const [mic, setMic] = useState({ listening: false, transcribing: false, error: null, engine: null });
-  const onText = useCallback((t) => setText(t), []);
   const enabled = useAIBuildersEnabled();
 
   const toggle = () => {
@@ -100,12 +99,7 @@ export const AIBuilderShell = ({
 
       {!draft ? (
         <>
-          <div className="relative">
-            <textarea value={text} onChange={(e) => setText(e.target.value)} rows={4} placeholder={example}
-              className="input-field ai-builder-input text-base leading-relaxed resize-y" style={{ height: 'auto', minHeight: '7.5rem', paddingRight: '3.5rem', paddingTop: '0.6rem' }}
-              aria-label={title} data-testid={`${id}-input`} />
-            <DictationMicButton value={text} onText={onText} keyterms={keyterms} onState={setMic} testId={`${id}-mic`} className="absolute right-2 top-2 z-10 shadow-sm" />
-          </div>
+          <DictationTextarea value={text} onChange={setText} placeholder={example} keyterms={keyterms} onState={setMic} ariaLabel={title} testId={`${id}-input`} micTestId={`${id}-mic`} />
           <div className="flex items-center justify-between gap-3 mt-3 flex-wrap">
             <span className={`text-[11px] ${mic.error ? 'text-[#ef4444]' : 'text-[var(--t5)]'}`} data-testid={`${id}-status`}>
               {status}

@@ -1248,7 +1248,39 @@ input[type="number"].allow-number-spinner {
   .input-field::placeholder {
     color: var(--t5, #64748b);
   }
-  /* AI Builder "e.g. …" example: quieter than typed text, and it never runs under the mic button. */
+  /* AI Builder "describe it" box: borderless textarea + mic row at the lower right. The example wraps across
+     the full width and nothing ever runs under the mic. */
+  .ai-dictation-box {
+    width: 100%;
+    border-radius: 0.75rem;
+    border: 1px solid var(--b);
+    background: var(--bg2);
+    color: var(--t);
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .ai-dictation-box.on-dark {
+    border-color: rgba(255,255,255,0.18);
+    background: rgba(255,255,255,0.06);
+    color: #F8FAFC;
+  }
+  .ai-dictation-box:focus-within {
+    border-color: #d4af37;
+    box-shadow: 0 0 0 1px rgba(var(--gold-rgb), 0.2);
+  }
+  .ai-dictation-box textarea.ai-builder-input {
+    display: block;
+    width: 100%;
+    background: transparent;
+    border: 0;
+    outline: none;
+    resize: none;
+    overflow-y: auto;
+    color: inherit;
+    font-size: 1rem;
+    line-height: 1.6;
+    padding: 0.75rem 0.875rem 0.25rem;
+    overflow-wrap: anywhere;
+  }
   .ai-builder-input::placeholder {
     color: var(--t5, #64748b);
     opacity: 0.55;
